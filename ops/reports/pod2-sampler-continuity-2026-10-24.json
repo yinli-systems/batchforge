@@ -1,0 +1,8 @@
+{
+  "observed_at_utc": "2026-10-23T21:17:01.059382+00:00",
+  "status": "successor_starting",
+  "pid": 21539,
+  "output": ".runtime/observability/controlplane-secondary-ab-20261024.jsonl",
+  "duration_seconds": 3600,
+  "overlap_requested": false
+}

@@ -1,0 +1,17 @@
+{
+  "observed_at": "2026-10-23T21:01:34.495753+00:00",
+  "current_preflight": {
+    "server_version": "17.11 (11592b3)",
+    "server_major": 17,
+    "pg_dump_version": "pg_dump (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+    "pg_dump_major": 17,
+    "pg_restore_version": "pg_restore (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+    "ssl_in_use": true,
+    "configured_sslmode": "verify-full",
+    "compatible": true
+  },
+  "legacy_tool_preflight_exit_code": 1,
+  "legacy_tool_rejected": true,
+  "legacy_tool_rejection": "/root/batchforge-runtime/venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-0\n  return Path(self.user_runtime_dir)\npg_dump16 cannot back up PostgreSQL17; select matching or newer tools with --bin-dir or PG_BIN_DIR",
+  "owner_role_can_create_isolated_database": true
+}

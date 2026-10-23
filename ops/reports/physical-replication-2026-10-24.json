@@ -1,0 +1,25 @@
+{
+  "observed_at": "2026-10-23T20:19:56.707516+00:00",
+  "probe": "local-private-physical-postgres-replication",
+  "postgres_server_version": 160002,
+  "transport": "owner-only Unix sockets",
+  "synchronous_commit": "remote_apply",
+  "synchronous_standby_count": 1,
+  "accepted_commits_before_crash": 64,
+  "retained_commits_after_crash": 64,
+  "standby_rejected_writes_before_promotion": true,
+  "former_primary_confirmed_stopped_before_promotion": true,
+  "automatic_failover": false,
+  "operator_promotion": true,
+  "promoted_write_requires_synchronous_commit_local_in_probe": true,
+  "count_after_promoted_write": 65,
+  "primary_acknowledged_wal_lsn": "0/3029F78",
+  "crash_stop_to_fencing_verified_seconds": 0.130719,
+  "promotion_and_write_seconds": 0.117292,
+  "limitations": [
+    "Two local processes share one host and disk failure domain",
+    "No network partition or independent quorum tested",
+    "Production strict synchronous failover requires another synchronous standby before writes resume",
+    "No existing database or application workload was modified"
+  ]
+}

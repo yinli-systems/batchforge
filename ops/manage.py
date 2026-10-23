@@ -50,6 +50,8 @@ def owned_record(path: Path) -> dict | None:
     if not path.exists():
         return None
     record = json.loads(path.read_text())
+    if not isinstance(record, dict) or any(key not in record for key in ("pid", "start_ticks", "cwd")) or type(record["pid"]) is not int:
+        raise RuntimeError("This file is not a managed process identity record; choose a different configuration filename")
     current = process_identity(record["pid"])
     if not current:
         return None
@@ -64,22 +66,38 @@ def command(args, env: dict) -> list[str]:
         return [python, "-m", "uvicorn", "backend.app:app", "--host", "127.0.0.1", "--port", str(args.port or 8000), "--no-access-log"]
     if args.role == "worker":
         return [python, "-m", "worker"]
+    if args.role == "gateway":
+        return [python, "-m", "uvicorn", "ops.gateway.worker_gateway:app", "--host", env.get("GATEWAY_HOST", "127.0.0.1"), "--port", str(args.port or 8081), "--no-access-log"]
+    if args.role == "link":
+        return [python, "-m", "ops.link.broker"]
+    if args.role == "supervisor":
+        return [python, "ops/supervise.py"]
     # vLLM allocates only the configured fraction of *total* memory. The default
     # is deliberately small for shared Runpod hosts; inspect free memory first.
-    return [python, "-m", "vllm.entrypoints.openai.api_server",
-            "--model", env.get("MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct"),
+    result = [python, "-m", "vllm.entrypoints.openai.api_server",
+            "--model", env.get("ENGINE_MODEL_PATH", env.get("MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct")),
+            "--served-model-name", env.get("MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct"),
             "--host", "127.0.0.1", "--port", str(args.port or 8001),
-            "--tensor-parallel-size", "1", "--dtype", "half",
+            "--tensor-parallel-size", "1", "--dtype", env.get("ENGINE_DTYPE", "half"),
             "--max-model-len", env.get("ENGINE_MAX_MODEL_LEN", "2048"),
             "--max-num-seqs", env.get("ENGINE_MAX_NUM_SEQS", "8"),
             "--gpu-memory-utilization", env.get("ENGINE_GPU_MEMORY_UTILIZATION", "0.06"),
             "--enforce-eager", "--disable-log-requests"]
+    if env.get("ENGINE_REVISION"):
+        result.extend(["--revision", env["ENGINE_REVISION"]])
+    if env.get("ENGINE_MAX_NUM_BATCHED_TOKENS"):
+        result.extend(["--max-num-batched-tokens", env["ENGINE_MAX_NUM_BATCHED_TOKENS"]])
+    if env.get("ENGINE_ENABLE_PREFIX_CACHING", "0") == "1":
+        result.append("--enable-prefix-caching")
+    else:
+        result.append("--no-enable-prefix-caching")
+    return result
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("start", "stop", "status", "logs"))
-    parser.add_argument("role", choices=("api", "worker", "engine"))
+    parser.add_argument("role", choices=("api", "worker", "engine", "gateway", "link", "supervisor"))
     parser.add_argument("--name", help="Unique instance suffix, e.g. gpu0")
     parser.add_argument("--env-file", type=Path, default=ROOT / ".env")
     parser.add_argument("--python", help="Interpreter from an app-owned virtual environment")

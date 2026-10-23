@@ -88,6 +88,8 @@ def run(args):
                     os.killpg(child.pid, signal.SIGKILL)
                     child.wait(timeout=5)
 
+        subprocess.run([sys.executable, "-m", "backend.migrate", "--bootstrap"], cwd=ROOT,
+                       env=env, check=True, stdout=subprocess.DEVNULL)
         start("api", "uvicorn", ("backend.app:app", "--host", "127.0.0.1", "--port", str(api_port), "--no-access-log"))
         start("engine", "uvicorn", ("worker.fake_engine:app", "--host", "127.0.0.1", "--port", str(engine_port), "--no-access-log"))
         public = httpx.Client(base_url=url, headers={"Authorization": f"Bearer {public_key}"}, timeout=5)

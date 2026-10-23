@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-23T20:34:58.436183+00:00",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "workers": [
+    {
+      "worker_id": "primary-qwen7b-gpu0",
+      "managed_name": "worker-gpu0",
+      "pid": 102234,
+      "control_plane": "http://127.0.0.1:8080",
+      "inference_engine": "http://127.0.0.1:8100",
+      "metrics_port": 9101,
+      "ready_http_status": 200,
+      "metrics": {
+        "batchforge_worker_inflight{}": 0.0,
+        "batchforge_worker_reserved_context_tokens{}": 0.0,
+        "batchforge_worker_capacity{}": 8.0,
+        "batchforge_worker_ready_engines{}": 1.0
+      },
+      "max_model_len": 4096,
+      "token_budget": 32768,
+      "max_inflight": 8
+    },
+    {
+      "worker_id": "primary-qwen7b-gpu1",
+      "managed_name": "worker-gpu1",
+      "pid": 102237,
+      "control_plane": "http://127.0.0.1:8080",
+      "inference_engine": "http://127.0.0.1:8101",
+      "metrics_port": 9102,
+      "ready_http_status": 200,
+      "metrics": {
+        "batchforge_worker_inflight{}": 0.0,
+        "batchforge_worker_reserved_context_tokens{}": 0.0,
+        "batchforge_worker_capacity{}": 8.0,
+        "batchforge_worker_ready_engines{}": 1.0
+      },
+      "max_model_len": 4096,
+      "token_budget": 32768,
+      "max_inflight": 8
+    },
+    {
+      "worker_id": "primary-qwen7b-gpu2",
+      "managed_name": "worker-gpu2",
+      "pid": 102240,
+      "control_plane": "http://127.0.0.1:8080",
+      "inference_engine": "http://127.0.0.1:8102",
+      "metrics_port": 9103,
+      "ready_http_status": 200,
+      "metrics": {
+        "batchforge_worker_inflight{}": 0.0,
+        "batchforge_worker_reserved_context_tokens{}": 0.0,
+        "batchforge_worker_capacity{}": 8.0,
+        "batchforge_worker_ready_engines{}": 1.0
+      },
+      "max_model_len": 4096,
+      "token_budget": 32768,
+      "max_inflight": 8
+    },
+    {
+      "worker_id": "primary-qwen7b-gpu3",
+      "managed_name": "worker-gpu3",
+      "pid": 102243,
+      "control_plane": "http://127.0.0.1:8080",
+      "inference_engine": "http://127.0.0.1:8103",
+      "metrics_port": 9104,
+      "ready_http_status": 200,
+      "metrics": {
+        "batchforge_worker_inflight{}": 0.0,
+        "batchforge_worker_reserved_context_tokens{}": 0.0,
+        "batchforge_worker_capacity{}": 8.0,
+        "batchforge_worker_ready_engines{}": 1.0
+      },
+      "max_model_len": 4096,
+      "token_budget": 32768,
+      "max_inflight": 8
+    }
+  ],
+  "all_four_ready": true,
+  "deployed_worker_sha256": "2fcbbbd677130b43d0f13f5b8241bed801b5be00b9ba0dad83255f8c70437448",
+  "worker_configs_contain_database_dsn": false,
+  "limitations": [
+    "Readiness and capacity observations; no new end-to-end throughput benchmark in this report"
+  ]
+}

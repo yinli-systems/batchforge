@@ -15,9 +15,14 @@ class Metrics:
         self.engines = Gauge("batchforge_worker_ready_engines", "Configured engines advertising the registered model", registry=self.registry)
         self.results = Counter("batchforge_worker_tasks", "Observed task outcomes", ["outcome"], registry=self.registry)
         self.requests = Counter("batchforge_worker_control_requests", "Control plane requests", ["operation", "outcome"], registry=self.registry)
+        self.control_failovers = Counter("batchforge_worker_control_failovers", "Control origin changes for subsequent requests", registry=self.registry)
+        self.control_origin = Gauge("batchforge_worker_control_origin_index", "Index of the selected configured control origin", registry=self.registry)
         self.latency = Histogram("batchforge_worker_inference_seconds", "Complete model request duration", buckets=(.1,.25,.5,1,2,5,10,20,40,80,160,320), registry=self.registry)
         self.prompt = Counter("batchforge_worker_prompt_tokens", "Reported model prompt tokens", registry=self.registry)
         self.completion = Counter("batchforge_worker_completion_tokens", "Reported model completion tokens", registry=self.registry)
+        self.invalid_outputs = Counter("batchforge_worker_invalid_outputs", "Observed engine responses rejected for invalid JSON-object output", registry=self.registry)
+        self.rejected_prompt = Counter("batchforge_worker_rejected_prompt_tokens", "Observed engine prompt tokens for rejected outputs; excluded from accepted usage", registry=self.registry)
+        self.rejected_generated = Counter("batchforge_worker_rejected_generated_tokens", "Observed engine completion tokens for rejected outputs; excluded from accepted usage", registry=self.registry)
         self.last_control_success = 0.0
         self.registered = False
         self.stopping = False

@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "status": "deployed",
+  "source_archive_sha256": "7afac375ad033c8f920936348ef7db210fa0e0e4ef568886615944c0c0fec849",
+  "source_hashes": {
+    "backend/CONTRACT.md": "b824477300a739b6c460ea5e6b9dfefb369d231f0edae13e5833520211d1ebf6",
+    "backend/__init__.py": "aa9a6007003553c446b7810268a4fe6d1c2db8a3750a9fd8df0bcf11d7f05d49",
+    "backend/admin.py": "35ce47c48842cb592ee7c6e9d904265342c59ba09f52a16572ca1da44ed40d38",
+    "backend/app.py": "20df1316a508af70ed6d714b585ae0c13cb8612d8648d0d02d5d68d546942d7b",
+    "backend/config.py": "6f7362464c536b05af1ed45e578fb58f0cc8904d2f6c317b5ab950d712af8313",
+    "backend/migrate.py": "85070f7cfabcd85465ad7de367375b1d714de17aaaea28a97c440596c84c8497",
+    "backend/migrations/0002_sql_completion.sql": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b",
+    "backend/migrations/0003_sql_claim.sql": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003",
+    "backend/schema.sql": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219",
+    "backend/store.py": "38240fe3bb6950bbd298c213038519cbb7aeaa425897cbf0e0a3d840c7f03ebb",
+    "backend/validation.py": "3c563ad95d1fb0b361c14408345ccc66b783069dab0c2a39f7b4e881cfc5353d"
+  },
+  "primary": {
+    "phase1": {
+      "observed_at_utc": "2026-10-23T21:31:34.875672+00:00",
+      "phase": 1,
+      "sql_claim_enabled": false,
+      "source_archive_sha256": "7afac375ad033c8f920936348ef7db210fa0e0e4ef568886615944c0c0fec849",
+      "source_hashes": {
+        "backend/CONTRACT.md": "b824477300a739b6c460ea5e6b9dfefb369d231f0edae13e5833520211d1ebf6",
+        "backend/__init__.py": "aa9a6007003553c446b7810268a4fe6d1c2db8a3750a9fd8df0bcf11d7f05d49",
+        "backend/admin.py": "35ce47c48842cb592ee7c6e9d904265342c59ba09f52a16572ca1da44ed40d38",
+        "backend/app.py": "20df1316a508af70ed6d714b585ae0c13cb8612d8648d0d02d5d68d546942d7b",
+        "backend/config.py": "6f7362464c536b05af1ed45e578fb58f0cc8904d2f6c317b5ab950d712af8313",
+        "backend/migrate.py": "85070f7cfabcd85465ad7de367375b1d714de17aaaea28a97c440596c84c8497",
+        "backend/migrations/0002_sql_completion.sql": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b",
+        "backend/migrations/0003_sql_claim.sql": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003",
+        "backend/schema.sql": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219",
+        "backend/store.py": "38240fe3bb6950bbd298c213038519cbb7aeaa425897cbf0e0a3d840c7f03ebb",
+        "backend/validation.py": "3c563ad95d1fb0b361c14408345ccc66b783069dab0c2a39f7b4e881cfc5353d"
+      },
+      "apis": [
+        {
+          "name": "a",
+          "port": 8082,
+          "pid": 113854,
+          "ready": {
+            "status": 200,
+            "body": {
+              "status": "ready"
+            }
+          },
+          "sql_completion_enabled": true,
+          "sql_claim_enabled": false
+        },
+        {
+          "name": "b",
+          "port": 8083,
+          "pid": 113863,
+          "ready": {
+            "status": 200,
+            "body": {
+              "status": "ready"
+            }
+          },
+          "sql_completion_enabled": true,
+          "sql_claim_enabled": false
+        }
+      ],
+      "gateway": {
+        "status": 200,
+        "body": {
+          "status": "ready",
+          "ready_replicas": 1
+        }
+      },
+      "non_api_identities_unchanged": {
+        "gateway-edge": true,
+        "link-pod2": true,
+        "worker-gpu0": true,
+        "engine-gpu0": true,
+        "worker-gpu1": true,
+        "engine-gpu1": true,
+        "worker-gpu2": true,
+        "engine-gpu2": true,
+        "worker-gpu3": true,
+        "engine-gpu3": true
+      },
+      "owner_migration_executed": false,
+      "extra_engines_started": 0
+    },
+    "phase2": {
+      "observed_at_utc": "2026-10-23T21:32:45.494403+00:00",
+      "phase": 2,
+      "sql_claim_enabled": true,
+      "source_archive_sha256": "7afac375ad033c8f920936348ef7db210fa0e0e4ef568886615944c0c0fec849",
+      "source_hashes": {
+        "backend/CONTRACT.md": "b824477300a739b6c460ea5e6b9dfefb369d231f0edae13e5833520211d1ebf6",
+        "backend/__init__.py": "aa9a6007003553c446b7810268a4fe6d1c2db8a3750a9fd8df0bcf11d7f05d49",
+        "backend/admin.py": "35ce47c48842cb592ee7c6e9d904265342c59ba09f52a16572ca1da44ed40d38",
+        "backend/app.py": "20df1316a508af70ed6d714b585ae0c13cb8612d8648d0d02d5d68d546942d7b",
+        "backend/config.py": "6f7362464c536b05af1ed45e578fb58f0cc8904d2f6c317b5ab950d712af8313",
+        "backend/migrate.py": "85070f7cfabcd85465ad7de367375b1d714de17aaaea28a97c440596c84c8497",
+        "backend/migrations/0002_sql_completion.sql": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b",
+        "backend/migrations/0003_sql_claim.sql": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003",
+        "backend/schema.sql": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219",
+        "backend/store.py": "38240fe3bb6950bbd298c213038519cbb7aeaa425897cbf0e0a3d840c7f03ebb",
+        "backend/validation.py": "3c563ad95d1fb0b361c14408345ccc66b783069dab0c2a39f7b4e881cfc5353d"
+      },
+      "apis": [
+        {
+          "name": "a",
+          "port": 8082,
+          "pid": 114159,
+          "ready": {
+            "status": 200,
+            "body": {
+              "status": "ready"
+            }
+          },
+          "sql_completion_enabled": true,
+          "sql_claim_enabled": true
+        },
+        {
+          "name": "b",
+          "port": 8083,
+          "pid": 114168,
+          "ready": {
+            "status": 200,
+            "body": {
+              "status": "ready"
+            }
+          },
+          "sql_completion_enabled": true,
+          "sql_claim_enabled": true
+        }
+      ],
+      "gateway": {
+        "status": 200,
+        "body": {
+          "status": "ready",
+          "ready_replicas": 2
+        }
+      },
+      "non_api_identities_unchanged": {
+        "gateway-edge": true,
+        "link-pod2": true,
+        "worker-gpu0": true,
+        "engine-gpu0": true,
+        "worker-gpu1": true,
+        "engine-gpu1": true,
+        "worker-gpu2": true,
+        "engine-gpu2": true,
+        "worker-gpu3": true,
+        "engine-gpu3": true
+      },
+      "owner_migration_executed": false,
+      "extra_engines_started": 0
+    },
+    "watchdog_restored": true,
+    "identity_check": "PID/start_ticks/cwd equality for all ten non-API manifest services"
+  },
+  "secondary": {
+    "phase1_confirmed_at_utc": "2026-10-23T21:31:42.624289+00:00",
+    "phase1_api_pids": {
+      "a": 52870,
+      "b": 52879
+    },
+    "phase2_confirmed_at_utc": "2026-10-23T21:33:06.204625+00:00",
+    "phase2_api_pids": {
+      "a": 54004,
+      "b": 54011
+    },
+    "direct_api_ready_status": {
+      "a": 200,
+      "b": 200
+    },
+    "gateway_ready_replicas": 2,
+    "sql_completion_enabled": true,
+    "sql_claim_enabled": true,
+    "watchdog_pid": 54034,
+    "non_api_pids_unchanged": 33,
+    "identity_check": "PID equality; separately reported by second-Pod operator agent",
+    "worker_engine_restart_operations": 0
+  },
+  "migration": {
+    "observed_at_utc": "2026-10-23T21:32:32.224299+00:00",
+    "applied_versions": [
+      3
+    ],
+    "schema_ledger": [
+      {
+        "version": 1,
+        "checksum": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219"
+      },
+      {
+        "version": 2,
+        "checksum": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b"
+      },
+      {
+        "version": 3,
+        "checksum": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003"
+      }
+    ],
+    "both_pods_phase1_confirmed": true,
+    "bootstrap_executed": false,
+    "source_archive_sha256": "7afac375ad033c8f920936348ef7db210fa0e0e4ef568886615944c0c0fec849"
+  },
+  "rollout_order": [
+    "Every primary/secondary API first ran compatible v3 source with SQL_CLAIM_ENABLED=false and existing SQL_COMPLETION_ENABLED=true",
+    "Both Pods confirmed all four direct API readiness checks before owner migration",
+    "Owner applied only additive migration 3 and verified immutable ledger checksums without tenant/key bootstrap",
+    "Each Pod rolled APIs sequentially to SQL_CLAIM_ENABLED=true, restored its watchdog, and checked retained worker/engine PIDs"
+  ],
+  "configuration_held_for_next_comparison": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "primary_h100_instances": 4,
+    "secondary_distinct_mig_instances": 16,
+    "worker_slots_each": 8,
+    "context_tokens": 4096,
+    "prefix_caching": false
+  },
+  "limits": [
+    "Rollout readiness and unchanged worker PIDs do not establish throughput or whole-Pod failover; separate real-workload experiments are required",
+    "Twenty inference instances comprise four full H100s and sixteen Blackwell MIG instances, not twenty equivalent full GPUs",
+    "No failure injection was executed during this rollout"
+  ]
+}

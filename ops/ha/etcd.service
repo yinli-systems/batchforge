@@ -1,0 +1,23 @@
+[Unit]
+Description=BatchForge etcd consensus member
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=etcd
+Group=etcd
+EnvironmentFile=/etc/batchforge-ha/etcd.env
+ExecStart=/usr/local/bin/etcd
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=120
+LimitNOFILE=65536
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/batchforge-ha/etcd
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "measurement_type": "real_engine_only_workload",
+  "started_at_utc": "2026-10-23T21:15:40.468187+00:00",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "dtype": "bfloat16",
+  "prefix_caching": false,
+  "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+  "context_limit": 4096,
+  "requested_ports": [
+    8206
+  ],
+  "requests_per_engine": 1,
+  "concurrency_per_engine": 1,
+  "input_sections": 16,
+  "output_limit_tokens": 8,
+  "temperature": 0,
+  "seed": 42,
+  "elapsed_seconds_including_readiness": 30.999242,
+  "requested_count": 1,
+  "successful_count": 1,
+  "passed": true,
+  "prompt_tokens": 1619,
+  "completion_tokens": 8,
+  "observed_requests_per_second_including_readiness": 0.032258852911040824,
+  "observed_output_tokens_per_second_including_readiness": 0.2580708232883266,
+  "quality_evaluated": false,
+  "results": [
+    {
+      "port": 8206,
+      "index": 0,
+      "prompt_sha256": "dbbfc32577d73a498dd31c9d77a274db9a30a29cd35386ccd11ebde9bbda9cb0",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1619,
+        "total_tokens": 1627,
+        "completion_tokens": 8,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "2e8f625580f70e277bcaccfbbb8b9c2819b9cb2000dc4d5908b430407649f172",
+      "output_sample": "### Executive Summary\n\nThe analysis of the",
+      "request_seconds": 0.861802
+    }
+  ]
+}

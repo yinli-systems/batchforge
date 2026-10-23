@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import replace
+import json
 
 import httpx
 import pytest
@@ -21,6 +22,19 @@ def task():
 def response():
     return {"choices": [{"message": {"role": "assistant", "content": "hello"}}],
             "usage": {"prompt_tokens": 1, "completion_tokens": 1}}
+
+
+def json_object_task():
+    value = task()
+    value["body"]["response_format"] = {"type": "json_object"}
+    return value
+
+
+def generated_response(content):
+    value = response()
+    value["choices"][0]["message"]["content"] = content
+    value["usage"] = {"prompt_tokens": 5, "completion_tokens": 7}
+    return value
 
 
 def make_worker(*args, **kwargs):
@@ -101,6 +115,126 @@ async def test_transient_engine_failure_reports_retryable_without_exposing_body(
         assert reports[0]["retryable"] is True
         assert reports[0]["error"]["code"] == "engine_http_503"
         assert "SECRET" not in str(reports)
+    finally:
+        await worker.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("content", ['{}', ' {"translation_zh":"你好","nested":{"ok":true}} \n'])
+async def test_requested_json_object_is_completed_without_claiming_field_fidelity(content):
+    reports = []
+
+    async def control(request):
+        reports.append((request.url.path, json.loads(request.content)))
+        return httpx.Response(200, json={"ok": True})
+
+    worker = make_worker(settings(), control_transport=httpx.MockTransport(control),
+                         inference_transport=httpx.MockTransport(lambda _: httpx.Response(200, json=generated_response(content))))
+    try:
+        await worker.execute(json_object_task())
+        assert len(reports) == 1 and reports[0][0].endswith("/complete")
+        assert reports[0][1]["response"]["choices"][0]["message"]["content"] == content
+        assert worker.metrics.prompt._value.get() == 5
+        assert worker.metrics.completion._value.get() == 7
+        assert worker.metrics.invalid_outputs._value.get() == 0
+        assert worker.metrics.rejected_generated._value.get() == 0
+    finally:
+        await worker.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("content", [
+    '```json\n{"value":"PRIVATE-GENERATED-TEXT"}\n```',
+    '{"value":"PRIVATE-GENERATED-TEXT\nraw newline"}',
+    '{"value":"PRIVATE-GENERATED-TEXT”}<tool_call>',
+    '{"value":NaN}', '{"value":Infinity}',
+    '[]', '"PRIVATE-GENERATED-TEXT"', 'null',
+    '{"value":1,"value":2}', None,
+])
+async def test_invalid_json_output_uses_durable_retry_without_accepted_usage_or_reinference(content):
+    reports, inferences = [], []
+
+    async def control(request):
+        reports.append((request.url.path, json.loads(request.content)))
+        return httpx.Response(200, json={"ok": True, "status": "pending"})
+
+    async def engine(request):
+        inferences.append(request)
+        return httpx.Response(200, json=generated_response(content))
+
+    worker = make_worker(settings(), control_transport=httpx.MockTransport(control),
+                         inference_transport=httpx.MockTransport(engine))
+    try:
+        await worker.execute(json_object_task())
+        assert len(inferences) == 1
+        assert len(reports) == 1 and reports[0][0].endswith("/fail")
+        assert reports[0][1] == {
+            "worker_id": "test-worker", "attempt_token": "attempt1",
+            "error": {"code": "invalid_json_output", "message": "Model output did not satisfy the requested JSON object format"},
+            "retryable": True,
+        }
+        assert "PRIVATE-GENERATED-TEXT" not in json.dumps(reports)
+        assert worker.metrics.prompt._value.get() == worker.metrics.completion._value.get() == 0
+        assert worker.metrics.invalid_outputs._value.get() == 1
+        assert worker.metrics.rejected_prompt._value.get() == 5
+        assert worker.metrics.rejected_generated._value.get() == 7
+        assert worker.engines[0].ready is True
+        samples = [sample for metric in worker.metrics.registry.collect()
+                   for sample in metric.samples if sample.name.startswith("batchforge_worker_rejected_")]
+        assert samples and all(sample.labels == {} for sample in samples)
+    finally:
+        await worker.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("response_format", [None, {"type": "text"}])
+async def test_output_without_explicit_json_object_contract_is_unchanged(response_format):
+    value = task()
+    if response_format is not None:
+        value["body"]["response_format"] = response_format
+    reports = []
+
+    async def control(request):
+        reports.append((request.url.path, json.loads(request.content)))
+        return httpx.Response(200, json={"ok": True})
+
+    worker = make_worker(settings(), control_transport=httpx.MockTransport(control),
+                         inference_transport=httpx.MockTransport(lambda _: httpx.Response(200, json=generated_response("ordinary non-JSON output"))))
+    try:
+        await worker.execute(value)
+        assert len(reports) == 1 and reports[0][0].endswith("/complete")
+        assert reports[0][1]["response"]["choices"][0]["message"]["content"] == "ordinary non-JSON output"
+        assert worker.metrics.completion._value.get() == 7
+        assert worker.metrics.invalid_outputs._value.get() == worker.metrics.rejected_generated._value.get() == 0
+    finally:
+        await worker.close()
+
+
+@pytest.mark.asyncio
+async def test_invalid_output_report_ack_loss_keeps_same_fence_and_never_generates_again():
+    reports, inferences = [], []
+
+    async def control(request):
+        assert request.url.path.endswith("/fail")
+        reports.append(request.content)
+        if len(reports) == 1:
+            raise httpx.ReadError("lost failure acknowledgement")
+        return httpx.Response(409, json={"error": {"code": "stale_attempt"}})
+
+    async def engine(request):
+        inferences.append(request)
+        return httpx.Response(200, json=generated_response('{"value":"unterminated'))
+
+    worker = make_worker(settings(), control_transport=httpx.MockTransport(control),
+                         inference_transport=httpx.MockTransport(engine))
+    try:
+        await worker.execute(json_object_task())
+        assert len(inferences) == 1
+        assert len(reports) == 2 and reports[0] == reports[1]
+        assert worker.metrics.results.labels("fenced")._value.get() == 1
+        assert worker.metrics.prompt._value.get() == worker.metrics.completion._value.get() == 0
+        assert worker.metrics.invalid_outputs._value.get() == 1
+        assert worker.metrics.rejected_generated._value.get() == 7
     finally:
         await worker.close()
 

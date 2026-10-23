@@ -1,0 +1,34 @@
+# Reviewed deployment proposal. This file alone creates no paid resources.
+# Migrate Neon with the owner credential before rollout; runtime receives only
+# bf_runtime DATABASE_URL and the separate worker credential.
+services:
+  - type: web
+    name: batchforge-api
+    runtime: python
+    region: frankfurt
+    plan: 0.5c-512mb
+    numInstances: 2
+    autoDeployTrigger: off
+    buildCommand: pip install --require-hashes -r requirements.txt && pip install --no-deps .
+    startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT --no-access-log
+    healthCheckPath: /readyz
+    maxShutdownDelaySeconds: 60
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.11
+      - key: DATABASE_URL
+        sync: false
+      - key: BATCHFORGE_WORKER_TOKEN
+        sync: false
+      - key: MODEL_NAME
+        value: Qwen/Qwen2.5-7B-Instruct
+      - key: FRONTEND_DIR
+        value: frontend
+      - key: DB_POOL_MIN
+        value: "1"
+      - key: DB_POOL_MAX
+        value: "8"
+      - key: MAX_OUTPUT_TOKENS
+        value: "1024"
+      - key: LEASE_SECONDS
+        value: "90"

@@ -1,0 +1,804 @@
+{
+  "schema_version": 1,
+  "measurement_type": "real_engine_only_workload",
+  "started_at_utc": "2026-10-23T20:25:07.451301+00:00",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "dtype": "bfloat16",
+  "prefix_caching": false,
+  "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+  "context_limit": 4096,
+  "requested_ports": [
+    8200,
+    8201,
+    8202,
+    8203,
+    8204,
+    8205
+  ],
+  "requests_per_engine": 8,
+  "concurrency_per_engine": 8,
+  "input_sections": 16,
+  "output_limit_tokens": 512,
+  "temperature": 0,
+  "seed": 42,
+  "elapsed_seconds_including_readiness": 24.455055,
+  "requested_count": 48,
+  "successful_count": 48,
+  "passed": true,
+  "prompt_tokens": 77792,
+  "completion_tokens": 24568,
+  "observed_requests_per_second_including_readiness": 1.9627843886931073,
+  "observed_output_tokens_per_second_including_readiness": 1004.6184762794221,
+  "quality_evaluated": false,
+  "results": [
+    {
+      "port": 8200,
+      "index": 0,
+      "prompt_sha256": "6eb30858e3ed44652ce2e297f15a2f07f8e3e100f7fcbe7a43067a19e58dbd43",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1620,
+        "total_tokens": 2132,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "65f98289120d1044e6aa4ef2c72308c6f4ce6cae0eb0addac5c96d5fab041b86",
+      "output_sample": "### Executive Summary\n\nThe operational data from regions r000 to r015 indicates varying levels of performance and reliability across different regions. Key metrics such as end-to-end latency, transient retry rates, and GPU occupancy provide insights into t",
+      "request_seconds": 23.715684
+    },
+    {
+      "port": 8200,
+      "index": 1,
+      "prompt_sha256": "46ce205bd6241093ed8c7e0cdfbb26e114982649c56bc20f4414f9932a848875",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "e6e19281bc6ca5f07a03e55c92ee3534e71b9c08ebe65d73bac2553a3b47aced",
+      "output_sample": null,
+      "request_seconds": 23.758313
+    },
+    {
+      "port": 8200,
+      "index": 2,
+      "prompt_sha256": "4605cd4b73f77608bb5df22e52befa6019c861ff51635cc658cdaba3383e4deb",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1622,
+        "total_tokens": 2134,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "5c2d398833fd6cd592d6ba8c5c7e2ed642b39b1f8b3e37fad4b5167ad3f2a376",
+      "output_sample": null,
+      "request_seconds": 23.758516
+    },
+    {
+      "port": 8200,
+      "index": 3,
+      "prompt_sha256": "67cf4b8accbf066f330eac2fc328e0557d5203fc1f9c4505335dc4b4b24c1850",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1623,
+        "total_tokens": 2135,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "d9ab21097e8e3f261a5e00a74cf9a89abc0deeb3a53d1f113003a63a53f56018",
+      "output_sample": null,
+      "request_seconds": 23.799008
+    },
+    {
+      "port": 8200,
+      "index": 4,
+      "prompt_sha256": "428df4456cc16b4236624c25326d58666765c77ddb1ce49df497bb277d5178ac",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1623,
+        "total_tokens": 2135,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "31892846c3928bf03200456f4c650adf29727f1c0868e30912a3bcce897aac1a",
+      "output_sample": null,
+      "request_seconds": 23.799454
+    },
+    {
+      "port": 8200,
+      "index": 5,
+      "prompt_sha256": "14b7a3787941ea64bf4bbec8ec2522b480d20ff9b73f63553a49c9e76c386e68",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1623,
+        "total_tokens": 2135,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "b30c422e83ffa360bf8f8645b7503005f0e8a30d6aff45a23dfaa74712a89821",
+      "output_sample": null,
+      "request_seconds": 23.799432
+    },
+    {
+      "port": 8200,
+      "index": 6,
+      "prompt_sha256": "aa54a59a3d76f16fd8ce2aec10eddaf5f6efc0867bcff55ae31da1833a7d3885",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1623,
+        "total_tokens": 2135,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "a857057c57afdd6df4d19457f794180ce1a628a02669e6bf9ba30b94374a9de8",
+      "output_sample": null,
+      "request_seconds": 23.840859
+    },
+    {
+      "port": 8200,
+      "index": 7,
+      "prompt_sha256": "6926b17be76fc3df60d26b420de2ff932f04727cdaeadaf0e22a8088c4dac647",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1623,
+        "total_tokens": 2135,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "65862f44579a94d09ece34e1ce833b7c615693e66c3d0d4b36c56f1fb8c013f6",
+      "output_sample": null,
+      "request_seconds": 23.84165
+    },
+    {
+      "port": 8201,
+      "index": 0,
+      "prompt_sha256": "a8909ca96ebaecd60e9f01ee23b71e7d91bd997eec22d6341171a8336b64802e",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1623,
+        "total_tokens": 2135,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "5fcf047eb71c87b90db2caf61cac71b2e935b871e0f3282a7b76b5c83ffabff3",
+      "output_sample": "### Executive Summary\n\nThe analysis of the synthetic operations log for incident report 820100000 reveals significant reliability risks across multiple regions, primarily due to high transient retry rates and long queue ages. The regions with the highest t",
+      "request_seconds": 24.096077
+    },
+    {
+      "port": 8201,
+      "index": 1,
+      "prompt_sha256": "47022db6625991ec7a81c5f910ee13f54344dbe590a7c0f76f8926681c0abf06",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1624,
+        "total_tokens": 2136,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "22a3d1b5c73ce54005948b07c683b8645272c3d0740a66c8ae3e2db150375363",
+      "output_sample": null,
+      "request_seconds": 24.138868
+    },
+    {
+      "port": 8201,
+      "index": 2,
+      "prompt_sha256": "8437286c6731aa0ca32b9d69f78659ca5474eff39a268f5e4254f12cda917358",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1624,
+        "total_tokens": 2136,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "073d66991d2cf9caa019045a85b07f8e97a01514a0b1d8795fc531784542fcea",
+      "output_sample": null,
+      "request_seconds": 24.139743
+    },
+    {
+      "port": 8201,
+      "index": 3,
+      "prompt_sha256": "465de73484d43ca645c454300a058b5498be0b9583e3102fee256a4a982d06c7",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1624,
+        "total_tokens": 2136,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "49c9e78b5c9d473e7870d524267cbd6b3e788fdd00129e7f5a18eef4e555141d",
+      "output_sample": null,
+      "request_seconds": 24.180795
+    },
+    {
+      "port": 8201,
+      "index": 4,
+      "prompt_sha256": "2fdc666ca89ee81783cdb10479f09b05dd151b927df0d91e51a42f8cb120ac11",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "0941e2256f497a34cb3da82e146f4f15e84daf4393bb55c07831eb74d5ca2d74",
+      "output_sample": null,
+      "request_seconds": 24.182279
+    },
+    {
+      "port": 8201,
+      "index": 5,
+      "prompt_sha256": "53d9a822b46ed888be244202a20d47afbb3c288935279775652eb06d26c46b42",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "5a3d064e2d0ddcf0f9f8b42b75352f7ceb5d5c5330b60339666ea527fc3104a4",
+      "output_sample": null,
+      "request_seconds": 24.182747
+    },
+    {
+      "port": 8201,
+      "index": 6,
+      "prompt_sha256": "0232a416e39f69520366ebe458a11511520f476b4222462804a7fb6bf95827e0",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1619,
+        "total_tokens": 2131,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "c7d534939da5c46b1226b863a850cc4d18510c34c58e8698a718d3a7f51fe888",
+      "output_sample": null,
+      "request_seconds": 24.222002
+    },
+    {
+      "port": 8201,
+      "index": 7,
+      "prompt_sha256": "bc231a680c0e9295bf3eacbe45e4675909a2810cdd3e317592362d293a47c645",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1620,
+        "total_tokens": 2132,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "ec8dfedee3560252e38ae7e110d64dd9263e588041a7fd2eee2d5c965108eac0",
+      "output_sample": null,
+      "request_seconds": 24.223255
+    },
+    {
+      "port": 8202,
+      "index": 0,
+      "prompt_sha256": "1a94bd779452afeeb1ba0b875c5e84e302e2b498cae698c45d062c7e53d953a9",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1620,
+        "total_tokens": 2132,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "08b6dee9de4d3ab1c92c64523df74fe6732ded0d95f1ffdbce96326dce5ddcbc",
+      "output_sample": "### Executive Summary\n\nThe analysis of the synthetic operations log for incident report 820200000 reveals significant variability in performance across different regions, with notable risks in reliability and responsiveness. Key findings include:\n\n- **Late",
+      "request_seconds": 24.192862
+    },
+    {
+      "port": 8202,
+      "index": 1,
+      "prompt_sha256": "4cc04f92f246c6d498332c3a26ffe36b2cde279c559051fc3ea75f3ec6857eb9",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "b108386952fec48514fda7f5e84a9444170f6b2eff04fff35987dbf38484f43d",
+      "output_sample": null,
+      "request_seconds": 24.193994
+    },
+    {
+      "port": 8202,
+      "index": 2,
+      "prompt_sha256": "fb59bd069bcd93f78b79c3bef76f17931e6efd1724c34f26a6294a2ccfb1f916",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "698d77cd00f0874f22047deecb12a1b5cac56bedc6566d480682010e3fc8a422",
+      "output_sample": null,
+      "request_seconds": 24.233414
+    },
+    {
+      "port": 8202,
+      "index": 3,
+      "prompt_sha256": "994eace9b42797fa1862659e26b82f949490fc35d68baa1502eacbe8da11e068",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1622,
+        "total_tokens": 2134,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "7023094b48450a3cf2ecf0f1b4b1ad79eaca76089c233569e1d7ae3a13957c60",
+      "output_sample": null,
+      "request_seconds": 24.233782
+    },
+    {
+      "port": 8202,
+      "index": 4,
+      "prompt_sha256": "0b57c7e51c216a1a534f0d8260e2a73af9391544eae2250d09fab5caf5b47a56",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "acd4c7eb9637e86cc407ac574eb7676c41d87127210e14e787e90324e1cf51ad",
+      "output_sample": null,
+      "request_seconds": 24.276433
+    },
+    {
+      "port": 8202,
+      "index": 5,
+      "prompt_sha256": "167441e9e5933230d24f55e864aa73748d00f5453bddc8c22064738431a0d6a4",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "3b189daf0a3f56948962a6f54959b303977228edf080422474bdd81f3aaa6646",
+      "output_sample": null,
+      "request_seconds": 24.279082
+    },
+    {
+      "port": 8202,
+      "index": 6,
+      "prompt_sha256": "4671b375adae1a94cfd72016b3c0814d392743fca5b69bb3e381d100f1671761",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "a5a4c7edf902162e031fb3bc1dec6d8d2ec6a1b42ab4b08e8d839f87bac07901",
+      "output_sample": null,
+      "request_seconds": 24.281068
+    },
+    {
+      "port": 8202,
+      "index": 7,
+      "prompt_sha256": "e90ffbb01f87423d10c2142ef4dada3bb855d248b131cfa87c94c89de071109f",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "624322a97e5f6457b0a05b476fdd38f260c17f4ee9dd876ad04edeff763b3e64",
+      "output_sample": null,
+      "request_seconds": 24.326675
+    },
+    {
+      "port": 8203,
+      "index": 0,
+      "prompt_sha256": "cde1476ca1e7b37c68389f542148bfaebefd4bd8f237c41c447b9fc8c5381446",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1620,
+        "total_tokens": 2132,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "cc08b1e6c7ef0ca1a97fdcbb0be0ef1ba36d19127b41963181828fc98700c40d",
+      "output_sample": "### Executive Summary\n\nThe analysis of the synthetic operations log for incident report 820300000 reveals significant variability in performance across different regions. Key metrics such as end-to-end latency, transient retry rates, and GPU occupancy indi",
+      "request_seconds": 24.112817
+    },
+    {
+      "port": 8203,
+      "index": 1,
+      "prompt_sha256": "5a2eb0e512ee8f60180262705701fe5d37341fb10636ea9b49d9f5920076b1a4",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1620,
+        "total_tokens": 2132,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "f0c874c974af2ea9bdfa4f7a70691600f52ffc9e2c80bc41ec7e486a31a6e1d1",
+      "output_sample": null,
+      "request_seconds": 24.155284
+    },
+    {
+      "port": 8203,
+      "index": 2,
+      "prompt_sha256": "6c1750fa3c9abb066936739d0429446a557a79a931ef5ae4c5e6d7ca9a9d9d3b",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "0dcc092f2450059b60b4537bc4720102e269e12e1475b417e780b955d8b605c2",
+      "output_sample": null,
+      "request_seconds": 24.156356
+    },
+    {
+      "port": 8203,
+      "index": 3,
+      "prompt_sha256": "c9043ae120090ffc9de752af14c450ac9d3bf9564d9f3768c12607475d06fe72",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1620,
+        "total_tokens": 2132,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "3b1543bdadfad73e752f842e43fd6eee09b625573c14b31806542ef914fd084f",
+      "output_sample": null,
+      "request_seconds": 24.197114
+    },
+    {
+      "port": 8203,
+      "index": 4,
+      "prompt_sha256": "5a5c560570753b91e3d559c828fac5d64cde5a35153c469f994d49ef30be7e03",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "9872128fffb3bb893622043ff3edec9759ca2d9fc4284c952dfcbe017d2fe368",
+      "output_sample": null,
+      "request_seconds": 24.198865
+    },
+    {
+      "port": 8203,
+      "index": 5,
+      "prompt_sha256": "bdbe26ebf14bf09bf3b62b07d09e8cbf8db0c87864fe21231dc9c1925269d84b",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "4fe8a24f8cdb391cda4c945240f0e4db10c607382ed9fd2ef9b64bb86b205d82",
+      "output_sample": null,
+      "request_seconds": 24.199477
+    },
+    {
+      "port": 8203,
+      "index": 6,
+      "prompt_sha256": "b54263d3696bdad07c0138990984ee12ff60aac22311397b16555b402efa0a52",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "7061dbeeb5be768f2bd16a45ec0f044c636efaed5c419ba2511a4289c98f0ee6",
+      "output_sample": null,
+      "request_seconds": 24.237804
+    },
+    {
+      "port": 8203,
+      "index": 7,
+      "prompt_sha256": "0ac84ec17a606eba1334718fee3e64b757e489efa9ea62e48647e14226697d7e",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "9b851b73b9375dec9b2a15dc81b211dde1631c4fb915991a698de49a0ceacc6a",
+      "output_sample": null,
+      "request_seconds": 24.239242
+    },
+    {
+      "port": 8204,
+      "index": 0,
+      "prompt_sha256": "5fbd58e9474547b69203c600d966ff6fa239b72cc21d97767d4da504dd07c060",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "69ca2a70910e6a6bc2c8e9ad66a4017b2ec9118721d34bc11368f482096f4f74",
+      "output_sample": "### Executive Summary\n\nThe operational log for incident report 820400000 indicates that all regions are performing tasks with varying degrees of efficiency and reliability. While most regions are functioning within acceptable parameters, several regions ex",
+      "request_seconds": 24.227337
+    },
+    {
+      "port": 8204,
+      "index": 1,
+      "prompt_sha256": "7a66a5aaee0afddd98415a49398591d88dbdebba89b00cd84db16e1135c85819",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "5189896b3c7225c365f94068ded14443e7a8e037410f3acbcfd8eda759bf1dee",
+      "output_sample": null,
+      "request_seconds": 24.275153
+    },
+    {
+      "port": 8204,
+      "index": 2,
+      "prompt_sha256": "72d98809ad5bdaaffdba173697779aef6eed4688999def52623bc952c84fed6b",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "1b911ccc2d8552f9cbec5c52d87088f59e215d427be78bf252757fac6f7af44c",
+      "output_sample": null,
+      "request_seconds": 24.277714
+    },
+    {
+      "port": 8204,
+      "index": 3,
+      "prompt_sha256": "371d0bec063ece2a6ce17753eea55d031a820f574e67c26b27ea440c5c43043e",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1620,
+        "total_tokens": 2132,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "84d20e494deb1b72706dbecc23521d38121901e35e5105a40f0f6db56c1afcd0",
+      "output_sample": null,
+      "request_seconds": 24.31482
+    },
+    {
+      "port": 8204,
+      "index": 4,
+      "prompt_sha256": "f5210f4afba60f7a8b8a6fa39e8869bcedbef00a0334b9ab0e9c101de3495b70",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1621,
+        "total_tokens": 2133,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "9ee024824d29be963d5527b8d41471be987a301e7285113cb8f50ebef0be0689",
+      "output_sample": null,
+      "request_seconds": 24.315994
+    },
+    {
+      "port": 8204,
+      "index": 5,
+      "prompt_sha256": "52244f931992779c265ce674380d6f43fae8672fcbfe75f7f2a644abc9dfa075",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1619,
+        "total_tokens": 2131,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "0fcbbef496c1a3d598607feb18557d403e8bfb1c4f61321460d8d923d8fce4c7",
+      "output_sample": null,
+      "request_seconds": 24.316308
+    },
+    {
+      "port": 8204,
+      "index": 6,
+      "prompt_sha256": "5577a8459594544cd224e356d10d38cf47265aa8c2b5e8829a5cea12138c936e",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1619,
+        "total_tokens": 2131,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "03ae79f214a9b693cb85ad9597d60cb7aa9ad30047c39dff489106d87c595c02",
+      "output_sample": null,
+      "request_seconds": 24.352542
+    },
+    {
+      "port": 8204,
+      "index": 7,
+      "prompt_sha256": "2ee737e36351329de1b9a634337610a4789873585db17ba5b5b88006c2858f08",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1617,
+        "total_tokens": 2129,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "f09e963d83896a6433fcb247d004202b9d8ca4f565548eacd65b0138ba57cbdf",
+      "output_sample": null,
+      "request_seconds": 24.353122
+    },
+    {
+      "port": 8205,
+      "index": 0,
+      "prompt_sha256": "9e4c0227cfd62e4199ecdf83ec0a54017e88a6f086936b567bfaa095f22d2f56",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1619,
+        "total_tokens": 2131,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "2ca2e061e4dd979dec8eac19629f31d4a4d7881218e35534bf4c50ac7f96805f",
+      "output_sample": "### Executive Summary\n\nThis incident report (820500000) highlights significant reliability risks across multiple regions, primarily due to high transient retry rates and varying levels of GPU occupancy. The regions with the highest transient retry rates an",
+      "request_seconds": 24.105866
+    },
+    {
+      "port": 8205,
+      "index": 1,
+      "prompt_sha256": "d75e7b2b040962b37de1d25050d933086e5150545f613050046c8a1aac05f45b",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1617,
+        "total_tokens": 2129,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "8361dd87098ea4d3444bfc24278d51c25ba826e40a7bf8058c21942f048c7077",
+      "output_sample": null,
+      "request_seconds": 24.148152
+    },
+    {
+      "port": 8205,
+      "index": 2,
+      "prompt_sha256": "97b12d92f3d835d810e77e9d838f1cac4193d4434959bfefc387493a0e1932cb",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1617,
+        "total_tokens": 2129,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "14abe4c097cb60aa47cad3c7722af069ced11de57ecf82486166e81b52944579",
+      "output_sample": null,
+      "request_seconds": 24.148482
+    },
+    {
+      "port": 8205,
+      "index": 3,
+      "prompt_sha256": "6cc0e98ceec075ce86fe21cf63358ce3c6427a5609de2f8a8b29de42f6a55976",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1617,
+        "total_tokens": 2129,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "906692adf54fd8e30dd1a9fde047edf9ec4cc44e44b725c9bae2a3caac00c35f",
+      "output_sample": null,
+      "request_seconds": 24.189357
+    },
+    {
+      "port": 8205,
+      "index": 4,
+      "prompt_sha256": "e6d85eb0e911fe816fb999d9f8ef28848078312e2e9c9f625a07c4b22ab6f41d",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1619,
+        "total_tokens": 2123,
+        "completion_tokens": 504,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "stop",
+      "output_sha256": "599fbc48680b8afd4854d781ce8827aca9e639e9dac1fa593825a06b3e266491",
+      "output_sample": null,
+      "request_seconds": 23.848979
+    },
+    {
+      "port": 8205,
+      "index": 5,
+      "prompt_sha256": "4c206b6dfe87a9a0506f7b0a8f60dcb54b5ccea676c6f15da7279a0b91017353",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1619,
+        "total_tokens": 2131,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "24459b3df7804582ab30a3d0fd28545ae34c67673150b583a1f960d96422fade",
+      "output_sample": null,
+      "request_seconds": 24.189467
+    },
+    {
+      "port": 8205,
+      "index": 6,
+      "prompt_sha256": "d62ab80d7fdc74a6cb17af705fdd01ad36cf5965a33226e7959b397a7e0d8bc0",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1619,
+        "total_tokens": 2131,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "5955daf6cd0f38626524510664c617a52f80bfc4106f1e6b91732c97c921b912",
+      "output_sample": null,
+      "request_seconds": 24.230609
+    },
+    {
+      "port": 8205,
+      "index": 7,
+      "prompt_sha256": "a3db95901814dc9c22a2014764b74caf4dcc33c1cab807bfc1e4720c1b832d63",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1619,
+        "total_tokens": 2131,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "198c5ae1c97cc14fcd8c3577a20da1c11007f3640567f503dd8dafa99ea8b205",
+      "output_sample": null,
+      "request_seconds": 24.231929
+    }
+  ]
+}

@@ -15,6 +15,7 @@ from psycopg.rows import dict_row
 
 from backend.app import create_app
 from backend.config import Settings
+from backend.migrate import migrate_database
 
 DSN = os.getenv("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not DSN, reason="Set TEST_DATABASE_URL to run actual PostgreSQL integration tests")
@@ -27,14 +28,17 @@ OTHER = {"Authorization": f"Bearer {OTHER_KEY}"}
 INTERNAL = {"Authorization": f"Bearer {WORKER_TOKEN}"}
 
 
-@pytest.fixture
-def client():
-    app = create_app(Settings(database_url=DSN, batchforge_api_key=API_KEY, batchforge_worker_token=WORKER_TOKEN, model_name=MODEL, lease_seconds=30, retry_base_seconds=1, max_attempts=2))
+@pytest.fixture(params=[(False, False), (True, False), (True, True), (False, True)], ids=["python-both", "sql-complete", "sql-both", "sql-claim"])
+def client(request):
+    migrate_database(DSN, API_KEY)
+    # Destructive test reset happens before recovery loops start. TRUNCATE's
+    # ACCESS EXCLUSIVE locks can deadlock with a live sweep's multi-table reads.
+    with psycopg.connect(DSN, autocommit=True) as conn:
+        conn.execute("TRUNCATE idempotency,attempts,tasks,batches,files,workers,tenant_queues CASCADE")
+        conn.execute("INSERT INTO tenants(id,name) VALUES('other','Other tenant') ON CONFLICT DO NOTHING")
+        conn.execute("INSERT INTO api_keys(key_hash,tenant_id) VALUES(%s,'other') ON CONFLICT DO NOTHING", (hashlib.sha256(OTHER_KEY.encode()).hexdigest(),))
+    app = create_app(Settings(database_url=DSN, batchforge_api_key=API_KEY, batchforge_worker_token=WORKER_TOKEN, model_name=MODEL, lease_seconds=30, retry_base_seconds=1, max_attempts=2, sql_completion_enabled=request.param[0], sql_claim_enabled=request.param[1]))
     with TestClient(app) as client:
-        with psycopg.connect(DSN, autocommit=True) as conn:
-            conn.execute("TRUNCATE idempotency,attempts,tasks,batches,files,workers,tenant_queues CASCADE")
-            conn.execute("INSERT INTO tenants(id,name) VALUES('other','Other tenant') ON CONFLICT DO NOTHING")
-            conn.execute("INSERT INTO api_keys(key_hash,tenant_id) VALUES(%s,'other') ON CONFLICT DO NOTHING", (hashlib.sha256(OTHER_KEY.encode()).hexdigest(),))
         yield client
 
 
@@ -341,3 +345,181 @@ def test_worker_liveness_readiness_counts_and_private_metadata_isolation(client)
         assert client.post("/internal/workers/register", headers=INTERNAL, json=body).status_code == 200
         worker = client.get("/v1/overview", headers=PUBLIC).json()["workers"][0]
         assert worker["engine_count"] is None and worker["ready_engine_count"] is None
+
+
+def test_model_upgrade_rejects_retry_of_unserved_model_without_admitting_work(client):
+    batch, _ = make_batch(client)
+    register(client)
+    task = claim(client)[0]
+    failed = client.post(f"/internal/tasks/{task['id']}/fail", headers=INTERNAL, json={"worker_id": "worker-one", "attempt_token": task["attempt_token"], "error": {"code": "test", "message": "failed before model upgrade"}, "retryable": False})
+    assert failed.status_code == 200
+    client.app.state.settings.model_name = "new-larger-model"
+    result = client.post(f"/v1/batches/{batch['id']}/retry", headers={**PUBLIC, "Idempotency-Key": "upgrade-retry"})
+    assert result.status_code == 409
+    assert result.json()["error"]["code"] == "model_unavailable"
+    assert sql("SELECT count(*) AS n FROM batches")[0]["n"] == 1
+    assert sql("SELECT count(*) AS n FROM tasks")[0]["n"] == 1
+
+
+def test_model_upgrade_cancellation_locks_the_historical_batch_queue(client):
+    import time
+
+    batch, _ = make_batch(client, 2)
+    client.app.state.settings.model_name = "new-larger-model"
+    with psycopg.connect(DSN) as blocker, ThreadPoolExecutor(max_workers=1) as pool:
+        blocker.execute("SELECT * FROM tenant_queues WHERE tenant_id='default' AND model=%s FOR UPDATE", (MODEL,))
+        future = pool.submit(client.post, f"/v1/batches/{batch['id']}/cancel", headers=PUBLIC)
+        observed_block = False
+        try:
+            deadline = time.monotonic() + 1.5
+            while time.monotonic() < deadline and not future.done():
+                observed_block = bool(sql("SELECT count(*) AS n FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE %s", ("%tenant_queues%",))[0]["n"])
+                if observed_block:
+                    break
+                time.sleep(0.01)
+        finally:
+            blocker.commit()
+        result = future.result(timeout=5)
+    assert observed_block, "Cancellation bypassed the batch's original model queue lock"
+    assert result.status_code == 200, result.text
+    assert result.json()["request_counts"]["cancelled"] == 2
+    assert sql("SELECT pending_count FROM tenant_queues WHERE model=%s", (MODEL,))[0]["pending_count"] == 0
+
+
+def test_mixed_old_new_completion_race_accepts_one_result_and_rolls_back_stale_worker_touch(client):
+    batch, _ = make_batch(client)
+    register(client)
+    task = claim(client)[0]
+    other_settings = client.app.state.settings.model_copy(update={"sql_completion_enabled": not client.app.state.settings.sql_completion_enabled})
+    with TestClient(create_app(other_settings)) as other:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = [future.result() for future in (pool.submit(complete, client, task), pool.submit(complete, other, task))]
+    assert [result.status_code for result in results] == [200, 200]
+    assert sum(result.json().get("duplicate", False) for result in results) == 1
+    final = client.get(f"/v1/batches/{batch['id']}", headers=PUBLIC).json()
+    assert final["usage"] == {"prompt_tokens": 7, "completion_tokens": 2}
+    before = sql("SELECT last_seen_at FROM workers WHERE id='worker-one'")[0]["last_seen_at"]
+    stale = client.post(f"/internal/tasks/{task['id']}/heartbeat", headers=INTERNAL, json={"worker_id": "worker-one", "attempt_token": task["attempt_token"]})
+    assert stale.status_code == 409
+    # Both a Python transaction and a failing SQL function must roll back their
+    # initial worker timestamp mutation, not commit a partial heartbeat.
+    assert sql("SELECT last_seen_at FROM workers WHERE id='worker-one'")[0]["last_seen_at"] == before
+
+
+def test_fencing_clock_is_checked_after_waiting_for_queue_lock(client):
+    import time
+
+    make_batch(client)
+    register(client)
+    task = claim(client)[0]
+    with psycopg.connect(DSN) as blocker, ThreadPoolExecutor(max_workers=1) as pool:
+        blocker.execute("SELECT * FROM tenant_queues WHERE tenant_id='default' AND model=%s FOR UPDATE", (MODEL,))
+        future = pool.submit(client.post, f"/internal/tasks/{task['id']}/heartbeat", headers=INTERNAL, json={"worker_id": "worker-one", "attempt_token": task["attempt_token"]})
+        waiting = False
+        try:
+            deadline = time.monotonic() + 1.5
+            while time.monotonic() < deadline and not future.done():
+                waiting = bool(sql("SELECT count(*) AS n FROM pg_stat_activity WHERE %s=ANY(pg_blocking_pids(pid))", (blocker.info.backend_pid,))[0]["n"])
+                if waiting:
+                    break
+                time.sleep(.01)
+            blocker.execute("UPDATE tasks SET lease_expires_at=clock_timestamp()-interval '1 second' WHERE id=%s", (task["id"],))
+        finally:
+            blocker.commit()
+        result = future.result(timeout=5)
+    assert waiting
+    assert result.status_code == 409, result.text
+    assert result.json()["error"]["code"] == "stale_attempt"
+
+
+def test_terminal_metadata_failure_rolls_back_response_attempt_and_usage_atomically(client):
+    batch, _ = make_batch(client)
+    register(client)
+    task = claim(client)[0]
+    sql("CREATE FUNCTION public.bf_test_fail_output() RETURNS trigger LANGUAGE plpgsql AS $fn$ BEGIN RAISE EXCEPTION USING ERRCODE='PT001',MESSAGE='intentional test-only output failure'; END $fn$")
+    sql("CREATE TRIGGER bf_test_output_failure BEFORE INSERT ON files FOR EACH ROW WHEN (NEW.kind='output') EXECUTE FUNCTION public.bf_test_fail_output()")
+    try:
+        with pytest.raises(psycopg.Error) as failed:
+            client.portal.call(client.app.state.store.complete, task["id"], "worker-one", task["attempt_token"], response_body(task)["response"])
+        assert failed.value.sqlstate == "PT001"
+        row = sql("SELECT status,response,prompt_tokens,completion_tokens FROM tasks WHERE id=%s", (task["id"],))[0]
+        assert row == {"status": "running", "response": None, "prompt_tokens": 0, "completion_tokens": 0}
+        assert sql("SELECT status FROM attempts WHERE token=%s", (task["attempt_token"],))[0]["status"] == "running"
+        current = client.get(f"/v1/batches/{batch['id']}", headers=PUBLIC).json()
+        assert current["request_counts"]["running"] == 1
+        assert current["request_counts"]["completed"] == 0
+        assert current["usage"] == {"prompt_tokens": 0, "completion_tokens": 0}
+    finally:
+        sql("DROP TRIGGER bf_test_output_failure ON files")
+        sql("DROP FUNCTION public.bf_test_fail_output()")
+    assert complete(client, task).status_code == 200
+
+
+def test_mixed_claim_modes_serialize_the_same_workers_capacity(client):
+    make_batch(client, 12)
+    register(client, concurrency=4)
+    other_settings = client.app.state.settings.model_copy(update={"sql_claim_enabled": not client.app.state.settings.sql_claim_enabled})
+    with TestClient(create_app(other_settings)) as other, ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(claim, target, "worker-one", 10) for target in (client, other)]
+        results = [future.result() for future in futures]
+    identifiers = [task["id"] for tasks in results for task in tasks]
+    assert len(identifiers) == len(set(identifiers)) == 4
+    assert sql("SELECT count(*) AS n FROM attempts")[0]["n"] == 4
+    assert sql("SELECT pending_count FROM tenant_queues WHERE tenant_id='default'")[0]["pending_count"] == 8
+    assert claim(client) == []
+
+
+def test_claim_skips_locked_task_and_preserves_remaining_queue_count(client):
+    batch, _ = make_batch(client, 3)
+    register(client)
+    with psycopg.connect(DSN) as blocker:
+        locked = blocker.execute("SELECT id FROM tasks WHERE batch_id=%s ORDER BY ready_at,id LIMIT 1 FOR UPDATE", (batch["id"],)).fetchone()[0]
+        tasks = claim(client)
+        assert len(tasks) == 2
+        assert locked not in {task["id"] for task in tasks}
+        assert sql("SELECT pending_count FROM tenant_queues WHERE tenant_id='default'")[0]["pending_count"] == 1
+        blocker.commit()
+    remaining = claim(client)
+    assert len(remaining) == 1 and remaining[0]["id"] == locked
+    assert sql("SELECT count(*) AS n FROM attempts")[0]["n"] == 3
+
+
+def test_claim_considers_only_eight_ready_tenants_before_recovery(client):
+    tenants = [f"bounded-{index:02d}" for index in range(9)]
+    for index, tenant in enumerate(tenants):
+        key = f"bounded-tenant-test-credential-{index}"
+        sql("INSERT INTO tenants(id,name) VALUES(%s,%s) ON CONFLICT DO NOTHING", (tenant, tenant))
+        sql("INSERT INTO api_keys(key_hash,tenant_id) VALUES(%s,%s) ON CONFLICT DO NOTHING", (hashlib.sha256(key.encode()).hexdigest(), tenant))
+        make_batch(client, headers={"Authorization": f"Bearer {key}"})
+        sql("UPDATE tenant_queues SET last_dispatched_at='2000-01-01'::timestamptz+%s*interval '1 second' WHERE tenant_id=%s", (index, tenant))
+    register(client)
+    sql("UPDATE batches SET expires_at=clock_timestamp()-interval '1 second' WHERE tenant_id=ANY(%s)", (tenants[:8],))
+    # No widening past the eight locked candidates when all eight batches are
+    # expired. The bounded recovery sweep makes the ninth eligible next time.
+    assert claim(client) == []
+    client.portal.call(client.app.state.store.recover)
+    task = claim(client)
+    assert len(task) == 1
+    assert sql("SELECT tenant_id FROM tasks WHERE id=%s", (task[0]["id"],))[0]["tenant_id"] == tenants[8]
+
+
+def test_attempt_insert_failure_rolls_back_claim_capacity_and_queue_atomically(client):
+    batch, _ = make_batch(client, 3)
+    register(client)
+    before = sql("SELECT last_seen_at FROM workers WHERE id='worker-one'")[0]["last_seen_at"]
+    sql("CREATE FUNCTION public.bf_test_fail_attempt() RETURNS trigger LANGUAGE plpgsql AS $fn$ BEGIN RAISE EXCEPTION USING ERRCODE='PT002',MESSAGE='intentional test-only attempt failure'; END $fn$")
+    sql("CREATE TRIGGER bf_test_attempt_failure BEFORE INSERT ON attempts FOR EACH ROW EXECUTE FUNCTION public.bf_test_fail_attempt()")
+    try:
+        with pytest.raises(psycopg.Error) as failed:
+            client.portal.call(client.app.state.store.claim, "worker-one", MODEL, 3)
+        assert failed.value.sqlstate == "PT002"
+        assert sql("SELECT count(*) AS n FROM tasks WHERE status='pending'")[0]["n"] == 3
+        assert sql("SELECT count(*) AS n FROM attempts")[0]["n"] == 0
+        assert sql("SELECT last_seen_at FROM workers WHERE id='worker-one'")[0]["last_seen_at"] == before
+        current = client.get(f"/v1/batches/{batch['id']}", headers=PUBLIC).json()
+        assert current["request_counts"]["pending"] == 3 and current["request_counts"]["running"] == 0
+        assert sql("SELECT pending_count FROM tenant_queues WHERE tenant_id='default'")[0]["pending_count"] == 3
+    finally:
+        sql("DROP TRIGGER bf_test_attempt_failure ON attempts")
+        sql("DROP FUNCTION public.bf_test_fail_attempt()")
+    assert len(claim(client)) == 3

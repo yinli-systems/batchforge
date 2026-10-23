@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "status": "prepared_not_executed",
+  "scope": "Application control-plane outage simulation; no whole-Pod or managed-database failure is claimed",
+  "source_copy": {
+    "destination": "primary Pod app directory",
+    "archive_sha256": "6895df6931172f05f67a61d8e0b8674a126c491d0e976a09e863e4f1ce060766",
+    "source_sha256": {
+      "ops/ha/controlplane_outage_probe.py": "33cd50ccf2962a74f555e836056d16186b5d739cd9598879b7b15006e4670413"
+    },
+    "metadata_entry": ".runtime/outage-source.sha256.json",
+    "verified": ["Exact archive checksum", "Exactly two regular-file members", "No links or additional members", "Per-file size bound and owner-only mode", "Embedded source checksum", "Atomic destination file replacement"],
+    "service_actions": 0
+  },
+  "actual_primary_dry_run": {
+    "exit_code": 0,
+    "status": "dry_run",
+    "placeholder_run_id": "bench-000000000000",
+    "configuration_sha256": "2ab3af9cdae15cb2b634f1abf023f1742c74936b649a35aaa345b8862d01c91a",
+    "duration_seconds": 120,
+    "planned_stopped_services": ["supervisor-primary", "gateway-edge", "api-a", "api-b", "link-pod2"],
+    "expected_tasks": 8192,
+    "wait_for_submission_seconds": 600,
+    "preserved_worker_engine_services": 8,
+    "execute_flag_supplied": false,
+    "service_actions": 0
+  },
+  "verification": {
+    "full_suite_before_final_observer_refinements": {"command": ".venv/bin/python devtools/run_checks.py", "passed": 170, "skipped": 1, "seconds": 24.01, "skip_reason": "Linux-only process-watchdog test on macOS"},
+    "final_targeted_real_postgres_and_probe_control_flow": {"targets": ["tests/test_outage_observation.py", "ops/ha/test_controlplane_outage_probe.py"], "passed": 8, "seconds": 0.56},
+    "cases": ["Exact run submission wait rejects partial, oversized and completed workloads", "Only leases valid at one PostgreSQL clock timestamp enter the captured sample", "A normal permanent model failure cannot masquerade as lease expiry", "Actual lease recovery and old-token heartbeat fencing", "Observer connection rejects writes", "Duplicate accepted-attempt ledger corruption is detected", "Finally restores after database failure or interruption", "Partial restoration attempts all services then retries the original topology", "Worker and engine process identities remain untouched in control-flow tests"]
+  },
+  "pending": ["Explicit release for the fault window", "Exact real 8192-task benchmark run ID", "Actual 120-second outage and secondary durable progress proof", "Actual watchdog crash/restart proof during inference load"],
+  "limitations": ["Dry-run validation performs no fault injection and is not availability evidence", "Control-flow tests use a simulated manager; real PostgreSQL observation tests use a disposable isolated database", "SIGKILL of the probe or loss of its host cannot run finally restoration", "HTTP availability is sampled rather than continuously observed"]
+}

@@ -1,0 +1,63 @@
+{
+  "observed_at": "2026-10-23T20:52:07.489852+00:00",
+  "os": "Ubuntu24.04noble",
+  "architecture": "amd64",
+  "install_root": "/root/batchforge-runtime/postgres-client-17",
+  "bin_dir": "/root/batchforge-runtime/postgres-client-17/bin",
+  "system_package_manager_modified": false,
+  "signature": {
+    "repository": "https://apt.postgresql.org/pub/repos/apt/",
+    "suite": "noble-pgdg",
+    "key_url": "https://www.postgresql.org/media/keys/ACCC4CF8.asc",
+    "key_sha256": "0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76",
+    "expected_signing_fingerprint": "B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8",
+    "valid_signature_status": [
+      "[GNUPG:] VALIDSIG B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8 2026-10-19 1792422076 0 4 0 1 10 01 B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8"
+    ],
+    "inrelease_sha256": "66187f1d56c9fef804f9f6849a8018c8c1194c9f83c3620c645006e9c7345f28",
+    "indexes": [
+      {
+        "component": "main",
+        "path": "main/binary-amd64/Packages.gz",
+        "sha256": "567400bd0ce087b65f37d32e4ae6ae548ea7d70191af6f896acfea59439fb340"
+      },
+      {
+        "component": "17",
+        "path": "17/binary-amd64/Packages.gz",
+        "sha256": "10b0f49264d91b3ff1c984ed0762904c24988d80a060cce2650ec179bbc835f1"
+      }
+    ]
+  },
+  "packages": [
+    {
+      "Package": "postgresql-client-17",
+      "Version": "17.11-1.pgdg24.04+2",
+      "Architecture": "amd64",
+      "Filename": "pool/main/p/postgresql-17/postgresql-client-17_17.11-1.pgdg24.04+2_amd64.deb",
+      "SHA256": "b3b071b67a814a382516d6f6241b529c52f909672457e2f48083acce047b634f",
+      "Size": "2052656",
+      "Depends": "libpq5 (>= 17.11), postgresql-client-common (>= 182~), sensible-utils, libc6 (>= 2.38), liblz4-1 (>= 0.0~r127), libreadline8t64 (>= 6.0), libssl3t64 (>= 3.0.0), libzstd1 (>= 1.5.5), zlib1g (>= 1:1.1.4)",
+      "component": "main",
+      "download_url": "https://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-17/postgresql-client-17_17.11-1.pgdg24.04+2_amd64.deb",
+      "verified_sha256": "b3b071b67a814a382516d6f6241b529c52f909672457e2f48083acce047b634f"
+    },
+    {
+      "Package": "libpq5",
+      "Version": "17.11-1.pgdg24.04+2",
+      "Architecture": "amd64",
+      "Filename": "pool/17/p/postgresql-17/libpq5_17.11-1.pgdg24.04+2_amd64.deb",
+      "SHA256": "42548e7f855a646f2dc58c1aa1cfd1464678fc0e8ac04096a66d6354bca5ed10",
+      "Size": "237304",
+      "Depends": "libc6 (>= 2.38), libgssapi-krb5-2 (>= 1.17), libldap2 (>= 2.6.2), libssl3t64 (>= 3.0.0)",
+      "component": "17",
+      "download_url": "https://apt.postgresql.org/pub/repos/apt/pool/17/p/postgresql-17/libpq5_17.11-1.pgdg24.04+2_amd64.deb",
+      "verified_sha256": "42548e7f855a646f2dc58c1aa1cfd1464678fc0e8ac04096a66d6354bca5ed10"
+    }
+  ],
+  "tool_versions": {
+    "pg_dump": "pg_dump (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+    "pg_restore": "pg_restore (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+    "psql": "psql (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)"
+  },
+  "pg_dump_ldd": "\tlinux-vdso.so.1 (0x00007ffe6337e000)\n\tlibpq.so.5 => /root/batchforge-runtime/postgres-client-17/rootfs/usr/lib/x86_64-linux-gnu/libpq.so.5 (0x000071d10ccae000)\n\tlibzstd.so.1 => /lib/x86_64-linux-gnu/libzstd.so.1 (0x000071d10cbe9000)\n\tliblz4.so.1 => /lib/x86_64-linux-gnu/liblz4.so.1 (0x000071d10cbc7000)\n\tlibcrypto.so.3 => /lib/x86_64-linux-gnu/libcrypto.so.3 (0x000071d10c6b3000)\n\tlibz.so.1 => /lib/x86_64-linux-gnu/libz.so.1 (0x000071d10c697000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x000071d10c482000)\n\tlibssl.so.3 => /lib/x86_64-linux-gnu/libssl.so.3 (0x000071d10c3d8000)\n\tlibgssapi_krb5.so.2 => /lib/x86_64-linux-gnu/libgssapi_krb5.so.2 (0x000071d10c384000)\n\tlibldap.so.2 => /lib/x86_64-linux-gnu/libldap.so.2 (0x000071d10c326000)\n\t/lib64/ld-linux-x86-64.so.2 (0x000071d10cd78000)\n\tlibkrb5.so.3 => /lib/x86_64-linux-gnu/libkrb5.so.3 (0x000071d10c25d000)\n\tlibk5crypto.so.3 => /lib/x86_64-linux-gnu/libk5crypto.so.3 (0x000071d10c22f000)\n\tlibcom_err.so.2 => /lib/x86_64-linux-gnu/libcom_err.so.2 (0x000071d10c229000)\n\tlibkrb5support.so.0 => /lib/x86_64-linux-gnu/libkrb5support.so.0 (0x000071d10c21c000)\n\tliblber.so.2 => /lib/x86_64-linux-gnu/liblber.so.2 (0x000071d10c20c000)\n\tlibsasl2.so.2 => /lib/x86_64-linux-gnu/libsasl2.so.2 (0x000071d10c1f2000)\n\tlibgnutls.so.30 => /lib/x86_64-linux-gnu/libgnutls.so.30 (0x000071d10bff5000)\n\tlibkeyutils.so.1 => /lib/x86_64-linux-gnu/libkeyutils.so.1 (0x000071d10bfee000)\n\tlibresolv.so.2 => /lib/x86_64-linux-gnu/libresolv.so.2 (0x000071d10bfdc000)\n\tlibp11-kit.so.0 => /lib/x86_64-linux-gnu/libp11-kit.so.0 (0x000071d10be38000)\n\tlibidn2.so.0 => /lib/x86_64-linux-gnu/libidn2.so.0 (0x000071d10be16000)\n\tlibunistring.so.5 => /lib/x86_64-linux-gnu/libunistring.so.5 (0x000071d10bc69000)\n\tlibtasn1.so.6 => /lib/x86_64-linux-gnu/libtasn1.so.6 (0x000071d10bc51000)\n\tlibnettle.so.8 => /lib/x86_64-linux-gnu/libnettle.so.8 (0x000071d10bbfc000)\n\tlibhogweed.so.6 => /lib/x86_64-linux-gnu/libhogweed.so.6 (0x000071d10bbb4000)\n\tlibgmp.so.10 => /lib/x86_64-linux-gnu/libgmp.so.10 (0x000071d10bb30000)\n\tlibffi.so.8 => /lib/x86_64-linux-gnu/libffi.so.8 (0x000071d10bb24000)\n"
+}

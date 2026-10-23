@@ -1,0 +1,630 @@
+{
+  "started_at_utc": "2026-10-23T21:17:09.387107+00:00",
+  "status": "complete",
+  "parallel_startups": 2,
+  "requested_logical_devices": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "dtype": "bfloat16",
+  "context_limit": 4096,
+  "max_num_seqs": 8,
+  "prefix_caching": false,
+  "workers_started": 0,
+  "processes_stopped": 0,
+  "devices": [
+    {
+      "logical_device": 6,
+      "cuda_selector": "MIG-22019961-7f1b-58a7-89a2-eee1fd1a72d4",
+      "started_at_utc": "2026-10-23T21:17:09.388197+00:00",
+      "port": 8206,
+      "passed": true,
+      "container_memory_available_before_bytes": 464500973568,
+      "prompt_tokens": 1619,
+      "completion_tokens": 8,
+      "generation_probe": {
+        "schema_version": 1,
+        "measurement_type": "real_engine_only_workload",
+        "started_at_utc": "2026-10-23T21:17:10.516883+00:00",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "dtype": "bfloat16",
+        "prefix_caching": false,
+        "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+        "context_limit": 4096,
+        "requested_ports": [
+          8206
+        ],
+        "requests_per_engine": 1,
+        "concurrency_per_engine": 1,
+        "input_sections": 16,
+        "output_limit_tokens": 8,
+        "temperature": 0,
+        "seed": 42,
+        "elapsed_seconds_including_readiness": 0.600323,
+        "requested_count": 1,
+        "successful_count": 1,
+        "passed": true,
+        "prompt_tokens": 1619,
+        "completion_tokens": 8,
+        "observed_requests_per_second_including_readiness": 1.6657697912180676,
+        "observed_output_tokens_per_second_including_readiness": 13.32615832974454,
+        "quality_evaluated": false,
+        "results": [
+          {
+            "port": 8206,
+            "index": 0,
+            "prompt_sha256": "dbbfc32577d73a498dd31c9d77a274db9a30a29cd35386ccd11ebde9bbda9cb0",
+            "passed": true,
+            "usage": {
+              "prompt_tokens": 1619,
+              "total_tokens": 1627,
+              "completion_tokens": 8,
+              "prompt_tokens_details": null
+            },
+            "finish_reason": "length",
+            "output_sha256": "2e8f625580f70e277bcaccfbbb8b9c2819b9cb2000dc4d5908b430407649f172",
+            "output_sample": "### Executive Summary\n\nThe analysis of the",
+            "request_seconds": 0.551115
+          }
+        ]
+      },
+      "probe_report_sha256": "978c47d29dd1c4d60b7b4ef7fc8ecb2a05a9a7d33e532cbbb34739bbfbbf0a0d",
+      "finished_at_utc": "2026-10-23T21:17:11.172163+00:00",
+      "elapsed_seconds": 1.783992
+    },
+    {
+      "logical_device": 7,
+      "cuda_selector": "MIG-55308027-c79e-5fc8-8587-940802972f9b",
+      "started_at_utc": "2026-10-23T21:17:09.388739+00:00",
+      "port": 8207,
+      "passed": true,
+      "container_memory_available_before_bytes": 464500449280,
+      "prompt_tokens": 1621,
+      "completion_tokens": 8,
+      "generation_probe": {
+        "schema_version": 1,
+        "measurement_type": "real_engine_only_workload",
+        "started_at_utc": "2026-10-23T21:17:13.625238+00:00",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "dtype": "bfloat16",
+        "prefix_caching": false,
+        "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+        "context_limit": 4096,
+        "requested_ports": [
+          8207
+        ],
+        "requests_per_engine": 1,
+        "concurrency_per_engine": 1,
+        "input_sections": 16,
+        "output_limit_tokens": 8,
+        "temperature": 0,
+        "seed": 42,
+        "elapsed_seconds_including_readiness": 29.984009,
+        "requested_count": 1,
+        "successful_count": 1,
+        "passed": true,
+        "prompt_tokens": 1621,
+        "completion_tokens": 8,
+        "observed_requests_per_second_including_readiness": 0.03335111020880126,
+        "observed_output_tokens_per_second_including_readiness": 0.26680888167041006,
+        "quality_evaluated": false,
+        "results": [
+          {
+            "port": 8207,
+            "index": 0,
+            "prompt_sha256": "edc9638ed632e205fae9154da6787e71363fc41f404bbafd7fc7c72a19788d57",
+            "passed": true,
+            "usage": {
+              "prompt_tokens": 1621,
+              "total_tokens": 1629,
+              "completion_tokens": 8,
+              "prompt_tokens_details": null
+            },
+            "finish_reason": "length",
+            "output_sha256": "2e8f625580f70e277bcaccfbbb8b9c2819b9cb2000dc4d5908b430407649f172",
+            "output_sample": "### Executive Summary\n\nThe analysis of the",
+            "request_seconds": 0.843488
+          }
+        ]
+      },
+      "probe_report_sha256": "9fc5a410943c3835d11cad96cf7d23699ae3bcd0ecee70dc7537542cc78a774c",
+      "finished_at_utc": "2026-10-23T21:17:43.697194+00:00",
+      "elapsed_seconds": 34.308478
+    },
+    {
+      "logical_device": 8,
+      "cuda_selector": "MIG-1f8f5a87-dc7b-5ddb-b8ba-5b060998d459",
+      "started_at_utc": "2026-10-23T21:17:11.172238+00:00",
+      "port": 8208,
+      "passed": true,
+      "container_memory_available_before_bytes": 464333369344,
+      "prompt_tokens": 1618,
+      "completion_tokens": 8,
+      "generation_probe": {
+        "schema_version": 1,
+        "measurement_type": "real_engine_only_workload",
+        "started_at_utc": "2026-10-23T21:17:15.156955+00:00",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "dtype": "bfloat16",
+        "prefix_caching": false,
+        "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+        "context_limit": 4096,
+        "requested_ports": [
+          8208
+        ],
+        "requests_per_engine": 1,
+        "concurrency_per_engine": 1,
+        "input_sections": 16,
+        "output_limit_tokens": 8,
+        "temperature": 0,
+        "seed": 42,
+        "elapsed_seconds_including_readiness": 29.969663,
+        "requested_count": 1,
+        "successful_count": 1,
+        "passed": true,
+        "prompt_tokens": 1618,
+        "completion_tokens": 8,
+        "observed_requests_per_second_including_readiness": 0.03336707563284186,
+        "observed_output_tokens_per_second_including_readiness": 0.26693660506273487,
+        "quality_evaluated": false,
+        "results": [
+          {
+            "port": 8208,
+            "index": 0,
+            "prompt_sha256": "6ccd2df40b366b7cf097db952a13884340b04c24cd400756d38cfd38688d24b8",
+            "passed": true,
+            "usage": {
+              "prompt_tokens": 1618,
+              "total_tokens": 1626,
+              "completion_tokens": 8,
+              "prompt_tokens_details": null
+            },
+            "finish_reason": "length",
+            "output_sha256": "2e8f625580f70e277bcaccfbbb8b9c2819b9cb2000dc4d5908b430407649f172",
+            "output_sample": "### Executive Summary\n\nThe analysis of the",
+            "request_seconds": 0.833361
+          }
+        ]
+      },
+      "probe_report_sha256": "d76a80e555f499fc23745866205911a87edc2c36fcf97da1ae2dc6d54f8846ee",
+      "finished_at_utc": "2026-10-23T21:17:45.226881+00:00",
+      "elapsed_seconds": 34.054666
+    },
+    {
+      "logical_device": 9,
+      "cuda_selector": "MIG-0d8bd9a9-893c-516b-9537-131114f7f936",
+      "started_at_utc": "2026-10-23T21:17:43.697280+00:00",
+      "port": 8209,
+      "passed": true,
+      "container_memory_available_before_bytes": 460321230848,
+      "prompt_tokens": 1619,
+      "completion_tokens": 8,
+      "generation_probe": {
+        "schema_version": 1,
+        "measurement_type": "real_engine_only_workload",
+        "started_at_utc": "2026-10-23T21:17:48.034075+00:00",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "dtype": "bfloat16",
+        "prefix_caching": false,
+        "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+        "context_limit": 4096,
+        "requested_ports": [
+          8209
+        ],
+        "requests_per_engine": 1,
+        "concurrency_per_engine": 1,
+        "input_sections": 16,
+        "output_limit_tokens": 8,
+        "temperature": 0,
+        "seed": 42,
+        "elapsed_seconds_including_readiness": 30.025288,
+        "requested_count": 1,
+        "successful_count": 1,
+        "passed": true,
+        "prompt_tokens": 1619,
+        "completion_tokens": 8,
+        "observed_requests_per_second_including_readiness": 0.0333052588186188,
+        "observed_output_tokens_per_second_including_readiness": 0.2664420705489504,
+        "quality_evaluated": false,
+        "results": [
+          {
+            "port": 8209,
+            "index": 0,
+            "prompt_sha256": "22e91e4a3626f7c17f8b177d0a9f1b4410204b19fb05b2206fcd3df555b7d386",
+            "passed": true,
+            "usage": {
+              "prompt_tokens": 1619,
+              "total_tokens": 1627,
+              "completion_tokens": 8,
+              "prompt_tokens_details": null
+            },
+            "finish_reason": "length",
+            "output_sha256": "2e8f625580f70e277bcaccfbbb8b9c2819b9cb2000dc4d5908b430407649f172",
+            "output_sample": "### Executive Summary\n\nThe analysis of the",
+            "request_seconds": 0.86632
+          }
+        ]
+      },
+      "probe_report_sha256": "516b1a0971b4a2790de46a481fdfb5df1a0d4e6c62a766cd56844c8d06fd1cca",
+      "finished_at_utc": "2026-10-23T21:18:18.113701+00:00",
+      "elapsed_seconds": 34.416443
+    },
+    {
+      "logical_device": 10,
+      "cuda_selector": "MIG-9ea7d731-750a-5119-86b5-dd727715e52a",
+      "started_at_utc": "2026-10-23T21:17:45.226969+00:00",
+      "port": 8210,
+      "passed": true,
+      "container_memory_available_before_bytes": 459983777792,
+      "prompt_tokens": 1622,
+      "completion_tokens": 8,
+      "generation_probe": {
+        "schema_version": 1,
+        "measurement_type": "real_engine_only_workload",
+        "started_at_utc": "2026-10-23T21:17:49.261628+00:00",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "dtype": "bfloat16",
+        "prefix_caching": false,
+        "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+        "context_limit": 4096,
+        "requested_ports": [
+          8210
+        ],
+        "requests_per_engine": 1,
+        "concurrency_per_engine": 1,
+        "input_sections": 16,
+        "output_limit_tokens": 8,
+        "temperature": 0,
+        "seed": 42,
+        "elapsed_seconds_including_readiness": 29.943306,
+        "requested_count": 1,
+        "successful_count": 1,
+        "passed": true,
+        "prompt_tokens": 1622,
+        "completion_tokens": 8,
+        "observed_requests_per_second_including_readiness": 0.03339644627591005,
+        "observed_output_tokens_per_second_including_readiness": 0.2671715702072804,
+        "quality_evaluated": false,
+        "results": [
+          {
+            "port": 8210,
+            "index": 0,
+            "prompt_sha256": "9aad3d2816b460be57679fe95d3e243507c14e0286a63cc92e3bab159da33439",
+            "passed": true,
+            "usage": {
+              "prompt_tokens": 1622,
+              "total_tokens": 1630,
+              "completion_tokens": 8,
+              "prompt_tokens_details": null
+            },
+            "finish_reason": "length",
+            "output_sha256": "2e8f625580f70e277bcaccfbbb8b9c2819b9cb2000dc4d5908b430407649f172",
+            "output_sample": "### Executive Summary\n\nThe analysis of the",
+            "request_seconds": 0.812452
+          }
+        ]
+      },
+      "probe_report_sha256": "7b3ce23989b82578e7c886009b44710c964f8f87a4307cc5e1a01198291154c3",
+      "finished_at_utc": "2026-10-23T21:18:19.289087+00:00",
+      "elapsed_seconds": 34.062143
+    },
+    {
+      "logical_device": 11,
+      "cuda_selector": "MIG-70b46ada-abf6-530f-b1d3-fa80bb90a21c",
+      "started_at_utc": "2026-10-23T21:18:18.113782+00:00",
+      "port": 8211,
+      "passed": true,
+      "container_memory_available_before_bytes": 455985328128,
+      "prompt_tokens": 1623,
+      "completion_tokens": 8,
+      "generation_probe": {
+        "schema_version": 1,
+        "measurement_type": "real_engine_only_workload",
+        "started_at_utc": "2026-10-23T21:18:21.748798+00:00",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "dtype": "bfloat16",
+        "prefix_caching": false,
+        "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+        "context_limit": 4096,
+        "requested_ports": [
+          8211
+        ],
+        "requests_per_engine": 1,
+        "concurrency_per_engine": 1,
+        "input_sections": 16,
+        "output_limit_tokens": 8,
+        "temperature": 0,
+        "seed": 42,
+        "elapsed_seconds_including_readiness": 28.937756,
+        "requested_count": 1,
+        "successful_count": 1,
+        "passed": true,
+        "prompt_tokens": 1623,
+        "completion_tokens": 8,
+        "observed_requests_per_second_including_readiness": 0.03455692959694872,
+        "observed_output_tokens_per_second_including_readiness": 0.27645543677558976,
+        "quality_evaluated": false,
+        "results": [
+          {
+            "port": 8211,
+            "index": 0,
+            "prompt_sha256": "f6b39fe4d7fb4e99d1fc6d5864584a01a41826a8680de39eec2d786c440020cb",
+            "passed": true,
+            "usage": {
+              "prompt_tokens": 1623,
+              "total_tokens": 1631,
+              "completion_tokens": 8,
+              "prompt_tokens_details": null
+            },
+            "finish_reason": "length",
+            "output_sha256": "2e8f625580f70e277bcaccfbbb8b9c2819b9cb2000dc4d5908b430407649f172",
+            "output_sample": "### Executive Summary\n\nThe analysis of the",
+            "request_seconds": 0.809359
+          }
+        ]
+      },
+      "probe_report_sha256": "2679e82fed3283a48b5693c9b4b4f87ae39fcda739a99bce4b2c056dc9f6266c",
+      "finished_at_utc": "2026-10-23T21:18:50.722040+00:00",
+      "elapsed_seconds": 32.608281
+    },
+    {
+      "logical_device": 12,
+      "cuda_selector": "MIG-acbb77ed-7f51-5892-be4d-e5be2e6cc8dd",
+      "started_at_utc": "2026-10-23T21:18:19.289182+00:00",
+      "port": 8212,
+      "passed": true,
+      "container_memory_available_before_bytes": 455711449088,
+      "prompt_tokens": 1618,
+      "completion_tokens": 8,
+      "generation_probe": {
+        "schema_version": 1,
+        "measurement_type": "real_engine_only_workload",
+        "started_at_utc": "2026-10-23T21:18:23.078119+00:00",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "dtype": "bfloat16",
+        "prefix_caching": false,
+        "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+        "context_limit": 4096,
+        "requested_ports": [
+          8212
+        ],
+        "requests_per_engine": 1,
+        "concurrency_per_engine": 1,
+        "input_sections": 16,
+        "output_limit_tokens": 8,
+        "temperature": 0,
+        "seed": 42,
+        "elapsed_seconds_including_readiness": 28.968804,
+        "requested_count": 1,
+        "successful_count": 1,
+        "passed": true,
+        "prompt_tokens": 1618,
+        "completion_tokens": 8,
+        "observed_requests_per_second_including_readiness": 0.034519892379553385,
+        "observed_output_tokens_per_second_including_readiness": 0.2761591390364271,
+        "quality_evaluated": false,
+        "results": [
+          {
+            "port": 8212,
+            "index": 0,
+            "prompt_sha256": "e5d54576482de8c29145b514fbe5470d26f5e166cf587d186902d54b71d7ecb4",
+            "passed": true,
+            "usage": {
+              "prompt_tokens": 1618,
+              "total_tokens": 1626,
+              "completion_tokens": 8,
+              "prompt_tokens_details": null
+            },
+            "finish_reason": "length",
+            "output_sha256": "c860026f2953d4722fcc415476cbe3b5df479934fe10ef8f058f790867c7b4b1",
+            "output_sample": "### Executive Summary\n\nThe operational log for",
+            "request_seconds": 0.833488
+          }
+        ]
+      },
+      "probe_report_sha256": "51553cc11e5686e51a10d2fe1783d00b30e7c69581a8da17de7eeb2d551608f7",
+      "finished_at_utc": "2026-10-23T21:18:52.099734+00:00",
+      "elapsed_seconds": 32.810568
+    },
+    {
+      "logical_device": 13,
+      "cuda_selector": "MIG-e0cfdac6-4296-5f39-8973-b517dca02671",
+      "started_at_utc": "2026-10-23T21:18:50.722119+00:00",
+      "port": 8213,
+      "passed": true,
+      "container_memory_available_before_bytes": 451647918080,
+      "prompt_tokens": 1618,
+      "completion_tokens": 8,
+      "generation_probe": {
+        "schema_version": 1,
+        "measurement_type": "real_engine_only_workload",
+        "started_at_utc": "2026-10-23T21:18:53.967527+00:00",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "dtype": "bfloat16",
+        "prefix_caching": false,
+        "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+        "context_limit": 4096,
+        "requested_ports": [
+          8213
+        ],
+        "requests_per_engine": 1,
+        "concurrency_per_engine": 1,
+        "input_sections": 16,
+        "output_limit_tokens": 8,
+        "temperature": 0,
+        "seed": 42,
+        "elapsed_seconds_including_readiness": 29.013428,
+        "requested_count": 1,
+        "successful_count": 1,
+        "passed": true,
+        "prompt_tokens": 1618,
+        "completion_tokens": 8,
+        "observed_requests_per_second_including_readiness": 0.03446679876356187,
+        "observed_output_tokens_per_second_including_readiness": 0.275734390108495,
+        "quality_evaluated": false,
+        "results": [
+          {
+            "port": 8213,
+            "index": 0,
+            "prompt_sha256": "da9df457284c9af2dd8574ef0b4fdbacb75846d4b32d4f3d1e0be8971df71318",
+            "passed": true,
+            "usage": {
+              "prompt_tokens": 1618,
+              "total_tokens": 1626,
+              "completion_tokens": 8,
+              "prompt_tokens_details": null
+            },
+            "finish_reason": "length",
+            "output_sha256": "2e8f625580f70e277bcaccfbbb8b9c2819b9cb2000dc4d5908b430407649f172",
+            "output_sample": "### Executive Summary\n\nThe analysis of the",
+            "request_seconds": 0.856449
+          }
+        ]
+      },
+      "probe_report_sha256": "c87be7bb7802ea5f0c08fd2d8d1fc28269e1bc0789753128d93d0b52615870b0",
+      "finished_at_utc": "2026-10-23T21:19:23.033404+00:00",
+      "elapsed_seconds": 32.311372
+    },
+    {
+      "logical_device": 14,
+      "cuda_selector": "MIG-bdcef49f-83bf-569a-907a-3e5a4feaa1fb",
+      "started_at_utc": "2026-10-23T21:18:52.099796+00:00",
+      "port": 8214,
+      "passed": true,
+      "container_memory_available_before_bytes": 451239432192,
+      "prompt_tokens": 1619,
+      "completion_tokens": 8,
+      "generation_probe": {
+        "schema_version": 1,
+        "measurement_type": "real_engine_only_workload",
+        "started_at_utc": "2026-10-23T21:18:55.486778+00:00",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "dtype": "bfloat16",
+        "prefix_caching": false,
+        "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+        "context_limit": 4096,
+        "requested_ports": [
+          8214
+        ],
+        "requests_per_engine": 1,
+        "concurrency_per_engine": 1,
+        "input_sections": 16,
+        "output_limit_tokens": 8,
+        "temperature": 0,
+        "seed": 42,
+        "elapsed_seconds_including_readiness": 28.946787,
+        "requested_count": 1,
+        "successful_count": 1,
+        "passed": true,
+        "prompt_tokens": 1619,
+        "completion_tokens": 8,
+        "observed_requests_per_second_including_readiness": 0.03454614853389177,
+        "observed_output_tokens_per_second_including_readiness": 0.27636918827113416,
+        "quality_evaluated": false,
+        "results": [
+          {
+            "port": 8214,
+            "index": 0,
+            "prompt_sha256": "bb6ad18274d2a0b857431aab7af57f8314375f7c61aca2242b7e38622749a2e0",
+            "passed": true,
+            "usage": {
+              "prompt_tokens": 1619,
+              "total_tokens": 1627,
+              "completion_tokens": 8,
+              "prompt_tokens_details": null
+            },
+            "finish_reason": "length",
+            "output_sha256": "2e8f625580f70e277bcaccfbbb8b9c2819b9cb2000dc4d5908b430407649f172",
+            "output_sample": "### Executive Summary\n\nThe analysis of the",
+            "request_seconds": 0.812988
+          }
+        ]
+      },
+      "probe_report_sha256": "76f621d6ba8b64578976628c61580bca88b9f1dae44071cd00ef518209f3560f",
+      "finished_at_utc": "2026-10-23T21:19:24.510198+00:00",
+      "elapsed_seconds": 32.410421
+    },
+    {
+      "logical_device": 15,
+      "cuda_selector": "MIG-83b2a8e2-adaa-5ea0-a85d-a591df1b0600",
+      "started_at_utc": "2026-10-23T21:19:23.033549+00:00",
+      "port": 8215,
+      "passed": true,
+      "container_memory_available_before_bytes": 447311818752,
+      "prompt_tokens": 1615,
+      "completion_tokens": 8,
+      "generation_probe": {
+        "schema_version": 1,
+        "measurement_type": "real_engine_only_workload",
+        "started_at_utc": "2026-10-23T21:19:25.967725+00:00",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "dtype": "bfloat16",
+        "prefix_caching": false,
+        "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+        "context_limit": 4096,
+        "requested_ports": [
+          8215
+        ],
+        "requests_per_engine": 1,
+        "concurrency_per_engine": 1,
+        "input_sections": 16,
+        "output_limit_tokens": 8,
+        "temperature": 0,
+        "seed": 42,
+        "elapsed_seconds_including_readiness": 29.991996,
+        "requested_count": 1,
+        "successful_count": 1,
+        "passed": true,
+        "prompt_tokens": 1615,
+        "completion_tokens": 8,
+        "observed_requests_per_second_including_readiness": 0.033342228832164617,
+        "observed_output_tokens_per_second_including_readiness": 0.26673783065731693,
+        "quality_evaluated": false,
+        "results": [
+          {
+            "port": 8215,
+            "index": 0,
+            "prompt_sha256": "25a9f9fb371aa29c8b1363e49e4e9834595ad7e8b66d7ca631d0f4a2b981c9c1",
+            "passed": true,
+            "usage": {
+              "prompt_tokens": 1615,
+              "total_tokens": 1623,
+              "completion_tokens": 8,
+              "prompt_tokens_details": null
+            },
+            "finish_reason": "length",
+            "output_sha256": "2e8f625580f70e277bcaccfbbb8b9c2819b9cb2000dc4d5908b430407649f172",
+            "output_sample": "### Executive Summary\n\nThe analysis of the",
+            "request_seconds": 0.85077
+          }
+        ]
+      },
+      "probe_report_sha256": "96b46e2ae0b0c028481ff9c33346f31bd3a98d2de39e59a49a777291d21e59dd",
+      "finished_at_utc": "2026-10-23T21:19:56.044276+00:00",
+      "elapsed_seconds": 33.010752
+    }
+  ],
+  "last_progress_at_utc": "2026-10-23T21:19:56.044535+00:00",
+  "finished_at_utc": "2026-10-23T21:19:56.046830+00:00",
+  "passed_count": 10
+}

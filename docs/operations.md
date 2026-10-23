@@ -1,97 +1,129 @@
 # Operations
 
-The native deployment runs in `/root/batchforge-runtime/app` on the first Pod.
-The workspace network volume rejected required file-mode and copy operations,
-so virtual environments and live database data use local app-owned directories.
-Existing workloads are not stopped or reconfigured.
+The exercised deployment is native Linux on two existing Runpod Pods. Both run
+independent loopback API replicas against the same managed Neon PostgreSQL 17
+instance in Frankfurt. GPU workers call their own Pod's API gateway. Disconnecting
+the operator laptop does not interrupt this path. The selected access policy is
+private SSH ingress; the paid public ingress proposal was deferred by the owner.
 
-| Resource | Location |
-| --- | --- |
-| API + worker interpreter | `/root/batchforge-runtime/venv/bin/python` |
-| GPU engine interpreter | `/root/batchforge-runtime/engine-venv/bin/python` |
-| Private runtime configuration | `/root/batchforge-runtime/access.env`, `gpu1.env` to `gpu3.env` |
-| API listener | `127.0.0.1:8080` |
-| Engine listeners | `127.0.0.1:8100` through `8103` |
-| Worker metrics | `127.0.0.1:9101` through `9104` |
-| PostgreSQL environment and data | `/opt/batchforge-pg/` |
-| PostgreSQL Unix socket | `/opt/batchforge-pg/socket` |
-| App process identity files and logs | `app/.runtime/` |
+## Runtime inventory
 
-Configuration files are mode 600; app runtime directories are private. Database
-data and its Unix socket belong to the dedicated `batchforgepg` OS user.
-PostgreSQL does not listen on TCP. Secrets and runtime data are ignored by Git
-and excluded from container build contexts.
+Both Pods use `/root/batchforge-runtime/app` as their application directory,
+`/root/batchforge-runtime/venv/bin/python` for API/worker/operations commands and
+`/root/batchforge-runtime/engine-venv/bin/python` for vLLM. Local runtime files are
+private and excluded from source archives and Git. Existing unrelated GPU
+workloads must remain untouched.
 
-## Access
+| Service | Primary Pod | Second Pod |
+| --- | --- | --- |
+| API replicas | `api-a`, `api-b`, ports 8082/8083 | `api-a`, `api-b`, ports 8082/8083 |
+| Private gateway | `gateway-edge`, port 8080 | `gateway-edge`, port 8080 |
+| Engines | `engine-gpu0` through `engine-gpu3`, 8100–8103 | `engine-pod2-7b-gpuN`, 8200+N |
+| Workers | `worker-gpu0` through `worker-gpu3`, metrics 9101–9104 | `worker-pod2-7b-migN`, metrics 9200+N |
+| Supervisor | `supervisor-primary` | `supervisor-main` |
+| Service manifest | `.runtime/services-primary.json` | `.runtime/pod2-services.json` |
+| Supervisor configuration | `../supervisor.env` | `.env.supervisor-pod2` |
+| API configuration | `../api-a.env`, `../api-b.env` | `.env.api-a`, `.env.api-b` |
 
-The initial deployment binds loopback and is accessed using SSH forwarding.
-The desktop session forwards its local port 8787 to the Pod's API port 8080.
-Open `http://127.0.0.1:8787`; the tenant key is in the laptop's ignored private
-`.runtime/access.env`. Do not place the key in a URL.
+Consult the manifest and model/device reports for the actual deployed engine
+count and UUID mapping. A physical GPU UUID is not a unique MIG instance ID.
+`torch.cuda.device_count()` alone undercounts the second Pod's 16 accessible MIG
+instances in the tested Torch/NVML environment; explicit MIG UUID discovery is
+required. Each worker/engine is independently bounded; the primary uses only its
+reserved share of four already shared H100s.
 
-To recreate the tunnel using the Pod's verified direct mapping:
+The canonical primary database configurations are `../neon-runtime.env` and
+`../neon-owner.env`, both mode 600. Applications receive only `bf_runtime`, the
+restricted runtime role. Migrations and backup operations use the separate owner
+configuration. The second Pod receives runtime credentials, not owner credentials.
+The legacy `../access.env` still holds the operator tenant key but its local
+PostgreSQL URL is retired. Do not use that URL for the current live database.
+
+## Private console access
+
+The current operator tunnel forwards local port 8787 to primary loopback 8080.
+Open `http://127.0.0.1:8787`; provide the tenant key through the console's key
+field, never a URL. The laptop's ignored `.runtime/access.env` contains that key.
 
 ```sh
 ssh -N -L 127.0.0.1:8787:127.0.0.1:8080 -p 13253 \
+  -o StrictHostKeyChecking=yes \
+  -o UserKnownHostsFile=/private/tmp/batchforge_known_hosts \
   -i ~/.ssh/id_ed25519 root@91.199.227.82
 ```
 
-Runpod may change the direct IP/port after lifecycle changes. Obtain current
-mapping from the user-authorized Pod before reconnecting. The HTTP API and GPU
-engine ports are not publicly exposed by this setup.
+Runpod can change the direct mapping after lifecycle changes. Verify the new
+host key and authorized mapping before reconnecting. Neither engine endpoints
+nor internal worker routes are published by this setup. The second Pod also
+serves its own console through its private gateway.
 
-## Manage the first Pod
+## Service supervision and maintenance
 
-From the deployed app directory, operate only managed app instances:
+Run commands from the deployed app directory. The manager checks the PID's
+working directory and Linux process-start identity before signaling it.
 
 ```sh
-/root/batchforge-runtime/venv/bin/python ops/manage.py status api
+/root/batchforge-runtime/venv/bin/python ops/manage.py status api --name a
 /root/batchforge-runtime/venv/bin/python ops/manage.py logs worker --name gpu0
-/root/batchforge-runtime/venv/bin/python ops/manage.py stop worker --name gpu0
-/root/batchforge-runtime/venv/bin/python ops/manage.py start worker --name gpu0 \
-  --env-file /root/batchforge-runtime/access.env \
+/root/batchforge-runtime/venv/bin/python ops/manage.py status supervisor --name primary
+```
+
+The supervisor restarts dead owned processes with bounded backoff, records
+restart state, and checks free GPU memory before starting an engine. Database
+unreadiness alone does not kill API processes. It refuses ambiguous process
+identity and ambiguous timed-out engine startup; resolve those conditions
+manually instead of launching duplicate model copies. Inspect the corresponding
+`.runtime/supervision-<manifest-stem>.json` and bounded event log.
+
+Stop the supervisor before deliberate maintenance, otherwise it can restart the
+service being changed. Stopping the watchdog preserves its children. Restart it
+after validating all intended services:
+
+```sh
+/root/batchforge-runtime/venv/bin/python ops/manage.py stop supervisor --name primary
+# Change only the selected app-owned service; use its manifest's exact env/port/GPU.
+/root/batchforge-runtime/venv/bin/python ops/manage.py start supervisor --name primary \
+  --env-file /root/batchforge-runtime/supervisor.env \
   --python /root/batchforge-runtime/venv/bin/python
 ```
 
-Use `gpu1.env` etc for other workers. Engine instances use the corresponding
-`--name gpuN --gpu N --port 810N`, the engine interpreter, and the same context
-and memory configuration. PID records include Linux process start identity and
-working directory; the manager refuses to signal a mismatched process.
+For API upgrades, deploy compatible code to all replicas first, apply explicit
+owner-run migrations, then enable optional new execution paths. Roll one API at
+a time and require `/readyz` before replacing the next. API startup verifies the
+schema; it does not run DDL or create tenant keys. Preserve token overlap while
+rotating workers. A gateway forwards a mutation once; it never silently retries
+an uncertain POST on another replica.
 
-The initial manager is not an OS boot service or a high-availability supervisor.
-Disconnecting SSH does not stop its detached app children, but Pod replacement
-or local-disk loss requires rebuilding services and restoring data. Use a
-managed PostgreSQL deployment with appropriate backups for customer production.
+A live process is not proof of useful GPU work. Check engine readiness, worker
+readiness, durable accepted results, claim/completion latency and lease churn.
+Inference can repeat after failure; fenced result acceptance and usage accounting
+must remain unique. Preserve the same attempt token when retrying an uncertain
+completion acknowledgement.
 
-Use `/healthz` for liveness, `/readyz` for database readiness, and the authenticated
-console for operational state. A live process alone does not establish that an
-engine is ready or that queued tasks are progressing.
+## Database protection and recovery
 
-## Back up and restore
+The old local PostgreSQL 16 source is fenced with database-default read-only
+transactions after a verified, drained, atomic copy to Neon. It is historical
+migration evidence, not an automatic fallback. Never route live writers back to
+it during a Neon outage: that would create diverging histories.
 
-Install the optional `pgserver==0.1.4` development utility for its PostgreSQL
-binaries. The backup helper uses `pg_dump` directly, never the package's global
-process discovery/cleanup manager.
+Use TLS `verify-full` with the direct Neon endpoint. The pooler does not accept
+the API's PostgreSQL startup `options`. Client-side TLS is the relevant check;
+`pg_stat_ssl` behind a provider TLS proxy does not describe that client hop.
+Database errors return bounded 503 responses. Workers retain their completion
+fence while reconnecting; new inference must not be started merely because an
+acknowledgement was lost.
 
-```sh
-python devtools/backup_postgres.py --env-file /root/batchforge-runtime/access.env
-```
+See [backup instructions](backup.md) for the version-matched PostgreSQL 17 dump
+and isolated restore procedure. A local dump or provider snapshot alone is not
+an off-host retention policy. Keep owner secrets outside worker configurations.
+The Neon project currently uses its free plan, without a production SLA. Storage,
+compute quota, point-in-time retention, alerts and paid production durability
+still require sizing and an explicit service decision.
 
-It creates an owner-only custom-format snapshot in `.runtime/backups` and checks
-it with `pg_restore --list`. This path has been exercised on the running Pod.
-Creating a local snapshot is not an off-host disaster-recovery policy. Retention,
-off-host transfer and regular restore checks must be configured for the deployment.
-The initial test-only snapshot was additionally saved in the operator's private
-`.runtime/backups` after auditing that it contained only generated fixtures.
-
-On a non-root development machine, verify a snapshot in an entirely new temporary
-cluster:
-
-```sh
-python devtools/verify_backup.py .runtime/backups/<snapshot>.dump
-```
-
-This path was exercised and verified 2,091 restored test tasks and matching usage.
-Restore customer data only into an explicitly selected empty database with
-`pg_restore --no-owner --exit-on-error`; the backup helper never restores or
-overwrites a database.
+The application watchdog is not an OS boot service, whole-Pod replacement
+controller, cross-region database consensus system or guarantee of provider
+availability. Recreating a lost Pod requires restoring its app configuration,
+model files and service manifest. The other Pod can keep its own workers running
+against Neon, but private client access must be redirected explicitly if the
+primary SSH endpoint is unavailable.

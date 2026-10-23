@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "test_only": true,
+  "physical_inference_performed": false,
+  "http_api_performance_measured": false,
+  "started_at": "2026-10-23T21:11:43.657476+00:00",
+  "comparison_order": [
+    "python_completion",
+    "sql_completion_v2"
+  ],
+  "configuration": {
+    "tasks_per_run": 512,
+    "tenants": 1,
+    "workers": 16,
+    "pool_max": 16,
+    "deadline_seconds": 180,
+    "runtime_backend": "deployed v2, no backend changes",
+    "lease_seconds": 30,
+    "completion_retry_budget_seconds": 25,
+    "heartbeat_performed": false,
+    "claim_limit": 8,
+    "empty_claim_sleep_seconds": 0.01
+  },
+  "runs": [
+    {
+      "mode": "python_completion",
+      "exit_code": 0,
+      "report": {
+        "test_only": true,
+        "physical_inference_performed": false,
+        "passed": true,
+        "model": "test-only-controlplane",
+        "measurement_started_at": "2026-10-23T21:11:45.123089+00:00",
+        "terminal_observation_ended_at": "2026-10-23T21:12:37.356959+00:00",
+        "tasks": 512,
+        "tenants": 1,
+        "workers": 16,
+        "pool_max": 16,
+        "sql_completion_enabled": false,
+        "elapsed_seconds": 52.233812396996655,
+        "synthetic_accepted_results_per_second": 9.802079850281789,
+        "completed": 512,
+        "claim_calls": 8153,
+        "completion_attempts": 512,
+        "claim_latency_seconds": {
+          "samples": 8153,
+          "p50": 0.063235,
+          "p95": 0.180829,
+          "max": 0.616384,
+          "mean": 0.080708
+        },
+        "complete_with_explicit_same_fence_retry_seconds": {
+          "samples": 512,
+          "p50": 0.811804,
+          "p95": 1.570718,
+          "max": 1.987093,
+          "mean": 0.82428
+        },
+        "retry_errors": {},
+        "operation_errors": {
+          "claim": {},
+          "complete": {}
+        },
+        "unique_results_and_exact_usage_verified": true,
+        "limitations": [
+          "Synthetic state-machine benchmark; no GPU or HTTP/API throughput measurement",
+          "Ingestion and output validation excluded from timed section",
+          "Same worker/fence retained on completion retry",
+          "Temporary database shares managed compute capacity with the application; run after real inference tests",
+          "Direct runtime-role database client; not a daily AI capacity forecast",
+          "This direct state test used 30s leases and 25s completion retry budget without heartbeats; production uses 90s leases with worker heartbeats",
+          "Benchmark empty-claim sleep is 10ms; this is not the production adaptive worker polling loop"
+        ],
+        "isolated_database_created": true,
+        "isolated_role_created": true,
+        "temporary_database": "bf_cp_ef98fa862d7a455f",
+        "temporary_role": "bf_cp_role_ef98fa862d7a455f",
+        "temporary_database_and_role_removed": true,
+        "cleanup_errors": [],
+        "source_sha256": {
+          "scripts/controlplane_benchmark.py": "70e949d83c940c64de1a99768b31e7a783dc6be9c01b45b3d6fb8527e0468ab1",
+          "backend/store.py": "96e4ab62ef2a422e075f681a54cf7298454689dd2506b7a523ea75de875a4ea9",
+          "backend/config.py": "5ea1ba6deb7e496faa01aac43415947f64b315799992d78aea2eabce723256ed",
+          "backend/migrate.py": "5f831919f66696423167376d3cd8dbd26f4bd035292486f9de0bf5d7d549e450",
+          "backend/migrations/0002_sql_completion.sql": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b"
+        },
+        "lease_seconds": 30,
+        "completion_retry_budget_seconds": 25,
+        "heartbeat_performed": false,
+        "claim_limit": 8,
+        "empty_claim_sleep_seconds": 0.01
+      }
+    },
+    {
+      "mode": "sql_completion_v2",
+      "exit_code": 0,
+      "report": {
+        "test_only": true,
+        "physical_inference_performed": false,
+        "passed": true,
+        "model": "test-only-controlplane",
+        "measurement_started_at": "2026-10-23T21:12:39.002978+00:00",
+        "terminal_observation_ended_at": "2026-10-23T21:12:52.357608+00:00",
+        "tasks": 512,
+        "tenants": 1,
+        "workers": 16,
+        "pool_max": 16,
+        "sql_completion_enabled": true,
+        "elapsed_seconds": 13.354570181050804,
+        "synthetic_accepted_results_per_second": 38.33893514045791,
+        "completed": 512,
+        "claim_calls": 2375,
+        "completion_attempts": 512,
+        "claim_latency_seconds": {
+          "samples": 2375,
+          "p50": 0.064774,
+          "p95": 0.163518,
+          "max": 0.601605,
+          "mean": 0.074643
+        },
+        "complete_with_explicit_same_fence_retry_seconds": {
+          "samples": 512,
+          "p50": 0.187477,
+          "p95": 0.302574,
+          "max": 0.448239,
+          "mean": 0.153061
+        },
+        "retry_errors": {},
+        "operation_errors": {
+          "claim": {},
+          "complete": {}
+        },
+        "unique_results_and_exact_usage_verified": true,
+        "limitations": [
+          "Synthetic state-machine benchmark; no GPU or HTTP/API throughput measurement",
+          "Ingestion and output validation excluded from timed section",
+          "Same worker/fence retained on completion retry",
+          "Temporary database shares managed compute capacity with the application; run after real inference tests",
+          "Direct runtime-role database client; not a daily AI capacity forecast",
+          "This direct state test used 30s leases and 25s completion retry budget without heartbeats; production uses 90s leases with worker heartbeats",
+          "Benchmark empty-claim sleep is 10ms; this is not the production adaptive worker polling loop"
+        ],
+        "isolated_database_created": true,
+        "isolated_role_created": true,
+        "temporary_database": "bf_cp_a3aeed7f725b4b2b",
+        "temporary_role": "bf_cp_role_a3aeed7f725b4b2b",
+        "temporary_database_and_role_removed": true,
+        "cleanup_errors": [],
+        "source_sha256": {
+          "scripts/controlplane_benchmark.py": "70e949d83c940c64de1a99768b31e7a783dc6be9c01b45b3d6fb8527e0468ab1",
+          "backend/store.py": "96e4ab62ef2a422e075f681a54cf7298454689dd2506b7a523ea75de875a4ea9",
+          "backend/config.py": "5ea1ba6deb7e496faa01aac43415947f64b315799992d78aea2eabce723256ed",
+          "backend/migrate.py": "5f831919f66696423167376d3cd8dbd26f4bd035292486f9de0bf5d7d549e450",
+          "backend/migrations/0002_sql_completion.sql": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b"
+        },
+        "lease_seconds": 30,
+        "completion_retry_budget_seconds": 25,
+        "heartbeat_performed": false,
+        "claim_limit": 8,
+        "empty_claim_sleep_seconds": 0.01
+      }
+    }
+  ],
+  "limitations": [
+    "One sequential pair, not randomized repeated trials",
+    "Direct Store/database calls, excluding ingestion and validation from timed section",
+    "Same managed compute as application; no daily AI/GPU capacity forecast",
+    "Benchmark empty-claim polling sleeps 10ms; production workers use adaptive polling. Claim contention and this polling loop are part of this particular state-only observation"
+  ],
+  "completed_at": "2026-10-23T21:12:52.646406+00:00",
+  "all_passed": true,
+  "observed_sql_vs_python_ratio": 3.9113061438033223,
+  "configuration_annotation": "Lease/retry/heartbeat fields added after the run from the exact executed source constants; source hashes refer to that executed source",
+  "production_comparison_limit": "Production has 90s leases and worker heartbeats; these synthetic Store-only runs do not measure that behavior"
+}

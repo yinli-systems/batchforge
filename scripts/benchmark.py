@@ -54,17 +54,36 @@ class Submission:
 
 
 def generate_workload(args, run_id: str) -> list[Submission]:
+    input_path = getattr(args, "input_jsonl", None)
+    source_rows = None
+    if input_path:
+        source_rows = [json.loads(line) for line in input_path.read_text().splitlines() if line.strip()]
+        if len(source_rows) < args.tasks:
+            raise ValueError("Input workload has fewer rows than requested tasks")
+        source_rows = source_rows[:args.tasks]
+        if any(row.get("body", {}).get("model") != args.model for row in source_rows):
+            raise ValueError("Provided workload model must match --model")
+        if len({row.get("custom_id") for row in source_rows}) != len(source_rows):
+            raise ValueError("Provided workload custom IDs must be unique")
     workloads = []
+    offset = 0
     for index in range(args.batches):
         count = args.tasks // args.batches + (index < args.tasks % args.batches)
         rows, identifiers = [], set()
         for number in range(count):
+            if source_rows is not None:
+                row = dict(source_rows[offset + number])
+                row["custom_id"] = run_id + "-" + row["custom_id"]
+                identifiers.add(row["custom_id"])
+                rows.append(json.dumps(row, ensure_ascii=False))
+                continue
             custom_id = f"{run_id}-{index}-{number}"
             identifiers.add(custom_id)
             rows.append(json.dumps({"custom_id": custom_id, "method": "POST", "url": "/v1/chat/completions",
                 "body": {"model": args.model, "messages": [{"role": "user", "content": f"Request {custom_id}. " + args.prompt}],
                          "max_tokens": args.max_tokens, "temperature": args.temperature}}, ensure_ascii=False))
         workloads.append(Submission(index, count, ("\n".join(rows) + "\n").encode(), identifiers))
+        offset += count
     return workloads
 
 
@@ -109,6 +128,7 @@ async def run(args, *, transport=None) -> dict:
             (args.workload_dir / f"{run_id}-{item.index}.jsonl").write_bytes(item.data)
     monitors: list[asyncio.Task] = []
     attempted_requests = successful_requests = 0
+    measurement_started_at = datetime.now(timezone.utc).isoformat()
     started = time.monotonic()
     headers = {"Authorization": f"Bearer {key}"}
     async with httpx.AsyncClient(base_url=args.url.rstrip("/"), headers=headers,
@@ -167,16 +187,25 @@ async def run(args, *, transport=None) -> dict:
             except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
                 item.error = request_error(exc, stage)
 
-        await asyncio.gather(*(submit(item) for item in submissions))
+        semaphore = asyncio.Semaphore(getattr(args, "submission_concurrency", 8))
+        async def bounded_submit(item):
+            async with semaphore:
+                await submit(item)
+        await asyncio.gather(*(bounded_submit(item) for item in submissions))
         submission_elapsed = time.monotonic() - started
         if monitors:
             await asyncio.gather(*monitors)
         elapsed = time.monotonic() - started
+        terminal_observation_ended_at = datetime.now(timezone.utc).isoformat()
         validation_started = time.monotonic()
         completed = failed = cancelled = prompt_tokens = completion_tokens = 0
         output_ids: list[str] = []
         simulated = False
         validation_errors = []
+        prompt_lengths, output_lengths, finish_reasons = [], [], {}
+        output_dir = getattr(args, "output_dir", None)
+        if output_dir:
+            output_dir.mkdir(parents=True, exist_ok=True)
         for item in submissions:
             if item.terminal_at is None:
                 continue
@@ -189,6 +218,9 @@ async def run(args, *, transport=None) -> dict:
                 try:
                     content = await client.get(f"/v1/files/{batch['output_file_id']}/content")
                     content.raise_for_status()
+                    if output_dir:
+                        path = output_dir / f"{run_id}-{item.index}-output.jsonl"
+                        path.write_bytes(content.content)
                     for line in content.text.splitlines():
                         row = json.loads(line)
                         output_ids.append(row["custom_id"])
@@ -196,6 +228,11 @@ async def run(args, *, transport=None) -> dict:
                         simulated |= bool(body.get("batchforge_test_only"))
                         prompt_tokens += body["usage"]["prompt_tokens"]
                         completion_tokens += body["usage"]["completion_tokens"]
+                        prompt_lengths.append(body["usage"]["prompt_tokens"])
+                        output_lengths.append(body["usage"]["completion_tokens"])
+                        for choice in body.get("choices", []):
+                            reason = choice.get("finish_reason", "unknown")
+                            finish_reasons[reason] = finish_reasons.get(reason, 0) + 1
                 except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
                     validation_errors.append({"batch_id": batch["id"], **request_error(exc, "output_validation")})
         validation_seconds = time.monotonic() - validation_started
@@ -212,6 +249,8 @@ async def run(args, *, transport=None) -> dict:
     passed = len(accepted) == args.batches and completed == args.tasks and not unfinished and not failed and not cancelled and integrity
     return {
         "schema_version": 2, "run_id": run_id, "observed_at": datetime.now(timezone.utc).isoformat(),
+        "measurement_started_at": measurement_started_at,
+        "terminal_observation_ended_at": terminal_observation_ended_at,
         "passed": passed, "measurement": "client observed submission through terminal observation; output validation measured separately",
         "engine_label": args.engine_label, "test_fixture_detected": simulated,
         "model": args.model, "requested_tasks": args.tasks, "submitted_tasks": sum(item.count for item in accepted),
@@ -221,13 +260,18 @@ async def run(args, *, transport=None) -> dict:
         "unfinished_batch_ids": sorted(unfinished), "submission_errors": errors,
         "output_validation_errors": validation_errors, "completed_tasks_per_second": round(completed / elapsed, 6),
         "observed_prompt_tokens": prompt_tokens, "observed_completion_tokens": completion_tokens,
+        "prompt_tokens_per_task": distribution(prompt_lengths), "completion_tokens_per_task": distribution(output_lengths),
+        "output_finish_reasons": finish_reasons,
         "output_custom_ids_unique": unique, "output_custom_ids_known": known,
         "output_rows_match_completed": len(output_ids) == completed,
         "batch_counts_match_submission": batch_counts_match,
         "batch_ids": [item.batch["id"] for item in accepted],
         "workload": {"sha256": workload_hash, "hash_definition": "concatenated exact JSONL bytes in batch_index order",
+            "provided_source_sha256": hashlib.sha256(args.input_jsonl.read_bytes()).hexdigest() if getattr(args,"input_jsonl",None) else None,
             "bytes": sum(len(item.data) for item in submissions), "generation_seconds": round(generation_seconds, 6),
-            "model": args.model, "prompt": args.prompt, "message_template": "Request {custom_id}. {prompt}",
+            "model": args.model, "prompt": None if getattr(args,"input_jsonl",None) else args.prompt,
+            "generation_mode": "provided-jsonl" if getattr(args,"input_jsonl",None) else "generated-prompt",
+            "message_template": "exact provided messages; run_id prepended to custom_id" if getattr(args,"input_jsonl",None) else "Request {custom_id}. {prompt}",
             "max_tokens": args.max_tokens, "temperature": args.temperature,
             "tasks_per_batch": [item.count for item in submissions]},
         "submission": {"elapsed_seconds": round(submission_elapsed, 6),
@@ -274,9 +318,12 @@ def main() -> None:
     parser.add_argument("--request-timeout", type=float, default=60)
     parser.add_argument("--poll", type=float, default=.5)
     parser.add_argument("--workload-dir", type=Path, help="Optionally save exact generated JSONL for the report SHA256")
+    parser.add_argument("--input-jsonl", type=Path, help="Replay a prepared real dataset workload; must match --model and contain at least --tasks rows")
+    parser.add_argument("--output-dir", type=Path, help="Save downloaded outputs privately for independent quality evaluation")
+    parser.add_argument("--submission-concurrency", type=int, default=8)
     parser.add_argument("--report", type=Path, default=Path(".runtime/benchmark.json"))
     args = parser.parse_args()
-    if not 1 <= args.batches <= args.tasks or args.max_tokens <= 0:
+    if not 1 <= args.batches <= args.tasks or args.max_tokens <= 0 or args.submission_concurrency < 1:
         parser.error("Require 1 <= batches <= tasks and positive max tokens")
     if not all(math.isfinite(value) and value > 0 for value in (args.deadline, args.poll, args.request_timeout)):
         parser.error("Timeouts and poll interval must be finite and positive")

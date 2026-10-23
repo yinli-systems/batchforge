@@ -1,0 +1,649 @@
+{
+  "sample_count": 119,
+  "first_sample_at": "2026-10-23T21:04:19.089602+00:00",
+  "last_sample_at": "2026-10-23T21:08:15.233789+00:00",
+  "operations": [
+    {
+      "method": "GET",
+      "route": "/metrics",
+      "count": 236.0,
+      "sum_seconds": 3.905471863457933,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 1.0,
+        "0.025": 220.0,
+        "0.05": 231.0,
+        "0.075": 235.0,
+        "0.1": 235.0,
+        "0.25": 235.0,
+        "0.5": 236.0,
+        "0.75": 236.0,
+        "1.0": 236.0,
+        "2.5": 236.0,
+        "5.0": 236.0,
+        "7.5": 236.0,
+        "10.0": 236.0,
+        "+Inf": 236.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.016548609590923444,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.01,
+        "upper_inclusive_seconds": 0.025,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/readyz",
+      "count": 982.0,
+      "sum_seconds": 21.92496730387211,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 912.0,
+        "0.05": 947.0,
+        "0.075": 973.0,
+        "0.1": 973.0,
+        "0.25": 975.0,
+        "0.5": 981.0,
+        "0.75": 982.0,
+        "1.0": 982.0,
+        "2.5": 982.0,
+        "5.0": 982.0,
+        "7.5": 982.0,
+        "10.0": 982.0,
+        "+Inf": 982.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.022326850614941048,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.01,
+        "upper_inclusive_seconds": 0.025,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/v1/batches/{bid}",
+      "count": 4069.0,
+      "sum_seconds": 92.8862697702134,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 3731.0,
+        "0.05": 3857.0,
+        "0.075": 4008.0,
+        "0.1": 4030.0,
+        "0.25": 4043.0,
+        "0.5": 4066.0,
+        "0.75": 4069.0,
+        "1.0": 4069.0,
+        "2.5": 4069.0,
+        "5.0": 4069.0,
+        "7.5": 4069.0,
+        "10.0": 4069.0,
+        "+Inf": 4069.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.022827788097865176,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.01,
+        "upper_inclusive_seconds": 0.025,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.05,
+        "upper_inclusive_seconds": 0.075,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/v1/files/{fid}/content",
+      "count": 14.0,
+      "sum_seconds": 0.27676961792167276,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 13.0,
+        "0.05": 14.0,
+        "0.075": 14.0,
+        "0.1": 14.0,
+        "0.25": 14.0,
+        "0.5": 14.0,
+        "0.75": 14.0,
+        "1.0": 14.0,
+        "2.5": 14.0,
+        "5.0": 14.0,
+        "7.5": 14.0,
+        "10.0": 14.0,
+        "+Inf": 14.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.019769258422976627,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.01,
+        "upper_inclusive_seconds": 0.025,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/v1/overview",
+      "count": 29.0,
+      "sum_seconds": 1.5341817390872166,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 14.0,
+        "0.075": 26.0,
+        "0.1": 29.0,
+        "0.25": 29.0,
+        "0.5": 29.0,
+        "0.75": 29.0,
+        "1.0": 29.0,
+        "2.5": 29.0,
+        "5.0": 29.0,
+        "7.5": 29.0,
+        "10.0": 29.0,
+        "+Inf": 29.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.05290281858921436,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.05,
+        "upper_inclusive_seconds": 0.075,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.075,
+        "upper_inclusive_seconds": 0.1,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/internal/tasks/claim",
+      "count": 1280.0,
+      "sum_seconds": 155.8728159085731,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 180.0,
+        "0.075": 750.0,
+        "0.1": 766.0,
+        "0.25": 1156.0,
+        "0.5": 1245.0,
+        "0.75": 1266.0,
+        "1.0": 1275.0,
+        "2.5": 1280.0,
+        "5.0": 1280.0,
+        "7.5": 1280.0,
+        "10.0": 1280.0,
+        "+Inf": 1280.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.12177563742857274,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.05,
+        "upper_inclusive_seconds": 0.075,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.25,
+        "upper_inclusive_seconds": 0.5,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/internal/tasks/{tid}/complete",
+      "count": 1424.0,
+      "sum_seconds": 397.73104690987384,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 9.0,
+        "0.025": 254.0,
+        "0.05": 370.0,
+        "0.075": 478.0,
+        "0.1": 573.0,
+        "0.25": 857.0,
+        "0.5": 1132.0,
+        "0.75": 1292.0,
+        "1.0": 1373.0,
+        "2.5": 1424.0,
+        "5.0": 1424.0,
+        "7.5": 1424.0,
+        "10.0": 1424.0,
+        "+Inf": 1424.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.279305510470417,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.1,
+        "upper_inclusive_seconds": 0.25,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.75,
+        "upper_inclusive_seconds": 1.0,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/internal/workers/register",
+      "count": 47.0,
+      "sum_seconds": 1.7493519371491857,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 4.0,
+        "0.025": 42.0,
+        "0.05": 42.0,
+        "0.075": 43.0,
+        "0.1": 43.0,
+        "0.25": 44.0,
+        "0.5": 47.0,
+        "0.75": 47.0,
+        "1.0": 47.0,
+        "2.5": 47.0,
+        "5.0": 47.0,
+        "7.5": 47.0,
+        "10.0": 47.0,
+        "+Inf": 47.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.037220253981897565,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.01,
+        "upper_inclusive_seconds": 0.025,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.25,
+        "upper_inclusive_seconds": 0.5,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/v1/batches",
+      "count": 32.0,
+      "sum_seconds": 34.58616508200066,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 0.0,
+        "0.075": 0.0,
+        "0.1": 0.0,
+        "0.25": 3.0,
+        "0.5": 11.0,
+        "0.75": 16.0,
+        "1.0": 20.0,
+        "2.5": 30.0,
+        "5.0": 32.0,
+        "7.5": 32.0,
+        "10.0": 32.0,
+        "+Inf": 32.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 1.0808176588125207,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.5,
+        "upper_inclusive_seconds": 0.75,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 2.5,
+        "upper_inclusive_seconds": 5.0,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/v1/files",
+      "count": 32.0,
+      "sum_seconds": 3.131548354809638,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 8.0,
+        "0.075": 19.0,
+        "0.1": 20.0,
+        "0.25": 32.0,
+        "0.5": 32.0,
+        "0.75": 32.0,
+        "1.0": 32.0,
+        "2.5": 32.0,
+        "5.0": 32.0,
+        "7.5": 32.0,
+        "10.0": 32.0,
+        "+Inf": 32.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.09786088608780119,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.05,
+        "upper_inclusive_seconds": 0.075,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.1,
+        "upper_inclusive_seconds": 0.25,
+        "upper_unbounded": false
+      }
+    }
+  ],
+  "counter_resets_excluded_intervals": {},
+  "api_scrape_failures": {},
+  "first_durable_queue": {
+    "pending": 0,
+    "running": 0,
+    "completed": 4651,
+    "failed": 0,
+    "cancelled": 0,
+    "batches": 118
+  },
+  "last_durable_queue": {
+    "pending": 0,
+    "running": 0,
+    "completed": 6699,
+    "failed": 0,
+    "cancelled": 0,
+    "batches": 150
+  },
+  "measurement_bounds": [
+    "HTTP statistics are deltas between successful scrapes of each observed API process; activity before its first scrape is excluded",
+    "Intervals spanning a process restart/counter reset are excluded; unobserved requests during such intervals are not reconstructed",
+    "p50/p95 are containing Prometheus histogram bucket bounds, not exact quantiles or interpolated point estimates",
+    "HTTP durations measure API request handling, not GPU inference task latency; all traffic on observed replicas is included",
+    "Database counters aggregate the database; PostgreSQL wait samples are periodic observations, not wait-time durations",
+    "Runtime-role visibility of other roles' activity may be redacted; WAL statistics can include other databases on the same cluster",
+    "GPU utilization/memory include all workloads visible on each GPU, including unrelated tenants; no GPU process inventory is queried",
+    "Database statistics, metrics and GPU probes finish at different times; each source includes its own elapsed time",
+    "Polling, metrics aggregation and sampling themselves consume some control-plane/database capacity",
+    "Window includes one outer sample before benchmark start and one after terminal observation; source scrape duration and two-second sampling bound attribution at edges",
+    "Only primary APIs are included in these histogram counts; database counters span both Pods",
+    "A worker transport fallback upgrade occurred before this run; root records origin-index/failover counters separately; inference model/slots/GPU configuration held fixed"
+  ],
+  "phase": "primary_api_sql_completion_heartbeat_enabled_python_claim",
+  "benchmark_start_at": "2026-10-23T21:04:20.362798+00:00",
+  "benchmark_end_at": "2026-10-23T21:08:13.986539+00:00",
+  "raw_series_sha256": "da6c68a06edbe86943b9a173de0d7a718ff258468432fbd24c5c19a1ffc3480c",
+  "raw_series_private_not_committed": true,
+  "observed_api_scope": [
+    "primary/api-a",
+    "primary/api-b"
+  ],
+  "postgres_wait_connection_samples": [
+    {
+      "state": "active",
+      "wait_event_type": "IPC",
+      "wait_event": "SyncRep",
+      "observations": 119,
+      "mean_visible_connections": 0.03361344537815126,
+      "max_visible_connections": 1,
+      "positive_samples": 4
+    },
+    {
+      "state": "active",
+      "wait_event_type": "LWLock",
+      "wait_event": "LockManager",
+      "observations": 119,
+      "mean_visible_connections": 0.008403361344537815,
+      "max_visible_connections": 1,
+      "positive_samples": 1
+    },
+    {
+      "state": "active",
+      "wait_event_type": "Lock",
+      "wait_event": "transactionid",
+      "observations": 119,
+      "mean_visible_connections": 1.4285714285714286,
+      "max_visible_connections": 8,
+      "positive_samples": 75
+    },
+    {
+      "state": "active",
+      "wait_event_type": "Lock",
+      "wait_event": "tuple",
+      "observations": 119,
+      "mean_visible_connections": 1.184873949579832,
+      "max_visible_connections": 14,
+      "positive_samples": 43
+    },
+    {
+      "state": "active",
+      "wait_event_type": "not_waiting_or_not_visible",
+      "wait_event": "none_or_not_visible",
+      "observations": 119,
+      "mean_visible_connections": 0.025210084033613446,
+      "max_visible_connections": 2,
+      "positive_samples": 2
+    },
+    {
+      "state": "idle",
+      "wait_event_type": "Client",
+      "wait_event": "ClientRead",
+      "observations": 119,
+      "mean_visible_connections": 23.529411764705884,
+      "max_visible_connections": 30,
+      "positive_samples": 119
+    },
+    {
+      "state": "idle in transaction",
+      "wait_event_type": "Client",
+      "wait_event": "ClientRead",
+      "observations": 119,
+      "mean_visible_connections": 2.0252100840336134,
+      "max_visible_connections": 7,
+      "positive_samples": 115
+    }
+  ],
+  "gpu_utilization_sample_percent": {
+    "0": {
+      "samples": 119,
+      "p50": 0.0,
+      "p95": 89.0,
+      "max": 96.0,
+      "mean": 24.084034
+    },
+    "1": {
+      "samples": 119,
+      "p50": 0.0,
+      "p95": 91.0,
+      "max": 97.0,
+      "mean": 42.016807
+    },
+    "2": {
+      "samples": 119,
+      "p50": 0.0,
+      "p95": 90.1,
+      "max": 97.0,
+      "mean": 43.521008
+    },
+    "3": {
+      "samples": 119,
+      "p50": 88.0,
+      "p95": 90.0,
+      "max": 98.0,
+      "mean": 59.352941
+    }
+  },
+  "http_status_count_deltas": [
+    {
+      "method": "GET",
+      "route": "/metrics",
+      "status": "200",
+      "count": 236.0
+    },
+    {
+      "method": "GET",
+      "route": "/readyz",
+      "status": "200",
+      "count": 982.0
+    },
+    {
+      "method": "GET",
+      "route": "/v1/batches/{bid}",
+      "status": "200",
+      "count": 4069.0
+    },
+    {
+      "method": "GET",
+      "route": "/v1/files/{fid}/content",
+      "status": "200",
+      "count": 14.0
+    },
+    {
+      "method": "GET",
+      "route": "/v1/overview",
+      "status": "200",
+      "count": 29.0
+    },
+    {
+      "method": "POST",
+      "route": "/internal/tasks/claim",
+      "status": "200",
+      "count": 1280.0
+    },
+    {
+      "method": "POST",
+      "route": "/internal/tasks/{tid}/complete",
+      "status": "200",
+      "count": 1424.0
+    },
+    {
+      "method": "POST",
+      "route": "/internal/workers/register",
+      "status": "200",
+      "count": 47.0
+    },
+    {
+      "method": "POST",
+      "route": "/v1/batches",
+      "status": "200",
+      "count": 32.0
+    },
+    {
+      "method": "POST",
+      "route": "/v1/files",
+      "status": "200",
+      "count": 32.0
+    }
+  ],
+  "first_relation_sizes": [
+    {
+      "relation": "attempts",
+      "heap_bytes": 1138688,
+      "total_bytes": 2269184
+    },
+    {
+      "relation": "batches",
+      "heap_bytes": 122880,
+      "total_bytes": 229376
+    },
+    {
+      "relation": "files",
+      "heap_bytes": 131072,
+      "total_bytes": 7307264
+    },
+    {
+      "relation": "idempotency",
+      "heap_bytes": 163840,
+      "total_bytes": 212992
+    },
+    {
+      "relation": "tasks",
+      "heap_bytes": 7864320,
+      "total_bytes": 20135936
+    },
+    {
+      "relation": "tenant_queues",
+      "heap_bytes": 8192,
+      "total_bytes": 81920
+    }
+  ],
+  "last_relation_sizes": [
+    {
+      "relation": "attempts",
+      "heap_bytes": 1753088,
+      "total_bytes": 3432448
+    },
+    {
+      "relation": "batches",
+      "heap_bytes": 122880,
+      "total_bytes": 237568
+    },
+    {
+      "relation": "files",
+      "heap_bytes": 131072,
+      "total_bytes": 14376960
+    },
+    {
+      "relation": "idempotency",
+      "heap_bytes": 163840,
+      "total_bytes": 237568
+    },
+    {
+      "relation": "tasks",
+      "heap_bytes": 11714560,
+      "total_bytes": 34201600
+    },
+    {
+      "relation": "tenant_queues",
+      "heap_bytes": 16384,
+      "total_bytes": 90112
+    }
+  ]
+}

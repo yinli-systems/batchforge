@@ -1,0 +1,4 @@
+Metadata-Version: 2.1
+Name: batchforge-mig-platform
+Version: 0.1
+Summary: Opt-in application-local vLLM 0.10.2 MIG UUID platform selector

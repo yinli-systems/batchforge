@@ -3,12 +3,19 @@
 Durable AI batch processing with a PostgreSQL control plane, fenced GPU workers,
 an OpenAI-shaped batch API, and an operations console backed by live data.
 
-The first release runs across two Pods: four shared H100 GPU replicas and an
-independent Blackwell MIG worker, coordinated by one durable control plane.
-A 512-request cross-Pod workload completed with 512 unique results; database
-records attribute work to both Pods. Fault tests cover worker death, lost
-acknowledgements and stale attempts.
+The current deployment runs fixed-revision Qwen2.5-7B BF16 replicas on four
+shared H100 devices and sixteen Blackwell MIG 24GB slices. Each Pod has two
+independent API processes and a private replica router, backed by managed Neon
+PostgreSQL 17. Workers use their own local API; inference no longer depends on
+an operator laptop or the other GPU Pod. An app-owned watchdog restarts crashed
+processes with identity checks, bounded backoff and GPU memory gates.
+Fault tests cover API/worker death, lost acknowledgements, stale attempts,
+read-only database rejection and transactional usage.
 See [validation](docs/validation.md) for workloads, measurements and limits.
+The managed database is currently on its free plan, without a production SLA.
+Public paid ingress was prepared and deferred by the operator; access remains
+private. See [availability](docs/ha.md), [ingress](docs/ingress.md), and
+[second-Pod deployment](docs/pod2.md).
 
 ## Features
 
@@ -49,6 +56,10 @@ quality recommendation for every workload. The optional GPU profile starts one
 replica. Existing engines can be configured with `INFERENCE_BASE_URLS` instead.
 The native Runpod deployment has been exercised; the Compose file is provided
 but its image build has not been run in the initial environment.
+Compose runs a one-shot migration before starting the API. For a native
+deployment, run `python -m backend.migrate --bootstrap` with the schema-owner
+database connection before API rollout. API startup verifies schema and performs
+no DDL; use a separate low-privilege runtime login.
 
 ## Develop and verify
 
@@ -60,7 +71,7 @@ uv run --no-sync python devtools/run_checks.py
 
 The helper starts an isolated real PostgreSQL cluster, runs database/worker tests,
 then stops it. It does not discover or signal other PostgreSQL processes.
-With Node 22 installed for development, run `node --test frontend/tests/*.test.js`
+With Node 22 or newer installed for development, run `node --test frontend/tests/*.test.js`
 for cancellation-race and retry-acknowledgement regressions. Node is not required
 to serve or use the console.
 Alternatively set `TEST_DATABASE_URL` to a **disposable** database: integration
@@ -113,5 +124,6 @@ private. A running deployment separately requires HTTPS and access controls.
 
 See [architecture](docs/architecture.md), [operations](docs/operations.md), and
 [worker operations](ops/README.md) for lease semantics, deployment and recovery.
-The [second-Pod guide](docs/pod2.md) documents the current private SSH application
-relay and its temporary dependence on the operator host.
+The [second-Pod guide](docs/pod2.md) records all sixteen MIG slices, real model execution,
+private connectivity, and the retired laptop relay. Management SSH is separate
+from the inference data path.

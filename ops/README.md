@@ -1,5 +1,10 @@
 # Operating BatchForge
 
+For the running two-Pod Qwen2.5-7B deployment, managed database, private console
+and process watchdogs, use the current [operations runbook](../docs/operations.md).
+The small-model container configuration below is a development example. It is
+not the configuration of the measured 7B fleet.
+
 The API is a control plane. A worker calls configured, separately managed
 OpenAI-compatible model engines. Neither service falls back to generated fixture
 responses. The `worker.fake_engine` service is explicitly test-only, refuses
@@ -57,6 +62,10 @@ same pins. The container recipe has not been built in the current environment.
 
 ```sh
 cd /root/batchforge-runtime/app
+# First apply migrations with the owner's DATABASE_URL in the environment.
+# --bootstrap is only for an explicitly configured new development tenant.
+/root/batchforge-runtime/venv/bin/python -m backend.migrate --bootstrap
+# API processes use the restricted runtime DATABASE_URL afterward.
 /root/batchforge-runtime/venv/bin/python ops/manage.py start api --python /root/batchforge-runtime/venv/bin/python
 /root/batchforge-runtime/venv/bin/python ops/manage.py start engine --name gpu0 --gpu 0 --port 8001 --python /root/batchforge-runtime/engine-venv/bin/python
 /root/batchforge-runtime/venv/bin/python ops/manage.py start worker --python /root/batchforge-runtime/venv/bin/python
@@ -72,6 +81,12 @@ service, or edits global services. A shared host's existing processes belong to
 other workloads. Add engines on other GPUs with different `--name`/`--port`
 values; point the worker at their local URLs. Every endpoint is an independent
 replica, not tensor parallelism.
+
+The current fleet has app-local watchdogs. Stop its watchdog before intentionally
+stopping a managed child, then restore it after maintenance; otherwise it will
+restart that child. API unready responses alone never cause watchdog restarts.
+The watchdog is not whole-Pod boot/replacement orchestration. Follow the exact
+manifest names and private configurations in the current runbook.
 
 SIGTERM stops new claims and drains existing work while renewing leases, up to
 `WORKER_SHUTDOWN_SECONDS` (default 240 seconds). Supervisor grace is 250 seconds.
@@ -131,6 +146,27 @@ have a verified successful output. Partial, failed, and timed-out runs still
 write JSON and exit nonzero. Output-validation download time is reported
 separately from the submission-to-terminal throughput interval. The benchmark
 does not project a small test into daily capacity and does not evaluate quality.
+
+For repeatable public-document workloads, build exact JSONL separately and pass
+it with `--input-jsonl`. Random run IDs modify custom IDs, not model messages:
+
+```sh
+python -m scripts.public_workload build --dataset .runtime/public-data/dev-v1.1.json \
+  --profile analysis --tasks 2048 --output .runtime/analysis.jsonl \
+  --manifest .runtime/analysis-manifest.json
+python scripts/benchmark.py --model Qwen/Qwen2.5-7B-Instruct --tasks 2048 \
+  --batches 32 --max-tokens 512 --input-jsonl .runtime/analysis.jsonl \
+  --output-dir .runtime/analysis-outputs --report .runtime/analysis-report.json
+python -m scripts.public_workload evaluate --manifest .runtime/analysis-manifest.json \
+  --outputs .runtime/analysis-outputs --report .runtime/analysis-quality.json
+```
+
+The dataset is [SQuAD 1.1 development](https://rajpurkar.github.io/SQuAD-explorer/),
+CC BY-SA 4.0, with the source SHA recorded in the manifest. `answer` uses a
+96-token cap; `analysis` uses 512 and reports requested versus actual explanation
+length; `translate` uses 1,024 and checks the JSON envelope without claiming
+translation fidelity. Use a fresh output directory for each run. Different
+profiles, GPU counts or output lengths are separate capacity observations.
 
 For deterministic HTTP integration tests only:
 

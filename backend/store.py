@@ -8,6 +8,7 @@ import json
 import secrets
 from datetime import datetime, timezone
 
+import psycopg
 from psycopg.types.json import Jsonb
 
 from .validation import body_hash, validate_rows, validate_usage
@@ -180,7 +181,13 @@ class Store:
 
     async def cancel(self, tenant, bid):
         async with self.pool.connection() as conn, conn.transaction():
-            await self.lock_queue(conn, tenant, self.settings.model_name)
+            # A rolling model change does not alter historical batch identity.
+            # Lock its actual queue before the batch, even if this API now serves
+            # another model. Using current MODEL_NAME violates the lock order.
+            source = await one(conn, "SELECT model FROM batches WHERE id=%s AND tenant_id=%s", (bid, tenant))
+            if not source:
+                raise APIError(404, "Batch not found", "not_found")
+            await self.lock_queue(conn, tenant, source["model"])
             row = await one(conn, "SELECT * FROM batches WHERE id=%s AND tenant_id=%s FOR UPDATE", (bid, tenant))
             if not row:
                 raise APIError(404, "Batch not found", "not_found")
@@ -199,6 +206,8 @@ class Store:
                 raise APIError(404, "Batch not found", "not_found")
             if source["status"] == "in_progress":
                 raise APIError(409, "Wait until source batch is terminal before retrying", "batch_not_terminal")
+            if source["model"] != self.settings.model_name:
+                raise APIError(409, "Source model is not currently served; submit a new batch using an available model", "model_unavailable")
             rows = await (await conn.execute("SELECT custom_id,body FROM tasks WHERE batch_id=%s AND status='failed' ORDER BY id", (bid,))).fetchall()
             if not rows:
                 raise APIError(409, "Source batch has no failed tasks", "no_failed_tasks")
@@ -242,6 +251,8 @@ class Store:
         return {"worker_id": worker_id, "heartbeat_interval_seconds": max(1, self.settings.lease_seconds // 3), "lease_seconds": self.settings.lease_seconds}
 
     async def claim(self, worker_id, model, limit):
+        if self.settings.sql_claim_enabled:
+            return await self.sql_attempt("claim", (worker_id, model, limit, self.settings.lease_seconds))
         async with self.pool.connection() as conn, conn.transaction():
             worker = await one(conn, "SELECT * FROM workers WHERE id=%s FOR UPDATE", (worker_id,))
             if not worker or worker["model"] != model:
@@ -293,6 +304,8 @@ class Store:
             raise APIError(409, "Lease expired, cancelled, or superseded; discard this result", "stale_attempt")
 
     async def heartbeat(self, tid, worker_id, token):
+        if self.settings.sql_completion_enabled:
+            return await self.sql_attempt("heartbeat", (tid, worker_id, token, self.settings.lease_seconds))
         async with self.pool.connection() as conn, conn.transaction():
             await conn.execute("UPDATE workers SET last_seen_at=clock_timestamp() WHERE id=%s", (worker_id,))
             task = await self.locked_task(conn, tid)
@@ -303,6 +316,8 @@ class Store:
 
     async def complete(self, tid, worker_id, token, response):
         prompt, completion = validate_usage(response)
+        if self.settings.sql_completion_enabled:
+            return await self.sql_attempt("complete", (tid, worker_id, token, Jsonb(response), prompt, completion))
         async with self.pool.connection() as conn, conn.transaction():
             await conn.execute("UPDATE workers SET last_seen_at=clock_timestamp() WHERE id=%s", (worker_id,))
             task = await self.locked_task(conn, tid)
@@ -315,6 +330,33 @@ class Store:
             await conn.execute("UPDATE workers SET last_seen_at=clock_timestamp() WHERE id=%s", (worker_id,))
             await self.finish_batch(conn, task["batch_id"])
             return {"ok": True}
+
+    async def sql_attempt(self, operation, values):
+        """One implicit statement transaction; SQL owns all locks and fencing.
+
+        Do not wrap this in conn.transaction(): that adds client BEGIN/COMMIT
+        round trips. Pool connections use autocommit and a SELECT function call
+        is itself a PostgreSQL atomic transaction.
+        """
+        statements = {
+            "heartbeat": "SELECT public.batchforge_heartbeat(%s,%s,%s,%s) AS result",
+            "complete": "SELECT public.batchforge_complete(%s,%s,%s,%s,%s,%s) AS result",
+            "claim": "SELECT public.batchforge_claim(%s,%s,%s,%s) AS result",
+        }
+        try:
+            async with self.pool.connection() as conn:
+                row = await one(conn, statements[operation], values)
+                return row["result"]
+        except psycopg.Error as exc:
+            if exc.sqlstate == "BF404":
+                raise APIError(404, "Task not found", "not_found") from None
+            if exc.sqlstate == "BF409":
+                raise APIError(409, "Lease expired, cancelled, or superseded; discard this result", "stale_attempt") from None
+            if exc.sqlstate == "BF410":
+                raise APIError(409, "Register this worker/model before claiming", "worker_not_registered") from None
+            if exc.sqlstate == "BF400":
+                raise APIError(400, "Invalid worker result or lease configuration") from None
+            raise
 
     async def failure_locked(self, conn, task, error, retryable, expired=False):
         retry = retryable and task["attempts"] < task["max_attempts"]

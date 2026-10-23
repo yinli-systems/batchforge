@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-23T21:10:30.867384+00:00",
+  "passed": true,
+  "source": "private primary Pod application backup directory",
+  "destination": "local workstation .runtime/backups",
+  "snapshot_filename": "batchforge-20261023T210307Z-b8e28561.dump",
+  "snapshot_bytes": 10246398,
+  "snapshot_sha256": "2d5c959b0ade7f794500d26abc62df7d1dc2f46cca2ffc2ca033279d16d65f77",
+  "expected_snapshot_sha256": "2d5c959b0ade7f794500d26abc62df7d1dc2f46cca2ffc2ca033279d16d65f77",
+  "snapshot_mode": "0o600",
+  "directory_mode": "0o700",
+  "independent_of_primary_pod_container": true,
+  "transfer": "SCP over verified SSH host key",
+  "included_in_git": false,
+  "automatic_scheduling_configured": false,
+  "retention_policy_configured": false,
+  "limitations": [
+    "Local workstation copy; no separate encrypted object-storage backup or automated retention policy claim",
+    "Filesystem mode is not encryption"
+  ]
+}

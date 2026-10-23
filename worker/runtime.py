@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import logging
 import random
 import signal
@@ -29,6 +30,29 @@ class InferenceError(Exception):
         self.code, self.retryable = code, retryable
 
 
+def is_strict_json_object(content: Any) -> bool:
+    """Validate raw output without repairing fences, control bytes or constants."""
+    if not isinstance(content, str):
+        return False
+
+    def reject_constant(_value):
+        raise ValueError("Non-finite JSON constant")
+
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Duplicate JSON object field")
+            result[key] = value
+        return result
+
+    try:
+        value = json.loads(content, parse_constant=reject_constant, object_pairs_hook=unique_object)
+    except (ValueError, RecursionError):
+        return False
+    return isinstance(value, dict)
+
+
 @dataclass
 class Engine:
     url: str
@@ -47,6 +71,9 @@ class Worker:
         self._capacity_changed = asyncio.Event()
         self._ready_engine_count = 0
         self._registered_ready_engine_count: int | None = None
+        self._control_origins = settings.control_origins
+        self._control_origin_index = 0
+        self._control_origin_epoch = 0
         self.active: set[asyncio.Task] = set()
         self.engines = [Engine(url) for url in settings.inference_urls]
         self.lease_seconds = 90.0
@@ -72,18 +99,47 @@ class Worker:
 
     async def _post(self, path: str, body: dict) -> dict:
         operation = path.rsplit("/", 1)[-1]
+        origin_epoch = self._control_origin_epoch
+        origin = self._control_origins[self._control_origin_index]
         try:
-            response = await self.control.post(path, json=body)
+            try:
+                # Exactly one HTTP attempt here: claims and other POSTs may
+                # have committed before an acknowledgement was lost. Changing
+                # origin affects the NEXT caller request, never replays this one.
+                response = await self.control.post(origin + path, json=body)
+            except httpx.TransportError:
+                self._advance_control_origin(origin_epoch)
+                raise
+            if response.status_code >= 500:
+                self._advance_control_origin(origin_epoch)
             if response.status_code == 409:
                 raise StaleAttempt("Control plane fenced the attempt")
             response.raise_for_status()
-            value = response.json()
+            try:
+                value = response.json()
+                if not isinstance(value, dict):
+                    raise ValueError("Control plane response must be an object")
+            except ValueError:
+                self._advance_control_origin(origin_epoch)
+                raise
         except Exception:
             self.metrics.requests.labels(operation, "error").inc()
             raise
         self.metrics.requests.labels(operation, "ok").inc()
         self.metrics.last_control_success = time.monotonic()
         return value
+
+    def _advance_control_origin(self, observed_epoch: int) -> None:
+        if len(self._control_origins) < 2 or observed_epoch != self._control_origin_epoch:
+            return
+        # Concurrent requests to an old origin cannot rotate a newer decision,
+        # even after the configured origin index has cycled back to that host.
+        self._control_origin_index = (self._control_origin_index + 1) % len(self._control_origins)
+        self._control_origin_epoch += 1
+        self.metrics.control_origin.set(self._control_origin_index)
+        self.metrics.control_failovers.inc()
+        log.warning("Control origin failed; subsequent requests will use configured origin index %s",
+                    self._control_origin_index)
 
     async def register(self) -> None:
         ready_engine_count = self._ready_engine_count
@@ -94,7 +150,8 @@ class Worker:
             "concurrency": self.config.slots,
             "metadata": {"engine_count": len(self.engines), "ready_engine_count": ready_engine_count,
                          "max_model_len": self.config.max_model_len,
-                         "token_budget": self.config.token_budget, "version": "0.1.0"},
+                         "token_budget": self.config.token_budget, "version": "0.1.0",
+                         "control_origin_count": len(self._control_origins)},
         })
         if result["worker_id"] != self.config.worker_id:
             raise ValueError("Control plane changed the worker identity")
@@ -225,6 +282,19 @@ class Worker:
         except (KeyError, TypeError, ValueError) as exc:
             raise InferenceError("invalid_engine_response", "Engine did not return valid choices and token usage", False) from exc
         engine.failures = 0
+        if task["body"].get("response_format") == {"type": "json_object"}:
+            try:
+                content = value["choices"][0]["message"]["content"]
+            except (KeyError, TypeError):
+                content = None
+            if not is_strict_json_object(content):
+                # These counters observe actual engine work, independently of
+                # whether a durable fail acknowledgement can be confirmed.
+                # Rejected output is never sent as accepted completion usage.
+                self.metrics.invalid_outputs.inc()
+                self.metrics.rejected_prompt.inc(usage["prompt_tokens"])
+                self.metrics.rejected_generated.inc(usage["completion_tokens"])
+                raise InferenceError("invalid_json_output", "Model output did not satisfy the requested JSON object format") from None
         return value
 
     async def _invoke_available(self, task: dict) -> dict:

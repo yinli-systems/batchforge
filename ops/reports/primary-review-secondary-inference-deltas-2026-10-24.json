@@ -1,0 +1,245 @@
+{
+  "scope": "Read-only comparison of archived secondary worker inference histograms; includes only worker-observed model HTTP durations, not database waiting",
+  "sql10_original6": {
+    "inference_count": 624.0,
+    "inference_seconds_sum": 5655.539433946426,
+    "mean_seconds": 9.063364477478245,
+    "completed": 624.0,
+    "claim_calls": 1236.0,
+    "histogram_cumulative_buckets": {
+      "0.1": 0.0,
+      "0.25": 0.0,
+      "0.5": 0.0,
+      "1.0": 0.0,
+      "2.0": 0.0,
+      "5.0": 1.0,
+      "10.0": 458.0,
+      "20.0": 623.0,
+      "40.0": 624.0,
+      "80.0": 624.0,
+      "160.0": 624.0,
+      "320.0": 624.0,
+      "inf": 624.0
+    },
+    "workers": [
+      {
+        "port": 9200,
+        "inference_count": 87.0,
+        "mean_seconds": 9.381158698321421,
+        "completed": 87.0,
+        "claim_calls": 208.0
+      },
+      {
+        "port": 9201,
+        "inference_count": 98.0,
+        "mean_seconds": 8.857888784559803,
+        "completed": 98.0,
+        "claim_calls": 191.0
+      },
+      {
+        "port": 9202,
+        "inference_count": 119.0,
+        "mean_seconds": 8.96614760362192,
+        "completed": 119.0,
+        "claim_calls": 220.0
+      },
+      {
+        "port": 9203,
+        "inference_count": 104.0,
+        "mean_seconds": 9.0764760276915,
+        "completed": 104.0,
+        "claim_calls": 197.0
+      },
+      {
+        "port": 9204,
+        "inference_count": 108.0,
+        "mean_seconds": 9.044398427721278,
+        "completed": 108.0,
+        "claim_calls": 211.0
+      },
+      {
+        "port": 9205,
+        "inference_count": 108.0,
+        "mean_seconds": 9.107272448155358,
+        "completed": 108.0,
+        "claim_calls": 209.0
+      }
+    ]
+  },
+  "sql20_original6": {
+    "inference_count": 377.0,
+    "inference_seconds_sum": 3444.868888670637,
+    "mean_seconds": 9.137583259073308,
+    "completed": 377.0,
+    "claim_calls": 1404.0,
+    "histogram_cumulative_buckets": {
+      "0.1": 0.0,
+      "0.25": 0.0,
+      "0.5": 0.0,
+      "1.0": 0.0,
+      "2.0": 0.0,
+      "5.0": 0.0,
+      "10.0": 266.0,
+      "20.0": 376.0,
+      "40.0": 377.0,
+      "80.0": 377.0,
+      "160.0": 377.0,
+      "320.0": 377.0,
+      "inf": 377.0
+    },
+    "workers": [
+      {
+        "port": 9200,
+        "inference_count": 33.0,
+        "mean_seconds": 8.80170545457319,
+        "completed": 33.0,
+        "claim_calls": 219.0
+      },
+      {
+        "port": 9201,
+        "inference_count": 107.0,
+        "mean_seconds": 9.214869441271425,
+        "completed": 107.0,
+        "claim_calls": 249.0
+      },
+      {
+        "port": 9202,
+        "inference_count": 69.0,
+        "mean_seconds": 9.099313392868668,
+        "completed": 69.0,
+        "claim_calls": 237.0
+      },
+      {
+        "port": 9203,
+        "inference_count": 56.0,
+        "mean_seconds": 8.900038089800157,
+        "completed": 56.0,
+        "claim_calls": 240.0
+      },
+      {
+        "port": 9204,
+        "inference_count": 80.0,
+        "mean_seconds": 9.383273454662412,
+        "completed": 80.0,
+        "claim_calls": 238.0
+      },
+      {
+        "port": 9205,
+        "inference_count": 32.0,
+        "mean_seconds": 9.109529529498104,
+        "completed": 32.0,
+        "claim_calls": 221.0
+      }
+    ]
+  },
+  "sql20_added10": {
+    "inference_count": 743.0,
+    "inference_seconds_sum": 6834.035384863906,
+    "mean_seconds": 9.19789419227982,
+    "completed": 743.0,
+    "claim_calls": 2362.0,
+    "histogram_cumulative_buckets": {
+      "0.1": 0.0,
+      "0.25": 0.0,
+      "0.5": 0.0,
+      "1.0": 0.0,
+      "2.0": 0.0,
+      "5.0": 0.0,
+      "10.0": 556.0,
+      "20.0": 741.0,
+      "40.0": 743.0,
+      "80.0": 743.0,
+      "160.0": 743.0,
+      "320.0": 743.0,
+      "inf": 743.0
+    },
+    "workers": [
+      {
+        "port": 9206,
+        "inference_count": 66.0,
+        "mean_seconds": 9.345494901256505,
+        "completed": 66.0,
+        "claim_calls": 234.0
+      },
+      {
+        "port": 9207,
+        "inference_count": 87.0,
+        "mean_seconds": 8.953504671907687,
+        "completed": 87.0,
+        "claim_calls": 250.0
+      },
+      {
+        "port": 9208,
+        "inference_count": 80.0,
+        "mean_seconds": 8.998414452224461,
+        "completed": 80.0,
+        "claim_calls": 236.0
+      },
+      {
+        "port": 9209,
+        "inference_count": 79.0,
+        "mean_seconds": 9.207793474391536,
+        "completed": 79.0,
+        "claim_calls": 229.0
+      },
+      {
+        "port": 9210,
+        "inference_count": 70.0,
+        "mean_seconds": 9.953230546901718,
+        "completed": 70.0,
+        "claim_calls": 235.0
+      },
+      {
+        "port": 9211,
+        "inference_count": 77.0,
+        "mean_seconds": 8.934335074038245,
+        "completed": 77.0,
+        "claim_calls": 229.0
+      },
+      {
+        "port": 9212,
+        "inference_count": 73.0,
+        "mean_seconds": 8.769325022861977,
+        "completed": 73.0,
+        "claim_calls": 239.0
+      },
+      {
+        "port": 9213,
+        "inference_count": 83.0,
+        "mean_seconds": 9.40212093497569,
+        "completed": 83.0,
+        "claim_calls": 242.0
+      },
+      {
+        "port": 9214,
+        "inference_count": 55.0,
+        "mean_seconds": 9.32020309893044,
+        "completed": 55.0,
+        "claim_calls": 235.0
+      },
+      {
+        "port": 9215,
+        "inference_count": 73.0,
+        "mean_seconds": 9.221521925657177,
+        "completed": 73.0,
+        "claim_calls": 233.0
+      }
+    ]
+  },
+  "limitations": [
+    "Different finite sample sizes and scheduling assignment; no causal claim about power, memory bandwidth, CPU or database",
+    "Mean model request time includes local vLLM queueing and HTTP response, not only GPU kernel execution",
+    "No GPU probes or runtime mutations were performed",
+    "Snapshot windows differ and contain idle time outside inference benchmarks; raw claim-call deltas are not comparable workload request rates"
+  ],
+  "snapshot_bounds": {
+    "sql10": {
+      "before": "2026-10-23T21:03:43.383433+00:00",
+      "after": "2026-10-23T21:09:17.076929+00:00"
+    },
+    "sql20": {
+      "before": "2026-10-23T21:23:58.146284+00:00",
+      "after": "2026-10-23T21:31:16.446734+00:00"
+    }
+  }
+}

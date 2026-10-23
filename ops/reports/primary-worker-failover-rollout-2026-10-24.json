@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-23T21:00:50.888303+00:00",
+  "archive_sha256": "7802df9b5ae567ca5ebec67808a83e5e80b1667467128de31f053fe0b6bf6001",
+  "archive_bytes": 71680,
+  "worker_envs": [
+    "/root/batchforge-runtime/app/.env.worker7b-gpu0",
+    "/root/batchforge-runtime/app/.env.worker7b-gpu1",
+    "/root/batchforge-runtime/app/.env.worker7b-gpu2",
+    "/root/batchforge-runtime/app/.env.worker7b-gpu3"
+  ],
+  "control_plane_origins": [
+    "http://127.0.0.1:8080",
+    "http://127.0.0.1:8082",
+    "http://127.0.0.1:8083"
+  ],
+  "restart_pending": false,
+  "services_restarted": true,
+  "database_credentials_in_worker_config": false,
+  "completed_at": "2026-10-23T21:01:22.483455+00:00",
+  "workers": [
+    {
+      "worker_id": "primary-qwen7b-gpu0",
+      "managed_name": "worker-gpu0",
+      "pid": 107120,
+      "ready_http_status": 200,
+      "metrics": {
+        "batchforge_worker_capacity": 8.0,
+        "batchforge_worker_ready_engines": 1.0,
+        "batchforge_worker_control_failovers_total": 0.0,
+        "batchforge_worker_control_origin_index": 0.0
+      }
+    },
+    {
+      "worker_id": "primary-qwen7b-gpu1",
+      "managed_name": "worker-gpu1",
+      "pid": 107126,
+      "ready_http_status": 200,
+      "metrics": {
+        "batchforge_worker_capacity": 8.0,
+        "batchforge_worker_ready_engines": 1.0,
+        "batchforge_worker_control_failovers_total": 0.0,
+        "batchforge_worker_control_origin_index": 0.0
+      }
+    },
+    {
+      "worker_id": "primary-qwen7b-gpu2",
+      "managed_name": "worker-gpu2",
+      "pid": 107132,
+      "ready_http_status": 200,
+      "metrics": {
+        "batchforge_worker_capacity": 8.0,
+        "batchforge_worker_ready_engines": 1.0,
+        "batchforge_worker_control_failovers_total": 0.0,
+        "batchforge_worker_control_origin_index": 0.0
+      }
+    },
+    {
+      "worker_id": "primary-qwen7b-gpu3",
+      "managed_name": "worker-gpu3",
+      "pid": 107138,
+      "ready_http_status": 200,
+      "metrics": {
+        "batchforge_worker_capacity": 8.0,
+        "batchforge_worker_ready_engines": 1.0,
+        "batchforge_worker_control_failovers_total": 0.0,
+        "batchforge_worker_control_origin_index": 0.0
+      }
+    }
+  ],
+  "all_four_ready": true,
+  "engine_pids_unchanged": true,
+  "engine_pids": {
+    "0": 98148,
+    "1": 99173,
+    "2": 100099,
+    "3": 101034
+  },
+  "deployed_worker_runtime_sha256": "a7fad80fddc14430299f2f5fc74d4fd849e2dff244ccdfb6ee9ed097e4397a5a",
+  "failover_outage_test_performed": false
+}

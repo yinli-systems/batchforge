@@ -1,130 +1,175 @@
 # Validation
 
-Measurements below were observed on 2026-10-23 UTC. They are short-run results,
-not a daily capacity forecast or a production availability claim.
+Current evidence comes from real PostgreSQL, native services on both existing
+GPU Pods, and public-document inference on Qwen2.5-7B. Private SSH ingress is the
+owner's selected policy. Short runs below establish observed behavior, not a
+24-hour capacity guarantee or a production availability SLA.
 
-## Correctness
+## Correctness and deployability
 
-The complete local suite currently passes **34 tests**, using PostgreSQL 16.2
-for database tests. Coverage includes concurrent claim capacity, tenant isolation,
-key rotation/revocation, cancellation races, deadline fencing, expired leases,
-idempotency conflicts and replay, concurrent admission limits, result streaming,
-transactional usage, endpoint failure handling, and event-driven worker refill.
-Three additional persisted console regressions pass in Node/V8: cancellation
-versus completion, confirmed cancellation, and retry after a committed-but-lost
-acknowledgement including recovery after tab reload. They run with
-`node --test frontend/tests/*.test.js` and are included in the CI configuration.
+The frozen v3 implementation passed the full local suite of 162 tests, with
+one Linux-only case skipped on macOS, before the subsequent outage-probe
+additions. It exercises all four combinations of Python/SQL claim and completion
+paths over real PostgreSQL: tenant isolation, capacity, admission and fair queue
+accounting, cancellation/deadline races, lease expiry, duplicate replay,
+transactional usage, terminal output metadata, least-privilege runtime operation,
+compatible migration rollouts and two TCP API replicas surviving an owned API
+process crash. New device-enumeration and backup regressions are included in the
+final check command, `python devtools/run_checks.py`.
 
-The HTTP chaos test launches its own API, test engine and worker subprocesses,
-SIGKILLs its worker after execution starts, restarts with a new identity, and
-drops a committed claim acknowledgement through a test proxy. It recovered four
-expired attempts and produced ten unique outputs for ten tasks. Late completion
-was rejected with 409. Its responses are explicitly synthetic and are never used
-as GPU performance evidence. See [observed report](../ops/reports/http-chaos-2026-10-23.json).
+The persisted console action regressions passed 3/3 using Node v24.21.0. They
+cover cancellation/completion races and a committed retry whose acknowledgement
+is lost, including recovery after tab reload. Backup helper checks passed 5/5:
+version mismatch rejection, private password delivery, atomic archive visibility,
+SHA validation and failure cleanup. Wheel construction succeeded and its archive
+contains `schema.sql` and the additive migration SQL. Container builds have not
+been exercised; the native deployment is the verified path.
 
-The separate [protocol probe](../ops/reports/failure-probe-2026-10-23.json) verifies
-cancellation, expiry, stale-result rejection and idempotent accepted completion.
+The local physical replication probe also verified synchronous acknowledgement,
+64 surviving committed rows after primary failure, standby read-only behavior,
+and manual promotion after fencing the stopped primary. It uses one machine and
+is separate from the deployed managed Neon topology; it is not cross-cloud or
+multi-region HA evidence.
 
-## Real GPU inference
+## Managed state and independent control planes
 
-Hardware: four shared NVIDIA H100 80GB HBM3 devices, four independent TP1 engines,
-FP16, eager execution, eight sequences per GPU, 2,048-token engine context cap,
-and a conservative 0.06 GPU-memory allocation target. Other host workloads were
-left running. Model and runtime versions are recorded in
-[hardware-primary](../ops/reports/hardware-primary-2026-10-23.json).
+The [Neon cutover](../ops/reports/neon-cutover-2026-10-24.json) drained all source
+writers, copied 2,603 tasks across nine application tables into an empty target,
+and verified ordered row hashes/counts before committing. The old local source
+is fenced read-only. Both Pods now use direct, verify-full PostgreSQL 17 TLS
+connections with a restricted runtime login. The operator laptop's old worker
+broker was closed; workers call their own Pod's loopback control plane.
 
-- Model: `Qwen/Qwen2.5-0.5B-Instruct`.
-- Model revision: `7ae557604adf67be50417f59c2c2f167def9a775`.
-- vLLM 0.10.2, PyTorch 2.8.0 / CUDA 12.8.
-- Transformers 4.55.2, tokenizers 0.21.4, huggingface-hub 0.34.4.
-- Short classification prompt, temperature 0, output limit 64 tokens.
-- Every measured output contained 14 generated tokens; input lengths varied with
-  request IDs. This is not a long-output, long-context or model-quality test.
+Each Pod runs two stateless APIs behind its own gateway and an app-local process
+watchdog. A gateway does not replay uncertain mutation requests. Worker failover
+selects a different origin for the next explicit request and retains the same
+attempt token for uncertain completion acknowledgement. Process supervision is
+not Pod replacement or independent client ingress. The Neon free plan has no
+production SLA; no database failure-domain or zero-RTO guarantee is inferred
+from four API processes.
 
-| Run | Tasks / batches | Client location | Observed elapsed | Completed/s | Failed |
-| --- | --- | --- | --- | --- | --- |
-| Smoke | 32 / 4 | Laptop through SSH | 3.353 s | 9.543 | 0 |
-| Initial polling | 1,024 / 32 | Native Pod client | 24.844 s | 41.217 | 0 |
-| Event-driven refill | 1,024 / 32 | Native Pod client | 13.126 s | 78.014 | 0 |
-| Two-Pod execution | 512 / 16 | Native primary Pod client | 9.930 s | 51.563 | 0 |
+The owner-approved restricted machine SSH link proved direct Pod-to-Pod operation
+before the second Pod obtained independent APIs. It is no longer required in the
+inference path. No existing unrelated GPU process or Pod configuration was reset.
 
-Every run downloaded and checked results: unique custom IDs, known inputs,
-output counts matching durable completed counts, no unfinished batches and no
-test-fixture marker. The large runs exercised all four GPU workers.
+## Real 7B configuration
 
-The two-Pod run added one Blackwell RTX PRO 6000 `MIG 1g.24gb` worker connected
-through the private SSH application relay. Database attempt records attribute
-496 accepted completions to the H100 Pod and 16 to the MIG Pod. This proves
-cross-Pod task execution; adding a remote worker through a laptop relay is not
-an established throughput improvement. See the [measurement](../ops/reports/gpu-multipod-2026-10-23.json)
-and [database attribution](../ops/reports/multipod-distribution-2026-10-23.json).
-Only one of the second Pod's six CUDA-visible MIG devices was used.
+- Model: `Qwen/Qwen2.5-7B-Instruct`, revision
+  `a09a35458c702b33eeacc393d103063234e8bc28`, 7,615,616,512 parameters.
+- BF16, vLLM 0.10.2, Torch 2.8.0/CUDA 12.8, Transformers 4.55.2,
+  Tokenizers 0.21.4, Hugging Face Hub 0.34.4.
+- Independent TP1 engines, eager execution, 4,096-token context, eight sequences
+  per engine and 4,096 maximum batched tokens. Prefix caching explicitly disabled.
+- Primary: four shared H100 80 GB devices, application memory target 0.24 each.
+  Existing other workloads remained running; this is not an isolated full-H100
+  capacity measurement.
+- Second: 24 GB RTX PRO 6000 Blackwell MIG slices, application memory target 0.82.
+  Native CUDA exposes sixteen unique MIG UUIDs. Torch's default NVML enumeration
+  returned six physical-device entries; using only that count initially omitted
+  ten accessible slices. Explicit UUID selection and per-slice real allocation
+  checks correct the discovery path. A MIG slice is not a full physical GPU.
 
-Reports: [smoke](../ops/reports/gpu-smoke-2026-10-23.json),
-[initial polling](../ops/reports/gpu-load-2026-10-23.json),
-[event-driven refill](../ops/reports/gpu-refill-2026-10-23.json).
-Reports include exact workload hashes, token counts, upload/create latencies,
-observed batch turnaround and measurement boundaries.
+See [primary model evidence](../ops/reports/primary-qwen7b-upgrade-2026-10-24.json),
+[second model load](../ops/reports/pod2-7b-engine-load-2026-10-24.json), and
+[device mapping](../ops/reports/pod2-device-visibility-2026-10-24.json).
+Every engine must pass real generation before its worker is started. Cold first
+requests on the second Pod took much longer than warm requests; readiness at
+`/v1/models` alone does not establish warmed generation latency.
 
-The runs used the same workload shape and settings, with different random IDs
-and slightly different input token totals. Shared hardware load was not isolated.
-The observed before/after result supports keeping the refill change but does not
-establish a universal speedup. Submission acceptance and completed inference are
-reported separately. The refill run accepted 1,024 tasks in about 0.50 seconds;
-that is a short batch-ingestion observation, not sustained task throughput.
+## Fixed-input public-document comparison
 
-## Browser acceptance
+The source is SQuAD 1.1 development (CC BY-SA 4.0), dataset SHA256
+`95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9`.
+The deterministic 2,048-example analysis input SHA256 is
+`8f81023c1ee309f945c1f5f2b0c15cbe2f17e7e6306a6d8b761f77396ca3f6e2`.
+Messages remain identical between runs; the unique run ID only prefixes custom
+IDs. Real passages are packed to a target of 700 words; output cap is 512 tokens.
+Actual average input was 1,156.96 tokens. This public data may occur in training
+and is not customer traffic or a contamination-free model evaluation.
 
-The deployed console was exercised through a private SSH tunnel: authentication,
-live metrics, JSONL sample submission, batch details, token usage, metadata and
-authenticated JSONL download. The sample batch completed three actual GPU tasks.
-Responsive checks at widths 1,280 and 390 pixels showed no document-level
-horizontal overflow. The console displayed five connected/engine-ready workers
-and 2,603 accepted completions after the measured runs.
-One model result used Markdown fences despite the plain JSON instruction;
-transport completion must not be confused with task-quality acceptance.
+| Configuration | Real tasks | Observed seconds | Completed/s | Mean output tokens | Failed tasks |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Python completion, 4 H100 + 6 MIG | 2,048 | 746.013 | 2.745 | 191.50 | 0 |
+| SQL v2 completion, same 10 engines | 2,048 | 233.624 | 8.766 | 191.58 | 0 |
 
-The second Pod's first generation probe timed out during initial startup; later
-real generation succeeded without an engine change. Its cause was not established.
-An idle relay disconnect/reconnect test verified remote listener cleanup and
-automatic worker re-registration. No active inference was interrupted in this
-test, so it does not establish cross-Pod lease-expiry recovery. See
-[second-Pod evidence](../ops/reports/pod2-deployment-2026-10-24.json).
+This observation is a 3.19× end-to-end increase. Both runs used identical total
+input tokens (2,369,454); output totals were 392,194 and 392,357. All ten workers
+accepted real results. Downloaded output IDs, durable task and batch counts,
+accepted attempts and token totals matched, with no repeated attempts. Each run
+has exact start/end times and separately timed output verification. Submission
+acceptance is not counted as completed inference.
 
-## Backup restoration
+The worker multi-origin patch was deployed alongside SQL v2. The before/after
+worker snapshots disclose selected origin and failover counters; do not describe
+this as a single-code-change laboratory experiment. Shared GPU load also remains
+a confounder. The separate synthetic state-machine comparison is explicitly not
+an HTTP or GPU benchmark.
 
-A private snapshot of the generated benchmark/catalog database was restored into
-a new temporary PostgreSQL cluster: 70 batches, 2,091 tasks, 169,144 metered tokens,
-zero task-count discrepancies, matching task/batch usage totals. The temporary
-cluster was stopped and removed; the live database was not a restore target.
-The [restore report](../ops/reports/restore-check-2026-10-23.json) includes the
-snapshot SHA256. The snapshot is ignored by Git and stored with mode 600.
+Reports: [baseline](../ops/reports/squad7b-analysis-2048-baseline-2026-10-24.json),
+[baseline attribution](../ops/reports/squad7b-analysis-2048-baseline-attribution-2026-10-24.json),
+[SQL v2](../ops/reports/squad7b-analysis-2048-sql10-2026-10-24.json),
+[SQL v2 attribution](../ops/reports/squad7b-analysis-2048-sql10-attribution-2026-10-24.json).
 
-UI rendering checks cover liveness versus engine readiness, missing legacy
-readiness, degraded nodes, escaped user content and batch states. Browser QA
-caught a nested-template formatter regression; it was fixed and render output
-was compared against the original before deployment.
+The primary's completion handling mean fell from about 1.50 seconds to 0.28
+seconds; p95 fell from histogram bucket (5,7.5] to (.75,1] seconds. These are API
+handling times, not GPU latency. Exact sample windows are recorded. Histogram
+percentiles are bucket bounds, not invented point estimates. Database lock wait
+samples and low GPU occupancy supported the diagnosis of remote round trips
+inside serialized critical sections. Claiming still held the tenant queue lock
+across many network calls and became the next optimization target.
 
-## Failures discovered and fixed
+## Output quality is separate
 
-Concurrent idempotent submissions initially deadlocked: foreign-key KEY SHARE
-locks on a tenant conflicted with an admission FOR UPDATE upgrade. Admission
-now uses FOR NO KEY UPDATE, which retains serialization and permits FK readers.
-Regressions reproduce four simultaneous eight-task submissions over real TCP
-HTTP and concurrent queue-limit competition.
+The baseline produced 38 invalid JSON envelopes and one length-truncated output.
+Its field-type contract success was 98.14%, answer exact match 65.77% and answer
+token F1 80.10%, counting invalid and missing responses as zero. These are this
+custom packed-context task's scores, not official SQuAD scores. SQL v2 produced
+41 invalid envelopes, one truncated output, exact match 65.58% and F1 80.01%.
+Different GPU kernels/batching can produce slightly different responses despite
+the fixed seed and temperature.
 
-The old vLLM release installed a newer, incompatible Transformers tokenizer API
-without an upper bound. The tested engine dependencies are pinned explicitly.
+The requested 180–220-word analysis was usually not followed: valid baseline
+responses had a 91-word median, and only 1/2,048 met the requested length. SQL v2
+had a 92-word median and zero in that range. Therefore neither row represents
+512 generated tokens/task or uniformly valid useful output. There is no
+independent grading of evidence grounding or explanation quality.
 
-## Verification limits
+The answer and translation profiles must record their own actual token lengths,
+truncation and JSON rates. A JSON translation envelope is not a translation
+fidelity score. See [baseline quality](../ops/reports/squad7b-analysis-2048-baseline-quality-2026-10-24.json).
 
-GitHub Actions is configured, but the hosted run did not start because GitHub
-reported account payment/spending-limit restrictions. This is separate from the
-passing local tests. [Blocked run](https://github.com/yinli-systems/batchforge/actions/runs/40013353844).
+## Backup recovery
 
-The Compose configuration parses, but container builds were not executed in the
-initial environment. The native deployment is the exercised path. The database
-is a single local PostgreSQL instance; no failover or multi-region durability has
-been established. Payments, invoices, object-storage retention, customer quality
-gates and ten-million-task sustained load remain outside the first release's
-verified capabilities.
+The current PostgreSQL 17.11 dump was restored into a newly created empty Neon
+database using the version-matched official client. Restoration verified 118
+batches and 4,651 completed tasks/attempts, 2,543,062 input and 428,722 output
+tokens, all batch/task status and usage invariants, and table/usage hashes. The
+restore database was removed; production was never a restore target. The source
+was not modified. See [restore proof](../ops/reports/managed-backup-restore-2026-10-24.json)
+and [backup procedure](backup.md). A local dump and provider snapshot are not an
+automatically retained disaster-recovery policy.
+
+## Historical small-model release
+
+The earlier Qwen2.5-0.5B release measured 78.01 tasks/second for 1,024 short
+classification tasks with only 14 output tokens each. Its two-Pod run used one
+MIG worker through the former operator relay. Those measurements are retained
+for history and cannot be compared as 7B or long-output capacity:
+[initial refill run](../ops/reports/gpu-refill-2026-10-23.json),
+[two-Pod run](../ops/reports/gpu-multipod-2026-10-23.json).
+
+The earlier isolated HTTP chaos test used marked synthetic responses, killed its
+own worker and dropped a committed claim acknowledgement. It recovered four
+expired attempts and produced ten unique outputs; stale completion returned
+409. It is protocol evidence, never GPU throughput:
+[HTTP chaos](../ops/reports/http-chaos-2026-10-23.json).
+
+## Remaining limits
+
+GitHub Actions is configured, but the hosted run could not start because GitHub
+reported account payment/spending restrictions. Local verification is separate:
+[blocked run](https://github.com/yinli-systems/batchforge/actions/runs/40013353844).
+Payments/invoicing, independent public ingress, scheduled off-host retention,
+whole-Pod replacement, database failure-domain recovery and a sustained
+10-million-task day have not been established. See [scaling analysis](scaling.md)
+for the measured gap and requirements.

@@ -1,0 +1,118 @@
+{
+  "observed_at_utc": "2026-10-23T20:58:51.263690+00:00",
+  "duration_seconds": 26.308843,
+  "model_loaded": false,
+  "processes_stopped": 0,
+  "devices": [
+    {
+      "logical_device": 6,
+      "cuda_selector": "MIG-22019961-7f1b-58a7-89a2-eee1fd1a72d4",
+      "driver_uuid_verified": true,
+      "status": "cuda_allocation_and_kernel_ok",
+      "free_bytes_before": 25130827776,
+      "total_bytes": 25367150592,
+      "tensor_bytes": 4096,
+      "checksum": 1024.0,
+      "torch_visible_device_count": 1
+    },
+    {
+      "logical_device": 7,
+      "cuda_selector": "MIG-55308027-c79e-5fc8-8587-940802972f9b",
+      "driver_uuid_verified": true,
+      "status": "cuda_allocation_and_kernel_ok",
+      "free_bytes_before": 25130827776,
+      "total_bytes": 25367150592,
+      "tensor_bytes": 4096,
+      "checksum": 1024.0,
+      "torch_visible_device_count": 1
+    },
+    {
+      "logical_device": 8,
+      "cuda_selector": "MIG-1f8f5a87-dc7b-5ddb-b8ba-5b060998d459",
+      "driver_uuid_verified": true,
+      "status": "cuda_allocation_and_kernel_ok",
+      "free_bytes_before": 25130827776,
+      "total_bytes": 25367150592,
+      "tensor_bytes": 4096,
+      "checksum": 1024.0,
+      "torch_visible_device_count": 1
+    },
+    {
+      "logical_device": 9,
+      "cuda_selector": "MIG-0d8bd9a9-893c-516b-9537-131114f7f936",
+      "driver_uuid_verified": true,
+      "status": "cuda_allocation_and_kernel_ok",
+      "free_bytes_before": 25130827776,
+      "total_bytes": 25367150592,
+      "tensor_bytes": 4096,
+      "checksum": 1024.0,
+      "torch_visible_device_count": 1
+    },
+    {
+      "logical_device": 10,
+      "cuda_selector": "MIG-9ea7d731-750a-5119-86b5-dd727715e52a",
+      "driver_uuid_verified": true,
+      "status": "cuda_allocation_and_kernel_ok",
+      "free_bytes_before": 25130827776,
+      "total_bytes": 25367150592,
+      "tensor_bytes": 4096,
+      "checksum": 1024.0,
+      "torch_visible_device_count": 1
+    },
+    {
+      "logical_device": 11,
+      "cuda_selector": "MIG-70b46ada-abf6-530f-b1d3-fa80bb90a21c",
+      "driver_uuid_verified": true,
+      "status": "cuda_allocation_and_kernel_ok",
+      "free_bytes_before": 25130827776,
+      "total_bytes": 25367150592,
+      "tensor_bytes": 4096,
+      "checksum": 1024.0,
+      "torch_visible_device_count": 1
+    },
+    {
+      "logical_device": 12,
+      "cuda_selector": "MIG-acbb77ed-7f51-5892-be4d-e5be2e6cc8dd",
+      "driver_uuid_verified": true,
+      "status": "cuda_allocation_and_kernel_ok",
+      "free_bytes_before": 25130827776,
+      "total_bytes": 25367150592,
+      "tensor_bytes": 4096,
+      "checksum": 1024.0,
+      "torch_visible_device_count": 1
+    },
+    {
+      "logical_device": 13,
+      "cuda_selector": "MIG-e0cfdac6-4296-5f39-8973-b517dca02671",
+      "driver_uuid_verified": true,
+      "status": "cuda_allocation_and_kernel_ok",
+      "free_bytes_before": 25130827776,
+      "total_bytes": 25367150592,
+      "tensor_bytes": 4096,
+      "checksum": 1024.0,
+      "torch_visible_device_count": 1
+    },
+    {
+      "logical_device": 14,
+      "cuda_selector": "MIG-bdcef49f-83bf-569a-907a-3e5a4feaa1fb",
+      "driver_uuid_verified": true,
+      "status": "cuda_allocation_and_kernel_ok",
+      "free_bytes_before": 25130827776,
+      "total_bytes": 25367150592,
+      "tensor_bytes": 4096,
+      "checksum": 1024.0,
+      "torch_visible_device_count": 1
+    },
+    {
+      "logical_device": 15,
+      "cuda_selector": "MIG-83b2a8e2-adaa-5ea0-a85d-a591df1b0600",
+      "driver_uuid_verified": true,
+      "status": "cuda_allocation_and_kernel_ok",
+      "free_bytes_before": 25130827776,
+      "total_bytes": 25367150592,
+      "tensor_bytes": 4096,
+      "checksum": 1024.0,
+      "torch_visible_device_count": 1
+    }
+  ]
+}

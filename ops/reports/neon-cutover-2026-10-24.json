@@ -1,0 +1,44 @@
+{
+  "destination_provider": "Neon",
+  "project_id": "little-math-11178935",
+  "region": "aws-eu-central-1",
+  "postgresql_major": 17,
+  "tls": {
+    "client_tls_in_use": true,
+    "sslmode": "verify-full",
+    "proxy_terminates_client_tls": true
+  },
+  "runtime_role": "bf_runtime",
+  "runtime_can_create_schema_objects": false,
+  "runtime_can_insert_tenant_keys": false,
+  "former_source_default_read_only": true,
+  "plan": "free-no-production-sla",
+  "source_drained": true,
+  "source_counts": {
+    "tenants": 1,
+    "api_keys": 1,
+    "workers": 5,
+    "files": 175,
+    "batches": 86,
+    "tasks": 2603,
+    "attempts": 2603,
+    "idempotency": 86,
+    "tenant_queues": 1
+  },
+  "ordered_table_sha256": {
+    "tenants": "6530267b1526d13890d83ed9196326cb6e79167241241c18369f990c175e2fe4",
+    "api_keys": "9378792046233d72cdc8dea0b41ab2f2d86a2aac07d44812af900ae08c156faa",
+    "workers": "840ecbbd287bf117ad2bc8472c868f4b328da4c2f4285104c34835939f451de5",
+    "files": "4b0eec76ffea9437eb192166580960537b554ccf829e3884e7549ff68931d281",
+    "batches": "d625c9117777875cd84035edbc61818fb76bfe6571bc440e77a7d7d523b986da",
+    "tasks": "881fb44068988f67668e0dc4fb2830bbba5417314203e56ca177ca5f8f5603b2",
+    "attempts": "4476356342dd753ee009117f290cb28c007e9bf1fd651362cde218e75b8e55bd",
+    "idempotency": "743035d742005dee914ffc9db5ff7056dd8f0771254a01c1c4fdfdce44238b18",
+    "tenant_queues": "00cce2fdfdc57f1b32f5704e5ba5e566ab52badf9241c8895d7dc86b445fc881"
+  },
+  "all_counts_and_hashes_match": true,
+  "copied": true,
+  "online_migration": false,
+  "migration_data_committed_atomically": true,
+  "source_writers_stopped": true
+}

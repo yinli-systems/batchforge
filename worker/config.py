@@ -32,6 +32,7 @@ class Settings:
     model: str
     worker_id: str
     name: str
+    control_urls: tuple[str, ...] = ()
     max_inflight: int = 8
     token_budget: int = 16384
     max_model_len: int = 2048
@@ -42,6 +43,10 @@ class Settings:
     metrics_host: str = "127.0.0.1"
     metrics_port: int = 9101
     inference_api_key: str = ""
+
+    @property
+    def control_origins(self) -> tuple[str, ...]:
+        return self.control_urls or (self.control_url,)
 
     @property
     def slots(self) -> int:
@@ -60,8 +65,19 @@ class Settings:
         ).split(",") if v.strip())
         if not urls:
             raise ValueError("INFERENCE_BASE_URLS cannot be empty")
+        raw_control_urls = os.environ.get("CONTROL_PLANE_URLS", "").strip()
+        if raw_control_urls:
+            control_urls = tuple(dict.fromkeys(
+                _url(value.strip(), "CONTROL_PLANE_URLS")
+                for value in raw_control_urls.split(",") if value.strip()
+            ))
+            if not control_urls:
+                raise ValueError("CONTROL_PLANE_URLS cannot be empty")
+        else:
+            control_urls = (_url(os.environ.get("CONTROL_PLANE_URL", "http://127.0.0.1:8000"), "CONTROL_PLANE_URL"),)
         settings = cls(
-            control_url=_url(os.environ.get("CONTROL_PLANE_URL", "http://127.0.0.1:8000"), "CONTROL_PLANE_URL"),
+            control_url=control_urls[0],
+            control_urls=control_urls,
             worker_token=token,
             inference_urls=urls,
             model=os.environ.get("MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct"),

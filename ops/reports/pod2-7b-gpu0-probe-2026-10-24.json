@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "measurement_type": "real_engine_only_workload",
+  "started_at_utc": "2026-10-23T20:21:39.503124+00:00",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "dtype": "bfloat16",
+  "prefix_caching": false,
+  "revision_evidence": "verified local model manifest, pinned engine arguments and /v1/models root path",
+  "context_limit": 4096,
+  "requested_ports": [
+    8200
+  ],
+  "requests_per_engine": 2,
+  "concurrency_per_engine": 1,
+  "input_sections": 8,
+  "output_limit_tokens": 128,
+  "temperature": 0,
+  "seed": 42,
+  "elapsed_seconds_including_readiness": 78.215492,
+  "requested_count": 2,
+  "successful_count": 2,
+  "passed": true,
+  "prompt_tokens": 1699,
+  "completion_tokens": 256,
+  "observed_requests_per_second_including_readiness": 0.02557038193837401,
+  "observed_output_tokens_per_second_including_readiness": 3.2730088881118733,
+  "quality_evaluated": false,
+  "results": [
+    {
+      "port": 8200,
+      "index": 0,
+      "prompt_sha256": "578a380f3540a7fa00561a67ab5acd5eca7c6477b002e077fc8dcf0dce315798",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 849,
+        "total_tokens": 977,
+        "completion_tokens": 128,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "994a49c7c63cc57c0a66111901853f7105f83010cce3bf53d3c61257ba18dad0",
+      "output_sample": "### Executive Summary\n\nThe analysis of the synthetic operations log for incident report 820000000 reveals significant reliability risks across multiple regions, primarily due to high transient retry rates, long queue ages, and varying GPU occupancies. The ",
+      "request_seconds": 59.86959
+    },
+    {
+      "port": 8200,
+      "index": 1,
+      "prompt_sha256": "804dd808a23e327ad89d3bcaede7365097e308445d24afdfef189f5b21b575cf",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 850,
+        "total_tokens": 978,
+        "completion_tokens": 128,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "length",
+      "output_sha256": "0d08778d29abbf10fc14fb4533d943132fb37da8c3981babeb2e5a9f374801f0",
+      "output_sample": null,
+      "request_seconds": 5.234881
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "observed_at": "2026-10-23T21:05:25.455713+00:00",
+  "passed": true,
+  "test_only": true,
+  "physical_database_or_inference_performed": false,
+  "checks": [
+    "explicit_bin_dir_precedence_and_env_fallback",
+    "pg16_rejects_pg17_before_dump_creation",
+    "private_pgpass_escaping_cleanup_and_tls_preservation",
+    "private_atomic_archive_and_hashed_metadata_without_false_restore_claim",
+    "failed_dump_removes_partial_archive_and_pgpass"
+  ],
+  "limitations": [
+    "Subprocess results are mocked to exercise filesystem and failure paths; actual PostgreSQL 17 archive and isolated restore are separate reports"
+  ]
+}

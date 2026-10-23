@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-23T21:08:55.579417+00:00",
+  "verification_script_sha256": "29c331b3d4a00813841eae7fbf8e71eaceffad212edfb109bf347ef77fdf1ed5",
+  "backup_helper_sha256": "20f952ff0fb992d4ff01c7ce3a30f3fd8b8b1320bf038f17931a99139568f878",
+  "snapshot_sha256": "2d5c959b0ade7f794500d26abc62df7d1dc2f46cca2ffc2ca033279d16d65f77",
+  "snapshot_bytes": 10246398,
+  "destination": "new uniquely named empty database on the same Neon PostgreSQL 17 branch",
+  "disposable_database": "bf_restore_0a12566edbc24ae18418",
+  "source_database_modified": false,
+  "credentials_in_argv": false,
+  "physical_inference_performed": false,
+  "restore_verified": true,
+  "limitations": [
+    "Same managed compute as the application; no disaster-region or provider-loss recovery claim",
+    "Rows and aggregates describe the consistent archive snapshot, not the subsequently changing live source",
+    "Database roles, infrastructure, external files, and secret recovery remain separate responsibilities"
+  ],
+  "restore_elapsed_seconds": 1.9482956189895049,
+  "server_version": "17.11 (11592b3)",
+  "ssl_in_use": true,
+  "tables": {
+    "api_keys": {
+      "rows": 1,
+      "sha256": "a6e6e2fcbf2da600bd6f821c072f998b26d6d8087f4d30278913670df82e01fe"
+    },
+    "attempts": {
+      "rows": 4651,
+      "sha256": "bb3a52615c2de393fb58d5fa4939f8b7b6b17332f9aa057e82a89f6960e4cff6"
+    },
+    "batches": {
+      "rows": 118,
+      "sha256": "03075d7cd23e07cd3a25466611d450cc19bae99c41aa2b7ff89d51b2803514b4"
+    },
+    "batchforge_schema_migrations": {
+      "rows": 2,
+      "sha256": "45a9de611b49b80ed97c3b3e9de9d238aece26648b6c6da067aff8d2579bff91"
+    },
+    "files": {
+      "rows": 239,
+      "sha256": "15c1d59d69322e6c241b3da96ab45d4ab28f169c9a33661ae4b12b9cbb5ef21a"
+    },
+    "idempotency": {
+      "rows": 118,
+      "sha256": "1bc235af7926517bfeb9a6b1312d24840fc4efa6a502bd455c7cdd61bf6cf178"
+    },
+    "tasks": {
+      "rows": 4651,
+      "sha256": "f6cceb0c95fc762723ebe7b75502ee4550ad7a9996ac0af6469d13fae4ab325c"
+    },
+    "tenant_queues": {
+      "rows": 2,
+      "sha256": "a9bdf2d96468f5aafec4919e16f48cb644739642b4a55f15d7f163ec35c0cabe"
+    },
+    "tenants": {
+      "rows": 1,
+      "sha256": "03be7062e639cb9c7561b05a238ce177486711089b056ad4fab821f6c9649b52"
+    },
+    "workers": {
+      "rows": 15,
+      "sha256": "be3fe44ce42a4b255c683f764e455fa19bc86b569b047dda03139dce5723ecc8"
+    }
+  },
+  "all_table_rows_sha256": "2887e7a08ca21bc8ec7d134afd49a07e0539a7baf03c9b07890ca14341e5b661",
+  "task_usage_ledger": {
+    "rows": 4651,
+    "sha256": "feb9e2f83959e94fface76ea28cf4db7808b3065ab9851d12abeedc093067454"
+  },
+  "restored_batches": 118,
+  "restored_tasks": 4651,
+  "restored_attempts": 4651,
+  "task_prompt_tokens": 2543062,
+  "task_completion_tokens": 428722,
+  "batch_prompt_tokens": 2543062,
+  "batch_completion_tokens": 428722,
+  "batch_count_or_usage_mismatches": 0,
+  "restored_status_counts": {
+    "completed": 4651
+  },
+  "unvalidated_constraints": 0,
+  "restored_migration_version": 2,
+  "disposable_database_removed": true,
+  "completed_at": "2026-10-23T21:09:00.246214+00:00",
+  "elapsed_seconds": 4.666662393021397,
+  "passed": true
+}

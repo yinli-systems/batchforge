@@ -28,4 +28,4 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [tool.setuptools.package-data]
-backend = ["schema.sql", "CONTRACT.md"]
+backend = ["schema.sql", "migrations/*.sql", "CONTRACT.md"]

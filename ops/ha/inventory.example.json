@@ -1,0 +1,10 @@
+{
+  "cluster_name": "batchforge-production",
+  "private_cidr": "10.80.0.0/24",
+  "postgres_bin_dir": "/usr/lib/postgresql/17/bin",
+  "nodes": [
+    {"name": "bf-db-a", "private_ip": "10.80.0.10", "failure_domain": "zone-a"},
+    {"name": "bf-db-b", "private_ip": "10.80.0.11", "failure_domain": "zone-b"},
+    {"name": "bf-db-c", "private_ip": "10.80.0.12", "failure_domain": "zone-c"}
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "api_readiness": {
+    "8082": {
+      "status": 200,
+      "body": {
+        "status": "ready"
+      }
+    },
+    "8083": {
+      "status": 200,
+      "body": {
+        "status": "ready"
+      }
+    },
+    "8080": {
+      "status": 200,
+      "body": {
+        "status": "ready",
+        "ready_replicas": 2
+      }
+    }
+  },
+  "runtime_database_role": "bf_runtime",
+  "bootstrap_or_migration_performed": false,
+  "tenant_api_key_copied": false,
+  "database_owner_credential_copied": false,
+  "worker_control_plane_url": "http://127.0.0.1:8080",
+  "runtime_depends_on_primary_pod": false,
+  "runtime_depends_on_operator_laptop": false,
+  "private_configuration_modes": {
+    ".env.api-a": "0o600",
+    ".env.api-b": "0o600",
+    ".env.gateway-pod2": "0o600"
+  }
+}

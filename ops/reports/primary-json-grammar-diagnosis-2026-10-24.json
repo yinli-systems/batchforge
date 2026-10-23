@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-23T21:35:33.715214+00:00",
+  "scope": "Read-only source, app-owned log and saved-response diagnosis; no new inference, GPU probe or database load",
+  "actual_stack": {
+    "vllm": "0.10.2",
+    "xgrammar": "0.1.23",
+    "transformers": "4.55.2",
+    "tokenizers": "0.21.4"
+  },
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "observed_failure": {
+    "source_index": 0,
+    "strict_json_error": "Unterminated string starting at",
+    "strict_json_error_position": 22,
+    "finish_reason": "stop",
+    "stop_reason": 151643,
+    "other_seven_valid_outputs_stop_reason": null,
+    "token_ids_returned": false,
+    "completion_tokens": 305,
+    "prompt_tokens": 439,
+    "contains_unterminated_string_and_tool_call_suffix": true
+  },
+  "observed_model_metadata": {
+    "tokenizer_eos_token": "<|im_end|>",
+    "tokenizer_eos_token_id": 151645,
+    "generation_config_eos_token_ids": [
+      151645,
+      151643
+    ],
+    "additional_generation_eos_token": {
+      "id": 151643,
+      "content": "<|endoftext|>"
+    },
+    "tool_call_token": {
+      "id": 151657,
+      "content": "<tool_call>",
+      "special": false
+    }
+  },
+  "official_source_observations": [
+    {
+      "url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.10.2/vllm/v1/structured_output/backend_xgrammar.py",
+      "observation": "Non-Mistral tokenizer info is constructed from the Hugging Face tokenizer without explicit additional generation stop IDs; JSON_OBJECT compiles a top-level object schema"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/mlc-ai/xgrammar/v0.1.23/python/xgrammar/tokenizer_info.py",
+      "observation": "from_huggingface defaults stop_token_ids to tokenizer.eos_token_id unless a caller supplies stop IDs"
+    }
+  ],
+  "app_owned_engine_log_observation": "No matching grammar/FSM error or response_format ignored-field warning found in bounded 512KiB engine-gpu0.log tail; this absence does not prove the runtime grammar was applied correctly",
+  "candidate_explanation": "The failed request ended on an additional generation EOS (151643) rather than the tokenizer EOS used by default grammar metadata. A mismatch between grammar stop IDs and engine stopping policy is a concrete candidate for the observed unterminated JSON.",
+  "candidate_is_inference_not_confirmed_root_cause": true,
+  "not_yet_tested": [
+    "Offline matcher/token-mask replay with both EOS IDs",
+    "A repeated inference reproduction with isolated grammar/EOS configuration"
+  ],
+  "mitigation": "Worker JSON-object postcondition rejects malformed raw content and routes it through existing fenced durable retries, excluding it from accepted completion usage",
+  "limitations": [
+    "Saved response omitted token IDs, so exact generated token/mask sequence cannot be reconstructed from this report",
+    "No engine upgrade, grammar patch, generation_config change or JSON-schema support was deployed",
+    "JSON syntax validation does not establish field completeness or translation fidelity"
+  ]
+}

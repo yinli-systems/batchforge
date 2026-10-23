@@ -1,0 +1,30 @@
+{
+  "expected": 2048,
+  "observed_unique": 2048,
+  "missing": 0,
+  "invalid_json_contract": 38,
+  "unknown_outputs": 0,
+  "duplicate_outputs": 0,
+  "length_truncated": 1,
+  "json_contract_success_rate_over_expected": 0.9814453125,
+  "answer_exact_match_over_expected": 0.65771484375,
+  "answer_token_f1_over_expected": 0.8010219450910138,
+  "analysis_word_count_for_valid_json": {
+    "samples": 2010,
+    "p50": 91.0,
+    "p95": 126.0,
+    "max": 206,
+    "mean": 93.158706
+  },
+  "requested_180_to_220_analysis_words_success_rate_over_expected": 0.00048828125,
+  "profile": "analysis",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "limitations": [
+    "Not an official SQuAD score",
+    "Public examples may be training-contaminated",
+    "JSON contract rate checks field types; requested explanation length is reported separately",
+    "Word counts split on whitespace",
+    "No independent evidence-grounding or explanation quality evaluation",
+    "Missing and invalid outputs score zero"
+  ]
+}

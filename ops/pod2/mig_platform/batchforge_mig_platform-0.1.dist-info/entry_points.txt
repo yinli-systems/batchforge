@@ -1,0 +1,2 @@
+[vllm.platform_plugins]
+batchforge_mig = batchforge_mig_plugin:register

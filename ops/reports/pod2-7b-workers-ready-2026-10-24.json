@@ -1,0 +1,107 @@
+{
+  "observed_at_utc": "2026-10-23T20:44:48.765399+00:00",
+  "passed": true,
+  "worker_count": 6,
+  "slots_per_worker": 8,
+  "total_slots": 48,
+  "control_plane_url": "http://127.0.0.1:8080",
+  "operator_laptop_relay_required": false,
+  "workers": [
+    {
+      "device": 0,
+      "worker_id": "secondpod-7b-mig0",
+      "metrics_port": 9200,
+      "readiness_status": 200,
+      "metrics_snapshot": [
+        "batchforge_worker_inflight 0.0",
+        "batchforge_worker_capacity 8.0",
+        "batchforge_worker_ready_engines 1.0",
+        "batchforge_worker_control_requests_total{operation=\"register\",outcome=\"ok\"} 19.0",
+        "batchforge_worker_control_requests_total{operation=\"claim\",outcome=\"ok\"} 173.0"
+      ],
+      "owned_process_verified": true,
+      "pid": 11896,
+      "private_config_mode": "0o600"
+    },
+    {
+      "device": 1,
+      "worker_id": "secondpod-7b-mig1",
+      "metrics_port": 9201,
+      "readiness_status": 200,
+      "metrics_snapshot": [
+        "batchforge_worker_inflight 0.0",
+        "batchforge_worker_capacity 8.0",
+        "batchforge_worker_ready_engines 1.0",
+        "batchforge_worker_control_requests_total{operation=\"register\",outcome=\"ok\"} 19.0",
+        "batchforge_worker_control_requests_total{operation=\"claim\",outcome=\"ok\"} 173.0"
+      ],
+      "owned_process_verified": true,
+      "pid": 11898,
+      "private_config_mode": "0o600"
+    },
+    {
+      "device": 2,
+      "worker_id": "secondpod-7b-mig2",
+      "metrics_port": 9202,
+      "readiness_status": 200,
+      "metrics_snapshot": [
+        "batchforge_worker_inflight 0.0",
+        "batchforge_worker_capacity 8.0",
+        "batchforge_worker_ready_engines 1.0",
+        "batchforge_worker_control_requests_total{operation=\"register\",outcome=\"ok\"} 19.0",
+        "batchforge_worker_control_requests_total{operation=\"claim\",outcome=\"ok\"} 173.0"
+      ],
+      "owned_process_verified": true,
+      "pid": 11900,
+      "private_config_mode": "0o600"
+    },
+    {
+      "device": 3,
+      "worker_id": "secondpod-7b-mig3",
+      "metrics_port": 9203,
+      "readiness_status": 200,
+      "metrics_snapshot": [
+        "batchforge_worker_inflight 0.0",
+        "batchforge_worker_capacity 8.0",
+        "batchforge_worker_ready_engines 1.0",
+        "batchforge_worker_control_requests_total{operation=\"register\",outcome=\"ok\"} 19.0",
+        "batchforge_worker_control_requests_total{operation=\"claim\",outcome=\"ok\"} 173.0"
+      ],
+      "owned_process_verified": true,
+      "pid": 11902,
+      "private_config_mode": "0o600"
+    },
+    {
+      "device": 4,
+      "worker_id": "secondpod-7b-mig4",
+      "metrics_port": 9204,
+      "readiness_status": 200,
+      "metrics_snapshot": [
+        "batchforge_worker_inflight 0.0",
+        "batchforge_worker_capacity 8.0",
+        "batchforge_worker_ready_engines 1.0",
+        "batchforge_worker_control_requests_total{operation=\"register\",outcome=\"ok\"} 19.0",
+        "batchforge_worker_control_requests_total{operation=\"claim\",outcome=\"ok\"} 172.0"
+      ],
+      "owned_process_verified": true,
+      "pid": 11904,
+      "private_config_mode": "0o600"
+    },
+    {
+      "device": 5,
+      "worker_id": "secondpod-7b-mig5",
+      "metrics_port": 9205,
+      "readiness_status": 200,
+      "metrics_snapshot": [
+        "batchforge_worker_inflight 0.0",
+        "batchforge_worker_capacity 8.0",
+        "batchforge_worker_ready_engines 1.0",
+        "batchforge_worker_control_requests_total{operation=\"register\",outcome=\"ok\"} 19.0",
+        "batchforge_worker_control_requests_total{operation=\"claim\",outcome=\"ok\"} 172.0"
+      ],
+      "owned_process_verified": true,
+      "pid": 11906,
+      "private_config_mode": "0o600"
+    }
+  ]
+}

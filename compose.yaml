@@ -15,6 +15,17 @@ services:
       timeout: 3s
       retries: 20
     networks: [private]
+  migrate:
+    build: .
+    restart: "no"
+    command: ["python", "-m", "backend.migrate", "--bootstrap"]
+    environment:
+      DATABASE_URL: postgresql://batchforge:${POSTGRES_PASSWORD}@postgres:5432/batchforge
+      BATCHFORGE_API_KEY: ${BATCHFORGE_API_KEY:?Set BATCHFORGE_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [private]
   api:
     build: .
     restart: unless-stopped
@@ -26,8 +37,8 @@ services:
       MAX_OUTPUT_TOKENS: ${MAX_OUTPUT_TOKENS:-2048}
       LEASE_SECONDS: ${LEASE_SECONDS:-90}
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     healthcheck:

@@ -1,0 +1,41 @@
+{
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "resolved_at_utc": "2026-10-23T20:18:31.615366+00:00",
+  "weight_files": [
+    {
+      "name": "model-00001-of-00004.safetensors",
+      "bytes": 3945441440,
+      "sha256": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7"
+    },
+    {
+      "name": "model-00002-of-00004.safetensors",
+      "bytes": 3864726352,
+      "sha256": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185"
+    },
+    {
+      "name": "model-00003-of-00004.safetensors",
+      "bytes": 3864726424,
+      "sha256": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5"
+    },
+    {
+      "name": "model-00004-of-00004.safetensors",
+      "bytes": 3556377672,
+      "sha256": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd"
+    }
+  ],
+  "weight_bytes": 15231271888,
+  "download_uses_authentication": false,
+  "trust_remote_code": false,
+  "storage_free_bytes_before": 1068254232576,
+  "model_path": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+  "download_completed_at_utc": "2026-10-23T20:18:58.190616+00:00",
+  "download_and_checksum_seconds": 26.575,
+  "sha256_verified_weight_files": [
+    "model-00001-of-00004.safetensors",
+    "model-00002-of-00004.safetensors",
+    "model-00003-of-00004.safetensors",
+    "model-00004-of-00004.safetensors"
+  ],
+  "status": "verified"
+}
