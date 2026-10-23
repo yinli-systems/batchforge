@@ -1,0 +1,223 @@
+{
+  "profile": "translate",
+  "run_id": "bench-8b6bcca57a87",
+  "measurement": "Worker observations in isolated before/after windows; not a durable billing ledger",
+  "snapshots": {
+    "primary": {
+      "before_at": "2026-10-23T22:03:56.123002+00:00",
+      "after_at": "2026-10-23T22:09:01.204880+00:00",
+      "before_report": "squad7b-translate-2048-json20-primary-before-workers-2026-10-24.json",
+      "after_report": "squad7b-translate-2048-json20-primary-after-workers-2026-10-24.json",
+      "counter_creation_timestamps_unchanged": true,
+      "workers": [
+        {
+          "port": 9101,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 77.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 40067.0,
+            "batchforge_worker_rejected_generated_tokens_total": 40472.0,
+            "batchforge_worker_control_failovers_total": 8.0
+          }
+        },
+        {
+          "port": 9102,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 85.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 42652.0,
+            "batchforge_worker_rejected_generated_tokens_total": 44227.0,
+            "batchforge_worker_control_failovers_total": 5.0
+          }
+        },
+        {
+          "port": 9103,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 90.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 45018.0,
+            "batchforge_worker_rejected_generated_tokens_total": 46755.0,
+            "batchforge_worker_control_failovers_total": 7.0
+          }
+        },
+        {
+          "port": 9104,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 107.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 52625.0,
+            "batchforge_worker_rejected_generated_tokens_total": 54175.0,
+            "batchforge_worker_control_failovers_total": 5.0
+          }
+        }
+      ]
+    },
+    "secondary": {
+      "before_at": "2026-10-23T22:03:15.827235+00:00",
+      "after_at": "2026-10-23T22:09:48.559116+00:00",
+      "before_report": "pod2-squad7b-translate-2048-before-workers-2026-10-24.json",
+      "after_report": "pod2-squad7b-translate-2048-after-workers-2026-10-24.json",
+      "counter_creation_timestamps_unchanged": true,
+      "workers": [
+        {
+          "port": 9200,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 19.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 9675.0,
+            "batchforge_worker_rejected_generated_tokens_total": 9038.0,
+            "batchforge_worker_control_failovers_total": 25.0
+          }
+        },
+        {
+          "port": 9201,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 23.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 11670.0,
+            "batchforge_worker_rejected_generated_tokens_total": 13460.0,
+            "batchforge_worker_control_failovers_total": 30.0
+          }
+        },
+        {
+          "port": 9202,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 27.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 13966.0,
+            "batchforge_worker_rejected_generated_tokens_total": 14832.0,
+            "batchforge_worker_control_failovers_total": 30.0
+          }
+        },
+        {
+          "port": 9203,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 5.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 2451.0,
+            "batchforge_worker_rejected_generated_tokens_total": 3161.0,
+            "batchforge_worker_control_failovers_total": 19.0
+          }
+        },
+        {
+          "port": 9204,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 13.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 6769.0,
+            "batchforge_worker_rejected_generated_tokens_total": 6340.0,
+            "batchforge_worker_control_failovers_total": 27.0
+          }
+        },
+        {
+          "port": 9205,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 15.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 7622.0,
+            "batchforge_worker_rejected_generated_tokens_total": 6796.0,
+            "batchforge_worker_control_failovers_total": 25.0
+          }
+        },
+        {
+          "port": 9206,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 22.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 10854.0,
+            "batchforge_worker_rejected_generated_tokens_total": 9548.0,
+            "batchforge_worker_control_failovers_total": 28.0
+          }
+        },
+        {
+          "port": 9207,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 14.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 6933.0,
+            "batchforge_worker_rejected_generated_tokens_total": 6891.0,
+            "batchforge_worker_control_failovers_total": 28.0
+          }
+        },
+        {
+          "port": 9208,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 11.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 5480.0,
+            "batchforge_worker_rejected_generated_tokens_total": 4925.0,
+            "batchforge_worker_control_failovers_total": 21.0
+          }
+        },
+        {
+          "port": 9209,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 40.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 20548.0,
+            "batchforge_worker_rejected_generated_tokens_total": 21176.0,
+            "batchforge_worker_control_failovers_total": 30.0
+          }
+        },
+        {
+          "port": 9210,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 21.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 10633.0,
+            "batchforge_worker_rejected_generated_tokens_total": 9761.0,
+            "batchforge_worker_control_failovers_total": 28.0
+          }
+        },
+        {
+          "port": 9211,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 23.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 11947.0,
+            "batchforge_worker_rejected_generated_tokens_total": 11786.0,
+            "batchforge_worker_control_failovers_total": 31.0
+          }
+        },
+        {
+          "port": 9212,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 14.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 7006.0,
+            "batchforge_worker_rejected_generated_tokens_total": 6622.0,
+            "batchforge_worker_control_failovers_total": 21.0
+          }
+        },
+        {
+          "port": 9213,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 31.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 15431.0,
+            "batchforge_worker_rejected_generated_tokens_total": 13176.0,
+            "batchforge_worker_control_failovers_total": 31.0
+          }
+        },
+        {
+          "port": 9214,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 12.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 5476.0,
+            "batchforge_worker_rejected_generated_tokens_total": 4470.0,
+            "batchforge_worker_control_failovers_total": 27.0
+          }
+        },
+        {
+          "port": 9215,
+          "deltas": {
+            "batchforge_worker_invalid_outputs_total": 17.0,
+            "batchforge_worker_rejected_prompt_tokens_total": 8911.0,
+            "batchforge_worker_rejected_generated_tokens_total": 9479.0,
+            "batchforge_worker_control_failovers_total": 24.0
+          }
+        }
+      ]
+    }
+  },
+  "sum_deltas": {
+    "batchforge_worker_invalid_outputs_total": 666.0,
+    "batchforge_worker_rejected_prompt_tokens_total": 335734.0,
+    "batchforge_worker_rejected_generated_tokens_total": 337090.0,
+    "batchforge_worker_control_failovers_total": 450.0
+  },
+  "accepted_usage": {
+    "observed_prompt_tokens": 954977,
+    "observed_completion_tokens": 772866,
+    "completed": 1872,
+    "failed": 176
+  },
+  "limitations": [
+    "Only responses observed by these workers are counted",
+    "Rejected tokens are excluded from accepted task/batch usage",
+    "JSON syntax does not establish required fields or content quality",
+    "No OS process-start gauge is exposed; counter creation timestamps are checked instead"
+  ]
+}

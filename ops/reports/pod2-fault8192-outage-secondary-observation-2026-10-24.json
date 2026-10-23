@@ -1,0 +1,284 @@
+{
+  "sample_count": 58,
+  "first_sample_at": "2026-10-23T21:56:03.388110+00:00",
+  "last_sample_at": "2026-10-23T21:58:01.212948+00:00",
+  "operations": [
+    {
+      "method": "GET",
+      "route": "/metrics",
+      "count": 114.0,
+      "sum_seconds": 26.491810131148668,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 95.0,
+        "0.075": 103.0,
+        "0.1": 105.0,
+        "0.25": 105.0,
+        "0.5": 105.0,
+        "0.75": 105.0,
+        "1.0": 106.0,
+        "2.5": 109.0,
+        "5.0": 114.0,
+        "7.5": 114.0,
+        "10.0": 114.0,
+        "+Inf": 114.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.23238429939604094,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 1.0,
+        "upper_inclusive_seconds": 2.5,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/readyz",
+      "count": 396.0,
+      "sum_seconds": 67.46382186573464,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 0.0,
+        "0.075": 0.0,
+        "0.1": 376.0,
+        "0.25": 377.0,
+        "0.5": 377.0,
+        "0.75": 378.0,
+        "1.0": 378.0,
+        "2.5": 396.0,
+        "5.0": 396.0,
+        "7.5": 396.0,
+        "10.0": 396.0,
+        "+Inf": 396.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.17036318652963295,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.075,
+        "upper_inclusive_seconds": 0.1,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.1,
+        "upper_inclusive_seconds": 0.25,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/internal/tasks/claim",
+      "count": 2220.0,
+      "sum_seconds": 156.36913849707344,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 2039.0,
+        "0.075": 2098.0,
+        "0.1": 2135.0,
+        "0.25": 2161.0,
+        "0.5": 2185.0,
+        "0.75": 2187.0,
+        "1.0": 2204.0,
+        "2.5": 2218.0,
+        "5.0": 2220.0,
+        "7.5": 2220.0,
+        "10.0": 2220.0,
+        "+Inf": 2220.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.0704365488725556,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.075,
+        "upper_inclusive_seconds": 0.1,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/internal/tasks/{tid}/complete",
+      "count": 2750.0,
+      "sum_seconds": 1602.9035616338952,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 2023.0,
+        "0.075": 2089.0,
+        "0.1": 2090.0,
+        "0.25": 2097.0,
+        "0.5": 2110.0,
+        "0.75": 2122.0,
+        "1.0": 2166.0,
+        "2.5": 2473.0,
+        "5.0": 2740.0,
+        "7.5": 2750.0,
+        "10.0": 2750.0,
+        "+Inf": 2750.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.5828740224123256,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 2.5,
+        "upper_inclusive_seconds": 5.0,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/internal/tasks/{tid}/heartbeat",
+      "count": 28.0,
+      "sum_seconds": 38.374497354991036,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 7.0,
+        "0.075": 7.0,
+        "0.1": 7.0,
+        "0.25": 8.0,
+        "0.5": 8.0,
+        "0.75": 10.0,
+        "1.0": 10.0,
+        "2.5": 24.0,
+        "5.0": 28.0,
+        "7.5": 28.0,
+        "10.0": 28.0,
+        "+Inf": 28.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 1.3705177626782512,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 1.0,
+        "upper_inclusive_seconds": 2.5,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 2.5,
+        "upper_inclusive_seconds": 5.0,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/internal/workers/register",
+      "count": 97.0,
+      "sum_seconds": 35.15672722304589,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 78.0,
+        "0.075": 79.0,
+        "0.1": 81.0,
+        "0.25": 81.0,
+        "0.5": 84.0,
+        "0.75": 84.0,
+        "1.0": 84.0,
+        "2.5": 92.0,
+        "5.0": 97.0,
+        "7.5": 97.0,
+        "10.0": 97.0,
+        "+Inf": 97.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.36244048683552466,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 2.5,
+        "upper_inclusive_seconds": 5.0,
+        "upper_unbounded": false
+      }
+    }
+  ],
+  "counter_resets_excluded_intervals": {},
+  "api_scrape_failures": {
+    "api-a": 2,
+    "api-b": 1
+  },
+  "first_durable_queue": {
+    "pending": 6312,
+    "running": 312,
+    "completed": 14411,
+    "failed": 0,
+    "cancelled": 0,
+    "batches": 278
+  },
+  "last_durable_queue": {
+    "pending": 3845,
+    "running": 251,
+    "completed": 16939,
+    "failed": 0,
+    "cancelled": 0,
+    "batches": 278
+  },
+  "measurement_bounds": [
+    "HTTP statistics are deltas between successful scrapes of each observed API process; activity before its first scrape is excluded",
+    "Intervals spanning a process restart/counter reset are excluded; unobserved requests during such intervals are not reconstructed",
+    "p50/p95 are containing Prometheus histogram bucket bounds, not exact quantiles or interpolated point estimates",
+    "HTTP durations measure API request handling, not GPU inference task latency; all traffic on observed replicas is included",
+    "Database counters aggregate the database; PostgreSQL wait samples are periodic observations, not wait-time durations",
+    "Runtime-role visibility of other roles' activity may be redacted; WAL statistics can include other databases on the same cluster",
+    "GPU utilization/memory include all workloads visible on each GPU, including unrelated tenants; no GPU process inventory is queried",
+    "Database statistics, metrics and GPU probes finish at different times; each source includes its own elapsed time",
+    "Polling, metrics aggregation and sampling themselves consume some control-plane/database capacity"
+  ],
+  "requested_window_start": "2026-10-23T21:56:03.156472+00:00",
+  "requested_window_end": "2026-10-23T21:58:03.201409+00:00",
+  "window_rule": "sample.started_at >= window_start AND sample.finished_at <= window_end",
+  "partial_coverage": false,
+  "source_streams": [
+    {
+      "path": ".runtime/observability/controlplane-secondary-ab-20261024.jsonl",
+      "bytes_at_capture": 8620881,
+      "sha256_at_capture": "e5c5e10371f81b5ca347b7852522671c85fda5c23c0f7db3a02a29463f0fae0e"
+    }
+  ],
+  "original_stream_preserved": true,
+  "coverage_limitation": "Only fully-contained samples are retained; first scrape and endpoint slivers are excluded from metric deltas",
+  "frozen_raw_path": ".runtime/observability/controlplane-secondary-fault8192-outage.jsonl",
+  "frozen_raw_bytes": 433531,
+  "frozen_raw_sha256": "a887769f413e32667a55cf81bcc16c399186ab89fe0f22cc6d56d7d023e2b170",
+  "maximum_between_sample_gap_seconds": 1.725826
+}

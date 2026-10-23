@@ -11,6 +11,7 @@ import stat
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -18,6 +19,31 @@ from ops.supervise import ConfigError, Watchdog, load_manifest, private_write
 
 
 SERVICE = {"role": "api", "name": "one", "env_file": "/unused.env", "python": "/unused/python", "port": 9999, "gpu": None}
+
+
+def test_engine_restart_generation_config_is_opt_in_and_preserves_other_flags(tmp_path, monkeypatch):
+    from ops.manage import command, load_env
+
+    monkeypatch.delenv("ENGINE_GENERATION_CONFIG", raising=False)
+    environment = tmp_path / "engine.env"
+    original = "MODEL_NAME=Qwen/Qwen2.5-7B-Instruct\nENGINE_MAX_NUM_SEQS=16\nENGINE_MAX_MODEL_LEN=4096\nENGINE_GPU_MEMORY_UTILIZATION=0.24\n"
+    environment.write_text(original)
+    args = SimpleNamespace(role="engine", python="/owned/engine-venv/bin/python", port=8100)
+    baseline = command(args, load_env(environment))
+    assert "--generation-config" not in baseline
+
+    # Reload the persisted env as a fresh manager/watchdog restart does. A path
+    # containing spaces must remain one argv element, without shell evaluation.
+    path = "/owned/generation configs/eos-151645"
+    environment.write_text(original + f"ENGINE_GENERATION_CONFIG='{path}'\n")
+    restarted = command(args, load_env(environment))
+    index = restarted.index("--generation-config")
+    assert restarted[index + 1] == path
+    assert restarted[:index] + restarted[index + 2:] == baseline
+    assert restarted.count("--generation-config") == 1
+
+    environment.write_text(original + "ENGINE_GENERATION_CONFIG=\n")
+    assert command(args, load_env(environment)) == baseline
 
 
 class FakeManager:

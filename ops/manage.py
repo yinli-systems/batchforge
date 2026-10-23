@@ -87,6 +87,8 @@ def command(args, env: dict) -> list[str]:
         result.extend(["--revision", env["ENGINE_REVISION"]])
     if env.get("ENGINE_MAX_NUM_BATCHED_TOKENS"):
         result.extend(["--max-num-batched-tokens", env["ENGINE_MAX_NUM_BATCHED_TOKENS"]])
+    if env.get("ENGINE_GENERATION_CONFIG"):
+        result.extend(["--generation-config", env["ENGINE_GENERATION_CONFIG"]])
     if env.get("ENGINE_ENABLE_PREFIX_CACHING", "0") == "1":
         result.append("--enable-prefix-caching")
     else:

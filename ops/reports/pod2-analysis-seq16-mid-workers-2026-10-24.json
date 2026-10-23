@@ -1,0 +1,4149 @@
+{
+  "observed_at": "2026-10-23T21:54:22.900492+00:00",
+  "workers": [
+    {
+      "port": 9200,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 15.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 61440.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792453.2384515
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 23.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 255.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792023.134469
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792023.1858096
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792453.238435
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792022.9973884
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 4.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 208.96576725898194
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792022.9974062
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 19613.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792022.9974449
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 3313.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792022.997451
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792022.997456
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792022.997461
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792022.9974687
+        }
+      ]
+    },
+    {
+      "port": 9201,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 20.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792450.143976
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 23.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 256.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 20.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792022.7432852
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792022.7936964
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792450.1439512
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792022.607464
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 7.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 251.7466663500527
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792022.607481
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 23253.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792022.6075077
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 3878.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792022.6075137
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792022.6075187
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792022.607524
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792022.607532
+        }
+      ]
+    },
+    {
+      "port": 9202,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792449.5323892
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 234.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792071.0336785
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792071.0836813
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792449.5323553
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792070.8994882
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 11.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 264.9759724379401
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792070.8995054
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 28090.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792070.8995328
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 4217.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792070.8995388
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792070.8995438
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792070.8995488
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792070.8995566
+        }
+      ]
+    },
+    {
+      "port": 9203,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 23.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792449.3081207
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 228.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 23.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792073.1081986
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792073.1587448
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792449.3080883
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792072.9689767
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 10.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 23.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 23.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 23.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 23.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 23.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 23.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 23.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 263.54383623597096
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792072.9689963
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 26719.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792072.9690297
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 4189.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792072.9690368
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792072.969043
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792072.9690485
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792072.9690573
+        }
+      ]
+    },
+    {
+      "port": 9204,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 22.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792451.4959176
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 19.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 202.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 22.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792120.3011115
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792120.3522582
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792451.4959059
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792120.1657584
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 8.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 22.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 22.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 22.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 22.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 22.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 22.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 22.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 246.09925501712132
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792120.1657758
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 25209.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792120.1658025
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 3967.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792120.1658087
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792120.165814
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792120.1658187
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792120.1658268
+        }
+      ]
+    },
+    {
+      "port": 9205,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792452.7580912
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 198.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792122.4650283
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792122.5149596
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792452.7580626
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792122.3293402
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 5.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 217.87122076496598
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792122.3293574
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 20657.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792122.3293848
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 3487.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792122.329391
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792122.3293962
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792122.329402
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792122.3294106
+        }
+      ]
+    },
+    {
+      "port": 9206,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792452.9196022
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 171.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792169.552067
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792169.6031542
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792452.919577
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792169.4104092
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 5.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 197.1285708050127
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792169.4104364
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 19225.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792169.4104652
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 3061.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792169.4104714
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792169.4104767
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792169.410482
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792169.4104898
+        }
+      ]
+    },
+    {
+      "port": 9207,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 19.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792451.2163463
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 175.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 19.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792172.3293552
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792172.3791661
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792451.2163103
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792172.1901376
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 8.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 19.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 19.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 19.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 19.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 19.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 19.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 19.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 216.8426648589957
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792172.190158
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 21876.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792172.1901853
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 3491.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792172.190191
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792172.1901965
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792172.190201
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792172.190208
+        }
+      ]
+    },
+    {
+      "port": 9208,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792451.1510663
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 14.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 149.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792218.4092011
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792218.4598315
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792451.1510386
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792218.2724922
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 8.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 234.65582301904215
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792218.2725098
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 24013.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792218.2725377
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 3730.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792218.2725437
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792218.272549
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792218.2725537
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792218.2725616
+        }
+      ]
+    },
+    {
+      "port": 9209,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792448.8644624
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 13.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 147.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792222.3256667
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792222.3771176
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792448.8644216
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792222.1857798
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 11.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 24.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 274.9243801640987
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792222.1857975
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 28694.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792222.1858263
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 4304.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792222.1858327
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792222.1858377
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792222.1858428
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792222.1858506
+        }
+      ]
+    },
+    {
+      "port": 9210,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 14.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792452.541309
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 11.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 116.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 14.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792266.618179
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792266.6682987
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792452.5412781
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792266.4813647
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 4.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 14.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 14.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 14.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 14.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 14.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 14.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 14.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 165.21131416095886
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792266.4813817
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 15868.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792266.4814093
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 2629.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792266.4814153
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792266.4814203
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792266.4814336
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792266.4814415
+        }
+      ]
+    },
+    {
+      "port": 9211,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792452.7997558
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 11.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 116.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792271.3785257
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792271.4303572
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792452.7997131
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792271.2396731
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 6.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 183.15139888593694
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792271.2396905
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 18428.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792271.2397187
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 2889.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792271.2397246
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792271.2397296
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792271.239735
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792271.239744
+        }
+      ]
+    },
+    {
+      "port": 9212,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792451.4041157
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 9.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 92.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792315.2405536
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792315.2918258
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792451.4040923
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792315.1044004
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 7.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 18.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 198.72429830796318
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792315.104417
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 21323.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792315.1044533
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 3020.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792315.1044595
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792315.1044645
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792315.1044698
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792315.1044772
+        }
+      ]
+    },
+    {
+      "port": 9213,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792452.8570037
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 9.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 87.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792321.2413306
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792321.2923408
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792452.8569775
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792321.1026812
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 4.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 17.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 202.13816572006908
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792321.1026995
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 19918.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792321.1027272
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 3159.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792321.1027334
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792321.1027386
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792321.1027436
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792321.1027515
+        }
+      ]
+    },
+    {
+      "port": 9214,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 25.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792449.4799454
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 6.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 74.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 25.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792364.0428126
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792364.0935872
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792449.4799335
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792363.9053962
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 10.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 25.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 25.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 25.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 25.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 25.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 25.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 25.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 264.9654047070071
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792363.905414
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 28849.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792363.9054523
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 4230.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792363.9054587
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792363.9054642
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792363.9054692
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792363.905477
+        }
+      ]
+    },
+    {
+      "port": 9215,
+      "ready": true,
+      "metrics": [
+        {
+          "name": "batchforge_worker_inflight",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_reserved_context_tokens",
+          "labels": {},
+          "value": 65536.0
+        },
+        {
+          "name": "batchforge_worker_capacity",
+          "labels": {},
+          "value": 16.0
+        },
+        {
+          "name": "batchforge_worker_ready_engines",
+          "labels": {},
+          "value": 1.0
+        },
+        {
+          "name": "batchforge_worker_tasks_total",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_tasks_created",
+          "labels": {
+            "outcome": "completed"
+          },
+          "value": 1792792449.6087987
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 6.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 63.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_total",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "register",
+            "outcome": "ok"
+          },
+          "value": 1792792370.4411793
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "claim",
+            "outcome": "ok"
+          },
+          "value": 1792792370.4935658
+        },
+        {
+          "name": "batchforge_worker_control_requests_created",
+          "labels": {
+            "operation": "complete",
+            "outcome": "ok"
+          },
+          "value": 1792792449.6087708
+        },
+        {
+          "name": "batchforge_worker_control_failovers_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_control_failovers_created",
+          "labels": {},
+          "value": 1792792370.2992725
+        },
+        {
+          "name": "batchforge_worker_control_origin_index",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.1"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.25"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "0.5"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "1.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "2.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "5.0"
+          },
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "10.0"
+          },
+          "value": 8.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "20.0"
+          },
+          "value": 20.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "40.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "80.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "160.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "320.0"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_bucket",
+          "labels": {
+            "le": "+Inf"
+          },
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_count",
+          "labels": {},
+          "value": 21.0
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_sum",
+          "labels": {},
+          "value": 243.13930207004887
+        },
+        {
+          "name": "batchforge_worker_inference_seconds_created",
+          "labels": {},
+          "value": 1792792370.2992897
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_total",
+          "labels": {},
+          "value": 24568.0
+        },
+        {
+          "name": "batchforge_worker_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792370.299319
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_total",
+          "labels": {},
+          "value": 3814.0
+        },
+        {
+          "name": "batchforge_worker_completion_tokens_created",
+          "labels": {},
+          "value": 1792792370.2993255
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_invalid_outputs_created",
+          "labels": {},
+          "value": 1792792370.2993305
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_prompt_tokens_created",
+          "labels": {},
+          "value": 1792792370.2993355
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_total",
+          "labels": {},
+          "value": 0.0
+        },
+        {
+          "name": "batchforge_worker_rejected_generated_tokens_created",
+          "labels": {},
+          "value": 1792792370.299344
+        }
+      ]
+    }
+  ]
+}

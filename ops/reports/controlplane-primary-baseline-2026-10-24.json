@@ -678,5 +678,10 @@
       "status": "200",
       "count": 32.0
     }
-  ]
+  ],
+  "window_rule": {
+    "kind": "bracketing",
+    "selection": "Last sample.finished_at <= benchmark_start through first sample.started_at >= benchmark_end, inclusive",
+    "includes_activity_outside_exact_benchmark_window": true
+  }
 }

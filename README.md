@@ -24,6 +24,8 @@ private. See [availability](docs/ha.md), [ingress](docs/ingress.md), and
 - Cancel work, retry terminal failures and download result/error JSONL.
 - Run multiple GPU workers against independent OpenAI-compatible engines.
 - Recover expired leases and reject stale results after retry or cancellation.
+- Validate explicitly requested JSON objects before accepting results, with
+  bounded durable retries and separate rejected-compute observations.
 
 ## Components
 

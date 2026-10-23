@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "status": "handoff_observed_successor_sampling",
+  "queued_at_utc": "2026-10-23T21:44:37.430732+00:00",
+  "previous_observer": {
+    "pid": 107193,
+    "start_ticks": "31273982",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "successor": {
+    "pid": 116838,
+    "start_ticks": "31531412",
+    "cwd": "/root/batchforge-runtime/app",
+    "raw_file": ".runtime/observability/controlplane-seq16-20261024.jsonl",
+    "process_metadata": ".runtime/observability/controlplane-seq16-20261024.process.json",
+    "handoff_metadata": ".runtime/observability/controlplane-seq16-20261024.handoff.json",
+    "collector_sha256": "8860074f6e0689956bd34ceb836443f92e83ad51496251ecec707c343e08cff3",
+    "duration_seconds": 3600,
+    "interval_seconds": 2
+  },
+  "handoff_condition": "Kernel pidfd exit event for the exact pinned previous observer, revalidated by PID/start_ticks/cwd before waiting",
+  "previous_observer_signals_sent": 0,
+  "database_connections_or_gpu_sampling_while_waiting": 0,
+  "application_service_actions": 0,
+  "scope": [
+    "Primary API-a/API-b cumulative HTTP metrics",
+    "Existing runtime-role read-only PostgreSQL aggregates without query/prompt text",
+    "Device-wide GPU utilization and memory without process inventory"
+  ],
+  "measurement_bounds": [
+    "The successor began sampling only after the pinned predecessor exit event; actual handoff and first-sample timestamps are recorded",
+    "Record actual handoff UTC and first raw-sample timestamp once observed; scheduled expiration is not an observed timestamp",
+    "Process raw-series segments separately; do not invent missing counter deltas across a collector or API restart"
+  ],
+  "handoff_observed_at_utc": "2026-10-23T22:01:43.457651+00:00",
+  "successor_first_sample_at": "2026-10-23T22:01:43.704541+00:00",
+  "previous_observer_alive_at_verification": false,
+  "verification_at_utc": "2026-10-23T22:05:06.758785+00:00",
+  "successor_samples_at_verification": 101,
+  "successor_last_sample_at_verification": "2026-10-23T22:05:05.885220+00:00",
+  "successor_cumulative_scrape_failures_at_verification": {
+    "api-b": 2
+  }
+}

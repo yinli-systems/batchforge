@@ -645,5 +645,10 @@
       "heap_bytes": 16384,
       "total_bytes": 90112
     }
-  ]
+  ],
+  "window_rule": {
+    "kind": "bracketing",
+    "selection": "Last sample.finished_at <= benchmark_start through first sample.started_at >= benchmark_end, inclusive",
+    "includes_activity_outside_exact_benchmark_window": true
+  }
 }

@@ -1,0 +1,155 @@
+{
+  "run_id": "bench-cc9b87c9d2e1",
+  "durable_results_and_usage_match_downloaded_outputs": true,
+  "durable_task_count": 2048,
+  "durable_attempt_count": 2048,
+  "tasks_with_multiple_attempts": 0,
+  "accepted_completions_by_worker": {
+    "primary-qwen7b-gpu0": {
+      "completed": 280,
+      "other_statuses": {},
+      "prompt_tokens": 324327,
+      "completion_tokens": 53379
+    },
+    "primary-qwen7b-gpu1": {
+      "completed": 256,
+      "other_statuses": {},
+      "prompt_tokens": 297747,
+      "completion_tokens": 50214
+    },
+    "primary-qwen7b-gpu2": {
+      "completed": 301,
+      "other_statuses": {},
+      "prompt_tokens": 349353,
+      "completion_tokens": 56987
+    },
+    "primary-qwen7b-gpu3": {
+      "completed": 288,
+      "other_statuses": {},
+      "prompt_tokens": 332648,
+      "completion_tokens": 55381
+    },
+    "secondpod-7b-mig0": {
+      "completed": 57,
+      "other_statuses": {},
+      "prompt_tokens": 65062,
+      "completion_tokens": 10617
+    },
+    "secondpod-7b-mig1": {
+      "completed": 61,
+      "other_statuses": {},
+      "prompt_tokens": 71016,
+      "completion_tokens": 11011
+    },
+    "secondpod-7b-mig10": {
+      "completed": 52,
+      "other_statuses": {},
+      "prompt_tokens": 60100,
+      "completion_tokens": 11079
+    },
+    "secondpod-7b-mig11": {
+      "completed": 54,
+      "other_statuses": {},
+      "prompt_tokens": 62488,
+      "completion_tokens": 10151
+    },
+    "secondpod-7b-mig12": {
+      "completed": 59,
+      "other_statuses": {},
+      "prompt_tokens": 69167,
+      "completion_tokens": 11170
+    },
+    "secondpod-7b-mig13": {
+      "completed": 56,
+      "other_statuses": {},
+      "prompt_tokens": 64777,
+      "completion_tokens": 10398
+    },
+    "secondpod-7b-mig14": {
+      "completed": 60,
+      "other_statuses": {},
+      "prompt_tokens": 68905,
+      "completion_tokens": 11150
+    },
+    "secondpod-7b-mig15": {
+      "completed": 59,
+      "other_statuses": {},
+      "prompt_tokens": 67277,
+      "completion_tokens": 11383
+    },
+    "secondpod-7b-mig2": {
+      "completed": 62,
+      "other_statuses": {},
+      "prompt_tokens": 72257,
+      "completion_tokens": 11742
+    },
+    "secondpod-7b-mig3": {
+      "completed": 60,
+      "other_statuses": {},
+      "prompt_tokens": 69812,
+      "completion_tokens": 11106
+    },
+    "secondpod-7b-mig4": {
+      "completed": 62,
+      "other_statuses": {},
+      "prompt_tokens": 71411,
+      "completion_tokens": 11391
+    },
+    "secondpod-7b-mig5": {
+      "completed": 55,
+      "other_statuses": {},
+      "prompt_tokens": 63004,
+      "completion_tokens": 10946
+    },
+    "secondpod-7b-mig6": {
+      "completed": 56,
+      "other_statuses": {},
+      "prompt_tokens": 64373,
+      "completion_tokens": 10898
+    },
+    "secondpod-7b-mig7": {
+      "completed": 53,
+      "other_statuses": {},
+      "prompt_tokens": 60177,
+      "completion_tokens": 10331
+    },
+    "secondpod-7b-mig8": {
+      "completed": 57,
+      "other_statuses": {},
+      "prompt_tokens": 65633,
+      "completion_tokens": 10695
+    },
+    "secondpod-7b-mig9": {
+      "completed": 60,
+      "other_statuses": {},
+      "prompt_tokens": 69920,
+      "completion_tokens": 11387
+    }
+  },
+  "task_creation_to_durable_finish_seconds": {
+    "samples": 2048,
+    "p50": 24.274536,
+    "p95": 40.613475,
+    "max": 56.339116,
+    "mean": 24.295776
+  },
+  "accepted_attempt_claim_to_durable_finish_seconds": {
+    "samples": 2048,
+    "p50": 2.676559,
+    "p95": 14.423286,
+    "max": 28.4004,
+    "mean": 6.028312
+  },
+  "limitations": [
+    "Attempt duration includes worker scheduling, GPU execution, network and durable completion; not isolated GPU latency",
+    "Task turnaround includes queue wait",
+    "Only accepted result usage is counted; unsuccessful physical inference may consume additional compute"
+  ],
+  "attempt_status_and_error_counts": [
+    {
+      "status": "completed",
+      "error_code": "none",
+      "count": 2048
+    }
+  ]
+}

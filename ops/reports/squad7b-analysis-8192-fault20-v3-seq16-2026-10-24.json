@@ -1,0 +1,1021 @@
+{
+  "schema_version": 2,
+  "run_id": "bench-b868274f8fe7",
+  "observed_at": "2026-10-23T21:59:36.743417+00:00",
+  "measurement_started_at": "2026-10-23T21:55:25.847724+00:00",
+  "terminal_observation_ended_at": "2026-10-23T21:59:32.633354+00:00",
+  "passed": true,
+  "measurement": "client observed submission through terminal observation; output validation measured separately",
+  "engine_label": "real:4xH100-80GB+16xRTX-PRO-6000-Blackwell-MIG-24GB;7B-BF16;prefix-disabled;managed-Neon",
+  "test_fixture_detected": false,
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "requested_tasks": 8192,
+  "submitted_tasks": 8192,
+  "batches": 32,
+  "accepted_batches": 32,
+  "terminal_batches": 32,
+  "requested_max_output_tokens": 512,
+  "elapsed_seconds": 246.785609,
+  "completed": 8192,
+  "failed": 0,
+  "cancelled": 0,
+  "unfinished_batch_ids": [],
+  "submission_errors": [],
+  "output_validation_errors": [],
+  "completed_tasks_per_second": 33.194804,
+  "observed_prompt_tokens": 9484734,
+  "observed_completion_tokens": 1549504,
+  "prompt_tokens_per_task": {
+    "samples": 8192,
+    "p50": 1152.0,
+    "p95": 1306.0,
+    "max": 1591,
+    "mean": 1157.804443
+  },
+  "completion_tokens_per_task": {
+    "samples": 8192,
+    "p50": 181.0,
+    "p95": 279.0,
+    "max": 512,
+    "mean": 189.148438
+  },
+  "output_finish_reasons": {
+    "stop": 8185,
+    "length": 7
+  },
+  "output_custom_ids_unique": true,
+  "output_custom_ids_known": true,
+  "output_rows_match_completed": true,
+  "batch_counts_match_submission": true,
+  "batch_ids": [
+    "batch_b23449f124b82341932f5dc8f74f2308",
+    "batch_33c6ef3342c7321bf34e886b6e4190ff",
+    "batch_1cb29d90492e2a028dbc5dafe7b2186d",
+    "batch_49116120602d5f357ab6187a678fa97a",
+    "batch_ddc9b750b751ebc20d106748c6d53b5a",
+    "batch_683fc1fa9962bcba09406aa48461cd9e",
+    "batch_9e1d90d4ee5ecd1ea34aaaa357b99437",
+    "batch_0be2b17ffba59c397c8d6fb33794ac8d",
+    "batch_5bd44047a67a471c3c011a10db5363c5",
+    "batch_256abee1133797f034b7aba8c4268d46",
+    "batch_7db58606e8ab73884d3e43f571ce0bcd",
+    "batch_da12ecfd57bf1313ed197a4096850294",
+    "batch_27faaad7e6d198ab76dffb00814ebf01",
+    "batch_343b44a3b64557d0d7f5c5dde7451f0d",
+    "batch_255178915282d81d2846877b66b3bf40",
+    "batch_a6597bb8cc3cfe60bc975057270b2b1b",
+    "batch_8ccbee04564bbc51b9960f70f5c8e1b7",
+    "batch_2bd88a622ef80a2dce5a72c4d13434a5",
+    "batch_64291c13aa5befc2d4977c1418c5a412",
+    "batch_a0a15cfd34c2b6bc1b564a6bbe52b449",
+    "batch_a2c8de13a1f312116ca5acb377c1ebd4",
+    "batch_eefe6a9bedb32ba3137d50a9c8f68465",
+    "batch_eca2da07a6a2fd7c5bc0a6fe7ff768fe",
+    "batch_bd8f8a357e24ecbff8b70e2692cf4ac3",
+    "batch_eb6e4d287643ebe778d16e50e70e3727",
+    "batch_c0be65041cea7a58bdb89b6051391a62",
+    "batch_29c7f09b6e9bb6406c98b531133ffa10",
+    "batch_dc9dd8cf4902dec62bf1ceddd346857a",
+    "batch_fcf1b5d67edf3c6c3f1f60384cd7aec8",
+    "batch_4816376d8ce5f9833fcccc003e4d567c",
+    "batch_f09cd5f1e5af2564c350f17d356cd321",
+    "batch_cf5e409de614e360cf9169d03422f05c"
+  ],
+  "workload": {
+    "sha256": "591240e5c1aa62d915b90597e368e5a3b17b5c30c13da2348eeaf3b6e5d7eb79",
+    "hash_definition": "concatenated exact JSONL bytes in batch_index order",
+    "provided_source_sha256": "e6ce6622343f265e6efe1d2ff0a479129c03662753d3f97c1f02379e7774cdbf",
+    "bytes": 46700583,
+    "generation_seconds": 1.126237,
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "prompt": null,
+    "generation_mode": "provided-jsonl",
+    "message_template": "exact provided messages; run_id prepended to custom_id",
+    "max_tokens": 512,
+    "temperature": 0,
+    "tasks_per_batch": [
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256
+    ]
+  },
+  "submission": {
+    "elapsed_seconds": 6.541114,
+    "attempted_http_requests": 64,
+    "successful_http_requests": 64,
+    "requests_per_second": 9.784266,
+    "successful_requests_per_second": 9.784266,
+    "accepted_batches_per_second": 4.892133,
+    "accepted_tasks_per_second": 1252.386082,
+    "upload_latency_seconds": {
+      "samples": 32,
+      "p50": 0.395529,
+      "p95": 0.708955,
+      "max": 0.759729,
+      "mean": 0.430144
+    },
+    "create_latency_seconds": {
+      "samples": 32,
+      "p50": 0.930861,
+      "p95": 1.772848,
+      "max": 2.497199,
+      "mean": 1.074854
+    },
+    "latency_population": "all attempted requests, including failures",
+    "request_population": "POST /v1/files and POST /v1/batches only; excludes polling and downloads"
+  },
+  "batch_turnaround_seconds": {
+    "samples": 32,
+    "p50": 181.399112,
+    "p95": 240.427702,
+    "max": 242.89134,
+    "mean": 185.298637
+  },
+  "batch_after_acceptance_seconds": {
+    "samples": 32,
+    "p50": 180.304871,
+    "p95": 239.622209,
+    "max": 241.993244,
+    "mean": 184.223783
+  },
+  "batch_upload_to_terminal_seconds": {
+    "samples": 32,
+    "p50": 181.74878,
+    "p95": 240.938336,
+    "max": 243.65107,
+    "mean": 185.728782
+  },
+  "percentile_method": "linear interpolation at (n-1)*p",
+  "output_validation_seconds": 4.107512,
+  "poll_interval_seconds": 1.0,
+  "per_batch_deadline_seconds": 3600.0,
+  "batch_observations": [
+    {
+      "index": 0,
+      "tasks": 256,
+      "batch_id": "batch_b23449f124b82341932f5dc8f74f2308",
+      "status": "completed",
+      "upload_seconds": 0.41315,
+      "create_seconds": 0.555642,
+      "turnaround_seconds": 30.609084,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 1,
+      "tasks": 256,
+      "batch_id": "batch_33c6ef3342c7321bf34e886b6e4190ff",
+      "status": "completed",
+      "upload_seconds": 0.530028,
+      "create_seconds": 0.744387,
+      "turnaround_seconds": 159.652631,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "tasks": 256,
+      "batch_id": "batch_1cb29d90492e2a028dbc5dafe7b2186d",
+      "status": "completed",
+      "upload_seconds": 0.662003,
+      "create_seconds": 1.284111,
+      "turnaround_seconds": 159.481955,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "tasks": 256,
+      "batch_id": "batch_49116120602d5f357ab6187a678fa97a",
+      "status": "completed",
+      "upload_seconds": 0.597738,
+      "create_seconds": 1.910287,
+      "turnaround_seconds": 160.671149,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        },
+        {
+          "stage": "poll",
+          "type": "HTTPStatusError",
+          "http_status": 503,
+          "create_outcome_uncertain": false,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "tasks": 256,
+      "batch_id": "batch_ddc9b750b751ebc20d106748c6d53b5a",
+      "status": "completed",
+      "upload_seconds": 0.700016,
+      "create_seconds": 0.447877,
+      "turnaround_seconds": 159.483177,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "tasks": 256,
+      "batch_id": "batch_683fc1fa9962bcba09406aa48461cd9e",
+      "status": "completed",
+      "upload_seconds": 0.701655,
+      "create_seconds": 1.095168,
+      "turnaround_seconds": 159.42621,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "tasks": 256,
+      "batch_id": "batch_9e1d90d4ee5ecd1ea34aaaa357b99437",
+      "status": "completed",
+      "upload_seconds": 0.717877,
+      "create_seconds": 0.727626,
+      "turnaround_seconds": 239.84012,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "tasks": 256,
+      "batch_id": "batch_0be2b17ffba59c397c8d6fb33794ac8d",
+      "status": "completed",
+      "upload_seconds": 0.759729,
+      "create_seconds": 0.898097,
+      "turnaround_seconds": 242.89134,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "tasks": 256,
+      "batch_id": "batch_5bd44047a67a471c3c011a10db5363c5",
+      "status": "completed",
+      "upload_seconds": 0.593943,
+      "create_seconds": 1.660397,
+      "turnaround_seconds": 158.602424,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "tasks": 256,
+      "batch_id": "batch_256abee1133797f034b7aba8c4268d46",
+      "status": "completed",
+      "upload_seconds": 0.396773,
+      "create_seconds": 0.591082,
+      "turnaround_seconds": 158.613485,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "tasks": 256,
+      "batch_id": "batch_7db58606e8ab73884d3e43f571ce0bcd",
+      "status": "completed",
+      "upload_seconds": 0.437589,
+      "create_seconds": 0.590512,
+      "turnaround_seconds": 158.500633,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "tasks": 256,
+      "batch_id": "batch_da12ecfd57bf1313ed197a4096850294",
+      "status": "completed",
+      "upload_seconds": 0.349992,
+      "create_seconds": 0.920704,
+      "turnaround_seconds": 158.332028,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "tasks": 256,
+      "batch_id": "batch_27faaad7e6d198ab76dffb00814ebf01",
+      "status": "completed",
+      "upload_seconds": 0.47578,
+      "create_seconds": 1.264364,
+      "turnaround_seconds": 158.049486,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "tasks": 256,
+      "batch_id": "batch_343b44a3b64557d0d7f5c5dde7451f0d",
+      "status": "completed",
+      "upload_seconds": 0.250766,
+      "create_seconds": 0.853422,
+      "turnaround_seconds": 158.078064,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "tasks": 256,
+      "batch_id": "batch_255178915282d81d2846877b66b3bf40",
+      "status": "completed",
+      "upload_seconds": 0.581576,
+      "create_seconds": 1.570514,
+      "turnaround_seconds": 157.611891,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "tasks": 256,
+      "batch_id": "batch_a6597bb8cc3cfe60bc975057270b2b1b",
+      "status": "completed",
+      "upload_seconds": 0.482606,
+      "create_seconds": 2.497199,
+      "turnaround_seconds": 157.529983,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "tasks": 256,
+      "batch_id": "batch_8ccbee04564bbc51b9960f70f5c8e1b7",
+      "status": "completed",
+      "upload_seconds": 0.425753,
+      "create_seconds": 1.087625,
+      "turnaround_seconds": 169.711146,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "tasks": 256,
+      "batch_id": "batch_2bd88a622ef80a2dce5a72c4d13434a5",
+      "status": "completed",
+      "upload_seconds": 0.372928,
+      "create_seconds": 1.62061,
+      "turnaround_seconds": 177.877155,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "tasks": 256,
+      "batch_id": "batch_64291c13aa5befc2d4977c1418c5a412",
+      "status": "completed",
+      "upload_seconds": 0.326406,
+      "create_seconds": 0.567873,
+      "turnaround_seconds": 184.92107,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "tasks": 256,
+      "batch_id": "batch_a0a15cfd34c2b6bc1b564a6bbe52b449",
+      "status": "completed",
+      "upload_seconds": 0.394285,
+      "create_seconds": 0.609112,
+      "turnaround_seconds": 194.942845,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "tasks": 256,
+      "batch_id": "batch_a2c8de13a1f312116ca5acb377c1ebd4",
+      "status": "completed",
+      "upload_seconds": 0.30152,
+      "create_seconds": 0.811281,
+      "turnaround_seconds": 191.669748,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "tasks": 256,
+      "batch_id": "batch_eefe6a9bedb32ba3137d50a9c8f68465",
+      "status": "completed",
+      "upload_seconds": 0.364837,
+      "create_seconds": 1.566989,
+      "turnaround_seconds": 196.540491,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "tasks": 256,
+      "batch_id": "batch_eca2da07a6a2fd7c5bc0a6fe7ff768fe",
+      "status": "completed",
+      "upload_seconds": 0.196882,
+      "create_seconds": 0.850814,
+      "turnaround_seconds": 210.946449,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "tasks": 256,
+      "batch_id": "batch_bd8f8a357e24ecbff8b70e2692cf4ac3",
+      "status": "completed",
+      "upload_seconds": 0.412386,
+      "create_seconds": 0.639883,
+      "turnaround_seconds": 217.730833,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "tasks": 256,
+      "batch_id": "batch_eb6e4d287643ebe778d16e50e70e3727",
+      "status": "completed",
+      "upload_seconds": 0.325996,
+      "create_seconds": 1.284843,
+      "turnaround_seconds": 208.429766,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "tasks": 256,
+      "batch_id": "batch_c0be65041cea7a58bdb89b6051391a62",
+      "status": "completed",
+      "upload_seconds": 0.386219,
+      "create_seconds": 1.473364,
+      "turnaround_seconds": 217.471051,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "tasks": 256,
+      "batch_id": "batch_29c7f09b6e9bb6406c98b531133ffa10",
+      "status": "completed",
+      "upload_seconds": 0.371069,
+      "create_seconds": 0.938183,
+      "turnaround_seconds": 225.541311,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "tasks": 256,
+      "batch_id": "batch_dc9dd8cf4902dec62bf1ceddd346857a",
+      "status": "completed",
+      "upload_seconds": 0.162033,
+      "create_seconds": 1.134558,
+      "turnaround_seconds": 223.500998,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "tasks": 256,
+      "batch_id": "batch_fcf1b5d67edf3c6c3f1f60384cd7aec8",
+      "status": "completed",
+      "upload_seconds": 0.357507,
+      "create_seconds": 1.114584,
+      "turnaround_seconds": 226.243877,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "tasks": 256,
+      "batch_id": "batch_4816376d8ce5f9833fcccc003e4d567c",
+      "status": "completed",
+      "upload_seconds": 0.130697,
+      "create_seconds": 1.260029,
+      "turnaround_seconds": 229.363094,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 122
+        }
+      ]
+    },
+    {
+      "index": 30,
+      "tasks": 256,
+      "batch_id": "batch_f09cd5f1e5af2564c350f17d356cd321",
+      "status": "completed",
+      "upload_seconds": 0.327541,
+      "create_seconds": 0.923539,
+      "turnaround_seconds": 236.147021,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "tasks": 256,
+      "batch_id": "batch_cf5e409de614e360cf9169d03422f05c",
+      "status": "completed",
+      "upload_seconds": 0.257335,
+      "create_seconds": 0.900666,
+      "turnaround_seconds": 241.145859,
+      "request_counts": {
+        "total": 256,
+        "completed": 256,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [
+        {
+          "stage": "poll",
+          "type": "ConnectError",
+          "http_status": null,
+          "create_outcome_uncertain": false,
+          "count": 123
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Not a daily capacity forecast",
+    "Token lengths are measured from outputs, not guaranteed by the prompt",
+    "Batch turnaround starts before POST /v1/batches and ends at first client-observed terminal response; polling adds observation delay",
+    "No per-task inference latency or quality evaluation",
+    "Accepted counts require a received create acknowledgement; uncertain create errors may have committed server-side"
+  ]
+}

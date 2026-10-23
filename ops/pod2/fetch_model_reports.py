@@ -41,6 +41,10 @@ FILES = {
     "claim_phase2": ("pod2-api-claim-phase2.json", "pod2-api-claim-phase2"),
     "claim20_before_workers": ("analysis-sqlclaim20-before-workers.json", "pod2-analysis-sqlclaim20-before-workers"),
     "claim20_after_workers": ("analysis-sqlclaim20-after-workers.json", "pod2-analysis-sqlclaim20-after-workers"),
+    "claim20_observation": ("pod2-sqlclaim20-secondary-observation.json", "squad7b-analysis-2048-sql20v3-secondary-observation"),
+    "seq16_tuning": ("pod2-16seq-tuning.json", "pod2-16seq-tuning"),
+    "seq16_ready": ("pod2-16seq-ready.json", "pod2-16seq-ready"),
+    "seq16_before_workers": ("analysis-seq16-before-workers.json", "pod2-analysis-seq16-before-workers"),
 }
 
 

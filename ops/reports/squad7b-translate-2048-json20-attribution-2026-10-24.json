@@ -1,0 +1,193 @@
+{
+  "run_id": "bench-8b6bcca57a87",
+  "durable_results_and_usage_match_downloaded_outputs": true,
+  "durable_task_count": 2048,
+  "durable_attempt_count": 2538,
+  "tasks_with_multiple_attempts": 283,
+  "accepted_completions_by_worker": {
+    "primary-qwen7b-gpu0": {
+      "completed": 209,
+      "other_statuses": {
+        "failed": 9
+      },
+      "prompt_tokens": 106604,
+      "completion_tokens": 86855
+    },
+    "primary-qwen7b-gpu1": {
+      "completed": 224,
+      "other_statuses": {
+        "failed": 15
+      },
+      "prompt_tokens": 113530,
+      "completion_tokens": 91775
+    },
+    "primary-qwen7b-gpu2": {
+      "completed": 266,
+      "other_statuses": {
+        "failed": 21
+      },
+      "prompt_tokens": 136526,
+      "completion_tokens": 109986
+    },
+    "primary-qwen7b-gpu3": {
+      "completed": 262,
+      "other_statuses": {
+        "failed": 29
+      },
+      "prompt_tokens": 134850,
+      "completion_tokens": 109478
+    },
+    "secondpod-7b-mig0": {
+      "completed": 46,
+      "other_statuses": {},
+      "prompt_tokens": 23659,
+      "completion_tokens": 20281
+    },
+    "secondpod-7b-mig1": {
+      "completed": 64,
+      "other_statuses": {
+        "failed": 15
+      },
+      "prompt_tokens": 32881,
+      "completion_tokens": 25858
+    },
+    "secondpod-7b-mig10": {
+      "completed": 63,
+      "other_statuses": {
+        "failed": 12
+      },
+      "prompt_tokens": 31877,
+      "completion_tokens": 25771
+    },
+    "secondpod-7b-mig11": {
+      "completed": 60,
+      "other_statuses": {
+        "failed": 14
+      },
+      "prompt_tokens": 30380,
+      "completion_tokens": 24875
+    },
+    "secondpod-7b-mig12": {
+      "completed": 51,
+      "other_statuses": {},
+      "prompt_tokens": 25897,
+      "completion_tokens": 21124
+    },
+    "secondpod-7b-mig13": {
+      "completed": 57,
+      "other_statuses": {
+        "failed": 14
+      },
+      "prompt_tokens": 28806,
+      "completion_tokens": 23235
+    },
+    "secondpod-7b-mig14": {
+      "completed": 66,
+      "other_statuses": {},
+      "prompt_tokens": 34340,
+      "completion_tokens": 27837
+    },
+    "secondpod-7b-mig15": {
+      "completed": 48,
+      "other_statuses": {},
+      "prompt_tokens": 24163,
+      "completion_tokens": 19450
+    },
+    "secondpod-7b-mig2": {
+      "completed": 60,
+      "other_statuses": {
+        "failed": 9
+      },
+      "prompt_tokens": 30872,
+      "completion_tokens": 24713
+    },
+    "secondpod-7b-mig3": {
+      "completed": 61,
+      "other_statuses": {},
+      "prompt_tokens": 31331,
+      "completion_tokens": 25057
+    },
+    "secondpod-7b-mig4": {
+      "completed": 62,
+      "other_statuses": {
+        "failed": 1
+      },
+      "prompt_tokens": 31920,
+      "completion_tokens": 26632
+    },
+    "secondpod-7b-mig5": {
+      "completed": 55,
+      "other_statuses": {
+        "failed": 5
+      },
+      "prompt_tokens": 27703,
+      "completion_tokens": 22326
+    },
+    "secondpod-7b-mig6": {
+      "completed": 63,
+      "other_statuses": {
+        "failed": 5
+      },
+      "prompt_tokens": 32171,
+      "completion_tokens": 25594
+    },
+    "secondpod-7b-mig7": {
+      "completed": 49,
+      "other_statuses": {
+        "failed": 9
+      },
+      "prompt_tokens": 24525,
+      "completion_tokens": 19442
+    },
+    "secondpod-7b-mig8": {
+      "completed": 60,
+      "other_statuses": {},
+      "prompt_tokens": 30091,
+      "completion_tokens": 24352
+    },
+    "secondpod-7b-mig9": {
+      "completed": 46,
+      "other_statuses": {
+        "failed": 18
+      },
+      "prompt_tokens": 22851,
+      "completion_tokens": 18225
+    }
+  },
+  "task_creation_to_durable_finish_seconds": {
+    "samples": 1872,
+    "p50": 58.941108,
+    "p95": 137.771623,
+    "max": 238.636193,
+    "mean": 64.141986
+  },
+  "accepted_attempt_claim_to_durable_finish_seconds": {
+    "samples": 1872,
+    "p50": 8.033199,
+    "p95": 33.23625,
+    "max": 64.210088,
+    "mean": 14.228021
+  },
+  "limitations": [
+    "Attempt duration includes worker scheduling, GPU execution, network and durable completion; not isolated GPU latency",
+    "Task turnaround includes queue wait",
+    "Only accepted result usage is counted; unsuccessful physical inference may consume additional compute"
+  ],
+  "attempt_status_and_error_counts": [
+    {
+      "status": "completed",
+      "error_code": "none",
+      "count": 1872
+    },
+    {
+      "status": "failed",
+      "error_code": "invalid_json_output",
+      "count": 176
+    },
+    {
+      "status": "retrying",
+      "error_code": "invalid_json_output",
+      "count": 490
+    }
+  ]
+}

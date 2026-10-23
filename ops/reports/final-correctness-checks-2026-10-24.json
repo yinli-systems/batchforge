@@ -1,0 +1,40 @@
+{
+  "observed_at": "2026-10-23T21:51:01.112608+00:00",
+  "check_command": ".venv/bin/python devtools/run_checks.py",
+  "python": "3.12",
+  "actual_database": "private temporary local PostgreSQL 16 cluster, started and stopped by check command",
+  "passed": 197,
+  "skipped": 1,
+  "skip_reason": "Linux-only /proc service watchdog identity check on macOS; native Linux crash evidence recorded separately",
+  "elapsed_seconds": 22.58,
+  "warning": "Starlette TestClient httpx deprecation; no failed test",
+  "frontend": {
+    "command": "/Users/kevin/.local/node/bin/node --test frontend/tests/console-actions.test.js",
+    "node": "24.21.0",
+    "passed": 3,
+    "latest_source_sha256": "6b06e25ecf77198ce87a1ff4eeae12fc04469a6400ad725c6439780d06e5894b"
+  },
+  "wheel": {
+    "path": "batchforge-0.1.0-py3-none-any.whl",
+    "sha256": "dc7f5f7fe412a1a79ee8b8018018ad10bd4f0164e5f8b68f85a6f784b14a7600",
+    "source_members_checked": [
+      "backend/schema.sql",
+      "backend/migrations/0002_sql_completion.sql",
+      "backend/migrations/0003_sql_claim.sql",
+      "worker/runtime.py",
+      "worker/metrics.py"
+    ],
+    "source_member_bytes_match_checkout": true
+  },
+  "hosted_ci": {
+    "commit": "af2346793dab85d4cac0bb22fdb8d96fe5cd82c1",
+    "url": "https://github.com/yinli-systems/batchforge/actions/runs/40028627846",
+    "job_started": false,
+    "provider_message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the Billing & plans section in your settings"
+  },
+  "container_build_tested": false,
+  "limitations": [
+    "Local checks are separate from hosted CI",
+    "Short native experiments do not establish a production SLA or a ten-million-task day"
+  ]
+}

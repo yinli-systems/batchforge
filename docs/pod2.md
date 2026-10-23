@@ -32,7 +32,7 @@ numeric selectors as physical indices in that path. A selector beginning with
 
 Matching each verified engine process's numeric CUDA mask in a fresh
 metadata-only Driver process confirmed six unique selected MIG UUIDs. The
-currently activated masks 0 through 5 select one instance on physical GPU0,
+initially activated masks 0 through 5 selected one instance on physical GPU0,
 one on GPU1 and four on GPU2. Ten additional MIG instances were enumerated but
 were not loaded during the frozen six-engine baseline. This audit made no GPU
 allocation, MIG geometry change or service restart. Additional rollout must use
@@ -68,9 +68,9 @@ It selects vLLM's own `NonNvmlCudaPlatform`, whose capability, name and memory
 methods use the selected CUDA logical device. The overlay is provided only
 through each engine's `PYTHONPATH`; no installed vLLM or Torch source was
 modified. The selector requires a complete single MIG UUID and exactly vLLM
-0.10.2. Spawned worker processes inherit it. Original engines receive these
-settings only for future UUID-based watchdog restarts; their live processes
-remain unchanged.
+0.10.2. Spawned worker processes inherit it. During the ten-instance expansion,
+original engines received these settings only for future UUID-based watchdog
+restarts; their live processes remained unchanged in that phase.
 
 The initial validation observed compute capability 12.0, the correct MIG name,
 and 25,367,150,592 bytes of memory. MIG6 then generated eight actual output
@@ -93,7 +93,7 @@ All sixteen engines use:
 - Model directory: `/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/<revision>`.
 - Four safetensors shards, totaling 15,231,271,888 bytes, each checked against the
   SHA256 published in the official Hugging Face repository metadata.
-- Context limit 4096, eight active sequences, 4096 batched prefill tokens,
+- Context limit 4096, sixteen active sequences, 4096 batched prefill tokens,
   eager execution, and explicitly disabled prefix caching.
 - GPU memory utilization target 0.82; each engine reported 14.2488 GiB of model
   weights and approximately 4.56 GiB of KV cache. Following the load probe,
@@ -113,6 +113,29 @@ seconds. The original six engine PIDs remained unchanged. Their future-restart
 configurations now include the application-local MIG platform selector.
 Review [the final fleet identity and readiness report](../ops/reports/pod2-16mig-ready-2026-10-24.json)
 and [each additional engine's generation proof](../ops/reports/pod2-7b-expansion-2026-10-24.json).
+
+The later sequence rollout completed at 21:53:35.279201 UTC. All sixteen engines
+were restarted under their explicit unique MIG UUIDs with the application-local
+platform selector, including the original six. Every fresh startup reported
+85,440 KV-cache tokens, exceeding the 65,536-token reservation for sixteen
+4096-token contexts. Each engine passed sixteen simultaneous real generation
+requests, with the engine's running-request metric observed at sixteen. All
+256 diagnostic requests completed; their output was not quality-evaluated.
+The model revision, precision, memory fraction, context limit, batched-token
+limit and disabled prefix caching were preserved.
+
+All sixteen workers now reserve sixteen contexts each (`WORKER_MAX_INFLIGHT=16`,
+`WORKER_TOKEN_BUDGET=65536`), totaling 256 secondary slots. Their frozen source
+archive is `a2a3ac2f6f5be7593f13a52cbf9cc3167031c9751c8f9df2e9c1ae47323c428f`,
+including JSON output validation. The watchdog resumed as PID 82999 with all
+35 services running and ready; both APIs and the gateway retained their process
+identities. No device needed rollback. Owner-only eight-slot configurations
+remain available for rollback without being committed. See
+[per-device tuning and generation evidence](../ops/reports/pod2-16seq-tuning-2026-10-24.json),
+[final readiness](../ops/reports/pod2-16seq-ready-2026-10-24.json), and
+[the preserved clean-workload baseline](../ops/reports/pod2-analysis-seq16-before-workers-2026-10-24.json).
+The matching supervision snapshot is preserved under its own
+[sixteen-sequence stage filename](../ops/reports/pod2-16seq-service-supervision-2026-10-24.json).
 
 ## Original six-engine 7B workload measurements
 
@@ -234,12 +257,16 @@ configuration retained mode 0600. The former laptop broker exited with status
 zero; neither its old port 18082 nor the machine relay port 18084 is used by the
 current worker configurations.
 
-`ops/pod2/start_model_workers.py` validates the selected private configurations and
-model identities before starting workers:
+The initial eight-slot rollout used `ops/pod2/start_model_workers.py` to validate
+private configurations and model identities before starting workers:
 
 ```sh
 /root/batchforge-runtime/venv/bin/python ops/pod2/start_model_workers.py --devices 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
 ```
+
+That initializer expects eight-slot configurations. The active sixteen-slot
+deployment uses the private supervision manifest and existing tuned environment
+files; do not regenerate them with the initial-rollout helper.
 
 The temporary server-side machine link remains available for rollback checks.
 Its dedicated user-authorized key permits only a fixed relay command, with no
@@ -298,6 +325,58 @@ are recorded in the [claim pre-run snapshot](../ops/reports/pod2-analysis-sqlcla
 Comparisons must use after-minus-before counters, disclose the different
 starting origin, and avoid treating the workload as a perfectly isolated SQL
 microbenchmark. No worker was restarted merely to reset these measurements.
+
+The completed 20-engine SQL v3 workload processed all 2048 tasks without terminal
+failures in 86.949935 seconds (23.553784 tasks/second across both Pods). Its exact
+measurement window was 21:39:18.247531–21:40:45.197500 UTC. The secondary's
+43 fully contained samples cover 21:39:19.321759–21:40:43.603139 UTC, with no
+API scrape failures or excluded counter-reset intervals. Claim requests averaged
+49.50 ms (p95 histogram bucket 25–50 ms); completion requests averaged 49.74 ms
+(p95 bucket 50–75 ms). These observations concern this workload and do not prove
+a daily capacity or end-to-end task latency. All sixteen workers were ready in
+the preserved after snapshot; no worker's failover counter increased during
+the comparison. The earlier MIG9 and MIG13 counters and MIG13's direct-API origin
+remained unchanged. See the [after snapshot](../ops/reports/pod2-analysis-sqlclaim20-after-workers-2026-10-24.json)
+and [strict observation window](../ops/reports/squad7b-analysis-2048-sql20v3-secondary-observation-2026-10-24.json).
+
+The clean sixteen-sequence run completed all 2048 tasks without failures or
+retries in 59.80328 seconds (34.245613 tasks/second across both Pods), measured
+from 21:53:59.555580 to 21:54:59.358881 UTC. Its
+[strict secondary observation](../ops/reports/squad7b-analysis-2048-seq16-secondary-observation-2026-10-24.json)
+contains 29 samples, no API scrape failures and no counter-reset exclusions.
+The [mid-load worker snapshot](../ops/reports/pod2-analysis-seq16-mid-workers-2026-10-24.json)
+at 21:54:22.900492 UTC observed 255 in-flight requests across 256 secondary
+slots, and all sixteen workers had completed platform tasks.
+
+The [later worker snapshot](../ops/reports/pod2-analysis-seq16-after-workers-2026-10-24.json)
+was captured at 21:55:46.939922 UTC, after the next 8192-task load began at
+21:55:24 UTC. Its cumulative counters therefore span both runs; subtracting the
+earlier worker baseline cannot establish clean-run task attribution. Use the
+exact database batch ID and timestamp-bounded observations for that purpose.
+
+During the subsequent 8192-task run, the primary gateway and both primary APIs
+were deliberately unavailable from 21:56:03.156472 to 21:58:03.201409 UTC
+(120.044924 seconds). The independently checked batch advanced from 591 to
+3196 durable results on the secondary during that interval. All 8192 tasks
+eventually completed, with no failed or cancelled tasks; 61 expired attempts
+accounted for the 8253 total attempts. See the
+[full run](../ops/reports/squad7b-analysis-8192-fault20-v3-seq16-2026-10-24.json),
+[batch attribution](../ops/reports/squad7b-analysis-8192-fault20-v3-seq16-attribution-2026-10-24.json), and
+[fault evidence](../ops/reports/controlplane-outage-bench-b868274f8fe7-2026-10-24.json).
+This exercised an application control-plane outage, not Pod power loss or a
+managed-database failover.
+
+The [secondary outage-window observation](../ops/reports/pod2-fault8192-outage-secondary-observation-2026-10-24.json)
+contains 58 fully contained samples, spanning 21:56:03.388110–21:58:01.212948 UTC.
+It records 2220 claim HTTP calls with mean 70.44 ms and p95 bucket 75–100 ms,
+and 2750 completion HTTP calls with mean 582.87 ms and p95 bucket 2.5–5 seconds.
+There were two API-a metrics scrape failures and one API-b scrape failure, with
+no counter-reset exclusions. HTTP calls include idempotent retries and any
+non-success responses; they are not unique durable task counts. The source raw
+slice is retained with SHA256
+`a887769f413e32667a55cf81bcc16c399186ab89fe0f22cc6d56d7d023e2b170`.
+The [full-run secondary observation](../ops/reports/pod2-fault8192-full-secondary-observation-2026-10-24.json)
+is separately bounded to 21:55:25.847724–21:59:32.633354 UTC.
 
 The baseline secondary observer started after the inference benchmark began.
 Its frozen summary includes 314 samples fully contained in the requested

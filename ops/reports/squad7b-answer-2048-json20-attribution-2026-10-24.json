@@ -1,0 +1,169 @@
+{
+  "run_id": "bench-cb546d2836e0",
+  "durable_results_and_usage_match_downloaded_outputs": true,
+  "durable_task_count": 2048,
+  "durable_attempt_count": 2054,
+  "tasks_with_multiple_attempts": 3,
+  "accepted_completions_by_worker": {
+    "primary-qwen7b-gpu0": {
+      "completed": 282,
+      "other_statuses": {},
+      "prompt_tokens": 316211,
+      "completion_tokens": 4096
+    },
+    "primary-qwen7b-gpu1": {
+      "completed": 344,
+      "other_statuses": {},
+      "prompt_tokens": 384588,
+      "completion_tokens": 5070
+    },
+    "primary-qwen7b-gpu2": {
+      "completed": 272,
+      "other_statuses": {},
+      "prompt_tokens": 304485,
+      "completion_tokens": 3988
+    },
+    "primary-qwen7b-gpu3": {
+      "completed": 347,
+      "other_statuses": {},
+      "prompt_tokens": 385244,
+      "completion_tokens": 4998
+    },
+    "secondpod-7b-mig0": {
+      "completed": 45,
+      "other_statuses": {},
+      "prompt_tokens": 49840,
+      "completion_tokens": 609
+    },
+    "secondpod-7b-mig1": {
+      "completed": 60,
+      "other_statuses": {},
+      "prompt_tokens": 66259,
+      "completion_tokens": 965
+    },
+    "secondpod-7b-mig10": {
+      "completed": 55,
+      "other_statuses": {},
+      "prompt_tokens": 60699,
+      "completion_tokens": 849
+    },
+    "secondpod-7b-mig11": {
+      "completed": 59,
+      "other_statuses": {},
+      "prompt_tokens": 65883,
+      "completion_tokens": 805
+    },
+    "secondpod-7b-mig12": {
+      "completed": 55,
+      "other_statuses": {},
+      "prompt_tokens": 60768,
+      "completion_tokens": 849
+    },
+    "secondpod-7b-mig13": {
+      "completed": 41,
+      "other_statuses": {},
+      "prompt_tokens": 46023,
+      "completion_tokens": 537
+    },
+    "secondpod-7b-mig14": {
+      "completed": 56,
+      "other_statuses": {},
+      "prompt_tokens": 62525,
+      "completion_tokens": 809
+    },
+    "secondpod-7b-mig15": {
+      "completed": 43,
+      "other_statuses": {},
+      "prompt_tokens": 47920,
+      "completion_tokens": 601
+    },
+    "secondpod-7b-mig2": {
+      "completed": 53,
+      "other_statuses": {},
+      "prompt_tokens": 58498,
+      "completion_tokens": 773
+    },
+    "secondpod-7b-mig3": {
+      "completed": 35,
+      "other_statuses": {
+        "failed": 2
+      },
+      "prompt_tokens": 39462,
+      "completion_tokens": 498
+    },
+    "secondpod-7b-mig4": {
+      "completed": 46,
+      "other_statuses": {},
+      "prompt_tokens": 51525,
+      "completion_tokens": 639
+    },
+    "secondpod-7b-mig5": {
+      "completed": 42,
+      "other_statuses": {},
+      "prompt_tokens": 45806,
+      "completion_tokens": 563
+    },
+    "secondpod-7b-mig6": {
+      "completed": 57,
+      "other_statuses": {},
+      "prompt_tokens": 64029,
+      "completion_tokens": 844
+    },
+    "secondpod-7b-mig7": {
+      "completed": 49,
+      "other_statuses": {},
+      "prompt_tokens": 54830,
+      "completion_tokens": 699
+    },
+    "secondpod-7b-mig8": {
+      "completed": 51,
+      "other_statuses": {},
+      "prompt_tokens": 57200,
+      "completion_tokens": 817
+    },
+    "secondpod-7b-mig9": {
+      "completed": 53,
+      "other_statuses": {
+        "failed": 1
+      },
+      "prompt_tokens": 58133,
+      "completion_tokens": 828
+    }
+  },
+  "task_creation_to_durable_finish_seconds": {
+    "samples": 2045,
+    "p50": 8.582843,
+    "p95": 13.005665,
+    "max": 16.14598,
+    "mean": 8.648641
+  },
+  "accepted_attempt_claim_to_durable_finish_seconds": {
+    "samples": 2045,
+    "p50": 0.667066,
+    "p95": 4.632432,
+    "max": 12.780048,
+    "mean": 1.653872
+  },
+  "limitations": [
+    "Attempt duration includes worker scheduling, GPU execution, network and durable completion; not isolated GPU latency",
+    "Task turnaround includes queue wait",
+    "Only accepted result usage is counted; unsuccessful physical inference may consume additional compute"
+  ],
+  "attempt_status_and_error_counts": [
+    {
+      "status": "completed",
+      "error_code": "none",
+      "count": 2045
+    },
+    {
+      "status": "failed",
+      "error_code": "invalid_json_output",
+      "count": 3
+    },
+    {
+      "status": "retrying",
+      "error_code": "invalid_json_output",
+      "count": 6
+    }
+  ]
+}

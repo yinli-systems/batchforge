@@ -25,6 +25,20 @@ workloads must remain untouched.
 | Supervisor configuration | `../supervisor.env` | `.env.supervisor-pod2` |
 | API configuration | `../api-a.env`, `../api-b.env` | `.env.api-a`, `.env.api-b` |
 
+Primary engine configurations are `.env.engine7b-gpuN-16` for `N=0..3`; their
+workers use `.env.worker7b-gpuN`. Each engine now permits 16 sequences; each
+worker has `WORKER_MAX_INFLIGHT=16` and `WORKER_TOKEN_BUDGET=65536`, reserving a
+4,096-token context per slot. BF16, 4,096 batched tokens, prefix caching off and
+the 0.24 GPU memory fraction are unchanged. The canonical manifest references
+these per-GPU engine files; `.env.engine7b` remains the earlier eight-sequence
+template. Private rollback copies are in `.runtime/primary-retune16-20261024/`.
+All four engines passed the free-memory gate, logged 77,024 KV tokens and served
+16 simultaneous generations with an observed engine-running peak of 16 before
+their workers were activated. See the [tuning evidence](../ops/reports/primary-retune-16seq-2026-10-24.json)
+and its [exact executed controller source](../ops/reports/primary-retune16-controller-2026-10-24.py).
+The dated controller is a historical execution record, not a routine restart
+command; use the current manifest and process manager for maintenance.
+
 Consult the manifest and model/device reports for the actual deployed engine
 count and UUID mapping. A physical GPU UUID is not a unique MIG instance ID.
 `torch.cuda.device_count()` alone undercounts the second Pod's 16 accessible MIG

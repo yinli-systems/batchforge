@@ -1,0 +1,160 @@
+{
+  "run_id": "bench-b868274f8fe7",
+  "durable_results_and_usage_match_downloaded_outputs": true,
+  "durable_task_count": 8192,
+  "durable_attempt_count": 8253,
+  "tasks_with_multiple_attempts": 61,
+  "accepted_completions_by_worker": {
+    "primary-qwen7b-gpu0": {
+      "completed": 833,
+      "other_statuses": {},
+      "prompt_tokens": 969151,
+      "completion_tokens": 155945
+    },
+    "primary-qwen7b-gpu1": {
+      "completed": 788,
+      "other_statuses": {},
+      "prompt_tokens": 911153,
+      "completion_tokens": 150105
+    },
+    "primary-qwen7b-gpu2": {
+      "completed": 599,
+      "other_statuses": {},
+      "prompt_tokens": 692959,
+      "completion_tokens": 113028
+    },
+    "primary-qwen7b-gpu3": {
+      "completed": 824,
+      "other_statuses": {},
+      "prompt_tokens": 951511,
+      "completion_tokens": 154583
+    },
+    "secondpod-7b-mig0": {
+      "completed": 325,
+      "other_statuses": {},
+      "prompt_tokens": 379272,
+      "completion_tokens": 60549
+    },
+    "secondpod-7b-mig1": {
+      "completed": 326,
+      "other_statuses": {},
+      "prompt_tokens": 375704,
+      "completion_tokens": 61719
+    },
+    "secondpod-7b-mig10": {
+      "completed": 333,
+      "other_statuses": {},
+      "prompt_tokens": 385971,
+      "completion_tokens": 62143
+    },
+    "secondpod-7b-mig11": {
+      "completed": 324,
+      "other_statuses": {},
+      "prompt_tokens": 374926,
+      "completion_tokens": 60318
+    },
+    "secondpod-7b-mig12": {
+      "completed": 316,
+      "other_statuses": {},
+      "prompt_tokens": 364128,
+      "completion_tokens": 60569
+    },
+    "secondpod-7b-mig13": {
+      "completed": 320,
+      "other_statuses": {},
+      "prompt_tokens": 367548,
+      "completion_tokens": 60403
+    },
+    "secondpod-7b-mig14": {
+      "completed": 321,
+      "other_statuses": {},
+      "prompt_tokens": 374771,
+      "completion_tokens": 60064
+    },
+    "secondpod-7b-mig15": {
+      "completed": 319,
+      "other_statuses": {},
+      "prompt_tokens": 367498,
+      "completion_tokens": 60388
+    },
+    "secondpod-7b-mig2": {
+      "completed": 315,
+      "other_statuses": {},
+      "prompt_tokens": 365645,
+      "completion_tokens": 61355
+    },
+    "secondpod-7b-mig3": {
+      "completed": 311,
+      "other_statuses": {},
+      "prompt_tokens": 360197,
+      "completion_tokens": 61049
+    },
+    "secondpod-7b-mig4": {
+      "completed": 327,
+      "other_statuses": {},
+      "prompt_tokens": 378362,
+      "completion_tokens": 61680
+    },
+    "secondpod-7b-mig5": {
+      "completed": 325,
+      "other_statuses": {},
+      "prompt_tokens": 376732,
+      "completion_tokens": 61853
+    },
+    "secondpod-7b-mig6": {
+      "completed": 313,
+      "other_statuses": {},
+      "prompt_tokens": 365104,
+      "completion_tokens": 60326
+    },
+    "secondpod-7b-mig7": {
+      "completed": 327,
+      "other_statuses": {},
+      "prompt_tokens": 377137,
+      "completion_tokens": 62223
+    },
+    "secondpod-7b-mig8": {
+      "completed": 326,
+      "other_statuses": {},
+      "prompt_tokens": 377981,
+      "completion_tokens": 61123
+    },
+    "secondpod-7b-mig9": {
+      "completed": 320,
+      "other_statuses": {},
+      "prompt_tokens": 368984,
+      "completion_tokens": 60081
+    }
+  },
+  "task_creation_to_durable_finish_seconds": {
+    "samples": 8192,
+    "p50": 152.33494,
+    "p95": 222.600206,
+    "max": 242.621654,
+    "mean": 129.270489
+  },
+  "accepted_attempt_claim_to_durable_finish_seconds": {
+    "samples": 8192,
+    "p50": 8.866576,
+    "p95": 15.345241,
+    "max": 38.132093,
+    "mean": 7.779338
+  },
+  "limitations": [
+    "Attempt duration includes worker scheduling, GPU execution, network and durable completion; not isolated GPU latency",
+    "Task turnaround includes queue wait",
+    "Only accepted result usage is counted; unsuccessful physical inference may consume additional compute"
+  ],
+  "attempt_status_and_error_counts": [
+    {
+      "status": "completed",
+      "error_code": "none",
+      "count": 8192
+    },
+    {
+      "status": "expired",
+      "error_code": "lease_expired",
+      "count": 61
+    }
+  ]
+}

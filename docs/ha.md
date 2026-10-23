@@ -458,6 +458,44 @@ writes and detects an intentionally corrupted duplicate accepted-attempt
 ledger. Neither set substitutes for executing the released production
 experiment under real inference load.
 
+The released experiment ran against real 8192-task SQuAD analysis run
+`bench-b868274f8fe7` on 2026-10-23 UTC (2026-10-24 in the operator's timezone).
+The [full probe report](../ops/reports/controlplane-outage-bench-b868274f8fe7-2026-10-24.json)
+records primary URLs 8080/8082/8083 unavailable from
+**21:56:03.156472 through 21:58:03.201409 UTC**, an observed 120.044924 seconds.
+Secondary durable completions increased from 591 to 3196: **2605 accepted
+results while the primary control-plane URLs were unavailable**. These are
+database task counts, separate from HTTP request counts. The
+[secondary API observation](../ops/reports/pod2-fault8192-outage-secondary-observation-2026-10-24.json)
+uses 58 fully contained samples and discloses three metrics-scrape failures;
+its HTTP calls include retry/non-success traffic and are not unique results.
+
+At database time 21:56:03.161546 UTC, 61 captured primary leases were still
+valid, with deadlines 21:57:29.902948–21:57:32.574527 UTC. All 61 subsequently
+became `expired` with the lease-expiry error, and a real old-token heartbeat
+received `409 stale_attempt`. Task/batch counters and accepted task/attempt/token
+usage agreed throughout the sampled experiment, with no duplicate accepted
+attempts. APIs/gateway/watchdog restoration completed without a restore error.
+While 3646 tasks remained pending and 272 running, restored API-a PID 123270
+was killed through its pinned pidfd; the watchdog produced ready PID 123329
+in **5.823263 seconds**. Gateway readiness remained successful at every poll
+during that recovery. All four primary worker and four engine PIDs were
+unchanged. This proves the application experiment's recovery behavior; it
+does not prove continuous availability between polls or whole-Pod/database
+failover.
+
+The obsolete `link-pod2` process was stopped and removed from the active
+manifest. A separate read-only check at 22:05:06.758785 UTC found both direct
+APIs and gateway ready, two gateway replicas, watchdog PID 123292, **11/11
+managed services running**, and no managed link process or link manifest entry.
+The operator's UI-only tunnel was outside the experiment. Both Pods' GPU
+workers used their own local control planes and the external managed database.
+The entire real workload subsequently finished **8192 completed, zero failed
+or cancelled**, with 8253 attempts: 8192 accepted plus the 61 lease-expired
+attempts. Output IDs and accepted usage matched; physical inference is still
+at least once. The full job window was 21:55:25.847724–21:59:32.633354 UTC;
+this fault experiment is not a clean throughput-capacity benchmark.
+
 To detach the released experiment from an SSH client, run this operator block
 from the primary app directory using `/root/batchforge-runtime/venv/bin/python`. Set the
 literal run ID from the specific 8192-task benchmark being tested. Never select
