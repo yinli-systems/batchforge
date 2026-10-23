@@ -17,7 +17,7 @@ def arguments(tmp_path):
         deadline=1, request_timeout=1, poll=.001, workload_dir=tmp_path)
 
 
-def fixture_transport(*, fail_second_create=False):
+def fixture_transport(*, fail_second_create=False, reasoning_only=False, malformed_message=False):
     uploaded, batches = {}, {}
     fast_terminal = asyncio.Event()
 
@@ -52,6 +52,10 @@ def fixture_transport(*, fail_second_create=False):
         if path.startswith("/v1/files/output-"):
             file_id = path.split("/")[3].removeprefix("output-")
             rows = [{"custom_id": row["custom_id"], "response": {"body": {"batchforge_test_only": True,
+                "choices": [{"index": 0, "message": "invalid" if malformed_message else {
+                    "role": "assistant", "content": None if reasoning_only else "final answer",
+                    "reasoning_content": "reasoning without final answer" if reasoning_only else None},
+                    "finish_reason": "length" if reasoning_only else "stop"}],
                 "usage": {"prompt_tokens": 2, "completion_tokens": 3}}}} for row in uploaded[file_id]]
             return httpx.Response(200, text="\n".join(json.dumps(row) for row in rows) + "\n")
         raise AssertionError(str(request.url))
@@ -77,6 +81,8 @@ async def test_measured_report_fingerprints_actual_payload_and_records_config(mo
     assert report["observed_prompt_tokens"] == 8
     assert report["observed_completion_tokens"] == 12
     assert report["test_fixture_detected"] is True
+    assert report["output_content"]["final_text_present"] == 4
+    assert report["output_content"]["no_final_text"] == 0
 
 
 @pytest.mark.asyncio
@@ -98,3 +104,27 @@ def test_percentiles_are_defined_for_small_and_empty_samples():
     assert distribution([2])["p95"] == 2
     assert distribution([1, 3])["p50"] == 2
     assert distribution([1, 3])["p95"] == 2.9
+
+
+@pytest.mark.asyncio
+async def test_reasoning_only_length_outputs_remain_durable_completions_without_final_answers(monkeypatch, tmp_path):
+    monkeypatch.setenv("BATCHFORGE_API_KEY", "test-only-key")
+    report = await run(arguments(tmp_path), transport=fixture_transport(reasoning_only=True))
+    assert report["passed"] is True
+    assert report["completed"] == 4 and report["observed_completion_tokens"] == 12
+    assert report["output_content"]["final_text_present"] == 0
+    assert report["output_content"]["reasoning_only"] == report["output_content"]["no_final_text"] == 4
+    assert report["output_content"]["length_capped"] == 4
+    assert report["output_finish_reasons"] == {"length": 4}
+    assert report["output_content"]["durable_completion_distinct_from_final_answer"] is True
+    assert report["output_content"]["quality_evaluated"] is False
+
+
+@pytest.mark.asyncio
+async def test_malformed_choice_message_is_explicit_output_validation_failure(monkeypatch, tmp_path):
+    monkeypatch.setenv("BATCHFORGE_API_KEY", "test-only-key")
+    report = await run(arguments(tmp_path), transport=fixture_transport(malformed_message=True))
+    assert report["passed"] is False
+    assert report["completed"] == 4  # Database durable state is not rewritten by an observer.
+    assert report["output_validation_errors"]
+    assert report["output_content"]["rows_with_valid_content_shape"] == 0

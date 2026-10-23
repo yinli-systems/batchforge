@@ -25,6 +25,13 @@ import threading
 import time
 from urllib.request import ProxyHandler, build_opener
 
+try:
+    from .manage import engine_tensor_parallel_size
+    from .host_memory import admission as host_admission
+except ImportError:  # The watchdog is also launched as ops/supervise.py.
+    from manage import engine_tensor_parallel_size
+    from host_memory import admission as host_admission
+
 ROOT = Path(__file__).resolve().parent.parent
 ROLES = {"api", "worker", "engine", "gateway", "link"}
 NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}\Z")
@@ -53,6 +60,34 @@ def local_path(value, root: Path):
         raise ConfigError("Invalid path")
     path = Path(value)
     return Path(os.path.abspath(path if path.is_absolute() else root / path))
+
+
+def engine_settings(path: Path):
+    # Read only nonsecret options needed for GPU gates, never forward an engine
+    # configuration file wholesale into the short-lived probe subprocess.
+    keys = {"ENGINE_TENSOR_PARALLEL_SIZE", "ENGINE_GPU_MEMORY_UTILIZATION", "ENGINE_GPU_MEMORY_MARGIN_MIB", "BATCHFORGE_MIG_PLATFORM", "VLLM_PLUGINS", "ENGINE_BACKEND", "ENGINE_MODEL_PATH"}
+    values = {key: os.environ[key] for key in keys if key in os.environ}
+    for line in private_read(path).decode().splitlines():
+        line = line.strip().removeprefix("export ").strip()
+        key, separator, value = line.partition("=")
+        if separator and key.strip() in keys:
+            values[key.strip()] = " ".join(shlex.split(value, comments=True))
+    engine_memory_margin_bytes(values)
+    return values
+
+
+def engine_memory_margin_bytes(settings):
+    raw = settings.get("ENGINE_GPU_MEMORY_MARGIN_MIB", "512")
+    if not isinstance(raw, str) or not re.fullmatch(r"[0-9]+", raw) or not 512 <= int(raw) <= 16384:
+        raise ValueError("ENGINE_GPU_MEMORY_MARGIN_MIB must be an integer from 512 to 16384")
+    return int(raw) * 1024**2
+
+
+def engine_parallel_size(gpu, settings):
+    size = int(engine_tensor_parallel_size(argparse.Namespace(gpu=gpu), settings))
+    if size == 1 and "," in gpu:
+        raise ValueError("Single-rank engines require one explicit GPU selector")
+    return size
 
 
 def load_manifest(path: Path, root: Path = ROOT):
@@ -105,10 +140,15 @@ def load_manifest(path: Path, root: Path = ROOT):
                 raise ConfigError("Duplicate local HTTP readiness port")
             endpoints.add(port)
         gpu = entry.get("gpu")
-        if gpu is not None and (role != "engine" or not isinstance(gpu, str) or not re.fullmatch(r"[A-Za-z0-9_,./-]{1,128}", gpu)):
+        if gpu is not None and (role != "engine" or not isinstance(gpu, str) or not re.fullmatch(r"[A-Za-z0-9_,./-]{1,1024}", gpu)):
             raise ConfigError("Invalid engine GPU selector")
-        if role == "engine" and (gpu is None or "," in gpu):
-            raise ConfigError("Each managed engine requires one explicit GPU selector")
+        if role == "engine":
+            if gpu is None:
+                raise ConfigError("Each managed engine requires an explicit GPU selector")
+            try:
+                engine_parallel_size(gpu, engine_settings(environment))
+            except (ValueError, UnicodeError):
+                raise ConfigError("Engine GPU selectors do not match its validated tensor parallel configuration") from None
         services.append({"role": role, "name": name, "env_file": str(environment), "python": str(interpreter), "port": port, "gpu": gpu})
     digest = hashlib.sha256(json.dumps(services, sort_keys=True).encode()).hexdigest()
     return path, services, digest
@@ -152,6 +192,8 @@ class Manager:
                 return None, "manager_protocol_error"
             if action == "start" and payload.get("status") not in {"started", "already_running"}:
                 return None, "manager_protocol_error"
+            if action == "reap" and (payload.get("status") not in {"reaped", "nothing_to_reap", "leader_running"} or type(payload.get("remaining")) is not int):
+                return None, "manager_protocol_error"
             return payload, None
         except subprocess.TimeoutExpired:
             return None, "manager_timeout"
@@ -175,24 +217,52 @@ class Manager:
         # dead engine. Read only the nonsecret utilization option; no env values
         # or CUDA probe diagnostics are logged or included in status snapshots.
         try:
-            fraction = os.environ.get("ENGINE_GPU_MEMORY_UTILIZATION", "0.06")
-            for line in private_read(Path(service["env_file"])).decode().splitlines():
-                line = line.strip().removeprefix("export ").strip()
-                key, separator, value = line.partition("=")
-                if separator and key.strip() == "ENGINE_GPU_MEMORY_UTILIZATION":
-                    fraction = " ".join(shlex.split(value, comments=True))
-            fraction = float(fraction)
+            try:
+                settings = engine_settings(Path(service["env_file"]))
+                margin = engine_memory_margin_bytes(settings)
+            except ValueError:
+                return False, "gpu_configuration_invalid"
+            size = engine_parallel_size(service["gpu"], settings)
+            if settings.get("ENGINE_BACKEND") == "llama_cpp":
+                try:
+                    if not host_admission(settings.get("ENGINE_MODEL_PATH", "")):
+                        return False, "host_memory_insufficient"
+                except (OSError, ValueError, KeyError):
+                    return False, "host_memory_probe_unavailable"
+            if size > 1:
+                reaped, error = self.invoke(service, "reap")
+                if error:
+                    return False, "engine_members_unconfirmed"
+                if reaped["status"] == "leader_running" or reaped["remaining"]:
+                    return False, "engine_members_still_running"
+            fraction = float(settings.get("ENGINE_GPU_MEMORY_UTILIZATION", "0.06"))
             if not math.isfinite(fraction) or not 0 < fraction < 1:
                 return False, "gpu_configuration_invalid"
-            probe = subprocess.run([service["python"], "-c", "import json,torch; free,total=torch.cuda.mem_get_info(0); print(json.dumps({'free':free,'total':total}))"],
+            if size == 1:
+                code = "import json,torch; free,total=torch.cuda.mem_get_info(0); print(json.dumps({'free':free,'total':total}))"
+            else:
+                code = ("import json,torch; count=torch.cuda.device_count(); "
+                        f"devices=[dict(rank=rank,free=free,total=total) for rank in range(count) for free,total in [torch.cuda.mem_get_info(rank)]] if count=={size} else []; "
+                        "print(json.dumps(dict(device_count=count,devices=devices)))")
+            probe = subprocess.run([service["python"], "-c", code],
                                    env={**os.environ, "CUDA_VISIBLE_DEVICES": service["gpu"]}, cwd=self.root,
                                    stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15, check=False)
             if probe.returncode or len(probe.stdout) > 4096:
                 return False, "gpu_probe_unavailable"
             memory = json.loads(probe.stdout)
-            if type(memory.get("free")) is not int or type(memory.get("total")) is not int or not 0 <= memory["free"] <= memory["total"]:
+            if not isinstance(memory, dict):
                 return False, "gpu_probe_unavailable"
-            return (True, None) if memory["free"] >= memory["total"] * fraction + 512 * 1024**2 else (False, "gpu_memory_not_released")
+            if size == 1:
+                devices = [memory]
+            else:
+                devices = memory.get("devices")
+                if type(memory.get("device_count")) is not int or memory["device_count"] != size or not isinstance(devices, list) or len(devices) != size:
+                    return False, "gpu_probe_unavailable"
+                if any(not isinstance(row, dict) or type(row.get("rank")) is not int or row["rank"] != index for index, row in enumerate(devices)):
+                    return False, "gpu_probe_unavailable"
+            if any(type(row.get("free")) is not int or type(row.get("total")) is not int or not 0 <= row["free"] <= row["total"] or row["total"] <= 0 for row in devices):
+                return False, "gpu_probe_unavailable"
+            return (True, None) if all(row["free"] >= row["total"] * fraction + margin for row in devices) else (False, "gpu_memory_not_released")
         except (OSError, ValueError, UnicodeError, subprocess.TimeoutExpired):
             return False, "gpu_probe_unavailable"
 

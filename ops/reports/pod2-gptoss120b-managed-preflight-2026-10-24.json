@@ -1,0 +1,14 @@
+{
+  "validated_at": "2026-10-23T22:46:59.361557+00:00",
+  "source_archive_sha256": "a2dec12c6d1a3ecebccaa7602213f37829fd7e906211aa996f4db499cf98d86e",
+  "source_files_sha256": {
+    "ops/manage.py": "cd15563e36f8a0a269378aff74e1b7bc42e575cb7a9062a73d28519bca3bcd85",
+    "ops/supervise.py": "c349a9760573fcc6ced56566d59edfb73d9c3801720d81cd46e67fcccae1c386",
+    "ops/engine_members.py": "e4d0b2f2c130dce6fa16a4925d3557ca16475793a5b4f156f62a3d8f2df471ff",
+    "ops/host_memory.py": "e4887b81fd3c95e7f94bd118d0917775d5e8839c7c59e07b7dd8d98552150902",
+    "ops/llama_backend.py": "d27fce11beb565b287d19bce61aa9c3edbf5cb802fd3630fa4788e7aeb31adb4"
+  },
+  "future_service_count": 34,
+  "future_configuration_sha256": "1bb4c334dbfd8ea6020941aab6552f8a282f4ca17596d3585a04d5c8a551e832",
+  "host_memory_admission_passed": true
+}

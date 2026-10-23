@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-23T23:25:37.641734+00:00",
+  "status": "passed",
+  "operator_source_sha256": {
+    "batchforge_capacity_preflight.py": "08940e1dbb04e87165ac4391dfce16e32f69dceba6739a688bba5e79d11ff206",
+    "batchforge_schema3_restore.py": "c8931cdb9446b452bd5c7f7488b8817c7cd6a5ef6c1a9cf301b3ebda2380c8d7"
+  },
+  "application_services_changed": false,
+  "credentials_in_argv": false,
+  "stages": [
+    {
+      "name": "capacity",
+      "returncode": 0,
+      "elapsed_seconds": 0.5406971630291082,
+      "stdout_sha256": "640aa8adf452e8b4cfbb406800d4c7bdcad7c1f12fd408dad1ca68c88728709b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "dump",
+      "returncode": 0,
+      "elapsed_seconds": 21.546143763989676,
+      "stdout_sha256": "61ab976467b8eabf9c0883439e310dccd89e81e3217388eb91ec5bc08b01fdee",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "restore",
+      "returncode": 0,
+      "elapsed_seconds": 26.995116667996626,
+      "stdout_sha256": "2c65903472e9d3f1ad11c87250541116f1c2933f112359832ed0e663aa279c93",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "capacity_before_dump": {
+    "schema_version": 1,
+    "started_at": "2026-10-23T23:25:37.866165+00:00",
+    "read_only": true,
+    "backup_created": false,
+    "restore_executed": false,
+    "credentials_in_argv": false,
+    "configured_sslmode": "verify-full",
+    "direct_connection": true,
+    "operator_sha256": "08940e1dbb04e87165ac4391dfce16e32f69dceba6739a688bba5e79d11ff206",
+    "client_preflight": {
+      "server_version": "17.11 (11592b3)",
+      "server_major": 17,
+      "pg_dump_version": "pg_dump (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+      "pg_dump_major": 17,
+      "pg_restore_version": "pg_restore (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+      "ssl_in_use": true,
+      "configured_sslmode": "verify-full",
+      "compatible": true
+    },
+    "ssl_in_use": true,
+    "source_database_bytes": 253566976,
+    "same_branch_connectable_non_template_database_count": 2,
+    "same_branch_connectable_non_template_database_bytes": 261439488,
+    "migration_rows": [
+      {
+        "version": 1,
+        "checksum": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219"
+      },
+      {
+        "version": 2,
+        "checksum": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b"
+      },
+      {
+        "version": 3,
+        "checksum": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003"
+      }
+    ],
+    "all_three_checksums_match": true,
+    "public_relation_bytes": 245366784,
+    "counts": {
+      "tasks": 25134,
+      "attempts": 25691,
+      "batches": 343,
+      "unfinished_tasks": 0
+    },
+    "local_disk_free_bytes": 949338796032,
+    "proposed_new_database_budget_bytes": 380350464,
+    "same_branch_after_restore_budget_bytes": 776007680,
+    "operator_safety_limit_bytes": 850000000,
+    "free_plan_conservative_limit_bytes": 1000000000,
+    "preliminary_same_branch_gate_passed": true,
+    "local_archive_space_gate_passed": true,
+    "limitations": [
+      "Branch pg_database_size values are not a complete project billing metric",
+      "Project other-branch usage and history retention must be checked separately before restore release",
+      "1.5x source plus128MiB reserve is an operator planning bound, not a guarantee of provider accounting"
+    ],
+    "finished_at": "2026-10-23T23:25:38.129793+00:00"
+  },
+  "archive": {
+    "schema_version": 1,
+    "observed_at": "2026-10-23T23:25:59.696211+00:00",
+    "server_version": "17.11 (11592b3)",
+    "server_major": 17,
+    "pg_dump_version": "pg_dump (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+    "pg_dump_major": 17,
+    "pg_restore_version": "pg_restore (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+    "ssl_in_use": true,
+    "configured_sslmode": "verify-full",
+    "compatible": true,
+    "snapshot_path": "/root/batchforge-runtime/app/.runtime/managed-backups/batchforge-20261023T232538Z-5ac7d056.dump",
+    "snapshot_sha256": "a87e67c3f947913672a40ccd76f431858fbd03d0505ad30f51ebf03be9fa297d",
+    "snapshot_bytes": 103379878,
+    "snapshot_mode": "0o600",
+    "archive_format": "custom",
+    "archive_list_verified": true,
+    "archive_toc_entries": 74,
+    "restore_verified": false,
+    "database_modified": false,
+    "credentials_in_argv": false,
+    "password_delivery": "temporary mode-0600 pgpass file when URI contains a password",
+    "limitations": [
+      "Archive listing is not a restore test",
+      "Cluster-global roles and external infrastructure require separate backup policies"
+    ]
+  },
+  "restore_verified": true,
+  "finished_at": "2026-10-23T23:26:26.724983+00:00"
+}

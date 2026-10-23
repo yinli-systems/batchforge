@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import shutil
@@ -19,6 +20,96 @@ from ops.supervise import ConfigError, Watchdog, load_manifest, private_write
 
 
 SERVICE = {"role": "api", "name": "one", "env_file": "/unused.env", "python": "/unused/python", "port": 9999, "gpu": None}
+
+
+def test_engine_default_command_retains_the_existing_single_gpu_argv():
+    from ops.manage import command
+
+    args = SimpleNamespace(role="engine", python="/owned/python", port=8100, gpu="0")
+    assert command(args, {}) == [
+        "/owned/python", "-m", "vllm.entrypoints.openai.api_server",
+        "--model", "Qwen/Qwen2.5-0.5B-Instruct", "--served-model-name", "Qwen/Qwen2.5-0.5B-Instruct",
+        "--host", "127.0.0.1", "--port", "8100", "--tensor-parallel-size", "1", "--dtype", "half",
+        "--max-model-len", "2048", "--max-num-seqs", "8", "--gpu-memory-utilization", "0.06",
+        "--enforce-eager", "--disable-log-requests", "--no-enable-prefix-caching",
+    ]
+
+
+def test_persisted_tp4_and_chunked_prefill_preserve_the_released_memory_budget(tmp_path, monkeypatch):
+    from ops.manage import command, load_env
+
+    for key in ("ENGINE_TENSOR_PARALLEL_SIZE", "ENGINE_ENABLE_CHUNKED_PREFILL", "BATCHFORGE_MIG_PLATFORM", "VLLM_PLUGINS"):
+        monkeypatch.delenv(key, raising=False)
+    path = tmp_path / "engine.env"
+    base = ("MODEL_NAME=openai/gpt-oss-120b\nENGINE_DTYPE=bfloat16\n"
+            "ENGINE_MAX_MODEL_LEN=18440\nENGINE_MAX_NUM_SEQS=4\n"
+            "ENGINE_GPU_MEMORY_UTILIZATION=0.24\nENGINE_MAX_NUM_BATCHED_TOKENS=2048\n")
+    args = SimpleNamespace(role="engine", python="/owned/python", port=8300, gpu="0,1,2,3")
+    path.write_text(base)
+    before = command(args, load_env(path))
+    path.write_text(base + "ENGINE_TENSOR_PARALLEL_SIZE=4\nENGINE_ENABLE_CHUNKED_PREFILL=1\n")
+    after = command(args, load_env(path))
+    assert after[after.index("--tensor-parallel-size") + 1] == "4"
+    assert after.count("--enable-chunked-prefill") == 1
+    stripped = [part for part in after if part != "--enable-chunked-prefill"]
+    stripped[stripped.index("--tensor-parallel-size") + 1] = "1"
+    assert stripped == before
+    assert after[after.index("--gpu-memory-utilization") + 1] == "0.24"
+    assert after[after.index("--max-num-batched-tokens") + 1] == "2048"
+    assert "--cpu-offload-gb" not in after
+    path.write_text(base + "ENGINE_ENABLE_CHUNKED_PREFILL=0\n")
+    assert command(args, load_env(path)) == before
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "1.5", "true", "", " 4", "04"])
+def test_invalid_tensor_parallel_configuration_fails_before_launch(value):
+    from ops.manage import command
+
+    args = SimpleNamespace(role="engine", python="/owned/python", port=8300, gpu="0,1,2,3")
+    with pytest.raises(ValueError, match="positive integer"):
+        command(args, {"ENGINE_TENSOR_PARALLEL_SIZE": value})
+
+
+@pytest.mark.parametrize("mask", [None, "", "all", "0,1,2", "0,1,2,3,4", "0,1,2,2", "0,1,2,02", "0,1,2,", "MIG-a,MIG-b,MIG-c,MIG-d"])
+def test_tensor_parallel_requires_the_exact_unique_non_mig_device_mask(mask):
+    from ops.manage import command
+
+    args = SimpleNamespace(role="engine", python="/owned/python", port=8300, gpu=mask)
+    with pytest.raises(ValueError):
+        command(args, {"ENGINE_TENSOR_PARALLEL_SIZE": "4"})
+
+
+def test_tensor_parallel_uuid_masks_and_mig_plugin_guards():
+    from ops.manage import command
+
+    uuids = [f"GPU-00000000-0000-0000-0000-{index:012x}" for index in range(4)]
+    args = SimpleNamespace(role="engine", python="/owned/python", port=8300, gpu=None)
+    env = {"ENGINE_TENSOR_PARALLEL_SIZE": "4", "CUDA_VISIBLE_DEVICES": ",".join(uuids)}
+    assert command(args, env)[command(args, env).index("--tensor-parallel-size") + 1] == "4"
+    for change in ({"BATCHFORGE_MIG_PLATFORM": "1"}, {"VLLM_PLUGINS": "other,batchforge_mig"}):
+        with pytest.raises(ValueError, match="MIG platform"):
+            command(args, {**env, **change})
+    for mask in (",".join([*uuids[:3], uuids[0].upper().replace("GPU", "GPU")]), ",".join([*uuids[:3], "3"])):
+        args.gpu = mask
+        with pytest.raises(ValueError, match="unique"):
+            command(args, env)
+    # An explicit --gpu takes precedence over a broader inherited environment.
+    args.gpu = "0,1,2,3"
+    env["CUDA_VISIBLE_DEVICES"] = "0"
+    assert "4" == command(args, env)[command(args, env).index("--tensor-parallel-size") + 1]
+
+
+def test_chunked_prefill_does_not_require_tensor_parallel_or_change_mig_tp1():
+    from ops.manage import command
+
+    args = SimpleNamespace(role="engine", python="/owned/python", port=8200, gpu="MIG-one")
+    env = {"ENGINE_ENABLE_CHUNKED_PREFILL": "1", "BATCHFORGE_MIG_PLATFORM": "1"}
+    cmd = command(args, env)
+    assert cmd[cmd.index("--tensor-parallel-size") + 1] == "1"
+    assert "--enable-chunked-prefill" in cmd
+    for value in ("true", "-1", "", "2"):
+        with pytest.raises(ValueError, match="0 or 1"):
+            command(args, {"ENGINE_ENABLE_CHUNKED_PREFILL": value})
 
 
 def test_engine_restart_generation_config_is_opt_in_and_preserves_other_flags(tmp_path, monkeypatch):
@@ -128,6 +219,22 @@ def test_gpu_memory_gate_defers_launch_with_backoff_without_stopping_any_process
     assert state["start_count"] == state["failed_start_count"] == 0
 
 
+def test_cpu_expert_restart_rechecks_container_memory_before_cuda(tmp_path, monkeypatch):
+    import ops.supervise as supervise
+
+    env = tmp_path / 'engine.env'
+    env.write_text('ENGINE_BACKEND=llama_cpp\nENGINE_MODEL_PATH=/owned/model.gguf\n')
+    env.chmod(0o600)
+    service = {**SERVICE, 'role': 'engine', 'gpu': 'MIG-one', 'env_file': str(env)}
+    monkeypatch.setattr(supervise, 'host_admission', lambda model: False)
+    monkeypatch.setattr(supervise.subprocess, 'run', lambda *a, **kw: pytest.fail('GPU probe must not run without CPU memory'))
+    assert supervise.Manager().start_gate(service) == (False, 'host_memory_insufficient')
+    def unavailable(model):
+        raise OSError('missing cgroup mount')
+    monkeypatch.setattr(supervise, 'host_admission', unavailable)
+    assert supervise.Manager().start_gate(service) == (False, 'host_memory_probe_unavailable')
+
+
 def app_fixture(tmp_path):
     root = tmp_path / "application"
     runtime = root / ".runtime"
@@ -190,12 +297,145 @@ def test_manifest_accepts_35_service_mig_topology_and_rejects_more_than_64(tmp_p
         load_manifest(manifest, root)
 
 
+def test_manifest_multi_gpu_requires_matching_persisted_tp_and_preserves_mig_tp1(tmp_path, monkeypatch):
+    root, manifest, service = app_fixture(tmp_path)
+    monkeypatch.delenv("ENGINE_TENSOR_PARALLEL_SIZE", raising=False)
+    environment = Path(service["env_file"])
+    engine = {**service, "role": "engine", "name": "tp4", "port": 8300, "gpu": "0,1,2,3"}
+    private_write(manifest, {"services": [engine]})
+    with pytest.raises(ConfigError, match="tensor parallel"):
+        load_manifest(manifest, root)
+    environment.write_text("ENGINE_TENSOR_PARALLEL_SIZE=4\n")
+    assert load_manifest(manifest, root)[1][0]["gpu"] == "0,1,2,3"
+    uuids = ",".join(f"GPU-00000000-0000-0000-0000-{index:012x}" for index in range(4))
+    assert len(uuids) > 128
+    private_write(manifest, {"services": [{**engine, "gpu": uuids}]})
+    assert load_manifest(manifest, root)[1][0]["gpu"] == uuids
+    for text in ("ENGINE_TENSOR_PARALLEL_SIZE=3\n", "ENGINE_TENSOR_PARALLEL_SIZE=4\nBATCHFORGE_MIG_PLATFORM=1\n", "ENGINE_TENSOR_PARALLEL_SIZE=0\n"):
+        environment.write_text(text)
+        with pytest.raises(ConfigError, match="tensor parallel"):
+            load_manifest(manifest, root)
+    environment.write_text("ENGINE_TENSOR_PARALLEL_SIZE=4\n")
+    private_write(manifest, {"services": [{**engine, "gpu": "0"}]})
+    with pytest.raises(ConfigError, match="tensor parallel"):
+        load_manifest(manifest, root)
+    environment.write_text("BATCHFORGE_MIG_PLATFORM=1\n")
+    private_write(manifest, {"services": [{**engine, "gpu": "MIG-00000000-0000-0000-0000-000000000001"}]})
+    assert load_manifest(manifest, root)[1][0]["gpu"].startswith("MIG-")
+
+
+def gpu_gate_fixture(tmp_path, monkeypatch, devices, *, tp=4):
+    from ops.supervise import Manager
+
+    # A real interpreter runs the actual short probe program. This tiny CPU-only
+    # torch facade exercises rank enumeration/environment isolation without a GPU.
+    (tmp_path / "torch.py").write_text(
+        "import json,os\n"
+        "rows=json.loads(os.environ['BF_TEST_GPU_ROWS'])\n"
+        "assert os.environ['CUDA_VISIBLE_DEVICES']==os.environ['BF_TEST_GPU_MASK']\n"
+        "class cuda:\n"
+        " @staticmethod\n"
+        " def device_count():\n"
+        "  if os.environ.get('BF_TEST_NO_COUNT')=='1': raise AssertionError('legacy MIG probe changed')\n"
+        "  return len(rows)\n"
+        " @staticmethod\n"
+        " def mem_get_info(rank): return rows[rank]\n"
+    )
+    envfile = tmp_path / "engine.env"
+    envfile.write_text(f"ENGINE_TENSOR_PARALLEL_SIZE={tp}\nENGINE_GPU_MEMORY_UTILIZATION=0.24\n")
+    envfile.chmod(0o600)
+    mask = ",".join(str(index) for index in range(tp)) if tp > 1 else "MIG-one"
+    monkeypatch.setenv("BF_TEST_GPU_ROWS", json.dumps(devices))
+    monkeypatch.setenv("BF_TEST_GPU_MASK", mask)
+    for key in ("BATCHFORGE_MIG_PLATFORM", "VLLM_PLUGINS"):
+        monkeypatch.delenv(key, raising=False)
+    service = {"role": "engine", "name": "gpu-probe-only", "gpu": mask, "env_file": str(envfile), "python": sys.executable}
+    manager = Manager(root=tmp_path)
+    # Rank cleanup has separate identity/pidfd tests. Isolate that preceding
+    # gate here so the actual CPU probe program remains testable on macOS.
+    monkeypatch.setattr(manager, "invoke", lambda service, action: ({"status": "reaped", "remaining": 0}, None))
+    return manager, service
+
+
+def test_real_probe_requires_every_tp_rank_to_release_its_memory_budget(tmp_path, monkeypatch):
+    gib = 1024**3
+    manager, service = gpu_gate_fixture(tmp_path, monkeypatch, [[20 * gib, 80 * gib] for _ in range(4)])
+    assert manager.start_gate(service) == (True, None)
+    # Three free ranks cannot hide a single constrained rank, even when average
+    # aggregate free memory exceeds the total requested memory.
+    rows = [[30 * gib, 80 * gib] for _ in range(3)] + [[19 * gib, 80 * gib]]
+    monkeypatch.setenv("BF_TEST_GPU_ROWS", json.dumps(rows))
+    assert manager.start_gate(service) == (False, "gpu_memory_not_released")
+
+
+def test_measured_tp4_resident_memory_requires_the_explicit_one_gib_margin(tmp_path, monkeypatch):
+    mib = 1024**2
+    total, observed_resident = 81559*mib, 21984*mib
+    manager, service = gpu_gate_fixture(tmp_path, monkeypatch, [[observed_resident, total]]*4)
+    environment = Path(service["env_file"])
+    environment.write_text("ENGINE_TENSOR_PARALLEL_SIZE=4\nENGINE_GPU_MEMORY_UTILIZATION=0.26\n")
+    # The legacy default admits this much free memory even though the measured
+    # rank already uses it; the actual deployment therefore opts into 1 GiB.
+    assert manager.start_gate(service) == (True, None)
+    with environment.open("a") as file:
+        file.write("ENGINE_GPU_MEMORY_MARGIN_MIB=1024\n")
+    assert manager.start_gate(service) == (False, "gpu_memory_not_released")
+    threshold = math.ceil(total*.26 +1024*mib)
+    monkeypatch.setenv("BF_TEST_GPU_ROWS", json.dumps([[threshold,total]]*4))
+    assert manager.start_gate(service) == (True, None)
+    # One rank a byte below its own gate cannot be covered by the other three.
+    monkeypatch.setenv("BF_TEST_GPU_ROWS", json.dumps([[threshold+10*mib,total]]*3+[[threshold-1,total]]))
+    assert manager.start_gate(service) == (False, "gpu_memory_not_released")
+
+
+@pytest.mark.parametrize("value", ["", "511", "16385", "-512", "+512", "1.5", "1e3", "True", "NaN"])
+def test_invalid_memory_margin_fails_closed_before_any_cuda_probe(tmp_path, monkeypatch, value):
+    import ops.supervise as supervise
+    manager, service = gpu_gate_fixture(tmp_path, monkeypatch, [[40*1024**3,80*1024**3]]*4)
+    with Path(service["env_file"]).open("a") as file:
+        file.write("ENGINE_GPU_MEMORY_MARGIN_MIB="+value+"\n")
+    monkeypatch.setattr(supervise.subprocess, "run", lambda *args, **kwargs: pytest.fail("Invalid margin must not start a probe"))
+    assert manager.start_gate(service) == (False, "gpu_configuration_invalid")
+    with pytest.raises(ValueError, match="ENGINE_GPU_MEMORY_MARGIN_MIB"):
+        supervise.engine_settings(Path(service["env_file"]))
+
+
+def test_upper_bounded_margin_also_applies_to_the_legacy_single_mig_probe(tmp_path, monkeypatch):
+    gib = 1024**3
+    manager, service = gpu_gate_fixture(tmp_path, monkeypatch, [[36*gib,80*gib]], tp=1)
+    monkeypatch.setenv("BF_TEST_NO_COUNT", "1")
+    with Path(service["env_file"]).open("a") as file:
+        file.write("ENGINE_GPU_MEMORY_MARGIN_MIB=16384\n")
+    assert manager.start_gate(service) == (True, None)
+    monkeypatch.setenv("BF_TEST_GPU_ROWS", json.dumps([[35*gib,80*gib]]))
+    assert manager.start_gate(service) == (False, "gpu_memory_not_released")
+
+
+@pytest.mark.parametrize("devices", [
+    [[20 * 1024**3, 80 * 1024**3]] * 3,
+    [[20 * 1024**3, 80 * 1024**3]] * 5,
+    [[True, 80 * 1024**3]] * 4,
+    [[-1, 80 * 1024**3]] * 4,
+    [[0, 0]] * 4,
+])
+def test_real_probe_device_count_and_malformed_memory_fail_closed(tmp_path, monkeypatch, devices):
+    manager, service = gpu_gate_fixture(tmp_path, monkeypatch, devices)
+    assert manager.start_gate(service) == (False, "gpu_probe_unavailable")
+
+
+def test_single_mig_probe_keeps_legacy_mem_info_path(tmp_path, monkeypatch):
+    manager, service = gpu_gate_fixture(tmp_path, monkeypatch, [[20 * 1024**3, 80 * 1024**3]], tp=1)
+    monkeypatch.setenv("BF_TEST_NO_COUNT", "1")
+    monkeypatch.setenv("BATCHFORGE_MIG_PLATFORM", "1")
+    assert manager.start_gate(service) == (True, None)
+
+
 @pytest.mark.skipif(sys.platform != "linux", reason="Real crash/restart identity drill requires Linux /proc")
 def test_linux_process_crash_restarts_and_watchdog_rolling_restart_preserves_child(tmp_path):
     root, manifest, service = app_fixture(tmp_path)
     repository = Path(__file__).resolve().parents[1]
     (root / "ops").mkdir()
-    for name in ("manage.py", "supervise.py"):
+    for name in ("manage.py", "supervise.py", "engine_members.py", "host_memory.py", "llama_backend.py"):
         shutil.copyfile(repository / "ops" / name, root / "ops" / name)
     (root / "worker").mkdir()
     (root / "worker/__init__.py").write_text("")

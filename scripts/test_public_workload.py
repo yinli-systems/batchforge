@@ -51,3 +51,20 @@ def test_translation_contract_does_not_claim_answer_or_fidelity_scores(tmp_path)
     assert result["json_contract_success_rate_over_expected"] == 1
     assert result["answer_exact_match_over_expected"] is None
     assert result["translation_character_count_for_valid_json"]["mean"] == 4
+
+
+def test_reasoning_only_and_nonstandard_json_are_failed_answers_not_evaluator_crashes(tmp_path):
+    manifest = {"profile": "answer", "dataset_sha256": "fixture", "examples": {
+        f"squad-{i}": {"gold_answers": ["fox"]} for i in range(4)}}
+    contents = [None, '{"answer":"wrong","answer":"fox"}',
+                '{"answer":"fox","extra":NaN}', '{"answer":"fox"}']
+    rows = [{"custom_id": f"squad-{i}", "response": {"body": {"choices": [{
+        "message": {"content": content, "reasoning_content": "working"},
+        "finish_reason": "length" if i == 0 else "stop"}]}}}
+        for i, content in enumerate(contents)]
+    (tmp_path / 'test-output.jsonl').write_text('\n'.join(json.dumps(row) for row in rows))
+    result = evaluate(manifest, tmp_path)
+    assert result['observed_unique'] == 4 and result['missing'] == 0
+    assert result['invalid_json_contract'] == 3 and result['length_truncated'] == 1
+    assert result['json_contract_success_rate_over_expected'] == .25
+    assert result['answer_exact_match_over_expected'] == .25

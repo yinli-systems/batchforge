@@ -98,6 +98,27 @@ def test_idempotency_and_tenant_isolation(client):
     assert client.get("/metrics", headers=PUBLIC).status_code == 401
 
 
+def test_reasoning_effort_survives_upload_database_and_claim(client):
+    rows = []
+    for effort in (None, "low", "medium", "high"):
+        body = {"model": MODEL, "messages": [{"role": "user", "content": "hello"}], "max_tokens": 16}
+        if effort is not None:
+            body["reasoning_effort"] = effort
+        rows.append({"custom_id": effort or "omitted", "method": "POST", "url": "/v1/chat/completions", "body": body})
+    payload = "\n".join(json.dumps(row) for row in rows)
+    uploaded = client.post("/v1/files", headers=PUBLIC, files={"file": ("effort.jsonl", payload)})
+    assert uploaded.status_code == 200, uploaded.text
+    batch = client.post("/v1/batches", headers=PUBLIC, json={"input_file_id": uploaded.json()["id"]})
+    assert batch.status_code == 200, batch.text
+    register(client)
+    tasks = {item["custom_id"]: item["body"] for item in claim(client)}
+    assert "reasoning_effort" not in tasks.pop("omitted")
+    assert {key: value["reasoning_effort"] for key, value in tasks.items()} == {value: value for value in ("low", "medium", "high")}
+    invalid = {**rows[0], "body": {**rows[0]["body"], "reasoning_effort": ["low"]}}
+    rejected = client.post("/v1/files", headers=PUBLIC, files={"file": ("invalid-effort.jsonl", json.dumps(invalid))})
+    assert rejected.status_code == 400
+
+
 def test_lease_fencing_duplicate_commit_and_metering(client):
     batch, _ = make_batch(client)
     register(client)
@@ -359,6 +380,33 @@ def test_model_upgrade_rejects_retry_of_unserved_model_without_admitting_work(cl
     assert result.json()["error"]["code"] == "model_unavailable"
     assert sql("SELECT count(*) AS n FROM batches")[0]["n"] == 1
     assert sql("SELECT count(*) AS n FROM tasks")[0]["n"] == 1
+
+
+def test_multiple_models_preserve_queue_claim_retry_and_catalog_identity(client):
+    client.app.state.settings.model_names_json = '["large-model"]'
+    assert [m["id"] for m in client.get("/v1/models", headers=PUBLIC).json()["data"]] == [MODEL, "large-model"]
+    small, _ = make_batch(client)
+    row = {"custom_id": "large-one", "method": "POST", "url": "/v1/chat/completions", "body": {
+        "model": "large-model", "messages": [{"role": "user", "content": "hello"}], "max_tokens": 2048}}
+    uploaded = client.post("/v1/files", headers=PUBLIC, files={"file": ("large.jsonl", json.dumps(row))})
+    assert uploaded.status_code == 200
+    large = client.post("/v1/batches", headers=PUBLIC, json={"input_file_id": uploaded.json()["id"]}).json()
+    assert large["model"] == "large-model"
+    register(client)
+    assert {t["batch_id"] for t in claim(client)} == {small["id"]}
+    registered = client.post("/internal/workers/register", headers=INTERNAL, json={
+        "worker_id": "large-worker", "name": "large", "model": "large-model", "concurrency": 2})
+    assert registered.status_code == 200
+    task = client.post("/internal/tasks/claim", headers=INTERNAL, json={
+        "worker_id": "large-worker", "model": "large-model", "limit": 2}).json()["tasks"][0]
+    assert task["batch_id"] == large["id"] and task["body"]["model"] == "large-model"
+    failed = client.post(f"/internal/tasks/{task['id']}/fail", headers=INTERNAL, json={
+        "worker_id": "large-worker", "attempt_token": task["attempt_token"],
+        "error": {"code": "test", "message": "test"}, "retryable": False})
+    assert failed.status_code == 200
+    retried = client.post(f"/v1/batches/{large['id']}/retry", headers=PUBLIC)
+    assert retried.status_code == 200 and retried.json()["model"] == "large-model"
+    assert sql("SELECT model FROM tasks WHERE batch_id=%s", (retried.json()["id"],)) == [{"model": "large-model"}]
 
 
 def test_model_upgrade_cancellation_locks_the_historical_batch_queue(client):

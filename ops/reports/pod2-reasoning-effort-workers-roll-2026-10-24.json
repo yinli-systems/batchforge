@@ -1,0 +1,391 @@
+{
+  "supervisor_source_before_sha256": "c349a9760573fcc6ced56566d59edfb73d9c3801720d81cd46e67fcccae1c386",
+  "supervisor_source_after_sha256": "3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0",
+  "secondary_memory_margin_mib": "unchanged default512",
+  "started_at": "2026-10-23T23:16:52.632593+00:00",
+  "status": "ready",
+  "archive_sha256": "41c0bde4e89b0aa17d9ff82bec41a5388fde213f867d0453b3c87c524e10aa4e",
+  "worker_source_before_sha256": "be9d0515c6f92b2b4faa91def761353ecb8b815a98dd9ae07d3a3f55135d8679",
+  "worker_source_after_sha256": "0156ac72d5c4632ee80397eb703658bdb9b58f2c1b3b51d12d18039dcf04bcbe",
+  "old_worker_identities": {
+    "worker-pod2-7b-mig0": {
+      "pid": 66579,
+      "start_ticks": "24490319",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig1": {
+      "pid": 66562,
+      "start_ticks": "24490280",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig2": {
+      "pid": 68908,
+      "start_ticks": "24495110",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig3": {
+      "pid": 68915,
+      "start_ticks": "24495316",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig4": {
+      "pid": 71254,
+      "start_ticks": "24500037",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig5": {
+      "pid": 71276,
+      "start_ticks": "24500253",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig6": {
+      "pid": 73571,
+      "start_ticks": "24504959",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig7": {
+      "pid": 73660,
+      "start_ticks": "24505238",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig8": {
+      "pid": 75921,
+      "start_ticks": "24509847",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig9": {
+      "pid": 76026,
+      "start_ticks": "24510238",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig10": {
+      "pid": 78267,
+      "start_ticks": "24514668",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig11": {
+      "pid": 78423,
+      "start_ticks": "24515143",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig12": {
+      "pid": 80597,
+      "start_ticks": "24519530",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig13": {
+      "pid": 80770,
+      "start_ticks": "24520129",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-gptoss120b-cpu-expert": {
+      "pid": 130037,
+      "start_ticks": "24922653",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig15": {
+      "pid": 124931,
+      "start_ticks": "24861857",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "before_nonworker_identities": {
+    "api-a": {
+      "pid": 110071,
+      "start_ticks": "24758527",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 110081,
+      "start_ticks": "24758700",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 11870,
+      "start_ticks": "24081573",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu0": {
+      "pid": 64444,
+      "start_ticks": "24485736",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu1": {
+      "pid": 64378,
+      "start_ticks": "24485685",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu2": {
+      "pid": 66740,
+      "start_ticks": "24490676",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu3": {
+      "pid": 66806,
+      "start_ticks": "24490723",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu4": {
+      "pid": 69005,
+      "start_ticks": "24495553",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu5": {
+      "pid": 69153,
+      "start_ticks": "24495719",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu6": {
+      "pid": 71350,
+      "start_ticks": "24500465",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu7": {
+      "pid": 71499,
+      "start_ticks": "24500691",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu8": {
+      "pid": 73682,
+      "start_ticks": "24505357",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu9": {
+      "pid": 73890,
+      "start_ticks": "24505644",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu10": {
+      "pid": 76028,
+      "start_ticks": "24510253",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu11": {
+      "pid": 76246,
+      "start_ticks": "24510621",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu12": {
+      "pid": 78358,
+      "start_ticks": "24515055",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu13": {
+      "pid": 78659,
+      "start_ticks": "24515550",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-7b-gpu15": {
+      "pid": 111125,
+      "start_ticks": "24770931",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-pod2-gptoss120b-mig14": {
+      "pid": 128929,
+      "start_ticks": "24911837",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "engines_restarted": false,
+  "api_source_changed": false,
+  "new_worker_identities": {
+    "worker-pod2-7b-mig0": {
+      "pid": 138642,
+      "start_ticks": "25029514",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig1": {
+      "pid": 138643,
+      "start_ticks": "25029514",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig2": {
+      "pid": 138644,
+      "start_ticks": "25029514",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig3": {
+      "pid": 138645,
+      "start_ticks": "25029514",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig4": {
+      "pid": 138650,
+      "start_ticks": "25029542",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig5": {
+      "pid": 138652,
+      "start_ticks": "25029543",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig6": {
+      "pid": 138651,
+      "start_ticks": "25029543",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig7": {
+      "pid": 138653,
+      "start_ticks": "25029543",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig8": {
+      "pid": 138658,
+      "start_ticks": "25029571",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig9": {
+      "pid": 138659,
+      "start_ticks": "25029572",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig10": {
+      "pid": 138660,
+      "start_ticks": "25029572",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig11": {
+      "pid": 138661,
+      "start_ticks": "25029572",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig12": {
+      "pid": 138666,
+      "start_ticks": "25029600",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig13": {
+      "pid": 138667,
+      "start_ticks": "25029600",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-gptoss120b-cpu-expert": {
+      "pid": 138668,
+      "start_ticks": "25029601",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-pod2-7b-mig15": {
+      "pid": 138669,
+      "start_ticks": "25029601",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "worker_readiness": [
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig0",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig1",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig2",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig3",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig4",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig5",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig6",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig7",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig8",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig9",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig10",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig11",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig12",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 16,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-mig13",
+      "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "ready": true,
+      "capacity": 1,
+      "ready_engines": 1,
+      "worker_id": "secondpod-gptoss120b-cpu-expert",
+      "model": "openai/gpt-oss-120b"
+    },
+    {
+      "ready": true,
+      "capacity": 4,
+      "ready_engines": 1,
+      "worker_id": "secondpod-7b-18k-mig15",
+      "model": "Qwen/Qwen2.5-7B-Instruct-18k"
+    }
+  ],
+  "finished_at": "2026-10-23T23:16:56.657205+00:00",
+  "all_nonworker_identities_unchanged": true,
+  "watchdog_restored": true,
+  "archive_validation_note": "Initial v1 strict whitelist refused3AppleDouble sidecars; v1 was subsequently staged privately only. Clean v2 exact3regular files was used for live rollout."
+}

@@ -1,0 +1,41 @@
+{
+  "started_at": "2026-10-23T22:31:44.242630+00:00",
+  "source_archive_sha256": "c25c0b8b330fe3bacca9ea335f25fae6952ed79967f2dcc159bf40fda6ca2040",
+  "schema_migration_performed": false,
+  "source_files": [
+    "backend/app.py",
+    "backend/config.py",
+    "backend/store.py",
+    "backend/validation.py"
+  ],
+  "api": [
+    {
+      "name": "a",
+      "port": 8082,
+      "ready": true,
+      "configured_models": [
+        "Qwen/Qwen2.5-7B-Instruct",
+        "Qwen/Qwen2.5-7B-Instruct-18k",
+        "openai/gpt-oss-120b"
+      ],
+      "catalog_evidence": "same frozen Settings constructor and private per-API env; tenant HTTP catalog not requested because no tenant credential on this Pod",
+      "pid": 110071
+    },
+    {
+      "name": "b",
+      "port": 8083,
+      "ready": true,
+      "configured_models": [
+        "Qwen/Qwen2.5-7B-Instruct",
+        "Qwen/Qwen2.5-7B-Instruct-18k",
+        "openai/gpt-oss-120b"
+      ],
+      "catalog_evidence": "same frozen Settings constructor and private per-API env; tenant HTTP catalog not requested because no tenant credential on this Pod",
+      "pid": 110081
+    }
+  ],
+  "private_rollback_directory": "/root/batchforge-runtime/app/.runtime/rollback-multimodel-pod2-20261024",
+  "status": "complete",
+  "finished_at": "2026-10-23T22:31:48.106241+00:00",
+  "non_api_processes_unchanged": true
+}

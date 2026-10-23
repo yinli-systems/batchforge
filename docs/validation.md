@@ -1,14 +1,24 @@
 # Validation
 
-Current evidence comes from real PostgreSQL, native services on both existing
-GPU Pods, and public-document inference on Qwen2.5-7B. Private SSH ingress is the
+This page preserves the real PostgreSQL and Qwen2.5-7B validation history.
+The deployment now serves GPT-OSS-120B on both existing GPU Pods; see
+[100B validation](100b-validation.md) for its separate measurements. Private SSH ingress is the
 owner's selected policy. Short runs below establish observed behavior, not a
 24-hour capacity guarantee or a production availability SLA.
 
 ## Correctness and deployability
 
-The implementation passed the full local suite of 197 tests, with
-one Linux-only case skipped on macOS. It exercises all four combinations of Python/SQL claim and completion
+The latest implementation passed the full local suite of **321 tests**, with
+three Linux-only cases skipped on macOS (24.54 seconds, isolated real PostgreSQL).
+The final supervisor and owned-descendant suite also ran on Linux: **50 passed
+in 2.85 seconds**, including the macOS-skipped cases, leader loss, orphan cleanup
+and preservation of an unrelated process. It used an isolated app copy with
+CUDA hidden and no database or live service mutations. The initial observer
+incorrectly looked for PID files deliberately removed by successful cleanup;
+that raw error remains recorded. A follow-up checked the five exact test PIDs
+and found none running ([final report](../ops/reports/linux-ops-final-2026-10-24.json),
+[initial observer](../ops/reports/linux-ops-final-initial-observer-2026-10-24.json)).
+The full suite exercises all four combinations of Python/SQL claim and completion
 paths over real PostgreSQL: tenant isolation, capacity, admission and fair queue
 accounting, cancellation/deadline races, lease expiry, duplicate replay,
 transactional usage, terminal output metadata, least-privilege runtime operation,
@@ -256,7 +266,7 @@ See [baseline quality](../ops/reports/squad7b-analysis-2048-baseline-quality-202
 
 ## Backup recovery
 
-The current PostgreSQL 17.11 dump was restored into a newly created empty Neon
+The earlier schema-v2 PostgreSQL 17.11 dump was restored into a newly created empty Neon
 database using the version-matched official client. Restoration verified 118
 batches and 4,651 completed tasks/attempts, 2,543,062 input and 428,722 output
 tokens, all batch/task status and usage invariants, and table/usage hashes. The

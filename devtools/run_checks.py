@@ -15,7 +15,7 @@ import tempfile
 def main() -> int:
     root = Path(__file__).resolve().parent.parent
     if os.environ.get("TEST_DATABASE_URL"):
-        return subprocess.call([sys.executable, "-m", "pytest", "tests", "worker/tests", "ops/pod2", "ops/gateway", "ops/test_supervise.py", "ops/ha/test_controlplane_outage_probe.py", "scripts/test_public_workload.py", "scripts/test_observe_runtime.py", "devtools/test_backup_postgres.py", "-q"], cwd=root)
+        return subprocess.call([sys.executable, "-m", "pytest", "tests", "worker/tests", "ops/pod2", "ops/gateway", "ops/test_supervise.py", "ops/test_engine_members.py", "ops/test_host_memory.py", "ops/test_llama_backend.py", "ops/ha/test_controlplane_outage_probe.py", "ops/ha/test_engine_outage_probe.py", "scripts/test_public_workload.py", "scripts/test_observe_runtime.py", "devtools/test_backup_postgres.py", "-q"], cwd=root)
     # Use the packaged binaries directly. Do not use pgserver's discovery and
     # cleanup manager, which enumerates unrelated system processes.
     from pgserver._commands import POSTGRES_BIN_PATH
@@ -31,7 +31,7 @@ def main() -> int:
         try:
             uri = "postgresql://batchforge@/postgres?host=" + str(sockets)
             env = dict(os.environ, TEST_DATABASE_URL=uri, DATABASE_URL=uri)
-            return subprocess.call([sys.executable, "-m", "pytest", "tests", "worker/tests", "ops/pod2", "ops/gateway", "ops/test_supervise.py", "ops/ha/test_controlplane_outage_probe.py", "scripts/test_public_workload.py", "scripts/test_observe_runtime.py", "devtools/test_backup_postgres.py", "-q"], env=env, cwd=root)
+            return subprocess.call([sys.executable, "-m", "pytest", "tests", "worker/tests", "ops/pod2", "ops/gateway", "ops/test_supervise.py", "ops/test_engine_members.py", "ops/test_host_memory.py", "ops/test_llama_backend.py", "ops/ha/test_controlplane_outage_probe.py", "ops/ha/test_engine_outage_probe.py", "scripts/test_public_workload.py", "scripts/test_observe_runtime.py", "devtools/test_backup_postgres.py", "-q"], env=env, cwd=root)
         finally:
             subprocess.run([pg_ctl, "-D", str(data), "-m", "fast", "-w", "stop"], env=postgres_env, check=True, stdout=subprocess.DEVNULL)
 

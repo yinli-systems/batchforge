@@ -1,0 +1,59 @@
+{
+  "scope": "local verification of the final code, not hosted GitHub CI or production SLA",
+  "postgres_tests": {
+    "passed": 321,
+    "skipped_linux_only": 3,
+    "seconds": 24.54,
+    "isolated_real_postgresql": true
+  },
+  "frontend_tests": {
+    "passed": 3,
+    "runner": "node --test frontend/tests/console-actions.test.js"
+  },
+  "linux_owned_process_tests": {
+    "passed": 2,
+    "report": "engine-members-linux-regression-2026-10-24.json"
+  },
+  "wheel": {
+    "name": "batchforge-0.1.0-py3-none-any.whl",
+    "sha256": "9a049e6c6f6cf31b81af5ac772cdff582d5e6d4af0e337e55fa3b5f67de578ae",
+    "source_bytes_match": {
+      "backend/schema.sql": true,
+      "backend/migrations/0002_sql_completion.sql": true,
+      "backend/migrations/0003_sql_claim.sql": true,
+      "backend/config.py": true,
+      "backend/app.py": true,
+      "backend/store.py": true,
+      "backend/validation.py": true,
+      "backend/CONTRACT.md": true,
+      "worker/runtime.py": true
+    }
+  },
+  "limitations": [
+    "macOS sandbox blocked PostgreSQL shared memory; isolated suite passed after approved unsandboxed execution",
+    "Three platform-specific cases skipped on macOS; all ran in the isolated 50-test Linux ops suite",
+    "Hosted CI remains distinct from local verification",
+    "Container image build not exercised"
+  ],
+  "restart_gate_source_sha256": "3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0",
+  "linux_final_ops_tests": {
+    "passed": 50,
+    "seconds": 2.85,
+    "report": "linux-ops-final-2026-10-24.json",
+    "covers_macos_skipped_cases": true,
+    "cuda_visible_devices": "",
+    "database_used": false,
+    "exact_test_pid_cleanup_verified": true
+  },
+  "independent_source_and_deployment_audit": {
+    "comparisons": 25,
+    "mismatches": [],
+    "scope": [
+      "Primary and secondary deployed hashes for supervisor, worker, validation and contract",
+      "All seven source files named in the final Linux ops report",
+      "Existing wheel SHA256 and nine archived backend/schema/worker source members"
+    ],
+    "wheel_rebuilt": false,
+    "live_database_queried": false
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "status": "passed",
+  "started_at": "2026-10-23T22:19:09.180503+00:00",
+  "finished_at": "2026-10-23T22:19:10.360998+00:00",
+  "cpu_only": {
+    "cuda_visible_devices": "",
+    "explicit_tensor_device": "cpu",
+    "cuda_initialized_before": false,
+    "cuda_initialized_after": false,
+    "gpu_discovery_or_inference_called": false
+  },
+  "versions": {
+    "torch": "2.8.0",
+    "transformers": "4.55.2",
+    "xgrammar": "0.1.23"
+  },
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "tokenizer_eos_token_id": 151645,
+  "probe_token_id": 151643,
+  "probe_token_text": "<|endoftext|>",
+  "synthetic_prefix": "{\"translation_zh\":\"",
+  "complete_control": "{\"translation_zh\":\"你好\"}",
+  "prefix_token_ids": [
+    4913,
+    3053,
+    6415,
+    71,
+    3252
+  ],
+  "local_config_sha256": {
+    "config.json": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+    "tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+    "generation_config.json": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f"
+  },
+  "cases": [
+    {
+      "case": "hf_default",
+      "effective_stop_token_ids": [
+        151645
+      ],
+      "vocab_size": 152064,
+      "prefix_checks": [
+        {
+          "method": "accept_string",
+          "prefix_accepted": true,
+          "terminated_after_prefix": false,
+          "mask_required": true,
+          "allowed_next_token": {
+            "151643": true,
+            "151645": false
+          },
+          "accept_151643": true,
+          "terminated_after_151643_attempt": false
+        },
+        {
+          "method": "accept_tokenized_prefix",
+          "prefix_accepted": true,
+          "terminated_after_prefix": false,
+          "mask_required": true,
+          "allowed_next_token": {
+            "151643": true,
+            "151645": false
+          },
+          "accept_151643": true,
+          "terminated_after_151643_attempt": false
+        }
+      ],
+      "completed_json_control": {
+        "allowed_next_token": {
+          "151643": false,
+          "151645": true
+        },
+        "accept_151645": true,
+        "terminated_after_151645": true
+      }
+    },
+    {
+      "case": "explicit_both_eos",
+      "effective_stop_token_ids": [
+        151643,
+        151645
+      ],
+      "vocab_size": 152064,
+      "prefix_checks": [
+        {
+          "method": "accept_string",
+          "prefix_accepted": true,
+          "terminated_after_prefix": false,
+          "mask_required": true,
+          "allowed_next_token": {
+            "151643": false,
+            "151645": false
+          },
+          "accept_151643": false,
+          "terminated_after_151643_attempt": false
+        },
+        {
+          "method": "accept_tokenized_prefix",
+          "prefix_accepted": true,
+          "terminated_after_prefix": false,
+          "mask_required": true,
+          "allowed_next_token": {
+            "151643": false,
+            "151645": false
+          },
+          "accept_151643": false,
+          "terminated_after_151643_attempt": false
+        }
+      ],
+      "completed_json_control": {
+        "allowed_next_token": {
+          "151643": true,
+          "151645": true
+        },
+        "accept_151645": true,
+        "terminated_after_151645": true
+      }
+    }
+  ],
+  "measurement_bounds": "Synthetic CPU grammar-state proof only; no captured model prefix replay, GPU inference, service changes, or whole-workload attribution.",
+  "executed_snippet_sha256": "88b673b403a5110d213cc1720a4198484f87ac6ca38cf0c59b62ed9661c19ef8",
+  "executed_snippet": "#!/usr/bin/env python3\n\"\"\"Read-only, GPU-hidden grammar mask proof using the existing pinned tokenizer.\"\"\"\nimport datetime\nimport hashlib\nimport importlib.metadata\nimport json\nimport os\nfrom pathlib import Path\n\nassert os.environ.get(\"CUDA_VISIBLE_DEVICES\") == \"\"\nassert os.environ.get(\"HF_HUB_OFFLINE\") == \"1\"\nassert os.environ.get(\"TRANSFORMERS_OFFLINE\") == \"1\"\n\nimport torch\nimport xgrammar as xgr\nfrom transformers import AutoTokenizer\n\nassert not torch.cuda.is_initialized()\nassert importlib.metadata.version(\"xgrammar\") == \"0.1.23\"\nMODEL = Path(\"/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28\")\nPREFIX = '{\"translation_zh\":\"'\nCOMPLETE = '{\"translation_zh\":\"你好\"}'\nstarted = datetime.datetime.now(datetime.timezone.utc).isoformat()\nconfig = json.loads((MODEL / \"config.json\").read_text())\ntokenizer = AutoTokenizer.from_pretrained(str(MODEL), local_files_only=True, trust_remote_code=False)\nassert tokenizer.eos_token_id == 151645\nassert tokenizer.convert_ids_to_tokens(151643) == \"<|endoftext|>\"\n\ndef mask(matcher, vocab_size):\n    # Explicit CPU allocation; no CUDA tensors, CUDA discovery, or GPU API calls.\n    bits = torch.full((1, (vocab_size + 31) // 32), -1, dtype=torch.int32, device=\"cpu\")\n    assert bits.device.type == \"cpu\"\n    needed = matcher.fill_next_token_bitmask(bits)\n    return {str(token): bool((int(bits[0, token // 32].item()) >> (token % 32)) & 1)\n            for token in (151643, 151645)}, bool(needed)\n\nrows = []\nfor label, stops in ((\"hf_default\", None), (\"explicit_both_eos\", [151645, 151643])):\n    kwargs = {} if stops is None else {\"stop_token_ids\": stops}\n    info = xgr.TokenizerInfo.from_huggingface(tokenizer, vocab_size=config[\"vocab_size\"], **kwargs)\n    compiler = xgr.GrammarCompiler(info, max_threads=1, cache_enabled=False)\n    grammar = compiler.compile_builtin_json_grammar()\n    row = {\"case\": label, \"effective_stop_token_ids\": list(info.stop_token_ids), \"vocab_size\": info.vocab_size}\n    checks = []\n    for method in (\"accept_string\", \"accept_tokenized_prefix\"):\n        matcher = xgr.GrammarMatcher(grammar)\n        if method == \"accept_string\":\n            accepted = matcher.accept_string(PREFIX)\n        else:\n            accepted = all(matcher.accept_token(token) for token in tokenizer.encode(PREFIX, add_special_tokens=False))\n        assert accepted\n        terminated_before = matcher.is_terminated()\n        allowed, needed = mask(matcher, info.vocab_size)\n        accepted_extra = matcher.accept_token(151643)\n        checks.append({\"method\": method, \"prefix_accepted\": accepted,\n                       \"terminated_after_prefix\": terminated_before, \"mask_required\": needed,\n                       \"allowed_next_token\": allowed, \"accept_151643\": accepted_extra,\n                       \"terminated_after_151643_attempt\": matcher.is_terminated()})\n        assert not terminated_before\n        assert not allowed[\"151645\"]\n        assert allowed[\"151643\"] == (stops is None)\n        assert accepted_extra == (stops is None)\n        assert not matcher.is_terminated()\n    control = xgr.GrammarMatcher(grammar)\n    assert control.accept_string(COMPLETE)\n    control_mask, _ = mask(control, info.vocab_size)\n    assert control_mask[\"151645\"]\n    assert control.accept_token(151645)\n    assert control.is_terminated()\n    row.update(prefix_checks=checks, completed_json_control={\"allowed_next_token\": control_mask,\n               \"accept_151645\": True, \"terminated_after_151645\": True})\n    rows.append(row)\n\nassert not torch.cuda.is_initialized()\nreport = {\"status\": \"passed\", \"started_at\": started,\n          \"finished_at\": datetime.datetime.now(datetime.timezone.utc).isoformat(),\n          \"cpu_only\": {\"cuda_visible_devices\": os.environ[\"CUDA_VISIBLE_DEVICES\"],\n                       \"explicit_tensor_device\": \"cpu\", \"cuda_initialized_before\": False,\n                       \"cuda_initialized_after\": torch.cuda.is_initialized(),\n                       \"gpu_discovery_or_inference_called\": False},\n          \"versions\": {name: importlib.metadata.version(name) for name in (\"torch\", \"transformers\", \"xgrammar\")},\n          \"model_revision\": MODEL.name,\n          \"tokenizer_eos_token_id\": tokenizer.eos_token_id,\n          \"probe_token_id\": 151643, \"probe_token_text\": tokenizer.convert_ids_to_tokens(151643),\n          \"synthetic_prefix\": PREFIX, \"complete_control\": COMPLETE,\n          \"prefix_token_ids\": tokenizer.encode(PREFIX, add_special_tokens=False),\n          \"local_config_sha256\": {name: hashlib.sha256((MODEL / name).read_bytes()).hexdigest()\n                                   for name in (\"config.json\", \"tokenizer_config.json\", \"generation_config.json\")},\n          \"cases\": rows,\n          \"measurement_bounds\": \"Synthetic CPU grammar-state proof only; no captured model prefix replay, GPU inference, service changes, or whole-workload attribution.\"}\nprint(json.dumps(report, ensure_ascii=False, indent=2))\n",
+  "execution_stderr": ""
+}

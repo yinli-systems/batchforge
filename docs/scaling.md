@@ -9,7 +9,7 @@ measurements.
 
 ## What this deployment measures
 
-The current model is Qwen2.5-7B-Instruct, revision
+The earlier throughput baseline uses Qwen2.5-7B-Instruct, revision
 `a09a35458c702b33eeacc393d103063234e8bc28`, BF16, independent TP1 engines, eager
 execution, 4,096-token context, prefix caching explicitly disabled. Four H100s
 are shared with existing workloads; BatchForge's memory allocation is 0.24 per
@@ -21,6 +21,13 @@ inflight eight and a 32,768-token reservation. Sixteen-sequence tuning keeps the
 same memory fractions and requires a free-memory gate, proven KV capacity of at
 least 65,536 tokens and sixteen real simultaneous generations before activation.
 Device UUIDs, model revision, software and actual generation are recorded.
+
+The deployment has since added real GPT-OSS-120B execution on both Pods and a
+separate 18K-context 7B pool. Primary H100s now form one 120B TP4 engine; the
+secondary retains fourteen short-context 7B engines, one long-context 7B engine
+and one 120B CPU-expert/MIG engine. The historical twenty-engine rates below
+are not current 120B capacity. See [100B validation](100b-validation.md) for the
+new configuration and mixed-length results.
 
 Public-document inputs use distinct SQuAD development questions and real passages
 packed to a target of 700 words. This corpus may occur in training data; it is
@@ -149,7 +156,8 @@ An observed EOS/grammar configuration difference is a diagnostic hypothesis,
 not a confirmed root cause. These engine-only pilots do not measure platform
 capacity or translation fidelity.
 
-The tested worker JSON postcondition is enabled on all twenty workers. Exact
+During this 7B phase, the tested worker JSON postcondition was enabled on all
+twenty workers. The current 120B deployment retains the same guard. Exact
 `json_object` requests require a strict
 top-level object before completion. The [primary tuning report](../ops/reports/primary-retune-16seq-2026-10-24.json)
 records all four sixteen-sequence KV/probe/readiness gates at unchanged memory.
@@ -170,16 +178,50 @@ automatic retention schedule or a recovery SLA; see [backup](backup.md).
 
 ## Work required before a daily-scale claim
 
+For the newer **120B equal-cell mixed workload**, use the separate
+[measured capacity and cost arithmetic](100b-validation.md#cost-and-the-daily-target):
+primary 0.42766 and secondary 0.03001 engine inferences/s. Their separately
+measured sum at an assumed 70% duty is about 27,680/day, roughly 361× below
+ten million/day. The larger-model workload has different lengths, precision and
+active parameter count from the 7B analysis run above. Its input alone extrapolates
+to 256.98 GB/day using the recorded 7B equal-cell source byte distribution.
+
+The next measured engineering steps are:
+
+- Keep PostgreSQL responsible for task/attempt fences and accepted usage, but
+  move large immutable input/output bodies to checksummed object storage with
+  explicit lifecycle and streaming exports. Count duplicated payloads, WAL and
+  retained failed attempts when sizing storage.
+- Benchmark a fully available device in an isolated runtime before translating
+  shared TP4 measurements into hardware counts. Measure prefill, decode,
+  communication and memory separately; changing quantization/runtime requires
+  fresh answer-quality validation.
+- Evaluate token-cost-aware tenant scheduling under steady arrivals. The current
+  SQL scheduler is dispatch-turn fairness; the three measured client dispatch
+  orders are not a production scheduler implementation. Long requests, cheap
+  requests and tenant deadlines need explicit starvation and admission tests.
+- Define model-revision and precision compatibility for failover. The current
+  120B lanes have different non-expert precision; recovery re-executes a fenced
+  task on the second worker. It does not migrate a live KV cache or guarantee
+  the same generated token sequence.
+
+The general validation requirements remain:
+
 1. Repeat a fixed corpus with device count, model, concurrency and cache settings
    held constant; report device expansion separately.
 2. Measure steady arrivals, queue age, retries, KV pressure, operation latency,
    lock waits, WAL and storage growth; reserve capacity for a Pod outage.
-3. Measure multi-tenant fairness and recovery before sharding, preserving tenant
+3. Profile failure reporting and lease reaping under retry storms. They still use
+   client-driven multi-statement transactions; the original translation run
+   observed high failure latency, failed scrapes and 450 origin failovers. This
+   supports further profiling, not an unmeasured causal claim. Preserve fences,
+   bounded work and atomic counters when optimizing these paths.
+4. Measure multi-tenant fairness and recovery before sharding, preserving tenant
    admission limits and fenced accounting.
-4. Add checksummed object storage, streaming export, funded retention and cleanup.
-5. Establish quota alerts, scheduled off-host backup/restoration, Pod replacement
+5. Add checksummed object storage, streaming export, funded retention and cleanup.
+6. Establish quota alerts, scheduled off-host backup/restoration, Pod replacement
    and ingress recovery. Watchdogs do not remove the shared database dependency.
-6. Define customer acceptance rules for schema, factuality, truncation and retry
+7. Define customer acceptance rules for schema, factuality, truncation and retry
    cost before treating accepted completions as useful billable work.
 
 See [validation](validation.md), [operations](operations.md) and the report JSON

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-10-23T23:27:53.740283+00:00",
+  "passed": true,
+  "source_archive_report": "managed-backup-schema3-archive-2026-10-24.json",
+  "restore_report": "managed-backup-schema3-restore-2026-10-24.json",
+  "source_snapshot_path": "/root/batchforge-runtime/app/.runtime/managed-backups/batchforge-20261023T232538Z-5ac7d056.dump",
+  "local_snapshot_path": "/Users/kevin/Documents/ChatGPT/app 3/.runtime/backups/batchforge-20261023T232538Z-5ac7d056.dump",
+  "snapshot_bytes": 103379878,
+  "snapshot_sha256": "a87e67c3f947913672a40ccd76f431858fbd03d0505ad30f51ebf03be9fa297d",
+  "private_directory_mode": "0o700",
+  "snapshot_mode": "0o600",
+  "ssh_host_key_verified": true,
+  "atomic_publication_after_sha_verification": true,
+  "partial_file_removed": true,
+  "outside_primary_pod": true,
+  "raw_archive_in_git": false,
+  "limitations": [
+    "Filesystem permissions are not at-rest encryption",
+    "This is one verified workstation copy, not a scheduled retention policy or object-store backup",
+    "Archive restores data/schema; cluster roles, runtime ACLs, credentials and infrastructure remain separate recovery steps"
+  ]
+}

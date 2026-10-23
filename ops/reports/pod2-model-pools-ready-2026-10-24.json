@@ -1,0 +1,17 @@
+{
+  "observed_at": "2026-10-23T22:48:59.253575+00:00",
+  "worker15_id": "secondpod-7b-18k-mig15",
+  "worker15_model": "Qwen/Qwen2.5-7B-Instruct-18k",
+  "worker15_capacity": 4,
+  "worker15_token_budget": 73760,
+  "worker15_pid": 124931,
+  "short_7b_workers": 14,
+  "short_7b_capacity": 224,
+  "gptoss120b_workers": 1,
+  "gptoss120b_capacity": 1,
+  "total_workers": 16,
+  "total_engine_instances": 16,
+  "supervised_services": 35,
+  "existing34_process_records_unchanged": true,
+  "watchdog_pid": 124936
+}

@@ -1,0 +1,46 @@
+{
+  "observed_at": "2026-10-23T22:37:27.158050+00:00",
+  "model_path": "/root/batchforge-runtime/models/gpt-oss-120b-GGUF/7200b74bea78b0a2964ef9f3897eefa401e890ff/gpt-oss-120b-MXFP4.gguf",
+  "file_bytes_observed": 63387346208,
+  "file_checksum_still_requires_preparation_completion": true,
+  "header": {
+    "gguf_version": 3,
+    "tensor_count": 687,
+    "logical_parameter_count_from_tensor_shapes": 116829156672,
+    "tensor_quantization_type_counts": {
+      "8": 146,
+      "0": 433,
+      "39": 108
+    },
+    "architecture_metadata": {
+      "general.architecture": "gpt-oss",
+      "general.type": "model",
+      "general.name": "gpt-oss-120b",
+      "general.size_label": "128x3.1B",
+      "general.license": "apache-2.0",
+      "gpt-oss.block_count": 36,
+      "gpt-oss.context_length": 131072,
+      "gpt-oss.embedding_length": 2880,
+      "gpt-oss.feed_forward_length": 2880,
+      "gpt-oss.attention.head_count": 64,
+      "gpt-oss.attention.head_count_kv": 8,
+      "gpt-oss.rope.scaling.type": "yarn",
+      "gpt-oss.rope.scaling.factor": 32.0,
+      "gpt-oss.rope.scaling.original_context_length": 4096,
+      "gpt-oss.rope.scaling.yarn_beta_fast": 32.0,
+      "gpt-oss.rope.scaling.yarn_beta_slow": 1.0,
+      "gpt-oss.rope.freq_base": 150000.0,
+      "gpt-oss.attention.layer_norm_rms_epsilon": 9.999999747378752e-06,
+      "gpt-oss.expert_count": 128,
+      "gpt-oss.expert_used_count": 4,
+      "gpt-oss.attention.key_length": 64,
+      "gpt-oss.attention.value_length": 64,
+      "gpt-oss.attention.sliding_window": 128,
+      "gpt-oss.expert_feed_forward_length": 2880,
+      "general.quantization_version": 2,
+      "general.file_type": 38
+    },
+    "header_bytes_read": 13022233,
+    "tensor_payload_loaded": false
+  }
+}

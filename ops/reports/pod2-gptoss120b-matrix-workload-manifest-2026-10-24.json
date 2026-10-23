@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "model": "openai/gpt-oss-120b",
+  "tokenizer_revision": "7200b74bea78b0a2964ef9f3897eefa401e890ff",
+  "dataset": "SQuAD 1.1 development",
+  "license": "CC BY-SA 4.0",
+  "source_url": "https://rajpurkar.github.io/SQuAD-explorer/",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "workload_sha256": "2d08b280b3f184af0fec34713f7e523f898ba84f2b6ee5b6c086e378f715ced2",
+  "seed": 20261024,
+  "context_limit": 18440,
+  "input_sizes": [
+    128,
+    512,
+    2048,
+    8192,
+    16384
+  ],
+  "output_caps": [
+    32,
+    128,
+    512,
+    2048
+  ],
+  "repeats": 1,
+  "tasks": 20,
+  "prompt_tolerance_tokens": 8,
+  "chat_template_sha256": null,
+  "prompt_counter": {
+    "type": "llama-cpp-apply-template-tokenize",
+    "llama_cpp_commit": "0ae0e1976670fac25f4e0ed864df30021accc764",
+    "model_revision": "7200b74bea78b0a2964ef9f3897eefa401e890ff",
+    "model": "openai/gpt-oss-120b",
+    "supplied_model_sha256": "582bd40f6886200101f4c4ed9f25f3fe80cc14c86e9e2b37746cd8904a0c622d",
+    "supplied_binary_sha256": "163bc895c6e471380b5e42be3f474ac1b9cc20e6cfdf967339a6c09cbc4dc4dd",
+    "actual_server_chat_template_sha256": "b2215de6da8ba369957eece8c5aa18f4af94f6c4d311d85e691373a421d80e89",
+    "actual_server_context_capacity": 18688,
+    "actual_server_build_info": "b0-unknown",
+    "counter_source_sha256": "10ffe430979f557ebd0265fcc40052762562595e454571c15dce84080b01265e",
+    "formatter": "/apply-template: same oaicompat_chat_params_parse path as inference",
+    "tokenizer": "/tokenize add_special=false, parse_special=true",
+    "cache_policy_for_probes": "cache_prompt=false; actual cached_tokens must equal zero",
+    "scope": "Plain text messages without tools or per-request formatter overrides",
+    "supplied_asset_hash_scope": "Operator provenance; server identity/asset verification is separate",
+    "calibration": {
+      "observed_inference_prompt_tokens": 80,
+      "counter_prompt_tokens": 80,
+      "matched": true
+    },
+    "calibration_file_sha256": "18cc88d39ac8c80695a483e98af5f24facda53e6f3b3f132cccb30deaef2a492"
+  },
+  "examples": {
+    "mix-0-128-32": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "rendered_prompt_token_ids_sha256": "302a9ef4ade1697e21596e61f5b1a4133c95730921c8f07966d4998647cd7907",
+      "output_token_cap": 32,
+      "class": "balanced"
+    },
+    "mix-0-128-128": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "rendered_prompt_token_ids_sha256": "1d0e8e0f69df9089612eabbe18b621f3670002e716f30d4d913186893cc72b94",
+      "output_token_cap": 128,
+      "class": "balanced"
+    },
+    "mix-0-128-512": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "rendered_prompt_token_ids_sha256": "76e72c0f5309d2800501d0816e092499890292d07b7e7241a4583dcba421f405",
+      "output_token_cap": 512,
+      "class": "decode-heavy"
+    },
+    "mix-0-128-2048": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "rendered_prompt_token_ids_sha256": "193b164b67e42e21bc9cf7b136f7a63b70c3ce6922409bff37a399be6a0c3b77",
+      "output_token_cap": 2048,
+      "class": "decode-heavy"
+    },
+    "mix-0-512-32": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "rendered_prompt_token_ids_sha256": "232438d9be1d0c1054195f3a82905051a3ad923952efad47d4ee395a9c3ecf09",
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-512-128": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "rendered_prompt_token_ids_sha256": "677850d394b65f7a278f0770f6076499a2b6676d0db7dd11fe3d31a0c482f901",
+      "output_token_cap": 128,
+      "class": "balanced"
+    },
+    "mix-0-512-512": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "rendered_prompt_token_ids_sha256": "c3e61f5551985b2a45d5941b4eff1e430c416289cd410dfaf6ca1361f362dec1",
+      "output_token_cap": 512,
+      "class": "balanced"
+    },
+    "mix-0-512-2048": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "rendered_prompt_token_ids_sha256": "1a84dd8e0ee6dc48d38311f3f4bb995e5887b65d2ebdff0726f9c0b9756f73d6",
+      "output_token_cap": 2048,
+      "class": "decode-heavy"
+    },
+    "mix-0-2048-32": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "rendered_prompt_token_ids_sha256": "7c2d9c27596d91f8cbb993287e1b04c005bffaf5762fcda048619156d8208418",
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-2048-128": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "rendered_prompt_token_ids_sha256": "c2f8f25ebb2f9134d48bc15182e50def0b7be23009fb2a152c687bf6fe9d16f4",
+      "output_token_cap": 128,
+      "class": "prefill-heavy"
+    },
+    "mix-0-2048-512": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "rendered_prompt_token_ids_sha256": "a37010f942ecc5c007ce41aa14c9d2d16a69816c32d316bdf96d031a74226f96",
+      "output_token_cap": 512,
+      "class": "balanced"
+    },
+    "mix-0-2048-2048": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "rendered_prompt_token_ids_sha256": "dda561623bb20875d53fa0a591969fac1d08319675642d8865c6e2516c100485",
+      "output_token_cap": 2048,
+      "class": "balanced"
+    },
+    "mix-0-8192-32": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "rendered_prompt_token_ids_sha256": "5f7ac5ab71767fa9e279041ee781873f01d9868b5313290cca06c2c17a594565",
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-8192-128": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "rendered_prompt_token_ids_sha256": "88b0ae94e494c01ab4f2fb989a9f9ad6ca16579ae03f028900c897a5422d7b76",
+      "output_token_cap": 128,
+      "class": "prefill-heavy"
+    },
+    "mix-0-8192-512": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "rendered_prompt_token_ids_sha256": "61bfa7767dc7eff96500a53e3e5d117a36f2ad67b2da8c64c1246b7a6ce222b2",
+      "output_token_cap": 512,
+      "class": "prefill-heavy"
+    },
+    "mix-0-8192-2048": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "rendered_prompt_token_ids_sha256": "4b47d7d30328ea02b07922ab6087e3e297affc47d824e4f74e6a12e2f64042cb",
+      "output_token_cap": 2048,
+      "class": "balanced"
+    },
+    "mix-0-16384-32": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "rendered_prompt_token_ids_sha256": "6cd0e73ba325c664ba7b32c0c996b996808aa87a8a67c2dcc07459b6c5bec251",
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-16384-128": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "rendered_prompt_token_ids_sha256": "fe03ee6e72c9e8f6cae7bd8d02e209d79c1f14afb6b8f01969bae799537d7b1a",
+      "output_token_cap": 128,
+      "class": "prefill-heavy"
+    },
+    "mix-0-16384-512": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "rendered_prompt_token_ids_sha256": "dbd2adaaa7a5200a8dd7422aa309ecc86d060006e05ada9cebb74e1a49e6242f",
+      "output_token_cap": 512,
+      "class": "prefill-heavy"
+    },
+    "mix-0-16384-2048": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "rendered_prompt_token_ids_sha256": "0a4d8ca4a67ac3f801e9a544efe6d5aeb0e85ee63727aa723ef21449132c5807",
+      "output_token_cap": 2048,
+      "class": "prefill-heavy"
+    }
+  },
+  "limitations": [
+    "Real public text, not customer traffic or a quality evaluation",
+    "Output values are maximum lengths; actual generated tokens must come from engine usage",
+    "Input counts include rendered chat template and generation prefix; server usage must agree",
+    "Prefill/decode labels use requested input and output cap, not separate hardware timing"
+  ],
+  "cache_policy": "cache_prompt=false for every direct engine request; verify actual cached usage separately"
+}

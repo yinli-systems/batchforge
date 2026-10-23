@@ -30,7 +30,7 @@ def distribution(values: list[float]) -> dict:
         lower, upper = math.floor(position), math.ceil(position)
         return round(ordered[lower] + (ordered[upper] - ordered[lower]) * (position - lower), 6)
 
-    return {"samples": len(values), "p50": percentile(.5), "p95": percentile(.95),
+    return {"samples": len(values), "p50": percentile(.5), "p95": percentile(.95), "p99": percentile(.99),
             "max": round(max(ordered), 6) if ordered else None,
             "mean": round(sum(ordered) / len(ordered), 6) if ordered else None}
 
@@ -108,6 +108,31 @@ def checked_batch(value: dict, expected_id: str | None = None) -> dict:
     if sum(counts[key] for key in keys[1:]) != counts["total"]:
         raise ValueError("Batch count conservation failed")
     return value
+
+
+def content_breakdown(body: dict) -> dict:
+    """Presence/shape statistics, independent of durable acceptance or quality."""
+    if not isinstance(body, dict):
+        raise ValueError("Output body must be an object")
+    choices = body.get("choices")
+    if not isinstance(choices, list) or not choices:
+        raise ValueError("Output choices must be a nonempty list")
+    final = reasoning = 0
+    length = False
+    for choice in choices:
+        if not isinstance(choice, dict) or not isinstance(choice.get("message"), dict):
+            raise ValueError("Output choices/messages must be objects")
+        message = choice["message"]
+        text = message.get("content")
+        if any(message.get(key) is not None and not isinstance(message[key], str) for key in ("content", "reasoning_content", "reasoning")):
+            raise ValueError("Output text or reasoning must be a string or null")
+        thought = message.get("reasoning_content") or message.get("reasoning")
+        final += len(text or "")
+        reasoning += len(thought or "")
+        length |= choice.get("finish_reason") == "length"
+    return {"rows_with_valid_content_shape": 1, "final_text_present": int(final > 0),
+            "reasoning_only": int(final == 0 and reasoning > 0), "no_final_text": int(final == 0),
+            "length_capped": int(length), "final_text_codepoints": final, "reasoning_text_codepoints": reasoning}
 
 
 async def run(args, *, transport=None) -> dict:
@@ -203,6 +228,8 @@ async def run(args, *, transport=None) -> dict:
         simulated = False
         validation_errors = []
         prompt_lengths, output_lengths, finish_reasons = [], [], {}
+        output_content = {key: 0 for key in ("rows_with_valid_content_shape", "final_text_present", "reasoning_only",
+            "no_final_text", "length_capped", "final_text_codepoints", "reasoning_text_codepoints")}
         output_dir = getattr(args, "output_dir", None)
         if output_dir:
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -225,6 +252,9 @@ async def run(args, *, transport=None) -> dict:
                         row = json.loads(line)
                         output_ids.append(row["custom_id"])
                         body = row["response"]["body"]
+                        content_stats = content_breakdown(body)
+                        for key, value in content_stats.items():
+                            output_content[key] += value
                         simulated |= bool(body.get("batchforge_test_only"))
                         prompt_tokens += body["usage"]["prompt_tokens"]
                         completion_tokens += body["usage"]["completion_tokens"]
@@ -262,6 +292,9 @@ async def run(args, *, transport=None) -> dict:
         "observed_prompt_tokens": prompt_tokens, "observed_completion_tokens": completion_tokens,
         "prompt_tokens_per_task": distribution(prompt_lengths), "completion_tokens_per_task": distribution(output_lengths),
         "output_finish_reasons": finish_reasons,
+        "output_content": {**output_content,
+            "population": "Durable output rows with valid choice/message shapes; length_capped means any choice ended with length",
+            "quality_evaluated": False, "durable_completion_distinct_from_final_answer": True},
         "output_custom_ids_unique": unique, "output_custom_ids_known": known,
         "output_rows_match_completed": len(output_ids) == completed,
         "batch_counts_match_submission": batch_counts_match,
@@ -300,7 +333,9 @@ async def run(args, *, transport=None) -> dict:
             "poll_errors": item.poll_errors} for item in submissions],
         "limitations": ["Not a daily capacity forecast", "Token lengths are measured from outputs, not guaranteed by the prompt",
             "Batch turnaround starts before POST /v1/batches and ends at first client-observed terminal response; polling adds observation delay",
-            "No per-task inference latency or quality evaluation", "Accepted counts require a received create acknowledgement; uncertain create errors may have committed server-side"],
+            "No per-task inference latency or quality evaluation; final text presence is counted separately from durable completion",
+            "Reported generated tokens can include reasoning and control tokens; reasoning-only length-capped outputs remain durable completions",
+            "Accepted counts require a received create acknowledgement; uncertain create errors may have committed server-side"],
     }
 
 

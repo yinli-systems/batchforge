@@ -262,6 +262,51 @@ async def test_external_destination_is_not_accepted_as_task_parameter():
         await worker.close()
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("effort", [None, "low", "medium", "high"])
+async def test_reasoning_effort_forwarded_unchanged_and_omitted_by_default(effort):
+    invoked, reports = [], []
+    def engine(request):
+        invoked.append(json.loads(request.content))
+        return httpx.Response(200, json=response())
+    def control(request):
+        reports.append(request.url.path)
+        return httpx.Response(200, json={"ok": True})
+    worker = make_worker(settings(), control_transport=httpx.MockTransport(control), inference_transport=httpx.MockTransport(engine))
+    item = task()
+    if effort is not None:
+        item["body"]["reasoning_effort"] = effort
+    original = dict(item["body"])
+    try:
+        await worker.execute(item)
+        assert len(invoked) == 1 and reports == ["/internal/tasks/task1/complete"]
+        assert ("reasoning_effort" in invoked[0]) == (effort is not None)
+        assert invoked[0].get("reasoning_effort") == effort
+        assert item["body"] == original
+    finally:
+        await worker.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("invalid", [None, True, 1, [], {}, "", "LOW", "none", "minimal"])
+async def test_invalid_reasoning_effort_fails_without_engine_call(invalid):
+    reports = []
+    def control(request):
+        reports.append(json.loads(request.content))
+        return httpx.Response(200, json={"ok": True})
+    def engine(request):
+        pytest.fail("An invalid effort must not reach the engine")
+    worker = make_worker(settings(), control_transport=httpx.MockTransport(control), inference_transport=httpx.MockTransport(engine))
+    item = task()
+    item["body"]["reasoning_effort"] = invalid
+    try:
+        await worker.execute(item)
+        assert len(reports) == 1 and reports[0]["error"]["code"] == "unsupported_parameter"
+        assert reports[0]["retryable"] is False
+    finally:
+        await worker.close()
+
+
 def test_context_budget_is_a_hard_capacity_bound():
     assert settings(max_inflight=100, token_budget=8192, max_model_len=4096).slots == 2
 

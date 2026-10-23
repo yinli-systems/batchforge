@@ -1,0 +1,212 @@
+{
+  "schema_version": 3,
+  "scope": "engine-only streaming HTTP; no durable platform completions",
+  "measurement_started_at": "2026-10-23T23:04:42.054464+00:00",
+  "finished_at": "2026-10-23T23:04:46.037329+00:00",
+  "passed": true,
+  "engine_label": "MIG-bdcef49f-83bf-569a-907a-3e5a4feaa1fb SM12.0 llama.cpp0ae0e197 CPU-MoE28/36 threads16",
+  "model": "openai/gpt-oss-120b",
+  "passed_scope": "Complete inference streams and usage only; final text presence and quality are independent",
+  "tokenizer_revision": "7200b74bea78b0a2964ef9f3897eefa401e890ff",
+  "workload_sha256": "c8ae581e0414135185dd2e637bb86d61307b7d1039804a107dff3aecad7cb2e2",
+  "prompt_counter": {
+    "type": "legacy-unrecorded"
+  },
+  "policy": "fifo",
+  "policy_scope": "bounded client dispatch of one offered burst; engine scheduler unchanged",
+  "shortest_cost_proxy": "prompt_tokens + 16 * output_cap",
+  "concurrency": 1,
+  "controlled_fixed_output": true,
+  "context_limit": 18440,
+  "server_advertised_context_limit": null,
+  "summary": {
+    "offered": 1,
+    "completed": 1,
+    "errors": 0,
+    "elapsed_seconds": 3.9825493050157093,
+    "successful_inferences_per_second": 0.2510954475166392,
+    "final_text_present": 1,
+    "no_final_text": 0,
+    "prompt_tokens": 80,
+    "generated_tokens": 128,
+    "prompt_tokens_per_second": 20.08763580133114,
+    "generated_tokens_per_second": 32.14021728212982,
+    "completion_seconds": {
+      "samples": 1,
+      "p50": 3.982396,
+      "p95": 3.982396,
+      "p99": 3.982396,
+      "max": 3.982396,
+      "mean": 3.982396
+    },
+    "queue_seconds": {
+      "samples": 1,
+      "p50": 2.8e-05,
+      "p95": 2.8e-05,
+      "p99": 2.8e-05,
+      "max": 2.8e-05,
+      "mean": 2.8e-05
+    },
+    "http_ttft_seconds": {
+      "samples": 1,
+      "p50": 1.404634,
+      "p95": 1.404634,
+      "p99": 1.404634,
+      "max": 1.404634,
+      "mean": 1.404634
+    },
+    "first_final_content_seconds": {
+      "samples": 1,
+      "p50": 2.125089,
+      "p95": 2.125089,
+      "p99": 2.125089,
+      "max": 2.125089,
+      "mean": 2.125089
+    },
+    "stream_span_per_reported_output_token_proxy_seconds": {
+      "samples": 1,
+      "p50": 0.005827,
+      "p95": 0.005827,
+      "p99": 0.005827,
+      "max": 0.005827,
+      "mean": 0.005827
+    },
+    "visible_text_codepoints": 98,
+    "final_text_codepoints": 2,
+    "reasoning_text_codepoints": 96,
+    "http_service_seconds": {
+      "samples": 1,
+      "p50": 3.982368,
+      "p95": 3.982368,
+      "p99": 3.982368,
+      "max": 3.982368,
+      "mean": 3.982368
+    },
+    "all_terminal_completion_seconds": {
+      "samples": 1,
+      "p50": 3.982396,
+      "p95": 3.982396,
+      "p99": 3.982396,
+      "max": 3.982396,
+      "mean": 3.982396
+    },
+    "cost": null
+  },
+  "by_class": {
+    "balanced": {
+      "offered": 1,
+      "completed": 1,
+      "errors": 0,
+      "elapsed_seconds": 3.9825493050157093,
+      "successful_inferences_per_second": 0.2510954475166392,
+      "final_text_present": 1,
+      "no_final_text": 0,
+      "prompt_tokens": 80,
+      "generated_tokens": 128,
+      "prompt_tokens_per_second": 20.08763580133114,
+      "generated_tokens_per_second": 32.14021728212982,
+      "completion_seconds": {
+        "samples": 1,
+        "p50": 3.982396,
+        "p95": 3.982396,
+        "p99": 3.982396,
+        "max": 3.982396,
+        "mean": 3.982396
+      },
+      "queue_seconds": {
+        "samples": 1,
+        "p50": 2.8e-05,
+        "p95": 2.8e-05,
+        "p99": 2.8e-05,
+        "max": 2.8e-05,
+        "mean": 2.8e-05
+      },
+      "http_ttft_seconds": {
+        "samples": 1,
+        "p50": 1.404634,
+        "p95": 1.404634,
+        "p99": 1.404634,
+        "max": 1.404634,
+        "mean": 1.404634
+      },
+      "first_final_content_seconds": {
+        "samples": 1,
+        "p50": 2.125089,
+        "p95": 2.125089,
+        "p99": 2.125089,
+        "max": 2.125089,
+        "mean": 2.125089
+      },
+      "stream_span_per_reported_output_token_proxy_seconds": {
+        "samples": 1,
+        "p50": 0.005827,
+        "p95": 0.005827,
+        "p99": 0.005827,
+        "max": 0.005827,
+        "mean": 0.005827
+      },
+      "visible_text_codepoints": 98,
+      "final_text_codepoints": 2,
+      "reasoning_text_codepoints": 96,
+      "http_service_seconds": {
+        "samples": 1,
+        "p50": 3.982368,
+        "p95": 3.982368,
+        "p99": 3.982368,
+        "max": 3.982368,
+        "mean": 3.982368
+      },
+      "all_terminal_completion_seconds": {
+        "samples": 1,
+        "p50": 3.982396,
+        "p95": 3.982396,
+        "p99": 3.982396,
+        "max": 3.982396,
+        "mean": 3.982396
+      },
+      "cost": null
+    }
+  },
+  "records": [
+    {
+      "custom_id": "smoke",
+      "target_prompt_tokens": 80,
+      "rendered_prompt_tokens": 80,
+      "output_token_cap": 128,
+      "class": "balanced",
+      "status": "completed",
+      "dispatch_index": 0,
+      "queue_seconds": 2.78990191873163e-05,
+      "dispatch_started_at": "2026-10-23T23:04:42.054503+00:00",
+      "http_status": 200,
+      "reported_prompt_tokens": 80,
+      "reported_completion_tokens": 128,
+      "prompt_tokens": 80,
+      "completion_tokens": 128,
+      "finish_reason": "length",
+      "ttft_seconds": 1.404634092003107,
+      "stream_span_per_reported_output_token_proxy_seconds": 0.00582685923606238,
+      "emitted_text_events": 30,
+      "response_text_sha256": "63eb65f78c425f3784580d7acb38c1673c5682e92b5062965f0e1b323247850f",
+      "inference_success": true,
+      "final_text_present": true,
+      "first_final_content_seconds": 2.1250891469826456,
+      "final_text_codepoints": 2,
+      "reasoning_text_codepoints": 96,
+      "visible_text_codepoints": 98,
+      "service_seconds": 3.9823676589876413,
+      "completion_seconds": 3.9823959080094937
+    }
+  ],
+  "limitations": [
+    "Burst experiment, not sustained daily throughput or production traffic",
+    "TTFT is first visible text delta including reasoning, HTTP and engine queueing; first final content is reported separately",
+    "Stream-span/output-token value is a proxy: transport can bundle text, and reported usage includes reasoning/control tokens without visible deltas",
+    "Successful inference means a complete valid HTTP stream and usage; final text presence is separate and does not establish task quality",
+    "Generated-token throughput includes all engine-reported output tokens, including reasoning and Harmony/control tokens",
+    "Success-only percentile population is accompanied by all-terminal latency and explicit errors",
+    "Fixed-output mode ignores EOS and forces minimum tokens: capacity experiment, not natural task quality",
+    "Class token rates share the full run wall time; not isolated prefill/decode peaks",
+    "No GPU utilization measurement is inferred from HTTP token throughput"
+  ]
+}

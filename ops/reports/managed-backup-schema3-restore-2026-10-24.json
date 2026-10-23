@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-23T23:26:00.153190+00:00",
+  "verification_script_sha256": "c8931cdb9446b452bd5c7f7488b8817c7cd6a5ef6c1a9cf301b3ebda2380c8d7",
+  "backup_helper_sha256": "20f952ff0fb992d4ff01c7ce3a30f3fd8b8b1320bf038f17931a99139568f878",
+  "snapshot_sha256": "a87e67c3f947913672a40ccd76f431858fbd03d0505ad30f51ebf03be9fa297d",
+  "snapshot_bytes": 103379878,
+  "destination": "new uniquely named empty database on the same Neon PostgreSQL 17 branch",
+  "disposable_database": "bf_restore_a5846989945c4255a4a9",
+  "source_database_modified": false,
+  "credentials_in_argv": false,
+  "physical_inference_performed": false,
+  "restored_with_no_owner_no_acl": true,
+  "runtime_permissions_restored": false,
+  "restore_verified": true,
+  "limitations": [
+    "Same managed compute as the application; no disaster-region or provider-loss recovery claim",
+    "Rows and aggregates describe the consistent archive snapshot, not the subsequently changing live source",
+    "Database roles, infrastructure, external files, and secret recovery remain separate responsibilities",
+    "Per-database bf_runtime grants are intentionally not restored by --no-acl; data/schema hashes are not permission recovery proof"
+  ],
+  "capacity_observed_before_create": {
+    "source_bytes": 253566976,
+    "branch_bytes": 261439488,
+    "planning_after_restore_bytes": 776007680,
+    "operator_limit_bytes": 850000000
+  },
+  "restore_elapsed_seconds": 8.451979858975392,
+  "server_version": "17.11 (11592b3)",
+  "ssl_in_use": true,
+  "tables": {
+    "api_keys": {
+      "rows": 1,
+      "sha256": "a6e6e2fcbf2da600bd6f821c072f998b26d6d8087f4d30278913670df82e01fe"
+    },
+    "attempts": {
+      "rows": 25691,
+      "sha256": "833e9778ede6bb70ecf3fa15cba65c117ba207f30a065eaf63d28c7cfeee73e4"
+    },
+    "batches": {
+      "rows": 343,
+      "sha256": "6eb3994ded39224a09235be9027a4021b38c08daa5ba28b4b46e3fcaf0fb8c6b"
+    },
+    "batchforge_schema_migrations": {
+      "rows": 3,
+      "sha256": "a5e3a40f700e18c297852d2aae819947ed66082c9b7a8a0e04076c6ee2b9870b"
+    },
+    "files": {
+      "rows": 724,
+      "sha256": "faebf7fd313c1a17bd09816174fdf4b556a332fa1ddce42b5f8b871f48bcdcad"
+    },
+    "idempotency": {
+      "rows": 343,
+      "sha256": "19be0fd6f8c222c2e34bc2389d19bd7a78675a73576f0f4e585980fec6ca1a51"
+    },
+    "tasks": {
+      "rows": 25134,
+      "sha256": "fe0bdbca8c8c18956fe9863afa7fc86a19454afe823f201b1d24acc49a6746fb"
+    },
+    "tenant_queues": {
+      "rows": 3,
+      "sha256": "aad3492ea2ad1c06bdf50b3e0f00b159aef3295f6dcf9803547e5ea1885640ba"
+    },
+    "tenants": {
+      "rows": 1,
+      "sha256": "03be7062e639cb9c7561b05a238ce177486711089b056ad4fab821f6c9649b52"
+    },
+    "workers": {
+      "rows": 28,
+      "sha256": "c3c78bf9a9c71a571f65cf10ccb08ba88df47d7ba78c9a998f6772d7bfbf04b6"
+    }
+  },
+  "all_table_rows_sha256": "14d01a78ee42216f3de80c07afb84644473bf924a255d34695c00f9ddefee306",
+  "task_usage_ledger": {
+    "rows": 25134,
+    "sha256": "1394f0a2f8874a31f197e342d6e9b9c8ceec59855a5811abb99eec7fe3ad30cd"
+  },
+  "restored_batches": 343,
+  "restored_tasks": 25134,
+  "restored_attempts": 25691,
+  "task_prompt_tokens": 24740759,
+  "task_completion_tokens": 4347447,
+  "batch_prompt_tokens": 24740759,
+  "batch_completion_tokens": 4347447,
+  "batch_count_or_usage_mismatches": 0,
+  "restored_status_counts": {
+    "completed": 24955,
+    "failed": 179
+  },
+  "unvalidated_constraints": 0,
+  "restored_migration_version": 3,
+  "restored_migration_rows": [
+    {
+      "version": 1,
+      "checksum": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219"
+    },
+    {
+      "version": 2,
+      "checksum": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b"
+    },
+    {
+      "version": 3,
+      "checksum": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003"
+    }
+  ],
+  "all_three_migration_checksums_match": true,
+  "sql_state_machine_functions": [
+    {
+      "name": "batchforge_claim",
+      "security_definer": false,
+      "settings": [
+        "search_path=pg_catalog, public"
+      ]
+    },
+    {
+      "name": "batchforge_complete",
+      "security_definer": false,
+      "settings": [
+        "search_path=pg_catalog, public"
+      ]
+    },
+    {
+      "name": "batchforge_heartbeat",
+      "security_definer": false,
+      "settings": [
+        "search_path=pg_catalog, public"
+      ]
+    }
+  ],
+  "sql_functions_security_invoker_and_fixed_path": true,
+  "duplicate_accepted_attempt_tasks": 0,
+  "completed_task_accepted_attempt_mismatches": 0,
+  "accepted_attempt_usage_mismatches": 0,
+  "disposable_database_removed": true,
+  "completed_at": "2026-10-23T23:26:26.662685+00:00",
+  "elapsed_seconds": 26.509373523003887,
+  "passed": true
+}

@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "scope": "Arithmetic from short engine bursts, not a sustained capacity measurement, invoice, hardware equivalence, or procurement recommendation",
+  "target_tasks_per_day": 10000000,
+  "assumed_average_duty_fraction": 0.7,
+  "mean_input_tokens": 5452.8,
+  "mean_generated_tokens": 680.0,
+  "required_average_tasks_per_second": 115.74074074074075,
+  "required_provisioned_tasks_per_second_at_70pct": 165.34391534391537,
+  "required_average_input_tokens_per_second": 631111.1111111111,
+  "required_average_generated_tokens_per_second": 78703.70370370371,
+  "lanes": {
+    "primary": {
+      "source_report": "primary-gptoss120-seq8-fifo-2026-10-24.json",
+      "source_sha256": "5f1669de5c8330ac6dc02b0c208da51e82cb12b0a92a256aea4448227d7858b2",
+      "measured_inferences_per_second": 0.4276585450239866,
+      "measured_input_tokens_per_second": 2331.936514306794,
+      "measured_generated_tokens_per_second": 290.8078106163109,
+      "same_burst_rate_times_86400": 36949.69829007244,
+      "at_70pct_arithmetic_per_day": 25864.788803050706,
+      "recorded_whole_allocation_usd_per_hour": 16.1,
+      "all_whole_allocation_cost_assigned_to_this_lane_usd_per_million_at_measured_rate": 10457.460219744666,
+      "arithmetic_copies_of_this_measured_configuration_at_70pct": 387,
+      "arithmetic_whole_allocation_cost_for_those_copies_usd_per_day": 149536.80000000002
+    },
+    "secondary": {
+      "source_report": "pod2-gptoss120b-matrix-fifo-2026-10-24.json",
+      "source_sha256": "255e54b7464aa9299a219bc97141bb714dcdff5eb84807fc2dfb90c58f3db247",
+      "measured_inferences_per_second": 0.030013748025898776,
+      "measured_input_tokens_per_second": 163.65896523562085,
+      "measured_generated_tokens_per_second": 20.40934865761117,
+      "same_burst_rate_times_86400": 2593.1878294376543,
+      "at_70pct_arithmetic_per_day": 1815.2314806063578,
+      "recorded_whole_allocation_usd_per_hour": 11.18,
+      "all_whole_allocation_cost_assigned_to_this_lane_usd_per_million_at_measured_rate": 103471.10107260781,
+      "arithmetic_copies_of_this_measured_configuration_at_70pct": 5509,
+      "arithmetic_whole_allocation_cost_for_those_copies_usd_per_day": 1478174.88
+    }
+  },
+  "sum_of_separately_measured_lane_rates": {
+    "inferences_per_second": 0.4576722930498854,
+    "rate_times_86400": 39542.8861195101,
+    "at_70pct_arithmetic_per_day": 27680.020283657068,
+    "gap_factor_at_70pct": 361.27141156411056,
+    "arithmetic_copies_of_both_whole_allocations_at_70pct": 362,
+    "both_existing_whole_allocations_usd_per_day": 654.72,
+    "arithmetic_whole_allocation_cost_for_pair_copies_usd_per_day": 237008.64
+  },
+  "limitations": [
+    "Each measurement has only 20 requests and forced output caps; no full-day run or natural answer yield is established.",
+    "Adding rates assumes both lanes retain their separately measured throughput simultaneously; no fleet-level throughput experiment is implied.",
+    "Shared TP4 H100s are not four exclusively available H100s; CPU plus one MIG slice is not a full Blackwell GPU.",
+    "A copy means the entire measured configuration, not one full physical GPU; linear inference scaling has not been validated.",
+    "Whole allocation prices were previously recorded, not freshly invoiced; they include unrelated primary work and fifteen other secondary 7B lanes.",
+    "No price or purchase for new GPUs is authorized or implied.",
+    "Costs omit quality rejection, retries, control-plane services, storage, network traffic and a Pod failure reserve."
+  ],
+  "formulae": {
+    "daily_at_duty": "measured_inferences_per_second * 86400 * assumed_average_duty_fraction",
+    "required_copies": "ceil(target_tasks_per_day / daily_at_duty)",
+    "gross_cost_per_million_at_measured_rate": "whole_allocation_usd_per_hour * 1000000 / (measured_inferences_per_second * 3600)",
+    "daily_whole_allocation_cost": "required_copies * whole_allocation_usd_per_hour * 24"
+  }
+}

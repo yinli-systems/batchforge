@@ -1,0 +1,118 @@
+{
+  "started_at": "2026-10-23T23:04:32.329059+00:00",
+  "status": "complete",
+  "model": "openai/gpt-oss-120b",
+  "cpu_moe_layers": 28,
+  "cpu_threads": 16,
+  "client_concurrency": 1,
+  "context_reservation": 18440,
+  "force_length": true,
+  "policy": "fifo",
+  "frozen_matrix_source_sha256": "14e9ca117b9f9cf902bb793afa286f8a9cadc3fd8386567aef18b2243a480f09",
+  "counter_source_sha256": "10ffe430979f557ebd0265fcc40052762562595e454571c15dce84080b01265e",
+  "no_automatic_request_replay": true,
+  "workload_sha256": "2d08b280b3f184af0fec34713f7e523f898ba84f2b6ee5b6c086e378f715ced2",
+  "manifest_sha256": "2b5e81d91cec090a1da0a1a67752a6b7627fba3c071d68251ec436b95ee48f7a",
+  "stream_smoke_passed": true,
+  "finished_at": "2026-10-23T23:15:52.754752+00:00",
+  "passed": true,
+  "summary": {
+    "offered": 20,
+    "completed": 20,
+    "errors": 0,
+    "elapsed_seconds": 666.3612949219823,
+    "successful_inferences_per_second": 0.030013748025898776,
+    "final_text_present": 10,
+    "no_final_text": 10,
+    "prompt_tokens": 109056,
+    "generated_tokens": 13600,
+    "prompt_tokens_per_second": 163.65896523562085,
+    "generated_tokens_per_second": 20.40934865761117,
+    "completion_seconds": {
+      "samples": 20,
+      "p50": 422.1928,
+      "p95": 605.720133,
+      "p99": 654.232921,
+      "max": 666.361118,
+      "mean": 390.708224
+    },
+    "queue_seconds": {
+      "samples": 20,
+      "p50": 386.087766,
+      "p95": 576.67001,
+      "p99": 597.356813,
+      "max": 602.528513,
+      "mean": 357.39018
+    },
+    "http_ttft_seconds": {
+      "samples": 20,
+      "p50": 7.673678,
+      "p95": 51.82731,
+      "p99": 52.009511,
+      "max": 52.055062,
+      "mean": 18.230447
+    },
+    "first_final_content_seconds": {
+      "samples": 10,
+      "p50": 8.051683,
+      "p95": 61.714352,
+      "p99": 62.322082,
+      "max": 62.474015,
+      "mean": 19.575488
+    },
+    "stream_span_per_reported_output_token_proxy_seconds": {
+      "samples": 20,
+      "p50": 0.021505,
+      "p95": 0.023368,
+      "p99": 0.023482,
+      "max": 0.023511,
+      "mean": 0.021431
+    },
+    "visible_text_codepoints": 50925,
+    "final_text_codepoints": 37833,
+    "reasoning_text_codepoints": 13092,
+    "http_service_seconds": {
+      "samples": 20,
+      "p50": 28.202717,
+      "p95": 74.128046,
+      "p99": 93.524358,
+      "max": 98.373436,
+      "mean": 33.318043
+    },
+    "all_terminal_completion_seconds": {
+      "samples": 20,
+      "p50": 422.1928,
+      "p95": 605.720133,
+      "p99": 654.232921,
+      "max": 666.361118,
+      "mean": 390.708224
+    },
+    "cost": null
+  },
+  "uncached_evidence": {
+    "per_request_cache_prompt": false,
+    "all20_processed_prompt_counts_equal_full_usage": true,
+    "method": "Exclusive single-client FIFO appended server timing pairs; warm reused75/80 calibration processes only5, so processed-count equality detects prefix reuse",
+    "appended_log_sha256": "41772b4b4055e484b19dc95630767254569328d8c63baa956bb8418d1b054acc",
+    "event_count": 20,
+    "stream_cached_tokens_field_retained": false
+  },
+  "observed_resources": {
+    "gpu_memory_samples": 2626,
+    "peak_gpu_memory_used_bytes": 17140482048,
+    "minimum_gpu_memory_free_bytes": 8226668544,
+    "gpu_sm_utilization": "N/A: per-MIG NVML returns3; not inferred from capacity",
+    "engine_mean_cpu_cores": 7.850419486195356,
+    "cpu_allocation": {
+      "cpu.max": "10880000 100000",
+      "cpuset.cpus.effective": "0-255",
+      "cpu_models": [
+        "AMD EPYC 9554 64-Core Processor"
+      ],
+      "logical_cpu_count_visible": 256
+    },
+    "cpp_threads": 16,
+    "cpp_cpu_moe_layers": 28,
+    "raw_gpu_memory_samples_sha256": "0609feb96d7a3d2ce335782ec175962f8d39b3f6d7f7e970d391222d9e1e269c"
+  }
+}

@@ -1,0 +1,538 @@
+{
+  "observed_at": "2026-10-23T23:27:46.241758+00:00",
+  "scope": "Current three model pools after reviewed worker-first/API-last rollout; readonly exactownidentity/loopbackreadiness/envmode checks",
+  "service_count": 35,
+  "running": 35,
+  "ready": 35,
+  "all35_identities_match_reviewed_rollouts": true,
+  "all_private_envs_mode600": true,
+  "unique_selected_mig_uuids": 16,
+  "all16_engine_selectors_match": true,
+  "source_sha256": {
+    "worker/runtime.py": "0156ac72d5c4632ee80397eb703658bdb9b58f2c1b3b51d12d18039dcf04bcbe",
+    "backend/validation.py": "62f2f509566dd23bb543d238868f5127baf09d8170c133025a3ed53f3269e71f",
+    "backend/CONTRACT.md": "1892b5aea72456f5cfd8901455faaeb199d770beb4a588bbaa31e1cfc05edb33",
+    "ops/supervise.py": "3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0"
+  },
+  "watchdog_identity": {
+    "pid": 143429,
+    "start_ticks": "25089455",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "manifest_sha256": "9d714f04d7786879a314cb30669a5309ab64db6b6a5942d67e3a648239b61a2b",
+  "pools": [
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "engines": 14,
+      "workers": 14,
+      "slots": 224,
+      "context": 4096
+    },
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct-18k",
+      "engines": 1,
+      "workers": 1,
+      "slots": 4,
+      "context": 18440
+    },
+    {
+      "model": "openai/gpt-oss-120b",
+      "engines": 1,
+      "workers": 1,
+      "slots": 1,
+      "context": 18440,
+      "runtime_padded_context": 18688,
+      "cpu_moe_layers": 28,
+      "cpu_threads": 16
+    }
+  ],
+  "services": [
+    {
+      "role": "api",
+      "name": "a",
+      "identity": {
+        "pid": 143414,
+        "start_ticks": "25089186",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8082,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "api",
+      "name": "b",
+      "identity": {
+        "pid": 143423,
+        "start_ticks": "25089352",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8083,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "gateway",
+      "name": "edge",
+      "identity": {
+        "pid": 11870,
+        "start_ticks": "24081573",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8080,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu0",
+      "identity": {
+        "pid": 64444,
+        "start_ticks": "24485736",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8200,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-d2f12fb1-37bf-5218-8954-aa19d09e0a8a",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig0",
+      "identity": {
+        "pid": 138642,
+        "start_ticks": "25029514",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9200,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu1",
+      "identity": {
+        "pid": 64378,
+        "start_ticks": "24485685",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8201,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-0ae59fae-4b69-5e81-a265-0b1e0844dbe1",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig1",
+      "identity": {
+        "pid": 138643,
+        "start_ticks": "25029514",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9201,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu2",
+      "identity": {
+        "pid": 66740,
+        "start_ticks": "24490676",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8202,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-380086a7-e7a1-5c27-9aff-29a457a16ee8",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig2",
+      "identity": {
+        "pid": 138644,
+        "start_ticks": "25029514",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9202,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu3",
+      "identity": {
+        "pid": 66806,
+        "start_ticks": "24490723",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8203,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-e862004e-5f22-5248-9bf0-639dd320c22d",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig3",
+      "identity": {
+        "pid": 138645,
+        "start_ticks": "25029514",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9203,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu4",
+      "identity": {
+        "pid": 69005,
+        "start_ticks": "24495553",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8204,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-b619e29e-b921-5964-b67c-24dd2ddda4a5",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig4",
+      "identity": {
+        "pid": 138650,
+        "start_ticks": "25029542",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9204,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu5",
+      "identity": {
+        "pid": 69153,
+        "start_ticks": "24495719",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8205,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-e9c6f75d-60a5-5072-bddf-2d2661f0fb77",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig5",
+      "identity": {
+        "pid": 138652,
+        "start_ticks": "25029543",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9205,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu6",
+      "identity": {
+        "pid": 71350,
+        "start_ticks": "24500465",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8206,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-22019961-7f1b-58a7-89a2-eee1fd1a72d4",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig6",
+      "identity": {
+        "pid": 138651,
+        "start_ticks": "25029543",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9206,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu7",
+      "identity": {
+        "pid": 71499,
+        "start_ticks": "24500691",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8207,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-55308027-c79e-5fc8-8587-940802972f9b",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig7",
+      "identity": {
+        "pid": 138653,
+        "start_ticks": "25029543",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9207,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu8",
+      "identity": {
+        "pid": 73682,
+        "start_ticks": "24505357",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8208,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-1f8f5a87-dc7b-5ddb-b8ba-5b060998d459",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig8",
+      "identity": {
+        "pid": 138658,
+        "start_ticks": "25029571",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9208,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu9",
+      "identity": {
+        "pid": 73890,
+        "start_ticks": "24505644",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8209,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-0d8bd9a9-893c-516b-9537-131114f7f936",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig9",
+      "identity": {
+        "pid": 138659,
+        "start_ticks": "25029572",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9209,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu10",
+      "identity": {
+        "pid": 76028,
+        "start_ticks": "24510253",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8210,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-9ea7d731-750a-5119-86b5-dd727715e52a",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig10",
+      "identity": {
+        "pid": 138660,
+        "start_ticks": "25029572",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9210,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu11",
+      "identity": {
+        "pid": 76246,
+        "start_ticks": "24510621",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8211,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-70b46ada-abf6-530f-b1d3-fa80bb90a21c",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig11",
+      "identity": {
+        "pid": 138661,
+        "start_ticks": "25029572",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9211,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu12",
+      "identity": {
+        "pid": 78358,
+        "start_ticks": "24515055",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8212,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-acbb77ed-7f51-5892-be4d-e5be2e6cc8dd",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig12",
+      "identity": {
+        "pid": 138666,
+        "start_ticks": "25029600",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9212,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu13",
+      "identity": {
+        "pid": 78659,
+        "start_ticks": "24515550",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8213,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-e0cfdac6-4296-5f39-8973-b517dca02671",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig13",
+      "identity": {
+        "pid": 138667,
+        "start_ticks": "25029600",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9213,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "engine",
+      "name": "pod2-7b-gpu15",
+      "identity": {
+        "pid": 111125,
+        "start_ticks": "24770931",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8215,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-83b2a8e2-adaa-5ea0-a85d-a591df1b0600",
+      "selector_matches": true
+    },
+    {
+      "role": "engine",
+      "name": "pod2-gptoss120b-mig14",
+      "identity": {
+        "pid": 128929,
+        "start_ticks": "24911837",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 8314,
+      "env_mode": "0o600",
+      "cuda_selector": "MIG-bdcef49f-83bf-569a-907a-3e5a4feaa1fb",
+      "selector_matches": true
+    },
+    {
+      "role": "worker",
+      "name": "pod2-gptoss120b-cpu-expert",
+      "identity": {
+        "pid": 138668,
+        "start_ticks": "25029601",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9214,
+      "env_mode": "0o600"
+    },
+    {
+      "role": "worker",
+      "name": "pod2-7b-mig15",
+      "identity": {
+        "pid": 138669,
+        "start_ticks": "25029601",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "identity_matches_reviewed_rollouts": true,
+      "ready": true,
+      "port": 9215,
+      "env_mode": "0o600"
+    }
+  ]
+}

@@ -1,0 +1,354 @@
+{
+  "started_at": "2026-10-23T22:33:45.353838+00:00",
+  "status": "complete",
+  "logical_device": 15,
+  "selector": "MIG-83b2a8e2-adaa-5ea0-a85d-a591df1b0600",
+  "original_model": "Qwen/Qwen2.5-7B-Instruct",
+  "served_model": "Qwen/Qwen2.5-7B-Instruct-18k",
+  "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "dtype": "bfloat16",
+  "context_limit": 18440,
+  "max_num_seqs": 4,
+  "chunked_prefill": true,
+  "max_num_batched_tokens": 2048,
+  "memory_fraction": 0.82,
+  "prefix_caching": false,
+  "eos_configuration_changed": false,
+  "controller_sha256": "1cf6bf734a0953109316f5d6411f699931ff931085cd5a8adcc69a7a2e525f45",
+  "protected_services": [
+    "api-a",
+    "api-b",
+    "gateway-edge",
+    "engine-pod2-7b-gpu0",
+    "worker-pod2-7b-mig0",
+    "engine-pod2-7b-gpu1",
+    "worker-pod2-7b-mig1",
+    "engine-pod2-7b-gpu2",
+    "worker-pod2-7b-mig2",
+    "engine-pod2-7b-gpu3",
+    "worker-pod2-7b-mig3",
+    "engine-pod2-7b-gpu4",
+    "worker-pod2-7b-mig4",
+    "engine-pod2-7b-gpu5",
+    "worker-pod2-7b-mig5",
+    "engine-pod2-7b-gpu6",
+    "worker-pod2-7b-mig6",
+    "engine-pod2-7b-gpu7",
+    "worker-pod2-7b-mig7",
+    "engine-pod2-7b-gpu8",
+    "worker-pod2-7b-mig8",
+    "engine-pod2-7b-gpu9",
+    "worker-pod2-7b-mig9",
+    "engine-pod2-7b-gpu10",
+    "worker-pod2-7b-mig10",
+    "engine-pod2-7b-gpu11",
+    "worker-pod2-7b-mig11",
+    "engine-pod2-7b-gpu12",
+    "worker-pod2-7b-mig12",
+    "engine-pod2-7b-gpu13",
+    "worker-pod2-7b-mig13",
+    "engine-pod2-7b-gpu14",
+    "worker-pod2-7b-mig14"
+  ],
+  "policies": [
+    {
+      "policy": "fifo",
+      "passed": true,
+      "exit_code": 0,
+      "summary": {
+        "offered": 20,
+        "completed": 20,
+        "errors": 0,
+        "elapsed_seconds": 208.3723078740004,
+        "accepted_tasks_per_second": 0.09598204389084992,
+        "prompt_tokens": 109056,
+        "generated_tokens": 13600,
+        "prompt_tokens_per_second": 523.3708889280265,
+        "generated_tokens_per_second": 65.26778984577795,
+        "completion_seconds": {
+          "samples": 20,
+          "p50": 117.521858,
+          "p95": 162.570712,
+          "p99": 199.211799,
+          "max": 208.372071,
+          "mean": 116.071126
+        },
+        "queue_seconds": {
+          "samples": 20,
+          "p50": 105.928743,
+          "p95": 131.372863,
+          "p99": 133.53513,
+          "max": 134.075697,
+          "mean": 82.156037
+        },
+        "http_ttft_seconds": {
+          "samples": 20,
+          "p50": 0.958751,
+          "p95": 3.513435,
+          "p99": 5.626742,
+          "max": 6.155069,
+          "mean": 1.678507
+        },
+        "mean_decode_token_seconds": {
+          "samples": 20,
+          "p50": 0.046759,
+          "p95": 0.083949,
+          "p99": 0.12545,
+          "max": 0.135826,
+          "mean": 0.054484
+        },
+        "http_service_seconds": {
+          "samples": 20,
+          "p50": 18.523524,
+          "p95": 98.772797,
+          "p99": 99.227783,
+          "max": 99.34153,
+          "mean": 33.915089
+        },
+        "all_terminal_completion_seconds": {
+          "samples": 20,
+          "p50": 117.521858,
+          "p95": 162.570712,
+          "p99": 199.211799,
+          "max": 208.372071,
+          "mean": 116.071126
+        },
+        "cost": null
+      },
+      "gpu_observation": {
+        "nvml_init_code": 0,
+        "nvml_handle_query_code": 0,
+        "utilization_valid_samples": 0,
+        "utilization_error_codes": {
+          "3": 406
+        },
+        "engine_metric_sample_count": 406,
+        "memory_valid_samples": 406,
+        "gpu_utilization_availability": "N/A: NVML returned no valid per-MIG utilization; no physical/shared utilization substituted",
+        "capacity_metrics_are_not_sm_utilization": true,
+        "raw_samples_sha256": "7b13f36868d3cc34d1e419549d4fb3373057d95f151d4d720ab9ab55017495fc",
+        "raw_samples_bytes": 266092,
+        "raw_samples_file": "pod2-matrix7b-18k-fifo-gpu.jsonl"
+      },
+      "report_file": "pod2-matrix7b-18k-fifo.json"
+    },
+    {
+      "policy": "shortest",
+      "passed": true,
+      "exit_code": 0,
+      "summary": {
+        "offered": 20,
+        "completed": 20,
+        "errors": 0,
+        "elapsed_seconds": 224.89357106600073,
+        "accepted_tasks_per_second": 0.08893095478541044,
+        "prompt_tokens": 109056,
+        "generated_tokens": 13600,
+        "prompt_tokens_per_second": 484.922710253886,
+        "generated_tokens_per_second": 60.4730492540791,
+        "completion_seconds": {
+          "samples": 20,
+          "p50": 35.80129,
+          "p95": 160.785147,
+          "p99": 212.071706,
+          "max": 224.893345,
+          "mean": 57.552539
+        },
+        "queue_seconds": {
+          "samples": 20,
+          "p50": 9.326326,
+          "p95": 67.669599,
+          "p99": 119.662087,
+          "max": 132.660209,
+          "mean": 24.40098
+        },
+        "http_ttft_seconds": {
+          "samples": 20,
+          "p50": 0.672003,
+          "p95": 3.372919,
+          "p99": 3.407845,
+          "max": 3.416576,
+          "mean": 1.2063
+        },
+        "mean_decode_token_seconds": {
+          "samples": 20,
+          "p50": 0.045407,
+          "p95": 0.069982,
+          "p99": 0.070954,
+          "max": 0.071197,
+          "mean": 0.050074
+        },
+        "http_service_seconds": {
+          "samples": 20,
+          "p50": 18.955618,
+          "p95": 93.012269,
+          "p99": 93.132047,
+          "max": 93.161991,
+          "mean": 33.151558
+        },
+        "all_terminal_completion_seconds": {
+          "samples": 20,
+          "p50": 35.80129,
+          "p95": 160.785147,
+          "p99": 212.071706,
+          "max": 224.893345,
+          "mean": 57.552539
+        },
+        "cost": null
+      },
+      "gpu_observation": {
+        "nvml_init_code": 0,
+        "nvml_handle_query_code": 0,
+        "utilization_valid_samples": 0,
+        "utilization_error_codes": {
+          "3": 438
+        },
+        "engine_metric_sample_count": 438,
+        "memory_valid_samples": 438,
+        "gpu_utilization_availability": "N/A: NVML returned no valid per-MIG utilization; no physical/shared utilization substituted",
+        "capacity_metrics_are_not_sm_utilization": true,
+        "raw_samples_sha256": "6af054d1becc1ff9c706c134d9b2e0932fbcb6b20154b3c4e6b5b309ef8150c6",
+        "raw_samples_bytes": 286990,
+        "raw_samples_file": "pod2-matrix7b-18k-shortest-gpu.jsonl"
+      },
+      "report_file": "pod2-matrix7b-18k-shortest.json"
+    },
+    {
+      "policy": "class-fair",
+      "passed": true,
+      "exit_code": 0,
+      "summary": {
+        "offered": 20,
+        "completed": 20,
+        "errors": 0,
+        "elapsed_seconds": 197.35105285199825,
+        "accepted_tasks_per_second": 0.10134225133827297,
+        "prompt_tokens": 109056,
+        "generated_tokens": 13600,
+        "prompt_tokens_per_second": 552.5990280973349,
+        "generated_tokens_per_second": 68.91273091002563,
+        "completion_seconds": {
+          "samples": 20,
+          "p50": 122.860091,
+          "p95": 169.505806,
+          "p99": 191.781906,
+          "max": 197.350931,
+          "mean": 118.171025
+        },
+        "queue_seconds": {
+          "samples": 20,
+          "p50": 107.543005,
+          "p95": 139.045227,
+          "p99": 141.262091,
+          "max": 141.816306,
+          "mean": 84.328523
+        },
+        "http_ttft_seconds": {
+          "samples": 20,
+          "p50": 1.487509,
+          "p95": 3.395084,
+          "p99": 3.397846,
+          "max": 3.398537,
+          "mean": 1.639442
+        },
+        "mean_decode_token_seconds": {
+          "samples": 20,
+          "p50": 0.044272,
+          "p95": 0.053565,
+          "p99": 0.055001,
+          "max": 0.055361,
+          "mean": 0.046123
+        },
+        "http_service_seconds": {
+          "samples": 20,
+          "p50": 17.326471,
+          "p95": 98.046033,
+          "p99": 99.34215,
+          "max": 99.666179,
+          "mean": 33.842502
+        },
+        "all_terminal_completion_seconds": {
+          "samples": 20,
+          "p50": 122.860091,
+          "p95": 169.505806,
+          "p99": 191.781906,
+          "max": 197.350931,
+          "mean": 118.171025
+        },
+        "cost": null
+      },
+      "gpu_observation": {
+        "nvml_init_code": 0,
+        "nvml_handle_query_code": 0,
+        "utilization_valid_samples": 0,
+        "utilization_error_codes": {
+          "3": 384
+        },
+        "engine_metric_sample_count": 384,
+        "memory_valid_samples": 384,
+        "gpu_utilization_availability": "N/A: NVML returned no valid per-MIG utilization; no physical/shared utilization substituted",
+        "capacity_metrics_are_not_sm_utilization": true,
+        "raw_samples_sha256": "bcae32a5a26fc7537f6daf3635b6821969aa647446a0fce8443afac323a3a749",
+        "raw_samples_bytes": 251584,
+        "raw_samples_file": "pod2-matrix7b-18k-class-fair-gpu.jsonl"
+      },
+      "report_file": "pod2-matrix7b-18k-class-fair.json"
+    }
+  ],
+  "private_rollback_directory": "/root/batchforge-runtime/app/.runtime/rollback-longctx-mig15-20261024",
+  "worker_held_stopped_during_engine_only_benchmarks": true,
+  "free_memory_before": {
+    "free": 25130827776,
+    "total": 25367150592
+  },
+  "catalog": {
+    "object": "list",
+    "data": [
+      {
+        "id": "Qwen/Qwen2.5-7B-Instruct-18k",
+        "object": "model",
+        "created": 1792794857,
+        "owned_by": "vllm",
+        "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+        "parent": null,
+        "max_model_len": 18440,
+        "permission": [
+          {
+            "id": "modelperm-1e69584699e447019d848fd0679c212c",
+            "object": "model_permission",
+            "created": 1792794857,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "kv_token_capacity": 90512,
+  "concurrency": 4,
+  "kv_reservation_tokens": 73760,
+  "engine_pid": 111125,
+  "warmup": {
+    "usage": {
+      "prompt_tokens": 41,
+      "total_tokens": 73,
+      "completion_tokens": 32,
+      "prompt_tokens_details": null
+    },
+    "finish_reason": "length",
+    "response_text_sha256": "6c5a6bbd0e30bec32a81c49013e51916a03aa8c9e567e6660dd02ba139a480ab",
+    "timed": false
+  },
+  "active_supervised_services_during_benchmark": 34,
+  "protected_services_unchanged": true,
+  "watchdog_restored": true,
+  "finished_at": "2026-10-23T22:44:51.038963+00:00",
+  "worker15_still_stopped": true
+}

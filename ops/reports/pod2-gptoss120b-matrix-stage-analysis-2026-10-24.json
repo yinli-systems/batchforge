@@ -1,0 +1,43 @@
+{
+  "source_report": "pod2-gptoss120b-matrix-fifo-2026-10-24.json",
+  "source_sha256": "255e54b7464aa9299a219bc97141bb714dcdff5eb84807fc2dfb90c58f3db247",
+  "measurement_started_at": "2026-10-23T23:04:46.234160+00:00",
+  "finished_at": "2026-10-23T23:15:52.596131+00:00",
+  "inferences": 20,
+  "input_tokens": 109056,
+  "generated_tokens": 13600,
+  "all20_uncached_full_prefill_counts_match": true,
+  "all20_decode_counts_match_usage": true,
+  "sum_server_prefill_seconds": 359.80303000000004,
+  "sum_server_decode_seconds": 303.18945,
+  "aggregate_server_prefill_tokens_per_second": 303.09917067680055,
+  "aggregate_server_decode_tokens_per_second": 44.85644206947174,
+  "elapsed_seconds": 666.3612949219823,
+  "observed_resources": {
+    "gpu_memory_samples": 2626,
+    "peak_gpu_memory_used_bytes": 17140482048,
+    "minimum_gpu_memory_free_bytes": 8226668544,
+    "gpu_sm_utilization": "N/A: per-MIG NVML returns3; not inferred from capacity",
+    "engine_mean_cpu_cores": 7.850419486195356,
+    "cpu_allocation": {
+      "cpu.max": "10880000 100000",
+      "cpuset.cpus.effective": "0-255",
+      "cpu_models": [
+        "AMD EPYC 9554 64-Core Processor"
+      ],
+      "logical_cpu_count_visible": 256
+    },
+    "cpp_threads": 16,
+    "cpp_cpu_moe_layers": 28,
+    "raw_gpu_memory_samples_sha256": "0609feb96d7a3d2ce335782ec175962f8d39b3f6d7f7e970d391222d9e1e269c"
+  },
+  "latency_population": "20offeredatonce/FIFO1slot; completion includes bounded client wait, HTTPservice excludes clientwait",
+  "scope": "Engine CPU/GPU durations, not CUDA kernel timing; one mixed burst, not sustained production or quality SLA",
+  "decode_token_rate_formula": "sum(actualNoutput)/sum(serverdecode_seconds), not llama.cpp native(N-1) transition rate",
+  "decode_transition_intervals": 13580,
+  "aggregate_decode_transition_ms": 22.326174521354936,
+  "limitations": [
+    "Aggregate server stages combine CPUexpert and GPUwork; not isolatedCUDAkernel rates",
+    "Native llama.cpp decode rates count N-1transitions per request; report preserves rawstagecounts/durations"
+  ]
+}

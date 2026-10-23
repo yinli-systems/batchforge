@@ -1,0 +1,63 @@
+{
+  "started_at": "2026-10-23T22:52:07.698273+00:00",
+  "status": "passed",
+  "stage": "moe35",
+  "model": "openai/gpt-oss-120b",
+  "rendered_prompt_tokens": 16384,
+  "output_cap": 2048,
+  "requested_context_reservation": 18440,
+  "server_padded_context": 18688,
+  "per_request_cache_prompt": false,
+  "counter_calibration_usage_tokens": 80,
+  "source_body_sha256": "549cf575bfbf317bf4d9fbb0fcd06c7eafd27a9aeb6f220c0ba968a31a1ba12b",
+  "input_file": "pod2-gptoss120b-long-16384-input.json",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "llama_cpp_commit": "0ae0e1976670fac25f4e0ed864df30021accc764",
+  "server_chat_template_sha256": "b2215de6da8ba369957eece8c5aa18f4af94f6c4d311d85e691373a421d80e89",
+  "probe_source_sha256": "5247c1fe83d966aae80b7cd74b7a1160addb3a6878b8d07d4563232feb643850",
+  "engine_metrics_before_sha256": "6b4356a580e96f0f796baf77d23a65d6ea7f348df301a5f1cdb5bbeb8dd16d40",
+  "natural_generation_mode": true,
+  "forced_length": false,
+  "elapsed_seconds": 113.39608223299729,
+  "usage": {
+    "completion_tokens": 2048,
+    "prompt_tokens": 16384,
+    "total_tokens": 18432,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "cached_prompt_tokens": 0,
+  "server_input_count_matches": true,
+  "cache_disabled_evidence": true,
+  "finish_reason": "length",
+  "natural_stop": false,
+  "final_text_nonempty": true,
+  "final_text_sha256": "4fa95ba3dfa7db8a9508744c9604bdb4514c9bf1fd464cceaca4bd6329376abd",
+  "reasoning_text_sha256": "71626918cb810906c658f56e9dc18bf360e5f60ae6caa7a90a349d6a24c5d0fb",
+  "server_timings": {
+    "cache_n": 0,
+    "prompt_n": 16384,
+    "prompt_ms": 59611.644,
+    "prompt_per_token_ms": 3.638406005859375,
+    "prompt_per_second": 274.84563250763557,
+    "predicted_n": 2048,
+    "predicted_ms": 53673.428,
+    "predicted_per_token_ms": 26.220531509526136,
+    "predicted_per_second": 38.138052222041786
+  },
+  "response_top_level_keys": [
+    "choices",
+    "created",
+    "id",
+    "model",
+    "object",
+    "system_fingerprint",
+    "timings",
+    "usage"
+  ],
+  "prompt_tokens_per_wall_second": 144.4847095011224,
+  "generated_tokens_per_wall_second": 18.0605886876403,
+  "finished_at": "2026-10-23T22:54:01.097512+00:00",
+  "engine_metrics_after_sha256": "a39f26fb0149efef5ce0ffe3adb2cacdc3524d51a81fb3d9331bd0499301265f"
+}

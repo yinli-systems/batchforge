@@ -1,0 +1,3552 @@
+{
+  "started_at": "2026-10-23T22:57:13.279963+00:00",
+  "status": "ready",
+  "previous_cpu_moe_layers": 35,
+  "target_cpu_moe_layers": 28,
+  "gpu_moe_layers": 8,
+  "cpu_threads": 16,
+  "cpu_threads_batch": 16,
+  "slot_count": 1,
+  "requested_context": 18440,
+  "memory_fraction_admission_gate": 0.82,
+  "protected_service_count": 33,
+  "memory_available_before_bytes": 380972490752,
+  "cpu_allocation": {
+    "cpu.max": "10880000 100000",
+    "cpuset.cpus.effective": "0-255",
+    "cpu_models": [
+      "AMD EPYC 9554 64-Core Processor"
+    ],
+    "logical_cpu_count_visible": 256
+  },
+  "baseline_body_sha256": "549cf575bfbf317bf4d9fbb0fcd06c7eafd27a9aeb6f220c0ba968a31a1ba12b",
+  "baseline_elapsed_seconds": 113.39608223299729,
+  "private_rollback_directory": "/root/batchforge-runtime/app/.runtime/rollback-cpu-moe35-20261024",
+  "only_engine_configuration_change": "ENGINE_LLAMA_N_CPU_MOE35->28",
+  "free_memory_before": {
+    "free": 25130827776,
+    "total": 25367150592
+  },
+  "engine_pid": 128929,
+  "natural_probe": [
+    {
+      "output_cap": 32,
+      "elapsed_seconds": 2.1354381019773427,
+      "request_sha256": "3a421d3f52568143690765b6ed57349d01490e597564c8a50c7df03ae4ad8bee",
+      "usage": {
+        "completion_tokens": 32,
+        "prompt_tokens": 80,
+        "total_tokens": 112,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "response_text_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reasoning_text_sha256": "dea6dccaf76617f9d06f8ec6e0d22a1776915a00f132ac1f87faf3186eaf201f",
+      "final_text_nonempty": false,
+      "simple_arithmetic_matches": false,
+      "min_tokens_or_ignore_eos_used": false,
+      "natural_generation_mode": true,
+      "natural_stop": false
+    },
+    {
+      "output_cap": 128,
+      "elapsed_seconds": 0.8939037239761092,
+      "request_sha256": "aedf5ffa0019a459998e6b96d3989897a50693d4574c43cf5c3e4e377468512c",
+      "usage": {
+        "completion_tokens": 39,
+        "prompt_tokens": 80,
+        "total_tokens": 119,
+        "prompt_tokens_details": {
+          "cached_tokens": 75
+        }
+      },
+      "finish_reason": "stop",
+      "response_text_sha256": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+      "reasoning_text_sha256": "10dcb2c95281cc1ad55c8d13cb3edb4c009d1bc3fe5a555dabb9a724ce4d7aad",
+      "final_text_nonempty": true,
+      "simple_arithmetic_matches": true,
+      "min_tokens_or_ignore_eos_used": false,
+      "natural_generation_mode": true,
+      "natural_stop": true
+    }
+  ],
+  "long_probe": {
+    "started_at": "2026-10-23T22:57:27.064744+00:00",
+    "status": "passed",
+    "stage": "moe28",
+    "model": "openai/gpt-oss-120b",
+    "rendered_prompt_tokens": 16384,
+    "output_cap": 2048,
+    "requested_context_reservation": 18440,
+    "server_padded_context": 18688,
+    "per_request_cache_prompt": false,
+    "counter_calibration_usage_tokens": 80,
+    "source_body_sha256": "549cf575bfbf317bf4d9fbb0fcd06c7eafd27a9aeb6f220c0ba968a31a1ba12b",
+    "input_file": "pod2-gptoss120b-long-16384-input.json",
+    "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+    "llama_cpp_commit": "0ae0e1976670fac25f4e0ed864df30021accc764",
+    "server_chat_template_sha256": "b2215de6da8ba369957eece8c5aa18f4af94f6c4d311d85e691373a421d80e89",
+    "probe_source_sha256": "5247c1fe83d966aae80b7cd74b7a1160addb3a6878b8d07d4563232feb643850",
+    "engine_metrics_before_sha256": "5ca168442982ce3357447fad55b290af1c495578bdb440c5fa3c172764e0d43d",
+    "natural_generation_mode": true,
+    "forced_length": false,
+    "elapsed_seconds": 98.6399043679994,
+    "usage": {
+      "completion_tokens": 2048,
+      "prompt_tokens": 16384,
+      "total_tokens": 18432,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "cached_prompt_tokens": 0,
+    "server_input_count_matches": true,
+    "cache_disabled_evidence": true,
+    "finish_reason": "length",
+    "natural_stop": false,
+    "final_text_nonempty": true,
+    "final_text_sha256": "07834bafa57f2b39754e852b2dd40f0ed5adc7f9301af8b3f73be1c53918a3b2",
+    "reasoning_text_sha256": "71626918cb810906c658f56e9dc18bf360e5f60ae6caa7a90a349d6a24c5d0fb",
+    "server_timings": {
+      "cache_n": 0,
+      "prompt_n": 16384,
+      "prompt_ms": 50968.895,
+      "prompt_per_token_ms": 3.1108944702148436,
+      "prompt_per_second": 321.4509555288574,
+      "predicted_n": 2048,
+      "predicted_ms": 47559.672,
+      "predicted_per_token_ms": 23.233840742550072,
+      "predicted_per_second": 43.040666891058464
+    },
+    "response_top_level_keys": [
+      "choices",
+      "created",
+      "id",
+      "model",
+      "object",
+      "system_fingerprint",
+      "timings",
+      "usage"
+    ],
+    "prompt_tokens_per_wall_second": 166.09910669495002,
+    "generated_tokens_per_wall_second": 20.762388336868753,
+    "finished_at": "2026-10-23T22:59:05.708147+00:00",
+    "engine_metrics_after_sha256": "5507d0e729b79eb6b81ff0bc9f4e72d65504acfce33e57fae04e6b458d6930d2"
+  },
+  "gpu_memory": {
+    "sample_count": 425,
+    "minimum_free_bytes": 8410234880,
+    "peak_used_bytes": 16956915712,
+    "total_bytes": 25367150592,
+    "samples": [
+      {
+        "observed_at": "2026-10-23T22:57:18.087939+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25300172800,
+        "used_bytes": 66977792
+      },
+      {
+        "observed_at": "2026-10-23T22:57:18.340273+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25297616896,
+        "used_bytes": 69533696
+      },
+      {
+        "observed_at": "2026-10-23T22:57:18.593030+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:18.846045+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:19.100881+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:19.353908+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:19.606943+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:19.859995+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:20.112982+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:20.366080+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:20.619078+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:20.872497+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:21.126028+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:21.379595+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:21.633301+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:57:21.886484+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 9871949824,
+        "used_bytes": 15495200768
+      },
+      {
+        "observed_at": "2026-10-23T22:57:22.139933+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 9871949824,
+        "used_bytes": 15495200768
+      },
+      {
+        "observed_at": "2026-10-23T22:57:22.393288+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 9871949824,
+        "used_bytes": 15495200768
+      },
+      {
+        "observed_at": "2026-10-23T22:57:22.646476+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 9871949824,
+        "used_bytes": 15495200768
+      },
+      {
+        "observed_at": "2026-10-23T22:57:22.899572+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 9871949824,
+        "used_bytes": 15495200768
+      },
+      {
+        "observed_at": "2026-10-23T22:57:23.151696+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8466857984,
+        "used_bytes": 16900292608
+      },
+      {
+        "observed_at": "2026-10-23T22:57:23.405150+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8466857984,
+        "used_bytes": 16900292608
+      },
+      {
+        "observed_at": "2026-10-23T22:57:23.658815+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:23.912289+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:24.165854+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:24.419680+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:24.673101+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:24.926248+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:25.179738+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:25.433322+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:25.686966+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:25.940108+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:26.193409+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:26.446760+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:26.700074+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:26.953098+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:27.206117+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:27.459263+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8422817792,
+        "used_bytes": 16944332800
+      },
+      {
+        "observed_at": "2026-10-23T22:57:27.712382+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8418623488,
+        "used_bytes": 16948527104
+      },
+      {
+        "observed_at": "2026-10-23T22:57:27.965470+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8416526336,
+        "used_bytes": 16950624256
+      },
+      {
+        "observed_at": "2026-10-23T22:57:28.218620+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8416526336,
+        "used_bytes": 16950624256
+      },
+      {
+        "observed_at": "2026-10-23T22:57:28.471963+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:28.725229+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:28.978489+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:29.231730+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:29.485101+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:29.738503+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:29.991830+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:30.245135+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:30.498463+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:30.751336+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:31.004564+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:31.257656+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:31.511122+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:31.764398+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:32.017657+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:32.270917+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:32.524124+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:32.782328+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:33.035666+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:33.289114+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:33.542375+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:33.795696+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:34.049079+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:34.302328+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:34.555637+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:34.809093+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:35.062327+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:35.315619+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:35.568402+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:35.821665+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:36.075056+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:36.328496+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:36.581795+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:36.835115+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:37.088362+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:37.342235+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:37.596520+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:37.853982+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:38.107854+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:38.361192+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:38.614490+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:38.867741+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:39.121110+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:39.374505+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:39.627763+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:39.881022+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:40.134215+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:40.387526+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:40.640729+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:40.893975+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:41.146876+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:41.400148+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:41.653512+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:41.906840+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:42.160481+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:42.413720+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:42.667245+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:42.920463+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:43.173693+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:43.426936+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:43.680211+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:43.933416+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:44.186774+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:44.439212+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:44.692520+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:44.945750+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:45.199247+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:45.452507+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:45.705738+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:45.958996+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:46.212227+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:46.465593+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:46.719155+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:46.972479+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:47.225633+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:47.478912+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:47.732168+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:47.985469+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:48.238661+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:48.491757+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:48.744812+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:48.998279+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:49.251258+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:49.504570+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:49.757252+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:50.010475+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:50.263692+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:50.516913+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:50.775004+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:51.028380+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:51.281670+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:51.534909+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:51.788169+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:52.041361+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:52.294831+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:52.548098+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:52.801402+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:53.054629+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:53.307849+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:53.560708+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:53.813970+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:54.067174+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:54.320366+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:54.573671+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:54.826902+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:55.080460+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:55.334129+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:55.587660+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:55.840073+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:56.093416+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:56.346641+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:56.600091+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:56.853099+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:57.106311+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:57.359556+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:57.612774+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:57.866245+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:58.119559+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:58.372821+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:58.626137+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:58.879507+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:59.132826+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:59.386090+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:59.639398+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:57:59.891847+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:00.145205+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:00.398475+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:00.651758+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:00.904988+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:01.158238+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:01.411569+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:01.665010+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:01.918313+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:02.171633+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:02.424971+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:02.678478+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:02.931666+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:03.184876+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:03.437159+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:03.689606+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:03.942823+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:04.196038+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:04.449359+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:04.702628+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:04.955967+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:05.209272+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:05.461614+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:05.713988+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:05.967290+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:06.220657+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:06.473963+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:06.727235+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:06.980642+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:07.233941+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:07.487314+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:07.740582+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:07.993909+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:08.247076+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:08.500645+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:08.753964+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:09.007195+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:09.260703+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:09.513980+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:09.767197+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:10.020666+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:10.274101+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:10.527320+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:10.781987+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:11.034826+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:11.288248+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:11.541551+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:11.795035+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:12.047761+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:12.300391+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:12.553033+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:12.805652+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:13.058132+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:13.310510+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:13.563819+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:13.816590+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:14.069604+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:14.322628+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:14.575088+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:14.828241+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:15.081517+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:15.334764+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:15.588051+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:15.841202+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:16.094805+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:16.348144+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:16.601370+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:16.854619+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:17.107897+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:17.361132+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:17.614367+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:17.867661+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:18.120891+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:18.374954+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:18.628638+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:18.882061+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:19.134659+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:19.387748+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:19.642776+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:19.896382+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:20.150007+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:20.403283+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:20.656958+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:20.910554+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:21.164550+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:21.418501+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:21.677191+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:21.931109+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:22.184545+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:22.438473+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:22.692015+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:22.945986+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:23.199767+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:23.453670+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:23.706989+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:23.960277+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:24.213625+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:24.467499+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:24.721063+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:24.974956+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:25.228329+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:25.481774+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:25.735067+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:25.988851+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:26.244994+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:26.498745+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:26.752876+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:27.006484+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:27.260188+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:27.514004+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:27.767585+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:28.020748+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:28.274353+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:28.527669+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:28.782044+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:29.035792+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:29.289477+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:29.543212+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:29.796710+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:30.050191+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:30.304149+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:30.557866+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:30.811401+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:31.064896+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:31.318299+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:31.571760+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:31.825045+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:32.078486+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:32.331902+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:32.585274+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:32.838719+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:33.092199+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:33.345592+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:33.599075+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:33.852744+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:34.106157+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:34.359565+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:34.612012+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:34.865498+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:35.118952+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:35.372029+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:35.625571+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:35.879008+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:36.132349+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:36.385637+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:36.638857+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:36.892271+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:37.145544+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:37.399023+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:37.652676+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:37.909543+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:38.163008+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:38.416973+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:38.670880+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:38.924598+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:39.177971+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:39.431289+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:39.684782+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:39.938343+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:40.192102+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:40.445618+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:40.699068+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:40.952651+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:41.208400+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:41.463683+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:41.717568+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:41.972573+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:42.226001+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:42.479758+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:42.733486+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:42.986910+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:43.240284+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:43.493683+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:43.746953+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:44.000537+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:44.253951+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:44.507480+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:44.760707+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:45.014671+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:45.267328+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:45.519932+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:45.772499+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:46.026048+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:46.279553+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:46.532832+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:46.786724+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:47.040030+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:47.293765+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:47.547537+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:47.800805+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:48.054264+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:48.308051+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:48.561343+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:48.814539+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:49.067973+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:49.320881+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:49.574396+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:49.827861+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:50.081304+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:50.334750+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:50.588022+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:50.841715+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:51.095485+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:51.357104+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:51.610539+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:51.863942+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:52.116538+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:52.369589+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:52.623079+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:52.876488+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:53.129794+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:53.383506+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:53.636832+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:53.890220+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:54.142713+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:54.396000+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:54.649486+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:54.903538+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:55.157347+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:55.410271+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:55.662773+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:55.916044+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:56.168658+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:56.421187+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:56.674021+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:56.926997+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:57.180039+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:57.433123+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:57.685935+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:57.939227+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:58.192109+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:58.445496+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:58.698780+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:58.952236+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:59.205638+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:59.458866+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:59.712240+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:58:59.965554+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:00.218635+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:00.471327+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:00.724063+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:00.976653+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:01.229198+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:01.482609+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:01.736015+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:01.989242+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:02.241945+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:02.495133+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:02.748558+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:03.001838+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:03.255237+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:03.508933+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:03.761682+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:04.014916+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:04.267468+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:04.520634+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:04.774000+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:05.027485+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:05.280890+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      },
+      {
+        "observed_at": "2026-10-23T22:59:05.534798+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 8410234880,
+        "used_bytes": 16956915712
+      }
+    ]
+  },
+  "worker_pid": 130037,
+  "active_cpu_moe_layers": 28,
+  "finished_at": "2026-10-23T22:59:07.219360+00:00",
+  "protected_services_unchanged": true,
+  "watchdog_restored": true,
+  "natural_probe_interpretation": "32-token response has no final answer; 128-cap response stops at39tokens with75/80prompttokens cached. These startup checks are not cold performance measurements. Long probe separately disables cache."
+}

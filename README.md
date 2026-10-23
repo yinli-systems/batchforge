@@ -3,15 +3,19 @@
 Durable AI batch processing with a PostgreSQL control plane, fenced GPU workers,
 an OpenAI-shaped batch API, and an operations console backed by live data.
 
-The current deployment runs fixed-revision Qwen2.5-7B BF16 replicas on four
-shared H100 devices and sixteen Blackwell MIG 24GB slices. Each Pod has two
+The current deployment serves **GPT-OSS-120B (116.83B total parameters)** on both
+existing Pods: TP4 across four shared H100s, and a pinned llama.cpp CPU-expert
+lane on one Blackwell MIG. The second Pod also retains fourteen short-context
+Qwen2.5-7B BF16 engines and one 18K-context 7B engine. These are sixteen MIG
+slices across six physical GPUs, not sixteen full GPUs. Each Pod has two
 independent API processes and a private replica router, backed by managed Neon
 PostgreSQL 17. Workers use their own local API; inference no longer depends on
 an operator laptop or the other GPU Pod. An app-owned watchdog restarts crashed
 processes with identity checks, bounded backoff and GPU memory gates.
 Fault tests cover API/worker death, lost acknowledgements, stale attempts,
 read-only database rejection and transactional usage.
-See [validation](docs/validation.md) for workloads, measurements and limits.
+See [100B validation](docs/100b-validation.md) for real inference and workload
+evidence, and [earlier validation](docs/validation.md) for the 7B baselines.
 The managed database is currently on its free plan, without a production SLA.
 Public paid ingress was prepared and deferred by the operator; access remains
 private. See [availability](docs/ha.md), [ingress](docs/ingress.md), and
@@ -23,7 +27,10 @@ private. See [availability](docs/ha.md), [ingress](docs/ingress.md), and
 - Follow progress, queue depth, worker health and measured token usage.
 - Cancel work, retry terminal failures and download result/error JSONL.
 - Run multiple GPU workers against independent OpenAI-compatible engines.
+- Route each batch to its configured model and context-capacity pool.
 - Recover expired leases and reject stale results after retry or cancellation.
+- Gate restarts on per-rank GPU memory and CPU-expert cgroup headroom; clean up
+  previously observed engine descendants using verified Linux process identities.
 - Validate explicitly requested JSON objects before accepting results, with
   bounded durable retries and separate rejected-compute observations.
 
@@ -103,6 +110,16 @@ curl -H "Authorization: Bearer $BATCHFORGE_API_KEY" \
 Poll `/v1/batches/<id>`. Download `/v1/files/<output_file_id>/content` when terminal.
 Failed requests are exported separately; retrying creates a new batch from failed
 requests only. Reusing an idempotency key with a different request returns 409.
+
+Use `GET /v1/models` for the configured catalog. Set `MODEL_NAMES_JSON` to add
+model IDs alongside `MODEL_NAME`; a batch must contain exactly one model.
+The deployed 120B model ID is `openai/gpt-oss-120b`. Reasoning tokens consume its
+output budget, so a very small cap can produce no final answer. Token throughput,
+durable completion and useful final output are reported separately.
+Requests may explicitly set `reasoning_effort` to `low`, `medium` or `high`;
+omitting it preserves the runtime default. The small paired quality pilot found
+fewer generated tokens but worse answer scores with `low`, so the platform does
+not apply it globally. See the [measured quality tradeoff](docs/100b-validation.md#natural-answer-quality-and-reasoning-effort).
 
 ## Tenant administration
 

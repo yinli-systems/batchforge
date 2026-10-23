@@ -2,6 +2,79 @@
 
 The managed database runs PostgreSQL 17. A PostgreSQL 16 `pg_dump` cannot back it up. `devtools/backup_postgres.py` now checks the server and both client versions before creating a file. Select a compatible toolchain with `--bin-dir` or `PG_BIN_DIR`; the command-line option takes precedence. Without either, the development `pgserver` client remains the fallback, subject to the same check.
 
+## Latest schema v3 recovery proof
+
+The latest drill ran on **2026-10-23 at 23:25:37–23:26:26 UTC**, after both
+Pods' timed inference experiments and before the engine-loss workload. The
+application stayed online. The [workflow report](../ops/reports/managed-backup-schema3-workflow-2026-10-24.json)
+records a fresh capacity check, one consistent custom-format dump, one restore
+into a new uniquely named empty database on the same Neon branch, verification,
+and deletion of that exact temporary database. No source rows, source grants,
+or application services were changed.
+
+The [archive manifest](../ops/reports/managed-backup-schema3-archive-2026-10-24.json)
+records **103,379,878 bytes**, 74 table-of-contents entries and SHA256
+`a87e67c3f947913672a40ccd76f431858fbd03d0505ad30f51ebf03be9fa297d`.
+PostgreSQL server and both clients were 17.11; the direct connection used TLS
+`verify-full`. Creating the dump took 21.55 seconds. Its manifest deliberately
+retains `restore_verified:false`; archive readability and successful recovery
+are separate checks.
+
+The [restore report](../ops/reports/managed-backup-schema3-restore-2026-10-24.json)
+passed with 343 batches, 25,134 tasks and 25,691 attempts. Restored task and batch
+usage both contained 24,740,759 prompt tokens and 4,347,447 completion tokens.
+All three immutable migration checksums matched. The claim, completion and
+heartbeat SQL functions were present as SECURITY INVOKER with fixed search
+paths. Per-batch counters, accepted-attempt uniqueness and accepted usage had
+zero mismatches; no constraint was unvalidated. The pure restore step took
+8.45 seconds; create/restore/check/remove took 26.51 seconds. These are observed
+durations for this snapshot, not recovery-time guarantees.
+
+All ten restored tables and the task-usage ledger have deterministic row
+digests. **These hash the restored archive, not the subsequently changing live
+database.** No all-table equality comparison against the live source is claimed;
+idle worker registrations can still change live rows. The temporary database
+`bf_restore_a5846989945c4255a4a9` was removed successfully. Because the restore
+used `--no-owner --no-acl`, this drill does **not** establish restoration of
+`bf_runtime` permissions, cluster roles or credentials. A real cutover must
+reapply reviewed least-privilege grants to its destination and recover secrets
+separately; the drill did not alter source permissions.
+
+At 23:27:53 UTC the same archive was copied outside the Pod to the workstation,
+verified against the exact SHA256 and byte count, then atomically published
+under `.runtime/backups/batchforge-20261023T232538Z-5ac7d056.dump`.
+The [offhost report](../ops/reports/managed-backup-schema3-offhost-2026-10-24.json)
+records directory mode `0700`, file mode `0600`, removal of the transfer partial,
+and preservation of older backups. The archive stays out of Git. This is one
+private copy; at-rest encryption, scheduled retention and a recovery owner have
+not been configured by this drill.
+
+The Free plan currently advertises 1 GB/project, while this project's API
+reports a 1,073,741,824-byte branch limit. The operator used a more conservative
+1,000,000,000-byte limit and an 850,000,000-byte admission threshold. Immediately
+before the dump, the source occupied 253,566,976 physical bytes and both
+connectable non-template databases on the branch occupied 261,439,488 bytes.
+Adding a 1.5-times-source restore allowance plus 128 MiB reserve yielded
+776,007,680 bytes, below that threshold. The capacity gate was rechecked before
+creating the temporary database. Read-only project metadata showed no other
+live branches. Physical database size, branch logical size and provider billing
+metrics have different definitions; this conservative check is not a storage
+accounting guarantee. No paid resource or plan upgrade was created.
+[Capacity evidence](../ops/reports/managed-backup-schema3-capacity-2026-10-24.json),
+[sanitized project metadata](../ops/reports/managed-backup-schema3-neon-metadata-2026-10-24.json),
+[current pricing](https://neon.com/pricing),
+[October 2026 free-storage change](https://neon.com/blog/neon-free-plan-1-gb-per-project).
+
+The Free plan also includes **100 CU-hours per project per month**. A compute
+continuously active at 0.25 CU for a 30-day month would use
+`0.25 × 24 × 30 = 180 CU-hours`; 100 CU-hours would cover 400 such active hours,
+about 16.7 days. **This is steady-active arithmetic, not observed billing, an
+invoice forecast, or the current remaining quota balance.** Continuous worker
+polling and heartbeats can keep a database active, so scale-to-zero cannot be
+assumed to make an always-active deployment fit the monthly allowance. Measure
+actual consumption and quota before promising sustained availability; this
+drill did not change the plan. [Official compute allowance](https://neon.com/pricing).
+
 ## Create a private snapshot
 
 The primary Pod has an isolated PGDG 17.11 client installation at `/root/batchforge-runtime/postgres-client-17/bin`. The following commands read the owner URL from a private environment file, without placing the URL or password in process arguments:
@@ -51,7 +124,7 @@ After restoring, verify:
 - Sorted restored rows and the task usage ledger have recorded deterministic SHA256 digests. Hash canonical row JSON with an eight-byte big-endian length prefix before each UTF-8 row, so row boundaries are unambiguous.
 - The temporary database is disconnected and removed after the report is written. Cleanup must identify only that drill's exact generated database name.
 
-The current snapshot is recorded in [the archive report](../ops/reports/managed-backup-archive-2026-10-24.json): 10,246,398 bytes, SHA256 `2d5c959b0ade7f794500d26abc62df7d1dc2f46cca2ffc2ca033279d16d65f77`, 73 table-of-contents entries, PostgreSQL 17.11, TLS `verify-full`. [The preflight report](../ops/reports/managed-backup-preflight-2026-10-24.json) also records the intentional PostgreSQL 16 rejection. The archive report itself correctly says `restore_verified: false`: the separate restore drill supplies that additional evidence.
+The earlier schema v2 snapshot is retained in [the archive report](../ops/reports/managed-backup-archive-2026-10-24.json): 10,246,398 bytes, SHA256 `2d5c959b0ade7f794500d26abc62df7d1dc2f46cca2ffc2ca033279d16d65f77`, 73 table-of-contents entries, PostgreSQL 17.11, TLS `verify-full`. [The preflight report](../ops/reports/managed-backup-preflight-2026-10-24.json) also records the intentional PostgreSQL 16 rejection. The archive report itself correctly says `restore_verified: false`: the separate restore drill supplies that additional evidence.
 
 The [actual recovery report](../ops/reports/managed-backup-restore-2026-10-24.json) passed on 2026-10-23 at 21:09 UTC. It restored the hash-checked archive into a newly generated empty Neon PostgreSQL 17.11 database, then removed that exact disposable database. No application service or source database was changed. The drill restored 118 batches, 4,651 tasks, and 4,651 attempts, with zero per-batch count/state/usage mismatches and zero unvalidated constraints. Task and batch totals both contained 2,543,062 prompt tokens and 428,722 completion tokens. The report includes all ten table row counts/checksums, a task usage ledger SHA256, schema version 2, and verification-script/helper SHA256 values. The restore step took 1.95 seconds; the complete create/restore/check/remove drill took 4.67 seconds. These durations describe this particular 10 MB snapshot, not a recovery-time guarantee for a larger dataset.
 

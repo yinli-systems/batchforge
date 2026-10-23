@@ -1,0 +1,39 @@
+{
+  "observed_at": "2026-10-23T22:49:50.608322+00:00",
+  "scope": "CPU-only exact server template/tokenize endpoint calibration against earlier actual chat usage",
+  "apply_template_response_keys": [
+    "prompt"
+  ],
+  "prompt_text_sha256": "cf0a5d86ded83f0c5d72887161fa3de3111aa07a9acf8043be351e6348d6becf",
+  "prompt_bytes": 345,
+  "known_actual_chat_usage_prompt_tokens": 80,
+  "tokenize_variants": [
+    {
+      "add_special": false,
+      "parse_special": false,
+      "tokens": 80,
+      "token_ids_sha256": "cada7c0dbe8d56df0e68edb6fce716e53b5ef4e7d78b2e16e857caaf790d5f7f"
+    },
+    {
+      "add_special": false,
+      "parse_special": true,
+      "tokens": 80,
+      "token_ids_sha256": "cada7c0dbe8d56df0e68edb6fce716e53b5ef4e7d78b2e16e857caaf790d5f7f"
+    },
+    {
+      "add_special": true,
+      "parse_special": false,
+      "tokens": 80,
+      "token_ids_sha256": "cada7c0dbe8d56df0e68edb6fce716e53b5ef4e7d78b2e16e857caaf790d5f7f"
+    },
+    {
+      "add_special": true,
+      "parse_special": true,
+      "tokens": 80,
+      "token_ids_sha256": "cada7c0dbe8d56df0e68edb6fce716e53b5ef4e7d78b2e16e857caaf790d5f7f"
+    }
+  ],
+  "chat_template_sha256": "b2215de6da8ba369957eece8c5aa18f4af94f6c4d311d85e691373a421d80e89",
+  "model_alias": "openai/gpt-oss-120b",
+  "llama_cpp_commit": "0ae0e1976670fac25f4e0ed864df30021accc764"
+}

@@ -1,0 +1,42 @@
+{
+  "started_at": "2026-10-23T23:26:50.895216+00:00",
+  "status": "ready",
+  "archive_sha256": "41c0bde4e89b0aa17d9ff82bec41a5388fde213f867d0453b3c87c524e10aa4e",
+  "all17worker_upgrade_confirmed_at": "2026-10-23T23:26:05.440415+00:00",
+  "new_source_hashes": {
+    "backend/validation.py": "62f2f509566dd23bb543d238868f5127baf09d8170c133025a3ed53f3269e71f",
+    "backend/CONTRACT.md": "1892b5aea72456f5cfd8901455faaeb199d770beb4a588bbaa31e1cfc05edb33"
+  },
+  "old_source_hashes": {
+    "backend/validation.py": "1055c574c4f5aa549522d72fbf4d14c2b2fd9fbd599f27fb2fb009c61cc9207a",
+    "backend/CONTRACT.md": "b824477300a739b6c460ea5e6b9dfefb369d231f0edae13e5833520211d1ebf6"
+  },
+  "old_api_identities": {
+    "api-a": {
+      "pid": 110071,
+      "start_ticks": "24758527",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 110081,
+      "start_ticks": "24758700",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "engines_or_workers_restarted": false,
+  "new_api_identities": {
+    "api-a": {
+      "pid": 143414,
+      "start_ticks": "25089186",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 143423,
+      "start_ticks": "25089352",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "finished_at": "2026-10-23T23:26:54.344917+00:00",
+  "all33_nonapi_identities_unchanged": true,
+  "watchdog_restored": true
+}

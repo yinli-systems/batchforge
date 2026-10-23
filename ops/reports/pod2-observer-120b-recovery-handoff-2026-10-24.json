@@ -1,0 +1,16 @@
+{
+  "handoff_observed_at_utc": "2026-10-23T23:17:02.624497+00:00",
+  "observer_pid": 134254,
+  "observer_start_ticks": "24975695",
+  "previous_observer_identity": {
+    "pid": 71183,
+    "start_ticks": "24499091",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "overlap": false,
+  "handoff_condition": "Kernel pidfd exit event for pinned old observer; no signal sent",
+  "collector_sha256": "8860074f6e0689956bd34ceb836443f92e83ad51496251ecec707c343e08cff3",
+  "output": ".runtime/observability/controlplane-secondary-120b-recovery-20261024.jsonl",
+  "interval_seconds": 2,
+  "duration_seconds": 3600
+}

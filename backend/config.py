@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     # JSON is kept as a string to avoid BaseSettings' implicit complex decoding.
     batchforge_worker_tokens_json: str = ""
     model_name: str = "Qwen/Qwen2.5-0.5B-Instruct"
+    # Operator-controlled allowlist. Each batch retains exactly one model;
+    # workers and queues are always matched by that identity.
+    model_names_json: str = ""
     max_upload_bytes: int = Field(default=10 * 1024 * 1024, ge=1024, le=100 * 1024 * 1024)
     max_tasks_per_batch: int = Field(default=10000, ge=1, le=100000)
     max_request_bytes: int = Field(default=131072, ge=1024, le=1048576)
@@ -36,7 +39,22 @@ class Settings(BaseSettings):
     def valid_pool(self):
         if self.db_pool_min > self.db_pool_max:
             raise ValueError("db_pool_min must not exceed db_pool_max")
+        self.served_models()
         return self
+
+    def served_models(self) -> tuple[str, ...]:
+        extra = []
+        if self.model_names_json:
+            try:
+                extra = json.loads(self.model_names_json)
+            except (ValueError, TypeError):
+                raise ValueError("MODEL_NAMES_JSON must be a JSON array of model IDs") from None
+            if not isinstance(extra, list):
+                raise ValueError("MODEL_NAMES_JSON must be a JSON array of model IDs")
+        names = [self.model_name, *extra]
+        if len(names) > 16 or any(not isinstance(name, str) or not 1 <= len(name) <= 256 for name in names):
+            raise ValueError("Configure at most sixteen nonempty model IDs of at most 256 characters")
+        return tuple(dict.fromkeys(names))
 
     def worker_tokens(self) -> tuple[str, ...]:
         tokens = [self.batchforge_worker_token] if self.batchforge_worker_token else []

@@ -29,7 +29,7 @@ def unix(value):
 
 def batch_view(row):
     return {
-        "id": row["id"], "object": "batch", "endpoint": row["endpoint"],
+        "id": row["id"], "object": "batch", "endpoint": row["endpoint"], "model": row["model"],
         "input_file_id": row["input_file_id"], "completion_window": row["completion_window"],
         "status": row["status"], "metadata": row["metadata"],
         **{key: unix(row[key]) for key in ("created_at", "in_progress_at", "completed_at", "failed_at", "cancelled_at")},
@@ -96,6 +96,9 @@ class Store:
             await conn.execute("UPDATE idempotency SET response=%s WHERE tenant_id=%s AND scope=%s AND key=%s", (Jsonb(response), tenant, scope, key))
 
     async def create_rows(self, conn, tenant, input_file_id, rows, metadata):
+        model = rows[0]["body"]["model"] if rows else None
+        if model not in self.settings.served_models() or any(task["body"]["model"] != model for task in rows):
+            raise APIError(400, "Batch must use one configured model")
         # Tenant row serializes admission control, preventing concurrent submissions
         # from overshooting the configured queue bound. NO KEY UPDATE stays
         # compatible with KEY SHARE locks acquired by tenant foreign keys
@@ -104,13 +107,13 @@ class Store:
         queued = await one(conn, "SELECT COALESCE(sum(pending_count+running_count),0) AS n FROM batches WHERE tenant_id=%s AND status='in_progress'", (tenant,))
         if queued["n"] + len(rows) > self.settings.max_queued_tasks_per_tenant:
             raise APIError(429, "Tenant queue limit reached", "queue_limit")
-        await conn.execute("INSERT INTO tenant_queues(tenant_id,model) VALUES(%s,%s) ON CONFLICT DO NOTHING", (tenant, self.settings.model_name))
-        await conn.execute("SELECT tenant_id FROM tenant_queues WHERE tenant_id=%s AND model=%s FOR UPDATE", (tenant, self.settings.model_name))
-        await conn.execute("UPDATE tenant_queues SET pending_count=pending_count+%s,next_ready_at=LEAST(next_ready_at,clock_timestamp()) WHERE tenant_id=%s AND model=%s", (len(rows), tenant, self.settings.model_name))
+        await conn.execute("INSERT INTO tenant_queues(tenant_id,model) VALUES(%s,%s) ON CONFLICT DO NOTHING", (tenant, model))
+        await conn.execute("SELECT tenant_id FROM tenant_queues WHERE tenant_id=%s AND model=%s FOR UPDATE", (tenant, model))
+        await conn.execute("UPDATE tenant_queues SET pending_count=pending_count+%s,next_ready_at=LEAST(next_ready_at,clock_timestamp()) WHERE tenant_id=%s AND model=%s", (len(rows), tenant, model))
         bid = identifier("batch")
-        row = await one(conn, "INSERT INTO batches(id,tenant_id,input_file_id,model,status,metadata,total_count,pending_count) VALUES(%s,%s,%s,%s,'in_progress',%s,%s,%s) RETURNING *", (bid, tenant, input_file_id, self.settings.model_name, Jsonb(metadata), len(rows), len(rows)))
+        row = await one(conn, "INSERT INTO batches(id,tenant_id,input_file_id,model,status,metadata,total_count,pending_count) VALUES(%s,%s,%s,%s,'in_progress',%s,%s,%s) RETURNING *", (bid, tenant, input_file_id, model, Jsonb(metadata), len(rows), len(rows)))
         async with conn.cursor() as cursor:
-            await cursor.executemany("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts) VALUES(%s,%s,%s,%s,%s,%s,'pending',%s)", [(identifier("task"), tenant, bid, task["custom_id"], self.settings.model_name, Jsonb(task["body"]), self.settings.max_attempts) for task in rows])
+            await cursor.executemany("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts) VALUES(%s,%s,%s,%s,%s,%s,'pending',%s)", [(identifier("task"), tenant, bid, task["custom_id"], model, Jsonb(task["body"]), self.settings.max_attempts) for task in rows])
         return batch_view(row)
 
     async def create(self, tenant, body, key):
@@ -206,7 +209,7 @@ class Store:
                 raise APIError(404, "Batch not found", "not_found")
             if source["status"] == "in_progress":
                 raise APIError(409, "Wait until source batch is terminal before retrying", "batch_not_terminal")
-            if source["model"] != self.settings.model_name:
+            if source["model"] not in self.settings.served_models():
                 raise APIError(409, "Source model is not currently served; submit a new batch using an available model", "model_unavailable")
             rows = await (await conn.execute("SELECT custom_id,body FROM tasks WHERE batch_id=%s AND status='failed' ORDER BY id", (bid,))).fetchall()
             if not rows:

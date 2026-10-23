@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-23T23:24:48.702426+00:00",
+  "original_test_report": "linux-ops-final-report.json",
+  "pytest_returncode": 0,
+  "pytest_stdout": "..................................................                       [100%]\n50 passed in 2.85s\n",
+  "source_sha256": {
+    "ops/manage.py": "cd15563e36f8a0a269378aff74e1b7bc42e575cb7a9062a73d28519bca3bcd85",
+    "ops/supervise.py": "3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0",
+    "ops/engine_members.py": "e4d0b2f2c130dce6fa16a4925d3557ca16475793a5b4f156f62a3d8f2df471ff",
+    "ops/host_memory.py": "e4887b81fd3c95e7f94bd118d0917775d5e8839c7c59e07b7dd8d98552150902",
+    "ops/llama_backend.py": "d27fce11beb565b287d19bce61aa9c3edbf5cb802fd3630fa4788e7aeb31adb4",
+    "ops/test_supervise.py": "c37b663b4a73d4a3ee97e3c1fba0d30cb62b1cd0d130a48f32274551fa2098a6",
+    "ops/test_engine_members.py": "9116e95be58bd5b8008d94910e97c277696363a64ec0987d173bc022ceac7299"
+  },
+  "archive_sha256": "aa3cbdd6af359720fdd3d481967347357cc5b64491a17a01a5f144b8d761c790",
+  "cuda_visible_devices": "",
+  "database_used": false,
+  "active_service_modules_replaced": false,
+  "named_test_pids_checked": [
+    {
+      "pid": 147756,
+      "current_identity": null
+    },
+    {
+      "pid": 147757,
+      "current_identity": null
+    },
+    {
+      "pid": 147761,
+      "current_identity": null
+    },
+    {
+      "pid": 147763,
+      "current_identity": null
+    },
+    {
+      "pid": 147764,
+      "current_identity": null
+    }
+  ],
+  "no_named_test_pid_running": true,
+  "initial_observer_error": "The first wrapper looked for worker PID files deliberately removed by manage stop; pytest itself passed",
+  "cleanup_scope": "Only PIDs from this test run artifacts; no process-table enumeration or signals",
+  "limitations": [
+    "The tests themselves await every subprocess they create; this follow-up independently checks only identities retained in their artifacts",
+    "No CUDA inference, database, or live application process was used"
+  ],
+  "passed": true
+}

@@ -1,0 +1,80 @@
+{
+  "started_at": "2026-10-23T22:34:42.110637+00:00",
+  "status": "preparation_failed",
+  "model_repository": "ggml-org/gpt-oss-120b-GGUF",
+  "original_model": "openai/gpt-oss-120b",
+  "model_revision": "7200b74bea78b0a2964ef9f3897eefa401e890ff",
+  "expected_file_bytes": 63387346208,
+  "expected_file_sha256": "582bd40f6886200101f4c4ed9f25f3fe80cc14c86e9e2b37746cd8904a0c622d",
+  "llama_cpp_commit": "0ae0e1976670fac25f4e0ed864df30021accc764",
+  "memory_before": {
+    "limit_bytes": 501999996928,
+    "current_bytes": 58374234112,
+    "available_bytes": 443625762816,
+    "minimum_preserved_headroom_bytes": 85899345920
+  },
+  "disk_free_before_bytes": 1052922187776,
+  "gpu14_stopped": false,
+  "inference_engine_launched": false,
+  "initial_proposed_threads": 16,
+  "initial_proposed_parallel": 1,
+  "initial_proposed_context": 18440,
+  "proposed_mig_selector": "MIG-bdcef49f-83bf-569a-907a-3e5a4feaa1fb",
+  "controller_sha256": "530e195c012f8a14f609156a629a32621e40e6f860dadb328bff17c38cd32e19",
+  "build_error_type": "RuntimeError",
+  "build_error_message": "Source archive wrong commit root",
+  "memory_current": {
+    "limit_bytes": 501999996928,
+    "current_bytes": 127852171264,
+    "available_bytes": 374147825664,
+    "minimum_preserved_headroom_bytes": 85899345920
+  },
+  "model": {
+    "file": "/root/batchforge-runtime/models/gpt-oss-120b-GGUF/7200b74bea78b0a2964ef9f3897eefa401e890ff/gpt-oss-120b-MXFP4.gguf",
+    "bytes": 63387346208,
+    "sha256": "582bd40f6886200101f4c4ed9f25f3fe80cc14c86e9e2b37746cd8904a0c622d",
+    "hf_revision": "7200b74bea78b0a2964ef9f3897eefa401e890ff",
+    "metadata": {
+      "gguf_version": 3,
+      "tensor_count": 687,
+      "logical_parameter_count_from_tensor_shapes": 116829156672,
+      "tensor_quantization_type_counts": {
+        "8": 146,
+        "0": 433,
+        "39": 108
+      },
+      "architecture_metadata": {
+        "general.architecture": "gpt-oss",
+        "general.type": "model",
+        "general.name": "gpt-oss-120b",
+        "general.size_label": "128x3.1B",
+        "general.license": "apache-2.0",
+        "gpt-oss.block_count": 36,
+        "gpt-oss.context_length": 131072,
+        "gpt-oss.embedding_length": 2880,
+        "gpt-oss.feed_forward_length": 2880,
+        "gpt-oss.attention.head_count": 64,
+        "gpt-oss.attention.head_count_kv": 8,
+        "gpt-oss.rope.scaling.type": "yarn",
+        "gpt-oss.rope.scaling.factor": 32.0,
+        "gpt-oss.rope.scaling.original_context_length": 4096,
+        "gpt-oss.rope.scaling.yarn_beta_fast": 32.0,
+        "gpt-oss.rope.scaling.yarn_beta_slow": 1.0,
+        "gpt-oss.rope.freq_base": 150000.0,
+        "gpt-oss.attention.layer_norm_rms_epsilon": 9.999999747378752e-06,
+        "gpt-oss.expert_count": 128,
+        "gpt-oss.expert_used_count": 4,
+        "gpt-oss.attention.key_length": 64,
+        "gpt-oss.attention.value_length": 64,
+        "gpt-oss.attention.sliding_window": 128,
+        "gpt-oss.expert_feed_forward_length": 2880,
+        "general.quantization_version": 2,
+        "general.file_type": 38
+      },
+      "header_bytes_read": 13022233,
+      "tensor_payload_loaded": false
+    }
+  },
+  "model_complete_at": "2026-10-23T22:36:53.913665+00:00",
+  "finished_at": "2026-10-23T22:36:53.916402+00:00"
+}

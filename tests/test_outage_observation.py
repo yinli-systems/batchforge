@@ -15,6 +15,7 @@ from backend.app import create_app
 from backend.config import Settings
 from backend.migrate import migrate_database
 from ops.ha.controlplane_outage_probe import ProbeFailure, Progress
+from ops.ha.engine_outage_probe import EngineProgress
 
 
 def test_readonly_run_snapshot_captured_lease_and_accepted_usage_invariant():
@@ -79,6 +80,40 @@ def test_readonly_run_snapshot_captured_lease_and_accepted_usage_invariant():
             assert progress.snapshot()["expired_attempts"] == 1
             assert client.post(f"/internal/tasks/{claimed['id']}/heartbeat", headers=internal,
                 json={"worker_id": "primary-one", "attempt_token": claimed["attempt_token"]}).status_code == 409
+            # The engine-loss observer must prove this exact captured task was
+            # accepted by the exact other worker, not unrelated fleet progress.
+            engine_observer = EngineProgress(dsn, "bench-observer-test", model, "secondary-one")
+            wrong_worker = EngineProgress(dsn, "bench-observer-test", model, "secondary")
+            wrong_model = EngineProgress(dsn, "bench-observer-test", "other-model", "secondary-one")
+            try:
+                engine_observer.scope(3)
+                assert engine_observer.secondary_ready() and not wrong_worker.secondary_ready()
+                with pytest.raises(ProbeFailure, match="scope_mismatch"):
+                    wrong_model.scope(3)
+                assert wrong_model.capture("primary-one") == []
+                assert engine_observer.capture("primary-one") == []  # Already-expired leases cannot arm a new fault.
+                evidence = engine_observer.recovery(captured)
+                assert evidence["lease_expired"] == 1 and evidence["reclaimed_by_exact_secondary"] == 0
+                with psycopg.connect(dsn, autocommit=True) as owner:
+                    owner.execute("UPDATE tasks SET ready_at=clock_timestamp() WHERE id=%s", (claimed["id"],))
+                    owner.execute("UPDATE tenant_queues SET next_ready_at=clock_timestamp()")
+                reclaimed = client.post("/internal/tasks/claim", headers=internal,
+                    json={"worker_id": "secondary-one", "model": model, "limit": 1}).json()["tasks"][0]
+                assert reclaimed["id"] == claimed["id"] and reclaimed["attempt_token"] != claimed["attempt_token"]
+                assert client.post(f"/internal/tasks/{reclaimed['id']}/complete", headers=internal,
+                    json={"worker_id": "secondary-one", "attempt_token": reclaimed["attempt_token"], "response": response}).status_code == 200
+                evidence = engine_observer.recovery(captured)
+                assert evidence["reclaimed_by_exact_secondary"] == 1
+                assert evidence["reclaimed_tasks"][0]["accepted_count"] == 1
+                assert evidence["reclaimed_tasks"][0]["accepted_worker"] == "secondary-one"
+                assert wrong_worker.recovery(captured)["reclaimed_by_exact_secondary"] == 0
+                assert wrong_worker.snapshot()["secondary_completed"] == 0
+                assert engine_observer.snapshot()["secondary_completed"] == 2
+                assert "attempt_token" not in json.dumps(evidence)
+            finally:
+                engine_observer.close()
+                wrong_worker.close()
+                wrong_model.close()
             # Simulate an externally corrupted accepted-attempt ledger in this
             # disposable DB: the observer must detect it, not declare success.
             with psycopg.connect(dsn, autocommit=True) as owner:

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "source": "Read-only Neon connector describe_project and list_branches",
+  "capacity_report_file": "managed-backup-schema3-capacity-2026-10-24.json",
+  "capacity_report_sha256": "a25db8c2710de4692a21d5f4cf8742971ddc778d99c87456c3060472a1c6db48",
+  "capacity_operator_stdin_sha256": "08940e1dbb04e87165ac4391dfce16e32f69dceba6739a688bba5e79d11ff206",
+  "observed_at": "2026-10-23T23:05:15+00:00",
+  "project_id": "little-math-11178935",
+  "plan": "free_v3",
+  "postgres_major": 17,
+  "region": "aws-eu-central-1",
+  "branch_limit_bytes_from_api": 1073741824,
+  "operator_conservative_limit_bytes": 1000000000,
+  "history_retention_seconds": 21600,
+  "reported_project_data_transfer_bytes": 433637789,
+  "reported_project_data_storage_bytes_hour": 0,
+  "storage_zero_is_not_treated_as_empty_database": true,
+  "branches": [
+    {
+      "id": "br-quiet-wind-basjzi9a",
+      "name": "production",
+      "state": "ready",
+      "logical_size_bytes": 106831872,
+      "primary": true,
+      "updated_at": "2026-10-23T23:01:44Z"
+    }
+  ],
+  "other_live_branches": 0,
+  "limits_source": "https://neon.com/pricing",
+  "free_storage_change_source": "https://neon.com/blog/neon-free-plan-1-gb-per-project",
+  "limitations": [
+    "Connector metadata is periodically updated and not a transactionally consistent database observation",
+    "Logical-size and physical pg_database_size metrics have different definitions",
+    "No project, branch, paid compute or backup was created by these read-only calls",
+    "No connection URL, password, user email or prompt is retained in this report"
+  ]
+}

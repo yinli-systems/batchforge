@@ -249,7 +249,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/v1/models")
     async def models(tenant_id: str = Depends(tenant)):
-        return {"object": "list", "data": [{"id": settings.model_name, "object": "model", "owned_by": "batchforge"}]}
+        return {"object": "list", "data": [{"id": name, "object": "model", "owned_by": "batchforge"} for name in settings.served_models()]}
 
     @app.get("/v1/overview")
     async def overview(request: Request, tenant_id: str = Depends(tenant)):
@@ -257,8 +257,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/internal/workers/register", dependencies=[Depends(worker)])
     async def register(body: Registration, request: Request):
-        if body.model != settings.model_name:
-            raise APIError(400, "Worker model does not match MODEL_NAME")
+        if body.model not in settings.served_models():
+            raise APIError(400, "Worker model is not in the configured model catalog")
         return await request.app.state.store.register(body.model_dump())
 
     @app.post("/internal/tasks/claim", dependencies=[Depends(worker)])

@@ -1,7 +1,8 @@
 # Second Pod deployment
 
-The second user-supplied Pod runs sixteen independent 7B model engines and workers,
-two API replicas and its own private gateway. Its APIs connect directly to the
+The second user-supplied Pod runs fourteen short-context 7B engines, one
+18K-context 7B engine and one GPT-OSS-120B CPU-expert/GPU engine, each with its own
+worker. It also runs two API replicas and its own private gateway. Its APIs connect directly to the
 shared managed PostgreSQL database. Runtime requests require neither the primary
 Pod nor the operator laptop. The initial 0.5B deployment and laptop relay are
 historical.
@@ -86,7 +87,7 @@ work and are not validated by this result. Relevant official source:
 [official non-NVML CUDA platform](https://github.com/vllm-project/vllm/blob/v0.10.2/vllm/platforms/cuda.py),
 and [data-parallel device-index handling](https://github.com/vllm-project/vllm/blob/v0.10.2/vllm/v1/engine/utils.py).
 
-All sixteen engines use:
+The earlier uniform sixteen-engine 7B phase used:
 
 - Model: `Qwen/Qwen2.5-7B-Instruct`, non-quantized bfloat16.
 - Revision: `a09a35458c702b33eeacc393d103063234e8bc28`.
@@ -124,7 +125,7 @@ requests, with the engine's running-request metric observed at sixteen. All
 The model revision, precision, memory fraction, context limit, batched-token
 limit and disabled prefix caching were preserved.
 
-All sixteen workers now reserve sixteen contexts each (`WORKER_MAX_INFLIGHT=16`,
+During that uniform stage, all sixteen workers reserved sixteen contexts each (`WORKER_MAX_INFLIGHT=16`,
 `WORKER_TOKEN_BUDGET=65536`), totaling 256 secondary slots. Their frozen source
 archive is `a2a3ac2f6f5be7593f13a52cbf9cc3167031c9751c8f9df2e9c1ae47323c428f`,
 including JSON output validation. The watchdog resumed as PID 82999 with all
@@ -174,8 +175,10 @@ are installed from the repository's hash-locked requirements, and model-serving
 dependencies remain in a separate virtual environment. Hugging Face, vLLM,
 TorchInductor and Numba caches have explicit application-owned paths.
 
-Each engine has its own mode-600 file `.env.engine-pod2-7b-gpu<N>`, supervisor
-name `pod2-7b-gpu<N>`, explicit CUDA MIG UUID selector, and loopback port `8200 + N`.
+Each engine has its own mode-600 environment file, supervisor record, explicit
+CUDA MIG UUID selector, and loopback inference port. The original uniform 7B
+pool used `.env.engine-pod2-7b-gpu<N>` and port `8200 + N`; the current mixed
+pool's exceptions are listed below.
 `ops/manage.py` verifies recorded PID, process start identity and working
 directory before signaling an application process group.
 
@@ -186,7 +189,8 @@ cd /root/batchforge-runtime/app
 /root/batchforge-runtime/engine-venv/bin/python ops/pod2/report_engines.py --report .runtime/pod2-7b-hardware.json
 ```
 
-Repeat the controlled upgrade command for the selected devices through 15. It refuses to
+These commands reproduce the earlier uniform 7B rollout; do not apply them to
+the current MIG14/15 model pools. The controlled upgrade command refuses to
 start until the pinned model manifest is verified and requires free GPU memory
 of at least `total_memory * 0.82 + 512 MiB`. It never frees memory by terminating
 another workload. The common supervisor now monitors all 35 local services, with
@@ -228,9 +232,9 @@ mode-600 temporary scripts so concurrent operations cannot overwrite each other.
 
 ## Independent local control plane
 
-Sixteen mode-600 worker configurations are installed as
+The original six-engine rollout installed mode-600 configurations as
 `.env.worker-pod2-7b-mig<N>`. Worker identities are `secondpod-7b-mig0` through
-`secondpod-7b-mig15`. Each worker has one engine, eight slots, a 32,768-token context
+`secondpod-7b-mig5`. Each initially had one engine, eight slots, a 32,768-token context
 reservation budget, and loopback readiness/metrics port `9200 + N`. The inference
 URL uses loopback port `8200 + N`, excluding `/v1`.
 
@@ -264,16 +268,15 @@ private configurations and model identities before starting workers:
 /root/batchforge-runtime/venv/bin/python ops/pod2/start_model_workers.py --devices 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
 ```
 
-That initializer expects eight-slot configurations. The active sixteen-slot
+That initializer expects eight-slot configurations. The active mixed-model
 deployment uses the private supervision manifest and existing tuned environment
 files; do not regenerate them with the initial-rollout helper.
 
-The temporary server-side machine link remains available for rollback checks.
-Its dedicated user-authorized key permits only a fixed relay command, with no
-PTY, arbitrary commands or forwarding. The private machine key stays on the
-primary Pod; the user's private SSH key was never copied. Relay routes and frame
-sizes are bounded, and its private framing stream must never be treated as an
-operator log. It is outside the current worker request path.
+The temporary server-side machine link was retired after the 21:58 UTC
+control-plane recovery test. Its earlier dedicated user-authorized key allowed
+only a fixed relay command, with no PTY, arbitrary commands or forwarding; the
+user's private SSH key was never copied. No active relay is required by the
+current worker request path.
 
 Worker configurations reuse only the previously authorized worker token, without
 printing it. The managed-API deployment transferred only `bf_runtime` connection
@@ -413,3 +416,232 @@ and route-allowlist tests remain available:
 ```sh
 python3 -m unittest discover -s ops/pod2 -p test_relay.py -v
 ```
+
+## Long-context and 100B preparation
+
+A read-only check at 22:25:29 UTC found all 35 existing services ready before
+any model changes. The container has a 501,999,996,928-byte memory limit
+(467.52 GiB), with 443,634,458,624 bytes (413.16 GiB) then available; the host's
+larger physical RAM is not the container allocation. The app-owned filesystem
+had 1,052,933,414,912 bytes available. See the [resource snapshot](../ops/reports/pod2-100b-capacity-readonly-2026-10-24.json)
+and [per-MIG memory/toolchain queries](../ops/reports/pod2-100b-memory-build-metadata-2026-10-24.json).
+
+Native CUDA metadata reports 38 directed peer-access-capable pairs, within
+same-parent MIG groups of sizes 1/1/4/4/2/4. Cross-parent pairs return false.
+This is capability metadata, not a bandwidth or collective benchmark. The
+current NCCL is 2.27.3 and the vLLM application plugin is deliberately TP1/DP1.
+[NVIDIA's newer NCCL documentation](https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/usage/communicators.html#using-mig-instances)
+introduces experimental MIG communicators beginning with NCCL 2.31 and CUDA
+driver 13.0; it does not establish that this deployed stack can pool MIG memory.
+Sixteen replicas of the same 7B model are not a single 100B model.
+
+The two APIs now have a tested model catalog containing the existing 7B model,
+`Qwen/Qwen2.5-7B-Instruct-18k`, and `openai/gpt-oss-120b`, with a 2,048-token
+output cap. The rolling deployment changed no schema and preserved every
+non-API service identity. The [rollout report](../ops/reports/pod2-multimodel-api-roll-2026-10-24.json)
+verifies readiness and the catalog constructed from each actual private API
+environment; it does not claim an authenticated tenant HTTP catalog request.
+The long-context alias is necessary to keep 16K inputs out of 4K workers.
+
+## Current model pools
+
+The model-specific worker identities prevent a 16K or 117B request from being
+claimed by a short-context 7B engine. The current secondary has 16 engines,
+16 workers, two APIs and one gateway: 35 supervised services, plus the watchdog
+process itself. It reserves 229 inference slots across three pools:
+
+| MIG instances | Served model | Context reservation | Slots per worker | Inference / metrics ports |
+| --- | --- | ---: | ---: | --- |
+| 0–13 | `Qwen/Qwen2.5-7B-Instruct` | 4096 | 16 | 8200–8213 / 9200–9213 |
+| 15 | `Qwen/Qwen2.5-7B-Instruct-18k` | 18440 | 4 | 8215 / 9215 |
+| 14 | `openai/gpt-oss-120b` | 18440 | 1 | 8314 / 9214 |
+
+The long 7B worker is `secondpod-7b-18k-mig15`; its engine and worker files are
+`.env.engine-pod2-7b-gpu15-18k` and `.env.worker-pod2-7b-mig15-18k`.
+Its model weights remain the pinned original 7B revision. The engine advertises
+18440 context tokens, enables chunked prefill with a 2048-token batched limit,
+and reported 90,512 KV-cache tokens, exceeding the four-context reservation of
+73,760. Prefix caching stays disabled. The short pool retains its earlier
+4096-context, sixteen-sequence configuration. See the
+[model-pool activation record](../ops/reports/pod2-model-pools-ready-2026-10-24.json).
+
+The 117B worker is `secondpod-gptoss120b-cpu-expert`, with one slot and an
+18,440-token reservation. Its engine is `pod2-gptoss120b-mig14`; the current
+engine environment is `.env.engine-pod2-gptoss120b-mig14-moe28`. The former
+35-CPU-expert configuration is retained privately for rollback. All pools use
+the same local API origins and require no primary-Pod inference endpoint.
+
+### Actual 117B model and runtime
+
+The model is the official maintainer's conversion
+[`ggml-org/gpt-oss-120b-GGUF`](https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/tree/7200b74bea78b0a2964ef9f3897eefa401e890ff),
+pinned at revision `7200b74bea78b0a2964ef9f3897eefa401e890ff`. The sole downloaded
+weight file is `gpt-oss-120b-MXFP4.gguf`, 63,387,346,208 bytes, verified with
+SHA256 `582bd40f6886200101f4c4ed9f25f3fe80cc14c86e9e2b37746cd8904a0c622d`.
+Its parsed GGUF header contains 116,829,156,672 logical parameters, 36 layers,
+128 experts and four selected experts per token. Expert tensors use MXFP4,
+non-expert quantized tensors use Q8_0, and auxiliary tensors use F32. This is
+one model exceeding 100 billion total parameters; its sparse active-parameter
+count and quantization must not be described as a dense 120B BF16 model.
+See [asset integrity](../ops/reports/pod2-gptoss120b-ready-assets-2026-10-24.json)
+and [parsed tensor metadata](../ops/reports/pod2-gptoss120b-gguf-header-2026-10-24.json).
+
+The application-owned CUDA build uses official llama.cpp commit
+[`0ae0e1976670fac25f4e0ed864df30021accc764`](https://github.com/ggml-org/llama.cpp/tree/0ae0e1976670fac25f4e0ed864df30021accc764),
+CUDA 12.8 and architecture SM120. Its `llama-server` binary has SHA256
+`163bc895c6e471380b5e42be3f474ac1b9cc20e6cfdf967339a6c09cbc4dc4dd`.
+Source and build output live under `/root/batchforge-runtime/llama-cpp/<commit>`;
+no installed vLLM, Torch or system package was changed. The first preparation
+attempt rejected a source-archive directory entry before building; its report
+is preserved separately from the successful build retry.
+
+The current engine keeps 28 of 36 MoE layers on CPU and eight on the selected
+MIG instance, with non-MoE layers offloaded to GPU. It uses 16 generation and
+batch threads, one slot, batch size 2048, microbatch size 512, `--fit off`,
+`--no-context-shift`, `--jinja`, `--metrics` and `--perf`. Requested context is
+18440; llama.cpp pads its actual allocation to 18688. Admission and worker
+reservation remain 18440. The CPU allocation query found a 108.8-vCPU cgroup
+quota and visible cpuset 0–255 on AMD EPYC 9554 hardware. These are container
+bounds, not a dedicated 256-core allocation.
+
+The supervisor requires free GPU memory of at least `0.82 * total + 512 MiB`
+before a new engine start. For llama.cpp, 0.82 is an admission gate, not a
+runtime GPU-memory-fraction option. Its separate host-memory gate requires both
+host available memory and cgroup remaining memory to cover the model file plus
+80 GiB. It only stops processes whose saved start identity, application cwd and
+owned process tree match; it never frees space by terminating other workloads.
+
+### Uncached expert-placement comparison
+
+The same exact request body, containing 16,384 rendered prompt tokens and a
+2,048-token output cap, was measured before and after changing only CPU-expert
+placement from 35 to 28 layers. Both requests reported 16,384 prompt and 2,048
+completion tokens, zero cached tokens, a nonempty final response and
+`finish_reason=length`. They used natural generation mode without forced
+minimum length; reaching the cap does not prove the answer was complete.
+
+| CPU MoE layers / GPU MoE layers | Request elapsed | Server prefill | Server decode |
+| --- | ---: | ---: | ---: |
+| 35 / 1 | 113.396 s | 274.846 tokens/s | 38.138 tokens/s |
+| 28 / 8 | 98.640 s | 321.451 tokens/s | 43.041 tokens/s |
+
+This is one paired observation, not a production percentile or a claim about
+GPU-only performance. Thirty-three other service process identities remained
+unchanged. The 28-layer rollout restored its worker and watchdog; 425 GPU-memory
+samples observed a peak of 16,956,915,712 bytes and a minimum of 8,410,234,880
+bytes free. Per-MIG SM utilization returned NVML `NOT_SUPPORTED`, so utilization
+is explicitly unavailable. Full-parent utilization would include unrelated
+slices and is not substituted. See the [35-layer request](../ops/reports/pod2-gptoss120b-long-moe35-2026-10-24.json),
+[28-layer request](../ops/reports/pod2-gptoss120b-long-moe28-2026-10-24.json), and
+[controlled placement change](../ops/reports/pod2-gptoss120b-moe28-tuning-2026-10-24.json).
+The startup 32-token arithmetic response contained reasoning but no final
+answer; the subsequent 128-cap response produced the correct numeral with a
+warm prompt cache. Those startup checks are not cold throughput measurements.
+
+### Exact token counting and cache policy
+
+The reusable [llama.cpp counter](../scripts/llama_prompt_counter.py) obtains the
+running server's `/apply-template` output and counts it through `/tokenize` with
+special-token parsing. The pinned official server uses the same request parser
+for template application and inference. An actual 80-prompt-token response
+calibrates the counter; model alias, server context and runtime/model revisions
+are checked before measuring. Formatter-affecting request extensions are
+rejected rather than silently using an inexact template. The counter's probe
+permits natural generation only, distinguishes `stop` from `length`, and records
+response hashes instead of publishing response text. A persistent exclusive
+`.started` marker prevents an uncertain request from being automatically
+replayed under the same report name.
+
+Direct llama.cpp measurements set `cache_prompt=false` per request, and actual
+usage must show zero cached tokens. This field is an engine-only measurement
+option, not a newly exposed tenant API field. The 7B engines separately disable
+vLLM prefix caching. The fixed-capacity pilot verified that `ignore_eos=true`
+with a cap of 128 produced exactly 128 tokens, whereas natural generation on
+the same uncached input stopped at 39. The frozen harness also sends
+`min_tokens`; actual counted output is the capacity gate, not an assumption
+that llama.cpp implements vLLM's minimum-token semantics. Fixed-length output
+is not a quality score. See the [compatibility pilot](../ops/reports/pod2-gptoss120b-force-pilot-2026-10-24.json)
+and [counter calibration](../ops/reports/pod2-gptoss120b-tokenize-calibration-2026-10-24.json).
+
+The observed provider allocation price was $11.18/hour for this entire Pod.
+Any elapsed-time cost derived from it concerns that allocation, including CPU,
+RAM and all allocated MIG instances. Dividing it by sixteen is not evidence of
+a purchasable dedicated-MIG price or the marginal cost of one inference.
+
+### Long-context 7B dispatch experiment
+
+A separate engine-only run on MIG15 completed all 20 length combinations under
+each client dispatch policy, with concurrency four: FIFO 208.372 seconds,
+shortest requested work 224.894 seconds, and class-fair 197.351 seconds. Each
+processed 109,056 prompt and 13,600 generated tokens. The public text was fitted
+to the running model's template; outputs were forced to their capacity caps.
+These are bounded client dispatch policies, not a replacement for vLLM's
+internal scheduler. See the [manifest](../ops/reports/pod2-matrix7b-18k-workload-manifest-2026-10-24.json)
+and [FIFO](../ops/reports/pod2-matrix7b-18k-fifo-2026-10-24.json),
+[shortest](../ops/reports/pod2-matrix7b-18k-shortest-2026-10-24.json) and
+[class-fair](../ops/reports/pod2-matrix7b-18k-class-fair-2026-10-24.json) reports.
+
+The isolated llama.cpp build used eight CPU jobs during parts of FIFO and
+shortest; the class-fair run began after compilation completed. This overlap,
+the single repetition and only 20 requests per policy preclude attributing the
+observed difference solely to dispatch policy or treating p99 as a stable SLA.
+The [end-of-run engine histograms](../ops/reports/pod2-longctx-engine-histograms-2026-10-24.json)
+cover 61 requests, including the untimed warmup, without per-policy baselines.
+They must not be divided into invented per-policy prefill/decode measurements.
+
+### 117B mixed-length capacity run
+
+The single-slot CPU/GPU lane completed all 20 input/output combinations from
+23:04:46.234160 to 23:15:52.596131 UTC: 109,056 prompt and 13,600 generated
+tokens in 666.361 seconds, or 20.409 generated tokens/second over the full mixed
+run. This used FIFO client dispatch at concurrency one, 28 CPU-expert layers,
+16 threads and the pinned llama.cpp/GGUF assets above. It compared the same
+length grid as the primary, with runtime-specific chat formatting and fitted
+public text; it does not claim byte-identical prompts across runtimes.
+
+All twenty actual prompt counts matched their intended 128/512/2048/8192/16384
+lengths, and all twenty completion counts reached the 32/128/512/2048 caps.
+Every appended engine timing pair processed the entire reported prompt count
+and matched the completion count. The stream harness does not retain the
+`cached_tokens` field; this independent exclusive-client log evidence, together
+with `cache_prompt=false`, establishes that cached prefixes were not counted
+as prefill work. The raw private report and appended-log hash are preserved.
+
+The engine recorded 359.803 seconds of prefill and 303.189 seconds of decode
+across the run. These are combined CPU/GPU engine stages, not isolated CUDA
+kernel timings. HTTP service p95 was 74.128 seconds and first visible text p95
+was 51.827 seconds. Completion p95 was 605.720 seconds because the entire
+20-request burst was offered at once to one slot; it includes client FIFO wait.
+Only ten streams contained final response text. All-stream capacity success
+therefore must not be presented as twenty successful business answers.
+
+The 2626 GPU-memory samples observed a peak of 17,140,482,048 bytes and a minimum
+of 8,226,668,544 bytes free. The known llama.cpp process consumed a mean of
+7.850 CPU cores over this window; its thread setting remained sixteen. SM
+utilization was unavailable through per-MIG NVML. An immediate post-run check
+found 35/35 services running and ready, sixteen unique engine MIG selectors,
+and all verified process start identities predating the timed run. See the
+[full per-cell report](../ops/reports/pod2-gptoss120b-matrix-fifo-2026-10-24.json),
+[stage accounting](../ops/reports/pod2-gptoss120b-matrix-stage-analysis-2026-10-24.json),
+[token manifest](../ops/reports/pod2-gptoss120b-matrix-workload-manifest-2026-10-24.json),
+and [post-run service identities](../ops/reports/pod2-120b-moe28-service-supervision-2026-10-24.json).
+
+The optional `reasoning_effort` parameter was deployed with a worker-first
+protocol: all sixteen secondary workers reached the reviewed runtime before
+API validation changed, and the primary's sole active worker confirmed the
+same source before either secondary API rolled. Omitted values preserve the
+existing default; explicit values are `low`, `medium` or `high`. The secondary
+worker rollout preserved nineteen nonworker identities; its subsequent API
+roll preserved all thirty-three non-API identities. The supervisor's optional
+memory-margin setting retained the secondary's default of 512 MiB, without
+changing or restarting any engine. See the [worker rollout](../ops/reports/pod2-reasoning-effort-workers-roll-2026-10-24.json)
+and [API rollout](../ops/reports/pod2-reasoning-effort-api-roll-2026-10-24.json).
+
+The [final 23:27:46.241758 UTC check](../ops/reports/pod2-final-model-pools-ready-2026-10-24.json) found all 35 services running and ready,
+all sixteen actual engine selectors matching unique MIG UUIDs, every service
+environment file at mode 0600, and exact process identities matching the
+reviewed rollout records. No current runtime request depends on a relay. The
+read-only observer continued through a non-overlapping pidfd handoff at
+23:17:02.624497 UTC into a separate recovery stream; it did not signal or overlap
+its predecessor. Its PID and source hash are preserved in the
+[handoff record](../ops/reports/pod2-observer-120b-recovery-handoff-2026-10-24.json).

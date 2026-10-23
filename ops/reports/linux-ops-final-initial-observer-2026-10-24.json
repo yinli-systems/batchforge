@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-23T23:21:10.551867+00:00",
+  "finished_at": "2026-10-23T23:21:13.780389+00:00",
+  "archive_sha256": "aa3cbdd6af359720fdd3d481967347357cc5b64491a17a01a5f144b8d761c790",
+  "source_sha256": {
+    "ops/manage.py": "cd15563e36f8a0a269378aff74e1b7bc42e575cb7a9062a73d28519bca3bcd85",
+    "ops/supervise.py": "3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0",
+    "ops/engine_members.py": "e4d0b2f2c130dce6fa16a4925d3557ca16475793a5b4f156f62a3d8f2df471ff",
+    "ops/host_memory.py": "e4887b81fd3c95e7f94bd118d0917775d5e8839c7c59e07b7dd8d98552150902",
+    "ops/llama_backend.py": "d27fce11beb565b287d19bce61aa9c3edbf5cb802fd3630fa4788e7aeb31adb4",
+    "ops/test_supervise.py": "c37b663b4a73d4a3ee97e3c1fba0d30cb62b1cd0d130a48f32274551fa2098a6",
+    "ops/test_engine_members.py": "9116e95be58bd5b8008d94910e97c277696363a64ec0987d173bc022ceac7299"
+  },
+  "cuda_visible_devices": "",
+  "gpu_inference_performed": false,
+  "database_used": false,
+  "live_service_configuration_read": false,
+  "active_service_modules_replaced": false,
+  "returncode": 0,
+  "pytest_stdout": "..................................................                       [100%]\n50 passed in 2.85s\n",
+  "pytest_stderr": "",
+  "final_owned_test_worker_records": [],
+  "no_managed_test_worker_left_running": false,
+  "process_cleanup_scope": "Exact PIDs/start-time/cwd from test-owned records only; no unrelated process enumeration",
+  "limitations": [
+    "This CPU regression does not run CUDA or a real inference-engine restart",
+    "All subprocess cleanup in the tests is restricted to PIDs created by those tests"
+  ],
+  "passed": false
+}

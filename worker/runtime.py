@@ -242,9 +242,11 @@ class Worker:
         # SDK tool, or executable code. Streaming is disabled for durable results.
         if body.get("model") != self.config.model:
             raise InferenceError("unsupported_model", "Task model does not match worker", False)
-        allowed = {"model", "messages", "max_tokens", "max_completion_tokens", "temperature", "top_p", "seed", "stop", "response_format", "stream", "n"}
+        allowed = {"model", "messages", "max_tokens", "max_completion_tokens", "temperature", "top_p", "seed", "stop", "response_format", "stream", "n", "reasoning_effort"}
         if set(body) - allowed:
             raise InferenceError("unsupported_parameter", "Task contains unsupported inference parameters", False)
+        if "reasoning_effort" in body and (not isinstance(body["reasoning_effort"], str) or body["reasoning_effort"] not in {"low", "medium", "high"}):
+            raise InferenceError("unsupported_parameter", "reasoning_effort must be low, medium, or high", False)
         if body.get("stream", False) is not False or body.get("n", 1) != 1:
             raise InferenceError("unsupported_parameter", "Batch requires stream=false and n=1", False)
         body["stream"] = False

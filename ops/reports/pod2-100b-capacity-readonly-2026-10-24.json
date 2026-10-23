@@ -1,0 +1,1410 @@
+{
+  "observed_at_utc": "2026-10-23T22:25:29.781587+00:00",
+  "scope": "read_only_app_records_hardware_metadata_no_gpu_context_allocation_no_inference_no_restart",
+  "supervision": {
+    "watchdog_owned_running": true,
+    "watchdog_pid": 82999,
+    "snapshot_watchdog_pid": 82999,
+    "snapshot_updated_at": 1792794325.378284,
+    "service_count": 35,
+    "ready_count": 35,
+    "manifest_sha256": "17f9ccb2d88513853966ce455c6ce0dcc0edcd1f1351e919d2dc6204673e21b9"
+  },
+  "services": [
+    {
+      "logical_device": 0,
+      "engine_pid": 64444,
+      "worker_pid": 66579,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-d2f12fb1-37bf-5218-8954-aa19d09e0a8a"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-edc46dcb2cc4461e9bb3149a3c9c60e8",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 1,
+      "engine_pid": 64378,
+      "worker_pid": 66562,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-0ae59fae-4b69-5e81-a265-0b1e0844dbe1"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-d6cbfd0eadd84026a685f82e50889a8e",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 2,
+      "engine_pid": 66740,
+      "worker_pid": 68908,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-380086a7-e7a1-5c27-9aff-29a457a16ee8"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-6ded90df1e3e4d43b74f74d7ae59f3ff",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 3,
+      "engine_pid": 66806,
+      "worker_pid": 68915,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-e862004e-5f22-5248-9bf0-639dd320c22d"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-b831c6e4ba8243dabe818ec40a97a4fc",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 4,
+      "engine_pid": 69005,
+      "worker_pid": 71254,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-b619e29e-b921-5964-b67c-24dd2ddda4a5"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-1152361c23c246e380acafafcf882792",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 5,
+      "engine_pid": 69153,
+      "worker_pid": 71276,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-e9c6f75d-60a5-5072-bddf-2d2661f0fb77"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-07f7cc78534d47669b066e4c89ac074c",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 6,
+      "engine_pid": 71350,
+      "worker_pid": 73571,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-22019961-7f1b-58a7-89a2-eee1fd1a72d4"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-31442a1567764379937e6e51be19b5ff",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 7,
+      "engine_pid": 71499,
+      "worker_pid": 73660,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-55308027-c79e-5fc8-8587-940802972f9b"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-a293e56a82cc4a26a99ae96658b3288e",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 8,
+      "engine_pid": 73682,
+      "worker_pid": 75921,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-1f8f5a87-dc7b-5ddb-b8ba-5b060998d459"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-d9e20c9b18c54a70a0a35e87aa7a3fe2",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 9,
+      "engine_pid": 73890,
+      "worker_pid": 76026,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-0d8bd9a9-893c-516b-9537-131114f7f936"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-ba1dfa8d248448f39dc4a08f9defe5c9",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 10,
+      "engine_pid": 76028,
+      "worker_pid": 78267,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-9ea7d731-750a-5119-86b5-dd727715e52a"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-588a4849964740a1a32a900363e074e4",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 11,
+      "engine_pid": 76246,
+      "worker_pid": 78423,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-70b46ada-abf6-530f-b1d3-fa80bb90a21c"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-924a04d464b3411a956ef9021b98fc57",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 12,
+      "engine_pid": 78358,
+      "worker_pid": 80597,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-acbb77ed-7f51-5892-be4d-e5be2e6cc8dd"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-82488e4f62e44e5395eff57bdeeb78c3",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 13,
+      "engine_pid": 78659,
+      "worker_pid": 80770,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-e0cfdac6-4296-5f39-8973-b517dca02671"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-14da2379b48e47f2a2a11e34184129bb",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 14,
+      "engine_pid": 80688,
+      "worker_pid": 82942,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-bdcef49f-83bf-569a-907a-3e5a4feaa1fb"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-f8b945d2ecd7430ba78e0163be989e1b",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    },
+    {
+      "logical_device": 15,
+      "engine_pid": 80991,
+      "worker_pid": 82981,
+      "engine_owned_running": true,
+      "worker_owned_running": true,
+      "engine_visibility": {
+        "CUDA_VISIBLE_DEVICES": "MIG-83b2a8e2-adaa-5ea0-a85d-a591df1b0600"
+      },
+      "engine_settings": {
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct",
+        "ENGINE_REVISION": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "4096",
+        "ENGINE_MAX_NUM_SEQS": "16",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GPU_MEMORY_UTILIZATION": "0.82",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GENERATION_CONFIG": null
+      },
+      "worker_settings": {
+        "WORKER_MAX_INFLIGHT": "16",
+        "WORKER_TOKEN_BUDGET": "65536",
+        "ENGINE_MAX_MODEL_LEN": "4096"
+      },
+      "engine_catalog": {
+        "status": 200,
+        "models": [
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "created": 1792794329,
+            "owned_by": "vllm",
+            "root": "/root/batchforge-runtime/models/Qwen2.5-7B-Instruct/a09a35458c702b33eeacc393d103063234e8bc28",
+            "parent": null,
+            "max_model_len": 4096,
+            "permission": [
+              {
+                "id": "modelperm-74c13c770e1d4092aca3afa4b79d188e",
+                "object": "model_permission",
+                "created": 1792794329,
+                "allow_create_engine": false,
+                "allow_sampling": true,
+                "allow_logprobs": true,
+                "allow_search_indices": false,
+                "allow_view": true,
+                "allow_fine_tuning": false,
+                "organization": "*",
+                "group": null,
+                "is_blocking": false
+              }
+            ]
+          }
+        ]
+      },
+      "worker_ready": {
+        "status": 200
+      }
+    }
+  ],
+  "api_ready": {
+    "8080": {
+      "status": 200
+    },
+    "8082": {
+      "status": 200
+    },
+    "8083": {
+      "status": 200
+    }
+  },
+  "ram": {
+    "host": {
+      "MemTotal_bytes": 1081782312960,
+      "MemAvailable_bytes": 979436331008,
+      "SwapTotal_bytes": 0,
+      "SwapFree_bytes": 0
+    },
+    "cgroup": {
+      "memory.current": "58365538304",
+      "memory.max": "501999996928",
+      "memory.peak": "58499608576",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+      "cpu.max": "10880000 100000",
+      "cpuset.cpus.effective": "0-255"
+    },
+    "logical_cpus": 256
+  },
+  "app_owned_disk": {
+    "path": "/root/batchforge-runtime",
+    "total_bytes": 1073741824000,
+    "available_bytes": 1052933414912,
+    "free_bytes": 1052933414912
+  },
+  "physical_gpu_summary": {
+    "exit_code": 0,
+    "stdout": "0, NVIDIA RTX PRO 6000 Blackwell Server Edition, GPU-e1733072-d649-4b56-e3f7-57b3a80a5575, [Insufficient Permissions], [Insufficient Permissions], [Insufficient Permissions], 595.91.07, 00000000:21:00.0\n1, NVIDIA RTX PRO 6000 Blackwell Server Edition, GPU-e2ed6dc0-9964-bd1d-4c34-18c3f665b5e2, [Insufficient Permissions], [Insufficient Permissions], [Insufficient Permissions], 595.91.07, 00000000:23:00.0\n2, NVIDIA RTX PRO 6000 Blackwell Server Edition, GPU-9250dc54-3534-c2c1-979b-c65a55137ed5, [Insufficient Permissions], [Insufficient Permissions], [Insufficient Permissions], 595.91.07, 00000000:41:00.0\n3, NVIDIA RTX PRO 6000 Blackwell Server Edition, GPU-f464d0a8-e352-19b8-0c18-d165807bb94e, [Insufficient Permissions], [Insufficient Permissions], [Insufficient Permissions], 595.91.07, 00000000:81:00.0\n4, NVIDIA RTX PRO 6000 Blackwell Server Edition, GPU-d7b96f2f-7ecb-5c88-42b8-7de5f11112d6, [Insufficient Permissions], [Insufficient Permissions], [Insufficient Permissions], 595.91.07, 00000000:A1:00.0\n5, NVIDIA RTX PRO 6000 Blackwell Server Edition, GPU-7ca05125-1cc4-5658-5ead-2d4e45b16734, [Insufficient Permissions], [Insufficient Permissions], [Insufficient Permissions], 595.91.07, 00000000:C1:00.0",
+    "stderr": ""
+  },
+  "topology": {
+    "exit_code": 0,
+    "stdout": "\u001b[4mGPU0\tGPU1\tGPU2\tGPU3\tGPU4\tGPU5\tNIC0\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\u001b[0m\nGPU0\t X \tPHB\tNODE\tSYS\tSYS\tSYS\tSYS\t0-63,128-191\t0\t\tN/A\nGPU1\tPHB\t X \tNODE\tSYS\tSYS\tSYS\tSYS\t0-63,128-191\t0\t\tN/A\nGPU2\tNODE\tNODE\t X \tSYS\tSYS\tSYS\tSYS\t0-63,128-191\t0\t\tN/A\nGPU3\tSYS\tSYS\tSYS\t X \tNODE\tNODE\tNODE\t64-127,192-255\t1\t\tN/A\nGPU4\tSYS\tSYS\tSYS\tNODE\t X \tNODE\tNODE\t64-127,192-255\t1\t\tN/A\nGPU5\tSYS\tSYS\tSYS\tNODE\tNODE\t X \tPHB\t64-127,192-255\t1\t\tN/A\nNIC0\tSYS\tSYS\tSYS\tNODE\tNODE\tPHB\t X \t\t\t\t\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks\n\nNIC Legend:\n\n  NIC0: rocep195s0f0",
+    "stderr": ""
+  },
+  "physical_p2p_read": {
+    "exit_code": 0,
+    "stdout": "\u001b[4mGPU0\tGPU1\tGPU2\tGPU3\tGPU4\tGPU5\t\u001b[0m\n GPU0\tX\tNS\tNS\tNS\tNS\tNS\t\n GPU1\tNS\tX\tNS\tNS\tNS\tNS\t\n GPU2\tNS\tNS\tX\tNS\tNS\tNS\t\n GPU3\tNS\tNS\tNS\tX\tNS\tNS\t\n GPU4\tNS\tNS\tNS\tNS\tX\tNS\t\n GPU5\tNS\tNS\tNS\tNS\tNS\tX\t\n\nLegend:\n\n  X    = Self\n  OK   = Status Ok\n  CNS  = Chipset not supported\n  GNS  = GPU not supported\n  TNS  = Topology not supported\n  NS   = Not supported\n  U    = Unknown",
+    "stderr": ""
+  },
+  "cuda_driver_metadata": {
+    "driver_api_version": 13020,
+    "device_count": 16,
+    "devices": [
+      {
+        "cuda_index": 0,
+        "uuid_v2": "d2f12fb1-37bf-5218-8954-aa19d09e0a8a",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 1,
+        "uuid_v2": "0ae59fae-4b69-5e81-a265-0b1e0844dbe1",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 2,
+        "uuid_v2": "380086a7-e7a1-5c27-9aff-29a457a16ee8",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 3,
+        "uuid_v2": "e862004e-5f22-5248-9bf0-639dd320c22d",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 4,
+        "uuid_v2": "b619e29e-b921-5964-b67c-24dd2ddda4a5",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 5,
+        "uuid_v2": "e9c6f75d-60a5-5072-bddf-2d2661f0fb77",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 6,
+        "uuid_v2": "22019961-7f1b-58a7-89a2-eee1fd1a72d4",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 7,
+        "uuid_v2": "55308027-c79e-5fc8-8587-940802972f9b",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 8,
+        "uuid_v2": "1f8f5a87-dc7b-5ddb-b8ba-5b060998d459",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 9,
+        "uuid_v2": "0d8bd9a9-893c-516b-9537-131114f7f936",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 10,
+        "uuid_v2": "9ea7d731-750a-5119-86b5-dd727715e52a",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 11,
+        "uuid_v2": "70b46ada-abf6-530f-b1d3-fa80bb90a21c",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 12,
+        "uuid_v2": "acbb77ed-7f51-5892-be4d-e5be2e6cc8dd",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 13,
+        "uuid_v2": "e0cfdac6-4296-5f39-8973-b517dca02671",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 14,
+        "uuid_v2": "bdcef49f-83bf-569a-907a-3e5a4feaa1fb",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      },
+      {
+        "cuda_index": 15,
+        "uuid_v2": "83b2a8e2-adaa-5ea0-a85d-a591df1b0600",
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "total_bytes": 25367150592
+      }
+    ],
+    "peer_access_matrix": [
+      [
+        null,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        null,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        null,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        null,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        1,
+        null,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        1,
+        1,
+        null,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        null,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        null,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        null,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        null,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        null,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        null,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        null,
+        1,
+        1,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        null,
+        1,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        null,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        null
+      ]
+    ],
+    "peer_access_true_directed_pairs": 38,
+    "probe_allocated_gpu_memory": false,
+    "probe_created_gpu_context": false
+  },
+  "nvml_mig_memory_error_type": "ModuleNotFoundError",
+  "package_versions": {
+    "torch": "2.8.0+cu128",
+    "vllm": "0.10.2",
+    "transformers": "4.55.2",
+    "nvidia-nccl-cu12": "2.27.3"
+  }
+}

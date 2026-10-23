@@ -7,11 +7,18 @@ import fcntl
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import signal
 import subprocess
 import sys
 import time
+
+try:
+    from ops import engine_members, llama_backend
+except ModuleNotFoundError:
+    import engine_members
+    import llama_backend
 
 ROOT = Path(__file__).resolve().parent.parent
 RUNTIME = ROOT / ".runtime"
@@ -60,6 +67,32 @@ def owned_record(path: Path) -> dict | None:
     return record
 
 
+def engine_tensor_parallel_size(args, env: dict) -> str:
+    value = env.get("ENGINE_TENSOR_PARALLEL_SIZE", "1")
+    if not isinstance(value, str) or not re.fullmatch(r"[1-9][0-9]*", value):
+        raise ValueError("ENGINE_TENSOR_PARALLEL_SIZE must be a positive integer")
+    size = int(value)
+    if size == 1:
+        return "1"
+    # Multi-GPU use is opt-in and must name the exact devices. In particular,
+    # the existing MIG plugin is deliberately restricted to TP1/DP1.
+    plugins = env.get("VLLM_PLUGINS", "").split(",")
+    if env.get("BATCHFORGE_MIG_PLATFORM") == "1" or "batchforge_mig" in {p.strip() for p in plugins}:
+        raise ValueError("The application MIG platform supports tensor parallel size 1 only")
+    mask = getattr(args, "gpu", None)
+    if mask is None:
+        mask = env.get("CUDA_VISIBLE_DEVICES", "")
+    selectors = [part.strip() for part in mask.split(",")]
+    uuid = r"GPU-[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}"
+    if len(selectors) != size or any(not re.fullmatch(r"[0-9]+|" + uuid, part) for part in selectors):
+        raise ValueError("Tensor parallel engines require exactly that many explicit non-MIG GPU indices or full GPU UUIDs")
+    kinds = {"index" if part.isdecimal() else "uuid" for part in selectors}
+    identities = [str(int(part)) if part.isdecimal() else part.lower() for part in selectors]
+    if len(kinds) != 1 or len(set(identities)) != size:
+        raise ValueError("Tensor parallel GPU selectors must be unique and use one identifier format")
+    return str(size)
+
+
 def command(args, env: dict) -> list[str]:
     python = args.python or str(ROOT / ".venv" / "bin" / "python")
     if args.role == "api":
@@ -72,13 +105,20 @@ def command(args, env: dict) -> list[str]:
         return [python, "-m", "ops.link.broker"]
     if args.role == "supervisor":
         return [python, "ops/supervise.py"]
+    native = llama_backend.command(args, env, ROOT)
+    if native is not None:
+        return native
+    tensor_parallel_size = engine_tensor_parallel_size(args, env)
+    chunked_prefill = env.get("ENGINE_ENABLE_CHUNKED_PREFILL", "0")
+    if chunked_prefill not in ("0", "1"):
+        raise ValueError("ENGINE_ENABLE_CHUNKED_PREFILL must be 0 or 1")
     # vLLM allocates only the configured fraction of *total* memory. The default
     # is deliberately small for shared Runpod hosts; inspect free memory first.
     result = [python, "-m", "vllm.entrypoints.openai.api_server",
             "--model", env.get("ENGINE_MODEL_PATH", env.get("MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct")),
             "--served-model-name", env.get("MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct"),
             "--host", "127.0.0.1", "--port", str(args.port or 8001),
-            "--tensor-parallel-size", "1", "--dtype", env.get("ENGINE_DTYPE", "half"),
+            "--tensor-parallel-size", tensor_parallel_size, "--dtype", env.get("ENGINE_DTYPE", "half"),
             "--max-model-len", env.get("ENGINE_MAX_MODEL_LEN", "2048"),
             "--max-num-seqs", env.get("ENGINE_MAX_NUM_SEQS", "8"),
             "--gpu-memory-utilization", env.get("ENGINE_GPU_MEMORY_UTILIZATION", "0.06"),
@@ -89,6 +129,8 @@ def command(args, env: dict) -> list[str]:
         result.extend(["--max-num-batched-tokens", env["ENGINE_MAX_NUM_BATCHED_TOKENS"]])
     if env.get("ENGINE_GENERATION_CONFIG"):
         result.extend(["--generation-config", env["ENGINE_GENERATION_CONFIG"]])
+    if chunked_prefill == "1":
+        result.append("--enable-chunked-prefill")
     if env.get("ENGINE_ENABLE_PREFIX_CACHING", "0") == "1":
         result.append("--enable-prefix-caching")
     else:
@@ -98,7 +140,7 @@ def command(args, env: dict) -> list[str]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("start", "stop", "status", "logs"))
+    parser.add_argument("action", choices=("start", "stop", "status", "logs", "reap"))
     parser.add_argument("role", choices=("api", "worker", "engine", "gateway", "link", "supervisor"))
     parser.add_argument("--name", help="Unique instance suffix, e.g. gpu0")
     parser.add_argument("--env-file", type=Path, default=ROOT / ".env")
@@ -123,7 +165,23 @@ def main() -> None:
                 print("\n".join(logfile.read_text(errors="replace").splitlines()[-80:]))
             return
         if args.action == "status":
+            if record and record.get("track_members"):
+                engine_members.capture(pidfile.with_suffix(".members.json"), record)
             print(json.dumps({"name": name, "running": record is not None, "pid": record["pid"] if record else None}))
+            return
+        if args.action == "reap":
+            if args.role != "engine":
+                raise RuntimeError("Only engine members can be reaped")
+            if record:
+                print(json.dumps({"status": "leader_running", "remaining": 0}))
+            elif pidfile.exists():
+                previous = engine_members.read(pidfile)
+                if previous.get("track_members"):
+                    print(json.dumps(engine_members.reap(pidfile.with_suffix(".members.json"), previous)))
+                else:
+                    print(json.dumps({"status": "nothing_to_reap", "remaining": 0}))
+            else:
+                print(json.dumps({"status": "nothing_to_reap", "remaining": 0}))
             return
         if args.action == "start":
             if record:
@@ -143,15 +201,24 @@ def main() -> None:
             if not identity or child.poll() is not None:
                 raise RuntimeError(f"Process exited at startup; inspect {logfile}")
             tmp = pidfile.with_suffix(".tmp")
-            tmp.write_text(json.dumps({**identity, "command": cmd, "started_at": time.time()}))
+            tmp.write_text(json.dumps({**identity, "command": cmd, "started_at": time.time(),
+                "track_members": args.role == "engine" and int(env.get("ENGINE_TENSOR_PARALLEL_SIZE", "1")) > 1}))
             os.chmod(tmp, 0o600)
             tmp.replace(pidfile)
             print(json.dumps({"name": name, "status": "started", "pid": child.pid, "log": str(logfile)}))
             return
         if not record:
+            if args.role == "engine" and pidfile.exists():
+                previous = engine_members.read(pidfile)
+                if previous.get("track_members"):
+                    outcome = engine_members.reap(pidfile.with_suffix(".members.json"), previous)
+                    if outcome["remaining"]:
+                        raise RuntimeError("Engine children are still exiting; retry after memory release")
             pidfile.unlink(missing_ok=True)
             print(json.dumps({"name": name, "status": "not_running"}))
             return
+        if record.get("track_members"):
+            engine_members.capture(pidfile.with_suffix(".members.json"), record)
         os.killpg(record["pid"], signal.SIGTERM)
         deadline = time.monotonic() + args.grace_seconds
         while time.monotonic() < deadline and process_identity(record["pid"]):
@@ -160,6 +227,10 @@ def main() -> None:
             # Revalidate before escalation: PID reuse cannot target another app.
             owned_record(pidfile)
             os.killpg(record["pid"], signal.SIGKILL)
+        if record.get("track_members"):
+            outcome = engine_members.reap(pidfile.with_suffix(".members.json"), record)
+            if outcome["remaining"] or outcome["status"] == "leader_running":
+                raise RuntimeError("Engine processes are still exiting; retry after memory release")
         pidfile.unlink(missing_ok=True)
         print(json.dumps({"name": name, "status": "stopped"}))
 

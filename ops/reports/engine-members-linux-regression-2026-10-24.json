@@ -1,0 +1,21 @@
+{
+  "observed_at": "2026-10-23T22:41:31.288255+00:00",
+  "scope": "Linux CPU-only real process ownership regression; no GPU, DB or production service operations",
+  "host_role": "primary existing Pod, isolated .runtime/orphan-check-v1",
+  "result": "2 passed in 0.18s",
+  "proof": [
+    "captured child ignoring SIGTERM survives leader loss, then exact pidfd cleanup removes it",
+    "unrelated process in separate session survives",
+    "stale child start identity and different launch never signalled"
+  ],
+  "source_sha256": {
+    "ops/engine_members.py": "e4d0b2f2c130dce6fa16a4925d3557ca16475793a5b4f156f62a3d8f2df471ff",
+    "ops/test_engine_members.py": "9116e95be58bd5b8008d94910e97c277696363a64ec0987d173bc022ceac7299",
+    "ops/manage.py": "dbb87dfd03e36fc494b5051a13ce1a825dd3a44db6a02587a0796ccc6fe2ff8d",
+    "ops/supervise.py": "c94ff672f8a7d4e045bf24162dbef6d53efa252a0f6f3ae040e3a77418a3892a"
+  },
+  "limitations": [
+    "Unknown children created after the last capture remain unproven; memory gates prevent unsafe restart",
+    "GPU rank teardown and restart still require real engine failure exercise"
+  ]
+}

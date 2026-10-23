@@ -1,0 +1,149 @@
+{
+  "observed_at": "2026-10-23T23:00:49.637124+00:00",
+  "scope": "engine-only128-token fixed-capacity compatibility pilot",
+  "model": "openai/gpt-oss-120b",
+  "cpu_moe_layers": 28,
+  "results": [
+    {
+      "kind": "natural",
+      "elapsed_seconds": 2.53421437900397,
+      "request_body_sha256": "afffabd3eb36014a913567509892a1e78ce4c999d8f534a18b9597b7d5bcd1ea",
+      "usage": {
+        "completion_tokens": 39,
+        "prompt_tokens": 80,
+        "total_tokens": 119,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "finish_reason": "stop",
+      "final_text_nonempty": true,
+      "final_text_sha256": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+      "reasoning_text_sha256": "dea6dccaf76617f9d06f8ec6e0d22a1776915a00f132ac1f87faf3186eaf201f",
+      "server_timings": {
+        "cache_n": 0,
+        "prompt_n": 80,
+        "prompt_ms": 1297.797,
+        "prompt_per_token_ms": 16.2224625,
+        "prompt_per_second": 61.64292258342407,
+        "predicted_n": 39,
+        "predicted_ms": 821.691,
+        "predicted_per_token_ms": 21.623447368421054,
+        "predicted_per_second": 46.24609494323292
+      }
+    },
+    {
+      "kind": "force",
+      "elapsed_seconds": 4.071725561982021,
+      "request_body_sha256": "d3ffd5c8de2dfada6cb6f13baf79dd8067a497ca965b963241356bd010b2520c",
+      "usage": {
+        "completion_tokens": 128,
+        "prompt_tokens": 80,
+        "total_tokens": 208,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "final_text_nonempty": true,
+      "final_text_sha256": "23f663630e2f28250c09d7a0c370f55eebf635772f9ce27e46797ab8ef297f4b",
+      "reasoning_text_sha256": "dea6dccaf76617f9d06f8ec6e0d22a1776915a00f132ac1f87faf3186eaf201f",
+      "server_timings": {
+        "cache_n": 0,
+        "prompt_n": 80,
+        "prompt_ms": 1329.342,
+        "prompt_per_token_ms": 16.616775,
+        "prompt_per_second": 60.18014927686028,
+        "predicted_n": 128,
+        "predicted_ms": 2721.416,
+        "predicted_per_token_ms": 21.428472440944883,
+        "predicted_per_second": 46.666882240715864
+      }
+    }
+  ],
+  "source_occurrences": {
+    "ignore_eos": [
+      {
+        "file": "tools/server/server-schema.cpp",
+        "line": 423,
+        "line_sha256": "086d5b8d9bb2f296d4809fc3774708e88b985f9c3bc33fe8a0504f34495bac79"
+      },
+      {
+        "file": "tools/server/server-schema.cpp",
+        "line": 427,
+        "line_sha256": "8a2be0049b75abfcd18136a33bea764a79ddc4f7955eb5e6e5ba8f7b818071bc"
+      },
+      {
+        "file": "tools/server/server-schema.cpp",
+        "line": 428,
+        "line_sha256": "37c27ea16a49e05dc1a48e611acca3c143de666d7af4f7f05dd9a7fa3f21c31c"
+      },
+      {
+        "file": "tools/server/server-task.cpp",
+        "line": 72,
+        "line_sha256": "051018618ebc37e365e722c0ce65f942e677e79599197868fbd3be1b7145c89d"
+      },
+      {
+        "file": "tools/server/server-task.cpp",
+        "line": 126,
+        "line_sha256": "4e29f9d963207c86d5a7130a9bf0d7a61954f1dc3de3824d038de0ea54210445"
+      },
+      {
+        "file": "common/arg.cpp",
+        "line": 2023,
+        "line_sha256": "7a606a12de62d809dde850e2a2f02072df8eb3bbd77da7c0af9785676abc14e6"
+      },
+      {
+        "file": "common/common.cpp",
+        "line": 1347,
+        "line_sha256": "1ece6695bce7ddbbf2647579056c8638f1d98dbb4ea16b91e0369b87fe6e7eed"
+      },
+      {
+        "file": "common/common.cpp",
+        "line": 1349,
+        "line_sha256": "a9509e96cedb15ca80ac6145d8526e0fb2a5186e51b1f6e84ea7544221c5301f"
+      },
+      {
+        "file": "common/common.cpp",
+        "line": 1360,
+        "line_sha256": "bccb37a228c8137b291482b9fad10f12295e8791d5cb2736b3dcfed4fabd8303"
+      },
+      {
+        "file": "common/common.h",
+        "line": 256,
+        "line_sha256": "44781f157ac96f669731d701b2e3377ec81430ef6625f4d6143a736508928ca6"
+      }
+    ],
+    "min_tokens": [
+      {
+        "file": "tools/server/server-context.cpp",
+        "line": 1236,
+        "line_sha256": "4d67f3a98906ccb32f25e2126da93ea6ff71fa01f42c0befd49e1439c31f6f1a"
+      },
+      {
+        "file": "tools/server/server-context.cpp",
+        "line": 1372,
+        "line_sha256": "bddd2606fca23281749a760c8b20029ddc2837b70d45275d357b81822eeadddd"
+      },
+      {
+        "file": "common/arg.cpp",
+        "line": 2653,
+        "line_sha256": "7e7804c61581fc67251653608672157a00a15255200c67afc3cfc43be97de8a7"
+      },
+      {
+        "file": "common/common.h",
+        "line": 608,
+        "line_sha256": "e3967d9b3b711057bcbc31bccde2a2d4c7dc18624670a70fe82a33e320f7f2c7"
+      }
+    ]
+  },
+  "cache_disabled_for_both": true,
+  "force_cap_supported_by_actual_usage": true,
+  "min_tokens_source_support": "See source occurrences; actual usage gate is authoritative",
+  "gpu_sm_utilization": {
+    "nvml_return_code": 3,
+    "value_percent": null,
+    "availability": "N/A: per-MIG NVML utilization unavailable"
+  },
+  "quality_evaluated": false
+}

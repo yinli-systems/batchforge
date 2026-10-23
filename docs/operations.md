@@ -18,26 +18,34 @@ workloads must remain untouched.
 | --- | --- | --- |
 | API replicas | `api-a`, `api-b`, ports 8082/8083 | `api-a`, `api-b`, ports 8082/8083 |
 | Private gateway | `gateway-edge`, port 8080 | `gateway-edge`, port 8080 |
-| Engines | `engine-gpu0` through `engine-gpu3`, 8100–8103 | `engine-pod2-7b-gpuN`, 8200+N |
-| Workers | `worker-gpu0` through `worker-gpu3`, metrics 9101–9104 | `worker-pod2-7b-migN`, metrics 9200+N |
+| Engines | `engine-gptoss120`, port 8300, TP4 | 14 short 7B engines, one long 7B engine, one CPU-expert 120B engine |
+| Workers | `worker-gptoss120`, metrics 9105 | 16 model-specific workers; see [second-Pod inventory](pod2.md) |
 | Supervisor | `supervisor-primary` | `supervisor-main` |
 | Service manifest | `.runtime/services-primary.json` | `.runtime/pod2-services.json` |
 | Supervisor configuration | `../supervisor.env` | `.env.supervisor-pod2` |
 | API configuration | `../api-a.env`, `../api-b.env` | `.env.api-a`, `.env.api-b` |
 
-Primary engine configurations are `.env.engine7b-gpuN-16` for `N=0..3`; their
-workers use `.env.worker7b-gpuN`. Each engine now permits 16 sequences; each
-worker has `WORKER_MAX_INFLIGHT=16` and `WORKER_TOKEN_BUDGET=65536`, reserving a
-4,096-token context per slot. BF16, 4,096 batched tokens, prefix caching off and
-the 0.24 GPU memory fraction are unchanged. The canonical manifest references
-these per-GPU engine files; `.env.engine7b` remains the earlier eight-sequence
-template. Private rollback copies are in `.runtime/primary-retune16-20261024/`.
-All four engines passed the free-memory gate, logged 77,024 KV tokens and served
-16 simultaneous generations with an observed engine-running peak of 16 before
-their workers were activated. See the [tuning evidence](../ops/reports/primary-retune-16seq-2026-10-24.json)
-and its [exact executed controller source](../ops/reports/primary-retune16-controller-2026-10-24.py).
-The dated controller is a historical execution record, not a routine restart
-command; use the current manifest and process manager for maintenance.
+The primary now serves `openai/gpt-oss-120b` on four shared H100s with tensor
+parallelism. Its context is 18,440 tokens, prefill chunk 1,024, prefix cache off,
+and native MXFP4 experts / BF16 remaining tensors use the pinned vLLM Marlin
+path. The canonical manifest selects the active sequence limit and matching
+worker token budget. Check the [current measured configuration](100b-validation.md)
+and manifest before maintenance; dated tuning controllers are execution records,
+not routine restart commands. A worker reserves the full configured context
+per slot, and its inference timeout is 1,800 seconds with independent lease
+heartbeats. The final measured configuration uses
+`.env.engine-gptoss120-tp4-seq8` and `.env.worker-gptoss120-tp4-seq8`: eight slots,
+token budget 147,520 and memory fraction 0.26. Its healthy four-slot rollback
+is `.runtime/primary-gptoss120-seq8-tune/`, containing `original-manifest.json`,
+`engine-seq4.env` and `worker-seq4.env`.
+
+The old four-engine 7B deployment and its 16-sequence measurements are historical.
+Its rollback manifest is preserved privately under
+`.runtime/primary-tp4-transition-v1/original-services.json`. Do not start those
+engines alongside the 120B engine. Restoring that topology is an explicit drained
+maintenance operation with fresh per-device memory gates, not automatic failover.
+The second Pod's 120B lane uses a separately pinned native llama.cpp binary and
+GGUF with CPU experts; it does not use the vLLM interpreter.
 
 Consult the manifest and model/device reports for the actual deployed engine
 count and UUID mapping. A physical GPU UUID is not a unique MIG instance ID.
@@ -78,7 +86,7 @@ working directory and Linux process-start identity before signaling it.
 
 ```sh
 /root/batchforge-runtime/venv/bin/python ops/manage.py status api --name a
-/root/batchforge-runtime/venv/bin/python ops/manage.py logs worker --name gpu0
+/root/batchforge-runtime/venv/bin/python ops/manage.py logs worker --name gptoss120
 /root/batchforge-runtime/venv/bin/python ops/manage.py status supervisor --name primary
 ```
 
@@ -88,6 +96,20 @@ unreadiness alone does not kill API processes. It refuses ambiguous process
 identity and ambiguous timed-out engine startup; resolve those conditions
 manually instead of launching duplicate model copies. Inspect the corresponding
 `.runtime/supervision-<manifest-stem>.json` and bounded event log.
+
+TP engines additionally record only children observed while their owned leader
+is live. After leader loss, cleanup validates boot ID, process start time,
+working directory and launch identity before using pidfds to terminate those
+observed members. Unknown or escaped children are not guessed. Admission must
+still require the exact device count and free memory of at least the configured
+fraction plus `ENGINE_GPU_MEMORY_MARGIN_MIB` on every device. This margin
+defaults to 512 MiB and accepts integers from 512 through 16,384; invalid
+settings fail before a device probe. The current primary TP4 deployment uses
+2,048 MiB because the original margin was below its observed resident memory;
+the secondary retains 512 MiB. The CPU-expert lane also requires the
+checkpoint size plus 80 GiB headroom against both host and visible cgroup limits.
+Direct `manage.py start` does not itself enforce these resource gates: maintenance
+and recovery operators must call the supervisor's `Manager.start_gate` first.
 
 Stop the supervisor before deliberate maintenance, otherwise it can restart the
 service being changed. Stopping the watchdog preserves its children. Restart it

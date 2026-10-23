@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "model": "Qwen/Qwen2.5-7B-Instruct-18k",
+  "tokenizer_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "dataset": "SQuAD 1.1 development",
+  "license": "CC BY-SA 4.0",
+  "source_url": "https://rajpurkar.github.io/SQuAD-explorer/",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "workload_sha256": "e944e11282943fc7bd3c8fcbdc0d8ee297e2f7eac2bb611d64be8090dc07129b",
+  "seed": 20261024,
+  "context_limit": 18440,
+  "input_sizes": [
+    128,
+    512,
+    2048,
+    8192,
+    16384
+  ],
+  "output_caps": [
+    32,
+    128,
+    512,
+    2048
+  ],
+  "repeats": 1,
+  "tasks": 20,
+  "prompt_tolerance_tokens": 8,
+  "chat_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+  "examples": {
+    "mix-0-128-32": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "output_token_cap": 32,
+      "class": "balanced"
+    },
+    "mix-0-128-128": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "output_token_cap": 128,
+      "class": "balanced"
+    },
+    "mix-0-128-512": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "output_token_cap": 512,
+      "class": "decode-heavy"
+    },
+    "mix-0-128-2048": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "output_token_cap": 2048,
+      "class": "decode-heavy"
+    },
+    "mix-0-512-32": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-512-128": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "output_token_cap": 128,
+      "class": "balanced"
+    },
+    "mix-0-512-512": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "output_token_cap": 512,
+      "class": "balanced"
+    },
+    "mix-0-512-2048": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "output_token_cap": 2048,
+      "class": "decode-heavy"
+    },
+    "mix-0-2048-32": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-2048-128": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "output_token_cap": 128,
+      "class": "prefill-heavy"
+    },
+    "mix-0-2048-512": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "output_token_cap": 512,
+      "class": "balanced"
+    },
+    "mix-0-2048-2048": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "output_token_cap": 2048,
+      "class": "balanced"
+    },
+    "mix-0-8192-32": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-8192-128": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "output_token_cap": 128,
+      "class": "prefill-heavy"
+    },
+    "mix-0-8192-512": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "output_token_cap": 512,
+      "class": "prefill-heavy"
+    },
+    "mix-0-8192-2048": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "output_token_cap": 2048,
+      "class": "balanced"
+    },
+    "mix-0-16384-32": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-16384-128": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "output_token_cap": 128,
+      "class": "prefill-heavy"
+    },
+    "mix-0-16384-512": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "output_token_cap": 512,
+      "class": "prefill-heavy"
+    },
+    "mix-0-16384-2048": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "output_token_cap": 2048,
+      "class": "prefill-heavy"
+    }
+  },
+  "limitations": [
+    "Real public text, not customer traffic or a quality evaluation",
+    "Output values are maximum lengths; actual generated tokens must come from engine usage",
+    "Input counts include rendered chat template and generation prefix; server usage must agree",
+    "Prefill/decode labels use requested input and output cap, not separate hardware timing"
+  ]
+}

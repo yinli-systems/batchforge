@@ -113,12 +113,23 @@ def evaluate(manifest, outputs):
                 duplicates += 1
                 continue
             observed.add(identifier)
-            choice = row["response"]["body"]["choices"][0]
-            truncated += choice.get("finish_reason") == "length"
-            content = choice["message"]["content"].strip()
             try:
+                choice = row["response"]["body"]["choices"][0]
+                truncated += choice.get("finish_reason") == "length"
+                content = choice["message"]["content"]
+                if not isinstance(content, str):
+                    raise ValueError("No final text")
                 # Strict contract: markdown fences are not a valid JSON body.
-                parsed = json.loads(content)
+                def reject_constant(value):
+                    raise ValueError("Nonfinite JSON constant")
+                def unique_object(pairs):
+                    value = {}
+                    for key, item in pairs:
+                        if key in value:
+                            raise ValueError("Duplicate JSON field")
+                        value[key] = item
+                    return value
+                parsed = json.loads(content, parse_constant=reject_constant, object_pairs_hook=unique_object)
                 if manifest["profile"] == "translate":
                     translation = parsed["translation_zh"]
                     if not isinstance(translation, str) or not translation.strip():
@@ -135,11 +146,12 @@ def evaluate(manifest, outputs):
                     analysis_lengths.append(len(parsed["analysis"].split()))
                 em, f1 = score(answer, expected[identifier]["gold_answers"])
                 results.append((em, f1))
-            except (ValueError, KeyError, TypeError):
+            except (ValueError, KeyError, TypeError, IndexError):
                 invalid += 1
                 results.append((0, 0))
     population = len(expected)
-    return {"expected": population, "observed_unique": len(observed), "missing": population-len(observed), "invalid_json_contract": invalid,
+    return {"evaluator_version": 2, "json_policy": "reject missing final text, nonfinite constants and duplicate keys",
+        "expected": population, "observed_unique": len(observed), "missing": population-len(observed), "invalid_json_contract": invalid,
         "unknown_outputs": unknown, "duplicate_outputs": duplicates, "length_truncated": truncated,
         "json_contract_success_rate_over_expected": (len(observed)-invalid)/population,
         "answer_exact_match_over_expected": sum(r[0] for r in results)/population if manifest["profile"] != "translate" else None,

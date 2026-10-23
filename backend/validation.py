@@ -68,8 +68,10 @@ def validate_rows(data: bytes, settings) -> list[dict]:
         if row.get("method") != "POST" or row.get("url") != "/v1/chat/completions":
             raise InvalidInput(f"Line {number}: only POST /v1/chat/completions is supported")
         body = row.get("body")
-        if not isinstance(body, dict) or body.get("model") != settings.model_name:
-            raise InvalidInput(f"Line {number}: model must be {settings.model_name}")
+        if not isinstance(body, dict) or body.get("model") not in settings.served_models():
+            raise InvalidInput(f"Line {number}: model is not in the configured model catalog")
+        if result and body["model"] != result[0]["body"]["model"]:
+            raise InvalidInput(f"Line {number}: every request in a batch must use the same model")
         messages = body.get("messages")
         if not isinstance(messages, list) or not 1 <= len(messages) <= 128:
             raise InvalidInput(f"Line {number}: messages must contain 1 to 128 messages")
@@ -85,10 +87,12 @@ def validate_rows(data: bytes, settings) -> list[dict]:
         tokens = body.get("max_tokens", body.get("max_completion_tokens", min(256, settings.max_output_tokens)))
         if type(tokens) is not int or not 1 <= tokens <= settings.max_output_tokens:
             raise InvalidInput(f"Line {number}: output tokens must be 1 to {settings.max_output_tokens}")
-        allowed = {"model", "messages", "max_tokens", "max_completion_tokens", "temperature", "top_p", "seed", "stop", "response_format", "stream", "n"}
+        allowed = {"model", "messages", "max_tokens", "max_completion_tokens", "temperature", "top_p", "seed", "stop", "response_format", "stream", "n", "reasoning_effort"}
         unknown = set(body) - allowed
         if unknown:
             raise InvalidInput(f"Line {number}: unsupported request fields: {', '.join(sorted(unknown))}")
+        if "reasoning_effort" in body and (not isinstance(body["reasoning_effort"], str) or body["reasoning_effort"] not in {"low", "medium", "high"}):
+            raise InvalidInput(f"Line {number}: reasoning_effort must be low, medium, or high")
         if "temperature" in body and (type(body["temperature"]) not in (int, float) or not 0 <= body["temperature"] <= 2):
             raise InvalidInput(f"Line {number}: temperature must be 0 to 2")
         if "top_p" in body and (type(body["top_p"]) not in (int, float) or not 0 < body["top_p"] <= 1):

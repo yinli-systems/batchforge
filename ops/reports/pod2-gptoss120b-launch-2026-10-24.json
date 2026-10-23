@@ -1,0 +1,414 @@
+{
+  "started_at": "2026-10-23T22:47:00.092940+00:00",
+  "status": "ready",
+  "model": "openai/gpt-oss-120b",
+  "total_parameters": 116829156672,
+  "model_sha256": "582bd40f6886200101f4c4ed9f25f3fe80cc14c86e9e2b37746cd8904a0c622d",
+  "model_revision": "7200b74bea78b0a2964ef9f3897eefa401e890ff",
+  "binary_sha256": "163bc895c6e471380b5e42be3f474ac1b9cc20e6cfdf967339a6c09cbc4dc4dd",
+  "llama_cpp_commit": "0ae0e1976670fac25f4e0ed864df30021accc764",
+  "selector": "MIG-bdcef49f-83bf-569a-907a-3e5a4feaa1fb",
+  "context_reservation_tokens": 18440,
+  "worker_slots": 1,
+  "cpu_moe_layers": 35,
+  "cpu_threads": 16,
+  "container_memory_available_before_bytes": 379651354624,
+  "minimum_reserved_host_headroom_bytes": 85899345920,
+  "source_manager_sha256": "cd15563e36f8a0a269378aff74e1b7bc42e575cb7a9062a73d28519bca3bcd85",
+  "source_backend_sha256": "d27fce11beb565b287d19bce61aa9c3edbf5cb802fd3630fa4788e7aeb31adb4",
+  "private_rollback_directory": "/root/batchforge-runtime/app/.runtime/rollback-gptoss120b-mig14-20261024",
+  "protected_service_count": 32,
+  "free_memory_before": {
+    "free": 25130827776,
+    "total": 25367150592
+  },
+  "engine_readiness": {
+    "health": {
+      "status": "ok"
+    },
+    "catalog": {
+      "models": [
+        {
+          "name": "openai/gpt-oss-120b",
+          "model": "openai/gpt-oss-120b",
+          "modified_at": "",
+          "size": "",
+          "digest": "",
+          "type": "model",
+          "description": "",
+          "tags": [
+            ""
+          ],
+          "capabilities": [
+            "completion"
+          ],
+          "parameters": "",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "",
+            "families": [
+              ""
+            ],
+            "parameter_size": "",
+            "quantization_level": ""
+          }
+        }
+      ],
+      "object": "list",
+      "data": [
+        {
+          "id": "openai/gpt-oss-120b",
+          "aliases": [
+            "openai/gpt-oss-120b"
+          ],
+          "tags": [],
+          "object": "model",
+          "architecture": {
+            "input_modalities": [
+              "text"
+            ],
+            "output_modalities": [
+              "text"
+            ]
+          },
+          "created": 1792795628,
+          "owned_by": "llamacpp",
+          "meta": {
+            "vocab_type": 2,
+            "n_vocab": 201088,
+            "n_ctx": 18688,
+            "n_ctx_train": 131072,
+            "n_embd": 2880,
+            "n_params": 116829156672,
+            "size": 63374323968,
+            "ftype": "MXFP4 MoE"
+          }
+        }
+      ]
+    }
+  },
+  "engine_pid": 123753,
+  "natural_generation": [
+    {
+      "output_cap": 32,
+      "elapsed_seconds": 2.5907353440125007,
+      "request_sha256": "3a421d3f52568143690765b6ed57349d01490e597564c8a50c7df03ae4ad8bee",
+      "usage": {
+        "completion_tokens": 32,
+        "prompt_tokens": 80,
+        "total_tokens": 112,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "response_text_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reasoning_text_sha256": "dea6dccaf76617f9d06f8ec6e0d22a1776915a00f132ac1f87faf3186eaf201f",
+      "final_text_nonempty": false,
+      "simple_arithmetic_matches": false,
+      "min_tokens_or_ignore_eos_used": false,
+      "natural_generation_mode": true,
+      "natural_stop": false
+    },
+    {
+      "output_cap": 128,
+      "elapsed_seconds": 1.0762311379949097,
+      "request_sha256": "aedf5ffa0019a459998e6b96d3989897a50693d4574c43cf5c3e4e377468512c",
+      "usage": {
+        "completion_tokens": 39,
+        "prompt_tokens": 80,
+        "total_tokens": 119,
+        "prompt_tokens_details": {
+          "cached_tokens": 75
+        }
+      },
+      "finish_reason": "stop",
+      "response_text_sha256": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+      "reasoning_text_sha256": "10dcb2c95281cc1ad55c8d13cb3edb4c009d1bc3fe5a555dabb9a724ce4d7aad",
+      "final_text_nonempty": true,
+      "simple_arithmetic_matches": true,
+      "min_tokens_or_ignore_eos_used": false,
+      "natural_generation_mode": true,
+      "natural_stop": true
+    }
+  ],
+  "gpu_memory_observation": {
+    "sample_count": 32,
+    "minimum_free_bytes": 20298989568,
+    "peak_used_bytes": 5068161024,
+    "total_bytes": 25367150592,
+    "samples": [
+      {
+        "observed_at": "2026-10-23T22:47:03.703783+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25300172800,
+        "used_bytes": 66977792
+      },
+      {
+        "observed_at": "2026-10-23T22:47:03.956308+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25297616896,
+        "used_bytes": 69533696
+      },
+      {
+        "observed_at": "2026-10-23T22:47:04.208482+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:04.460586+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:04.716963+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:04.974848+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:05.227796+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:05.480786+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:05.734039+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:05.987023+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:06.243559+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:06.496786+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:06.749772+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:07.002779+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:07.255860+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 25130827776,
+        "used_bytes": 236322816
+      },
+      {
+        "observed_at": "2026-10-23T22:47:07.508902+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 21748121600,
+        "used_bytes": 3619028992
+      },
+      {
+        "observed_at": "2026-10-23T22:47:07.763545+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20370292736,
+        "used_bytes": 4996857856
+      },
+      {
+        "observed_at": "2026-10-23T22:47:08.016675+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20343029760,
+        "used_bytes": 5024120832
+      },
+      {
+        "observed_at": "2026-10-23T22:47:08.269897+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:08.522986+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:08.775333+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:09.028549+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:09.281881+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:09.535132+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:09.788356+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:10.041498+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:10.294755+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:10.547194+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:10.800454+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:11.053552+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:11.306794+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      },
+      {
+        "observed_at": "2026-10-23T22:47:11.560363+00:00",
+        "nvml_return_code": 0,
+        "nvml_memory_return_code": 0,
+        "total_bytes": 25367150592,
+        "free_bytes": 20298989568,
+        "used_bytes": 5068161024
+      }
+    ],
+    "sm_utilization": "N/A unless independently available; not inferred from model activity"
+  },
+  "server_properties": {
+    "total_slots": 1,
+    "model_path": "/root/batchforge-runtime/models/gpt-oss-120b-GGUF/7200b74bea78b0a2964ef9f3897eefa401e890ff/gpt-oss-120b-MXFP4.gguf",
+    "build_info": "b0-unknown",
+    "configured_n_ctx": 18688,
+    "default_parameters_n_ctx": null
+  },
+  "server_properties_sha256": "170a5c5ab931ef296d4501297856ddbf888381673f34d7625996edb6ed18feb0",
+  "worker_pid": 124055,
+  "finished_at": "2026-10-23T22:47:12.989629+00:00",
+  "protected_services_unchanged": true,
+  "watchdog_restored": true,
+  "cache_limitation": "The repeated 128-token-cap natural probe reused 75 of 80 prompt tokens. Its latency is a warm-cache execution check, not a cold input benchmark."
+}
