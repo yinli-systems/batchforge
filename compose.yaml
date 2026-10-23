@@ -1,0 +1,108 @@
+name: batchforge
+services:
+  postgres:
+    image: postgres:17.6-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: batchforge
+      POSTGRES_USER: batchforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a strong POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U batchforge -d batchforge"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [private]
+  api:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://batchforge:${POSTGRES_PASSWORD}@postgres:5432/batchforge
+      BATCHFORGE_API_KEY: ${BATCHFORGE_API_KEY:?Set BATCHFORGE_API_KEY}
+      BATCHFORGE_WORKER_TOKEN: ${BATCHFORGE_WORKER_TOKEN:?Set a separate BATCHFORGE_WORKER_TOKEN}
+      MODEL_NAME: ${MODEL_NAME:-Qwen/Qwen2.5-0.5B-Instruct}
+      MAX_OUTPUT_TOKENS: ${MAX_OUTPUT_TOKENS:-2048}
+      LEASE_SECONDS: ${LEASE_SECONDS:-90}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [private]
+  worker:
+    build: .
+    restart: unless-stopped
+    command: ["python", "-m", "worker"]
+    stop_grace_period: 250s
+    environment:
+      CONTROL_PLANE_URL: http://api:8000
+      BATCHFORGE_WORKER_TOKEN: ${BATCHFORGE_WORKER_TOKEN:?Set BATCHFORGE_WORKER_TOKEN}
+      MODEL_NAME: ${MODEL_NAME:-Qwen/Qwen2.5-0.5B-Instruct}
+      INFERENCE_BASE_URLS: ${INFERENCE_BASE_URLS:-http://vllm:8000}
+      INFERENCE_API_KEY: ${INFERENCE_API_KEY:-}
+      WORKER_MAX_INFLIGHT: ${WORKER_MAX_INFLIGHT:-8}
+      WORKER_TOKEN_BUDGET: ${WORKER_TOKEN_BUDGET:-16384}
+      ENGINE_MAX_MODEL_LEN: ${ENGINE_MAX_MODEL_LEN:-2048}
+      WORKER_METRICS_HOST: 0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9101/readyz', timeout=2)"]
+      interval: 15s
+      timeout: 3s
+      retries: 4
+    networks: [private]
+  vllm:
+    profiles: [gpu]
+    build:
+      context: .
+      dockerfile: ops/Dockerfile.engine
+    image: batchforge-engine:0.10.2
+    restart: unless-stopped
+    ipc: host
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+    command:
+      - --model
+      - ${MODEL_NAME:-Qwen/Qwen2.5-0.5B-Instruct}
+      - --max-model-len
+      - ${ENGINE_MAX_MODEL_LEN:-2048}
+      - --gpu-memory-utilization
+      - ${ENGINE_GPU_MEMORY_UTILIZATION:-0.06}
+      - --max-num-seqs
+      - ${ENGINE_MAX_NUM_SEQS:-8}
+      - --enforce-eager
+      - --disable-log-requests
+    volumes:
+      - model-cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${GPU_DEVICE_ID:-0}"]
+              capabilities: [gpu]
+    networks: [private]
+  test-engine:
+    profiles: [test]
+    build: .
+    command: ["uvicorn", "worker.fake_engine:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      BATCHFORGE_TEST_ENGINE: "1"
+      MODEL_NAME: ${MODEL_NAME:-Qwen/Qwen2.5-0.5B-Instruct}
+      TEST_ENGINE_DELAY_SECONDS: ${TEST_ENGINE_DELAY_SECONDS:-0.01}
+      TEST_ENGINE_FAIL_FIRST: ${TEST_ENGINE_FAIL_FIRST:-0}
+    networks: [private]
+volumes:
+  postgres-data:
+  model-cache:
+networks:
+  private:

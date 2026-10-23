@@ -1,0 +1,4 @@
+# This matches the first measured deployment's engine stack. The explicit
+# Transformers ceiling prevents the incompatible Transformers 5 tokenizer API.
+FROM vllm/vllm-openai:v0.10.2
+RUN python -m pip install --no-cache-dir transformers==4.55.2 tokenizers==0.21.4 huggingface-hub==0.34.4

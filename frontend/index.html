@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b1017">
+    <meta name="description"
+          content="BatchForge — reliable, observable AI batch inference.">
+    <title>BatchForge · Inference control plane</title>
+    <link rel="icon"
+          href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%236ee7b7'/%3E%3Cpath d='m9 8 14 8-14 8V8Z' fill='%230b1017'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <a class="brand" href="#overview" aria-label="BatchForge overview"><span class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="m6 4 13 8-13 8V4Z" fill="currentColor" />
+            <path d="m6 4 7 8-7 8" stroke="#0c1515" stroke-width="1.5" />
+          </svg>
+        </span><span>BatchForge<span class="brand-dot">.</span></span></a>
+        <div class="workspace">
+          <span class="workspace-icon">W</span>
+          <div>
+            <strong>Inference workspace</strong><span>GPU batch control plane</span>
+          </div>
+          <span class="workspace-chevrons">⌃
+            <br>
+          ⌄</span>
+        </div>
+        <div class="nav-label">WORKSPACE</div>
+        <nav id="main-nav">
+          <a class="nav-item active" href="#overview" data-view="overview"><span data-icon="overview"></span>Overview</a>
+          <a class="nav-item" href="#batches" data-view="batches"><span data-icon="batches"></span>Batches<span id="nav-batch-count" class="nav-count" hidden></span></a>
+          <a class="nav-item" href="#workers" data-view="workers"><span data-icon="workers"></span>Workers<span id="nav-worker-dot" class="nav-status" hidden></span></a>
+        </nav>
+        <div class="nav-label nav-label-second">DEVELOPERS</div>
+        <a class="nav-item" href="#docs" data-view="docs"><span data-icon="code"></span>API reference<span class="nav-arrow">↗</span></a>
+        <div class="sidebar-bottom">
+          <div class="engine-card">
+            <div class="engine-card-title">
+              <span class="status-dot" id="sidebar-health-dot"></span><strong id="sidebar-health">Not connected</strong>
+            </div>
+            <p id="sidebar-health-detail">Connect to your inference cluster.</p>
+            <span class="engine-card-label">SELF-HOSTED · PRIVATE BY DEFAULT</span>
+          </div>
+          <button class="account-button" id="account-button">
+            <span class="account-avatar" data-icon="key"></span><span><strong id="account-label">Connect workspace</strong><small id="account-description">API key required</small></span><span class="account-menu">···</span>
+          </button>
+        </div>
+      </aside>
+      <div class="main-shell">
+        <header class="topbar">
+          <div class="breadcrumb">
+            <button class="mobile-menu icon-button"
+                    id="mobile-menu"
+                    aria-label="Toggle navigation"
+                    data-icon="menu"></button>
+            <span class="breadcrumb-home" data-icon="layers"></span><span class="breadcrumb-slash">/</span><span id="breadcrumb-view">Overview</span>
+          </div>
+          <div class="topbar-actions">
+            <span class="connection-badge" id="connection-badge"><span class="status-dot"></span>Disconnected</span><a href="#docs" class="topbar-docs">Documentation<span>↗</span></a>
+            <button class="icon-button"
+                    id="refresh-button"
+                    aria-label="Refresh data"
+                    title="Refresh data"
+                    data-icon="refresh"></button>
+          </div>
+        </header>
+        <main id="main-content" tabindex="-1">
+        </main>
+        <footer>
+          <span>BatchForge <span class="footer-divider">/</span> Inference, orchestrated.</span><span id="last-updated">Waiting for connection</span>
+        </footer>
+      </div>
+    </div>
+    <div id="toast-region"
+         class="toast-region"
+         role="status"
+         aria-live="polite"></div>
+    <dialog id="connect-dialog"
+            class="dialog connect-dialog"
+            aria-labelledby="connect-title">
+      <form id="connect-form">
+        <div class="dialog-header">
+          <span class="dialog-symbol" data-icon="key"></span>
+          <button class="icon-button"
+                  type="button"
+                  data-close-dialog="connect-dialog"
+                  aria-label="Close"
+                  data-icon="close"></button>
+        </div>
+        <span class="eyebrow">YOUR INFRASTRUCTURE. YOUR CONTROL.</span>
+        <h2 id="connect-title">Connect your workspace</h2>
+        <p class="dialog-description">
+          Enter the API key configured on your BatchForge server. Your key stays in this browser tab’s session storage.
+        </p>
+        <label class="field-label" for="api-key">Workspace API key</label>
+        <div class="password-field">
+          <input id="api-key"
+                 name="key"
+                 type="password"
+                 autocomplete="off"
+                 spellcheck="false"
+                 placeholder="Enter your API key"
+                 required>
+          <button class="icon-button"
+                  type="button"
+                  id="toggle-key"
+                  aria-label="Show API key"
+                  data-icon="eye"></button>
+        </div>
+        <div class="form-error" id="connect-error" role="alert" hidden></div>
+        <button class="button button-primary button-full"
+                type="submit"
+                id="connect-submit">
+          Connect workspace<span data-icon="arrow"></span>
+        </button>
+        <p class="security-note">
+          <span data-icon="lock"></span>Authenticated requests go to this server only.
+        </p>
+      </form>
+    </dialog>
+    <dialog id="create-dialog"
+            class="dialog create-dialog"
+            aria-labelledby="create-title">
+      <form id="create-form">
+        <div class="dialog-header">
+          <div>
+            <span class="eyebrow">BATCH INFERENCE</span>
+            <h2 id="create-title">Create a batch</h2>
+          </div>
+          <button class="icon-button"
+                  type="button"
+                  data-close-dialog="create-dialog"
+                  aria-label="Close"
+                  data-icon="close"></button>
+        </div>
+        <p class="dialog-description">
+          Upload OpenAI-compatible requests. We’ll durably queue each task and track every result.
+        </p>
+        <div class="form-grid">
+          <div>
+            <label class="field-label" for="batch-name">
+              Batch name <span class="optional">optional</span>
+            </label>
+            <input id="batch-name"
+                   maxlength="100"
+                   placeholder="e.g. Product catalog extraction">
+          </div>
+          <div>
+            <label class="field-label" for="batch-model">Model for sample</label>
+            <select id="batch-model">
+              <option value="">Loading models…</option>
+            </select>
+          </div>
+        </div>
+        <div class="input-tabs" role="tablist" aria-label="Input method">
+          <button class="input-tab active"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  data-input-mode="upload">Upload JSONL</button>
+          <button class="input-tab"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-input-mode="paste">Paste requests</button>
+        </div>
+        <div id="upload-pane">
+          <label class="dropzone" id="dropzone" for="batch-file">
+            <span class="upload-icon" data-icon="upload"></span><strong id="upload-label">Drop a JSONL file here</strong><span id="upload-description">or <u>browse files</u> · one request per line</span>
+            <input type="file"
+                   id="batch-file"
+                   accept=".jsonl,.ndjson,application/jsonl,application/x-ndjson">
+          </label>
+        </div>
+        <div id="paste-pane" hidden>
+          <label class="sr-only" for="batch-jsonl">JSONL requests</label>
+          <textarea id="batch-jsonl"
+                    class="code-input"
+                    spellcheck="false"
+                    placeholder='{"custom_id":"task-001","method":"POST","url":"/v1/chat/completions","body":{"model":"…","messages":[…]}}'></textarea>
+        </div>
+        <div class="sample-row">
+          <button class="text-button" type="button" id="load-sample">
+            <span data-icon="code"></span>Use extraction sample
+          </button>
+          <span id="input-line-count">JSONL format</span>
+        </div>
+        <div class="info-box">
+          <span data-icon="info"></span>
+          <p>
+            Each line needs a unique <code>custom_id</code>, <code>method</code>, <code>url</code>, and request <code>body</code>. Unfinished tasks expire 24 hours after submission. Processing starts when a worker is available.
+          </p>
+        </div>
+        <div class="form-error" id="create-error" role="alert" hidden></div>
+        <div class="dialog-footer">
+          <button class="button button-secondary"
+                  type="button"
+                  data-close-dialog="create-dialog">Cancel</button>
+          <button class="button button-primary" id="create-submit" type="submit">
+            <span data-icon="plus"></span>Create batch
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="confirm-dialog"
+            class="dialog confirm-dialog"
+            aria-labelledby="confirm-title">
+      <form id="confirm-form">
+        <div class="dialog-header">
+          <h2 id="confirm-title">Cancel this batch?</h2>
+          <button class="icon-button"
+                  type="button"
+                  data-close-dialog="confirm-dialog"
+                  aria-label="Close"
+                  data-icon="close"></button>
+        </div>
+        <p id="confirm-description" class="dialog-description">
+          Pending tasks will be cancelled. Already completed results remain available.
+        </p>
+        <div class="dialog-footer">
+          <button type="button"
+                  class="button button-secondary"
+                  data-close-dialog="confirm-dialog">Keep running</button>
+          <button type="submit" class="button button-danger" id="confirm-submit">Cancel batch</button>
+        </div>
+      </form>
+    </dialog>
+    <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+    <aside id="batch-drawer"
+           class="detail-drawer"
+           role="dialog"
+           aria-modal="true"
+           aria-label="Batch details"
+           tabindex="-1"
+           hidden>
+    </aside>
+    <noscript>
+      <div class="noscript">Enable JavaScript to use the BatchForge console. The REST API remains available.</div>
+    </noscript>
+  </body>
+</html>

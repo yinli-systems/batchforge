@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "test_only": true,
+  "observed_at": "2026-10-23T19:35:47.597941+00:00",
+  "elapsed_seconds": 16.597,
+  "transport": "real localhost HTTP",
+  "worker_crash": "SIGKILL after engine received a request",
+  "worker_restart_new_identity": true,
+  "lost_claim_acknowledgement": "upstream committed; proxy discarded response and returned503",
+  "stale_crashed_worker_completion_rejected": true,
+  "expired_attempts_recovered": 4,
+  "maximum_attempts_per_task": 2,
+  "completed_tasks": 10,
+  "unique_result_rows": 10,
+  "test_database_created_and_dropped": true,
+  "limitations": [
+    "Synthetic test engine; no GPU used or throughput claim",
+    "A503 proxy simulates lost claim acknowledgement after upstream commit"
+  ]
+}

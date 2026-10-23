@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "test_only": true,
+  "run_id": "failure-test-5dd587208fb7",
+  "observed_at": "2026-10-23T19:36:16.677893+00:00",
+  "lease_seconds": 5,
+  "elapsed_seconds": 7.112,
+  "cancellation_fences_heartbeat": true,
+  "cancellation_fences_completion": true,
+  "expired_lease_reclaimed": true,
+  "stale_completion_rejected": true,
+  "accepted_completion_replay_idempotent": true,
+  "single_durable_output_row": true,
+  "replay_response": {
+    "ok": true,
+    "duplicate": true
+  },
+  "limitations": [
+    "Protocol test with synthetic response; no model or GPU throughput measured"
+  ]
+}
