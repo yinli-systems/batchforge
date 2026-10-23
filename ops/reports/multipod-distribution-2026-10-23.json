@@ -1,0 +1,40 @@
+{
+  "run_id": "bench-24c85ed4a5ad",
+  "passed": true,
+  "completed": 512,
+  "elapsed_seconds": 9.929644,
+  "completed_tasks_per_second": 51.562776,
+  "accepted_results_by_worker": [
+    {
+      "worker_id": "batchforge-gpu0",
+      "accepted_results": 67,
+      "prompt_tokens": 4425,
+      "completion_tokens": 938
+    },
+    {
+      "worker_id": "batchforge-gpu1",
+      "accepted_results": 174,
+      "prompt_tokens": 11461,
+      "completion_tokens": 2436
+    },
+    {
+      "worker_id": "batchforge-gpu2",
+      "accepted_results": 73,
+      "prompt_tokens": 4825,
+      "completion_tokens": 1022
+    },
+    {
+      "worker_id": "batchforge-gpu3",
+      "accepted_results": 182,
+      "prompt_tokens": 12060,
+      "completion_tokens": 2548
+    },
+    {
+      "worker_id": "secondpod-blackwell-mig0",
+      "accepted_results": 16,
+      "prompt_tokens": 1053,
+      "completion_tokens": 224
+    }
+  ],
+  "multiple_pods_executed": true
+}

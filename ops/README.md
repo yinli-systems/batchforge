@@ -43,19 +43,26 @@ only after measuring memory, engine health, accepted quality, and task latency.
 
 ## Shared Runpod host without Docker
 
-Use an app-owned directory such as `/workspace/batchforge` and virtual
-environments. Do not install into the global interpreter. Install API/worker
-dependencies with `pip install -e '.[worker]'` inside `.venv`. Install the engine
-in a separate `.venv-vllm` with a tested pinned version (container example uses
-vLLM 0.11.1). Keep secrets in mode-600 `.env`; runtime files are private.
+The native deployment uses `/root/batchforge-runtime/app`, with API/worker
+dependencies in `/root/batchforge-runtime/venv` and the model server in
+`/root/batchforge-runtime/engine-venv`. The pod's `/workspace` FUSE mount did not
+support the runtime's file-copy/permission operations, so keep application runtime
+and virtual environments on the pod's native filesystem. Do not install into the
+global interpreter. Keep secrets in mode-600 `.env`; runtime files are private.
+
+The exercised engine stack pins vLLM 0.10.2, Transformers 4.55.2, Tokenizers
+0.21.4, and Hugging Face Hub 0.34.4. The explicit dependency pins avoid the
+incompatible Transformers 5 tokenizer API. `ops/Dockerfile.engine` carries the
+same pins. The container recipe has not been built in the current environment.
 
 ```sh
-.venv/bin/python ops/manage.py start api
-.venv/bin/python ops/manage.py start engine --name gpu0 --gpu 0 --port 8001 --python /workspace/batchforge/.venv-vllm/bin/python
-.venv/bin/python ops/manage.py start worker
-.venv/bin/python ops/manage.py status worker
-.venv/bin/python ops/manage.py logs engine --name gpu0
-.venv/bin/python ops/manage.py stop worker
+cd /root/batchforge-runtime/app
+/root/batchforge-runtime/venv/bin/python ops/manage.py start api --python /root/batchforge-runtime/venv/bin/python
+/root/batchforge-runtime/venv/bin/python ops/manage.py start engine --name gpu0 --gpu 0 --port 8001 --python /root/batchforge-runtime/engine-venv/bin/python
+/root/batchforge-runtime/venv/bin/python ops/manage.py start worker --python /root/batchforge-runtime/venv/bin/python
+/root/batchforge-runtime/venv/bin/python ops/manage.py status worker
+/root/batchforge-runtime/venv/bin/python ops/manage.py logs engine --name gpu0
+/root/batchforge-runtime/venv/bin/python ops/manage.py stop worker
 ```
 
 `ops/manage.py` is Linux-only. It checks the process start time and working
@@ -82,20 +89,48 @@ errors, timeouts, 429, and 5xx responses open an exponential endpoint cooldown
 immediately consume every task retry. Other healthy replicas remain eligible.
 Already received claims keep their heartbeat while waiting for a healthy engine.
 
+Busy workers wait for capacity events instead of sleeping between successful
+claims. Completing work wakes the claim loop immediately; a partial nonempty
+claim immediately fills remaining capacity from other ready batches. Only empty
+queues use jittered adaptive polling, starting at `WORKER_POLL_SECONDS` and
+doubling up to `max(WORKER_POLL_SECONDS, 2 seconds)`. Engine-readiness changes also
+wake the loop. Registration metadata includes `engine_count` and
+`ready_engine_count`, refreshed immediately when readiness changes as well as
+periodically. Worker liveness and model readiness are separate observations.
+
 ## Reproducible observed measurements
 
 Run real inference first and keep the resulting JSON report:
 
 ```sh
-python scripts/benchmark.py --tasks 1000 --batches 8 --max-tokens 64 --engine-label 'Qwen2.5-0.5B / H100 / vLLM' --report .runtime/real-benchmark.json
+python scripts/benchmark.py --tasks 1000 --batches 8 --max-tokens 64 --temperature 0 --engine-label 'Qwen2.5-0.5B / H100 / vLLM0.10.2' --workload-dir .runtime/benchmark-inputs --report .runtime/real-benchmark.json
 python -m pytest worker/tests -q
 ```
 
 The benchmark reads `BATCHFORGE_API_KEY` from the environment. It uploads JSONL,
 submits idempotent batches, waits for terminal states, downloads outputs, checks
 unique submitted IDs, and records actual token usage and observed wall-clock
-throughput. Failed or timed-out runs exit nonzero. It does not project a small
-test into a claimed daily capacity and does not evaluate task quality.
+throughput. The schema-version-2 report includes client-observed upload and
+batch-create p50/p95/max latencies; attempted and successful submission requests
+per second; batch turnaround distributions; exact prompt/output-limit/temperature
+configuration; and SHA256 of the concatenated generated JSONL bytes in batch
+index order. `--workload-dir` saves those exact files for audit or replay.
+
+Submission RPS counts only upload and create requests, including failed attempts;
+polling and result downloads are excluded. Each acknowledged batch is monitored
+immediately while other submissions continue. Turnaround starts before its create
+request and ends at the first terminal response observed by that client, so the
+poll interval adds observation delay. It is not per-task inference latency.
+Percentiles use linear interpolation and include their sample count.
+
+Failed creates retain safe status/type/phase diagnostics and any successfully
+observed batches in the report. The report records an uncertain create outcome
+when a transport error or server error could follow a commit; it never counts
+that task as acknowledged submission. `passed` requires every requested task to
+have a verified successful output. Partial, failed, and timed-out runs still
+write JSON and exit nonzero. Output-validation download time is reported
+separately from the submission-to-terminal throughput interval. The benchmark
+does not project a small test into daily capacity and does not evaluate quality.
 
 For deterministic HTTP integration tests only:
 
@@ -143,5 +178,5 @@ completed 10 tasks with 10 unique output rows and 4 recovered expired attempts;
 the [saved report](reports/http-chaos-2026-10-23.json) records the measurement.
 All responses in this test are marked synthetic; no GPU performance is measured.
 
-The pinned vLLM image and engine command follow [vLLM's official Docker docs](https://docs.vllm.ai/en/v0.11.1/deployment/docker/).
+The pinned vLLM image and engine command follow [vLLM's official Docker docs](https://docs.vllm.ai/en/v0.10.2/deployment/docker.html).
 Compose starts PostgreSQL/API in healthcheck order using [Docker's documented dependency semantics](https://docs.docker.com/reference/compose-file/services/#depends_on).

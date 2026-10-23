@@ -17,6 +17,7 @@ htmlcov/
 dist/
 build/
 *.tar.gz
+*.dump
 .tools/
 secrets/
 test-results/

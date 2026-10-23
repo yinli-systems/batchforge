@@ -2582,3 +2582,13 @@ select:focus {
   outline: 2px solid var(--green);
   outline-offset: 3px
 }
+
+.nav-status.warning {
+  background: var(--orange);
+}
+
+.gpu-tile.warming {
+  background: #2a231a;
+  border-color: #675034;
+  color: var(--orange);
+}

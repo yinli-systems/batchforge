@@ -34,5 +34,11 @@ jobs:
           python -m pip install --no-deps -e .
       - name: PostgreSQL correctness and worker failure tests
         run: python devtools/run_checks.py
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Console cancellation and retry acknowledgement regressions
+        run: node --test frontend/tests/*.test.js
       - name: Compile Python source
         run: python -m compileall -q backend worker ops scripts devtools

@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "observed_date_local": "2026-10-24",
+  "timezone": "Asia/Dubai",
+  "measurement_type": "deployment_and_real_inference_probe",
+  "hardware": {
+    "cuda_visible_device_count": 6,
+    "device0_name": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+    "device0_memory_total_bytes": 25367150592,
+    "device0_memory_free_before_app_bytes": 25122439168,
+    "memory_source": "torch.cuda.mem_get_info(0)",
+    "nvml_memory_query": "Insufficient Permissions",
+    "application_devices_used": [
+      0
+    ]
+  },
+  "runtime": {
+    "python": "3.12.3",
+    "torch": "2.8.0+cu128",
+    "vllm": "0.10.2",
+    "transformers": "4.55.2",
+    "tokenizers": "0.21.4",
+    "huggingface_hub": "0.34.4",
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "dtype": "float16",
+    "max_model_len": 2048,
+    "max_num_seqs": 8,
+    "gpu_memory_utilization_target": 0.12,
+    "enforce_eager": true,
+    "reported_weight_gib": 0.9267,
+    "reported_kv_cache_gib": 1.82
+  },
+  "engine_probe": {
+    "succeeded": true,
+    "elapsed_seconds": 0.0874,
+    "prompt_tokens": 34,
+    "completion_tokens": 8,
+    "total_tokens": 42,
+    "finish_reason": "length",
+    "output_chars": 33,
+    "initial_cold_start_probe_timed_out_seconds": 60,
+    "initial_timeout_root_cause": "not established",
+    "quality_evaluated": false,
+    "sustained_throughput_measured": false
+  },
+  "worker": {
+    "id": "secondpod-blackwell-mig0",
+    "name": "POD2/RTX-PRO-6000-Blackwell-MIG0",
+    "slots": 8,
+    "token_budget": 16384,
+    "metrics_bind": "127.0.0.1:9101",
+    "inference_url": "http://127.0.0.1:8100",
+    "control_url": "http://127.0.0.1:18082",
+    "readiness_status": 200,
+    "ready_engines": 1,
+    "counter_snapshot": {
+      "completed": 16,
+      "complete_requests_ok": 16,
+      "prompt_tokens": 1053,
+      "completion_tokens": 224
+    },
+    "counter_snapshot_is_batch_attribution": false,
+    "runtime_dependency_install": "repository requirements.txt, pip install --require-hashes, exit 0",
+    "final_ready_at_utc": "2026-10-23T20:06:49.072768+00:00",
+    "final_readiness_status": 200,
+    "private_config_mode_verified": "0600"
+  },
+  "transport": {
+    "type": "route_restricted_http_over_existing_authorized_interactive_ssh",
+    "remote_bind": "127.0.0.1",
+    "remote_port": 18082,
+    "operator_upstream": "http://127.0.0.1:8787",
+    "reverse_tcp_forwarding": "rejected by gateway",
+    "direct_mapped_ssh": "supplied key rejected",
+    "ssh_authentication_configuration_changed": false,
+    "max_body_bytes": 4194304,
+    "max_frame_bytes": 6291456,
+    "remote_concurrency_limit": 64,
+    "local_forwarding_threads": 32,
+    "upstream_timeout_seconds": 8,
+    "liveness_ping_seconds": 5,
+    "remote_liveness_timeout_seconds": 45,
+    "forwarded_request_snapshot": 74,
+    "forwarded_errors_snapshot": 0,
+    "temporary_operator_host_dependency": true,
+    "production_ha_link": false
+  },
+  "credential_scope": {
+    "worker_token_transfer_explicitly_authorized": true,
+    "remote_config_mode": "0600",
+    "tenant_key_copied": false,
+    "database_credentials_copied": false,
+    "ssh_private_key_copied": false,
+    "github_credentials_copied": false
+  },
+  "validation": {
+    "relay_http_stdio_boundary_test": "passed",
+    "actual_worker_completed_tasks_observed": true,
+    "legacy_application_relay_port_18080_cleanup": "verified exact app cwd, command/port and start identity; SIGTERM through pidfd",
+    "unrelated_workloads_stopped": false,
+    "relay_http_stdio_boundary_test_count": 2,
+    "final_runtime_hash_install_exit_status": 0
+  },
+  "limitations": [
+    "Only one of six CUDA-visible MIG devices was used.",
+    "Probe timing is not sustained task capacity or model quality.",
+    "Operator host and both SSH paths must stay available.",
+    "Separate batch report is required for per-worker attribution and end-to-end throughput."
+  ],
+  "idle_reconnect_test": {
+    "passed": true,
+    "before_at_utc": "2026-10-23T20:04:10.361079+00:00",
+    "before_inflight": 0,
+    "before_completed": 16,
+    "before_register_ok": 11,
+    "before_claim_ok": 76,
+    "old_broker_forwarded_final": 104,
+    "old_broker_upstream_errors_final": 0,
+    "remote_port_closed": true,
+    "closure_observed_at_utc": "2026-10-23T20:04:58.543931+00:00",
+    "port_closure_observation_seconds": 40.527,
+    "reconnected_ready_at_utc": "2026-10-23T20:05:51.540626+00:00",
+    "after_readiness_status": 200,
+    "same_worker_process_before_after": true,
+    "after_register_ok": 12,
+    "after_claim_ok_snapshot": 83,
+    "active_inference_interrupted": false,
+    "lease_expiry_exercised": false
+  }
+}

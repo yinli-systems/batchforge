@@ -18,7 +18,7 @@ Errors: `{ "error": { "message": "...", "type": "invalid_request_error", "code":
 - `POST /v1/batches/{id}/cancel` stops claims and fences outstanding attempts; returns batch.
 - `POST /v1/batches/{id}/retry` creates a new batch from failed tasks only; returns new batch (409 if no failures or source nonterminal).
 - `GET /v1/models` returns `{object:"list",data:[{id,object:"model",owned_by:"batchforge"}]}`.
-- `GET /v1/overview` returns `{stats:{total_batches,total_tasks,completed_tasks,failed_tasks,cancelled_tasks,queued_tasks,running_tasks,prompt_tokens,completion_tokens},throughput:[{timestamp,completed,failed,tokens}],workers:[{id,name,model,concurrency,status,last_seen_at}],recent_batches:[batch]}`.
+- `GET /v1/overview` returns `{stats:{total_batches,total_tasks,completed_tasks,failed_tasks,cancelled_tasks,queued_tasks,running_tasks,prompt_tokens,completion_tokens},throughput:[{timestamp,completed,failed,tokens}],workers:[{id,name,model,concurrency,status,last_seen_at,engine_count,ready_engine_count}],recent_batches:[batch]}`.
 
 Batch: `{id,object:"batch",endpoint,input_file_id,completion_window,status,created_at,in_progress_at,completed_at,failed_at,cancelled_at,output_file_id,error_file_id,request_counts:{total,completed,failed,cancelled,running,pending},metadata,errors?}`.
 Status: `in_progress|completed|failed|cancelled`. Results become available at terminal state. Partial completed results survive cancellation.
@@ -48,3 +48,5 @@ Limits configurable: upload bytes, tasks/batch, request bytes, max output tokens
 - Worker identity is trusted inside a cluster because all workers share one deployment secret. Use a private network and TLS at the ingress; per-worker mTLS identity and remote attestation are not implemented.
 - `/v1/overview` task/usage totals are tenant-scoped. Worker inventory exposes only deployment names, models, configured concurrency and liveness, never private worker metadata.
 - Bootstrap key insertion never re-enables revoked keys and does not revoke previous keys during rotation. Operator tooling: `python -m backend.admin create-tenant --name NAME`, `add-key --tenant-id ID`, `revoke-key --key-hash SHA256`. Generated key material appears once on stdout; only digests are stored.
+
+Worker `status` is process liveness (`online|offline`), not engine availability. `engine_count` and `ready_engine_count` are separately reported readiness counts, sanitized to integer 0..4096 or null when absent/invalid. No other worker metadata is returned.

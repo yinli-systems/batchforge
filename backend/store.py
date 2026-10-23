@@ -38,6 +38,18 @@ def batch_view(row):
     }
 
 
+def worker_view(row):
+    """Expose liveness and bounded readiness counts, never worker metadata."""
+    result = {key: row[key] for key in ("id", "name", "model", "concurrency", "status")}
+    result["last_seen_at"] = row["last_seen_at"].isoformat()
+    metadata = row.get("metadata")
+    metadata = metadata if isinstance(metadata, dict) else {}
+    for key in ("engine_count", "ready_engine_count"):
+        value = metadata.get(key)
+        result[key] = value if type(value) is int and 0 <= value <= 4096 else None
+    return result
+
+
 def file_view(row):
     return {"id": row["id"], "object": "file", "bytes": row["bytes"],
             "created_at": unix(row["created_at"]), "filename": row["filename"],
@@ -357,6 +369,6 @@ class Store:
         async with self.pool.connection() as conn:
             stats = await one(conn, "SELECT count(*) AS total_batches,COALESCE(sum(total_count),0) AS total_tasks,COALESCE(sum(completed_count),0) AS completed_tasks,COALESCE(sum(failed_count),0) AS failed_tasks,COALESCE(sum(cancelled_count),0) AS cancelled_tasks,COALESCE(sum(pending_count),0) AS queued_tasks,COALESCE(sum(running_count),0) AS running_tasks,COALESCE(sum(prompt_tokens),0) AS prompt_tokens,COALESCE(sum(completion_tokens),0) AS completion_tokens FROM batches WHERE tenant_id=%s", (tenant,))
             buckets = await (await conn.execute("SELECT date_trunc('hour',finished_at) AS timestamp,count(*) FILTER(WHERE status='completed') AS completed,count(*) FILTER(WHERE status='failed') AS failed,COALESCE(sum(prompt_tokens+completion_tokens) FILTER(WHERE status='completed'),0) AS tokens FROM attempts WHERE tenant_id=%s AND finished_at>=now()-interval '24 hours' GROUP BY 1 ORDER BY 1", (tenant,))).fetchall()
-            workers = await (await conn.execute("SELECT id,name,model,concurrency,last_seen_at,CASE WHEN last_seen_at>clock_timestamp()-(%s*interval '1 second') THEN 'online' ELSE 'offline' END AS status FROM workers ORDER BY last_seen_at DESC LIMIT 100", (self.settings.lease_seconds * 2,))).fetchall()
+            workers = await (await conn.execute("SELECT id,name,model,concurrency,metadata,last_seen_at,CASE WHEN last_seen_at>clock_timestamp()-(%s*interval '1 second') THEN 'online' ELSE 'offline' END AS status FROM workers ORDER BY last_seen_at DESC LIMIT 100", (self.settings.lease_seconds * 2,))).fetchall()
             batches = await (await conn.execute("SELECT * FROM batches WHERE tenant_id=%s ORDER BY created_at DESC,id DESC LIMIT 10", (tenant,))).fetchall()
-        return {"stats": {key: int(value) for key, value in stats.items()}, "throughput": [{**row, "timestamp": row["timestamp"].isoformat(), "tokens": int(row["tokens"])} for row in buckets], "workers": [{**row, "last_seen_at": row["last_seen_at"].isoformat()} for row in workers], "recent_batches": [batch_view(row) for row in batches]}
+        return {"stats": {key: int(value) for key, value in stats.items()}, "throughput": [{**row, "timestamp": row["timestamp"].isoformat(), "tokens": int(row["tokens"])} for row in buckets], "workers": [worker_view(row) for row in workers], "recent_batches": [batch_view(row) for row in batches]}

@@ -1,0 +1,52 @@
+{
+  "gpu_count": 4,
+  "gpus": [
+    {
+      "index": 0,
+      "name": "NVIDIA H100 80GB HBM3",
+      "capability": [
+        9,
+        0
+      ]
+    },
+    {
+      "index": 1,
+      "name": "NVIDIA H100 80GB HBM3",
+      "capability": [
+        9,
+        0
+      ]
+    },
+    {
+      "index": 2,
+      "name": "NVIDIA H100 80GB HBM3",
+      "capability": [
+        9,
+        0
+      ]
+    },
+    {
+      "index": 3,
+      "name": "NVIDIA H100 80GB HBM3",
+      "capability": [
+        9,
+        0
+      ]
+    }
+  ],
+  "versions": {
+    "torch": "2.8.0",
+    "vllm": "0.10.2",
+    "transformers": "4.55.2",
+    "tokenizers": "0.21.4",
+    "huggingface-hub": "0.34.4"
+  },
+  "cuda_runtime": "12.8",
+  "model_snapshots": [
+    "7ae557604adf67be50417f59c2c2f167def9a775"
+  ],
+  "gpu_memory_utilization": 0.06,
+  "max_model_len": 2048,
+  "max_num_seqs": 8,
+  "execution": "enforce-eager FP16; four independent TP1 replicas; shared host"
+}

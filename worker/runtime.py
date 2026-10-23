@@ -44,6 +44,9 @@ class Worker:
         self.metrics = Metrics()
         self.metrics.slots.set(settings.slots)
         self.stop = asyncio.Event()
+        self._capacity_changed = asyncio.Event()
+        self._ready_engine_count = 0
+        self._registered_ready_engine_count: int | None = None
         self.active: set[asyncio.Task] = set()
         self.engines = [Engine(url) for url in settings.inference_urls]
         self.lease_seconds = 90.0
@@ -83,12 +86,14 @@ class Worker:
         return value
 
     async def register(self) -> None:
+        ready_engine_count = self._ready_engine_count
         result = await self._post("/internal/workers/register", {
             "worker_id": self.config.worker_id,
             "name": self.config.name,
             "model": self.config.model,
             "concurrency": self.config.slots,
-            "metadata": {"engine_count": len(self.engines), "max_model_len": self.config.max_model_len,
+            "metadata": {"engine_count": len(self.engines), "ready_engine_count": ready_engine_count,
+                         "max_model_len": self.config.max_model_len,
                          "token_budget": self.config.token_budget, "version": "0.1.0"},
         })
         if result["worker_id"] != self.config.worker_id:
@@ -98,6 +103,7 @@ class Worker:
         if self.lease_seconds < 5 or self.heartbeat_seconds <= 0:
             raise ValueError("Unsafe lease configuration from control plane")
         self.metrics.registered = True
+        self._registered_ready_engine_count = ready_engine_count
 
     async def probe_engines(self) -> None:
         async def probe(engine: Engine) -> None:
@@ -124,6 +130,9 @@ class Worker:
         count = sum(engine.ready for engine in self.engines)
         self.metrics.engine_ready = count > 0
         self.metrics.engines.set(count)
+        if count != self._ready_engine_count:
+            self._ready_engine_count = count
+            self._capacity_changed.set()
 
     def _engine_unavailable(self, engine: Engine) -> None:
         engine.ready = False
@@ -278,17 +287,40 @@ class Worker:
         with contextlib.suppress(asyncio.TimeoutError):
             await asyncio.wait_for(self.stop.wait(), timeout=seconds)
 
+    def _task_finished(self, task: asyncio.Task) -> None:
+        self.active.discard(task)
+        self._capacity_changed.set()
+
+    async def _wait_for_capacity(self, seconds: float) -> None:
+        # Both events retain notifications sent before this wait is installed.
+        # The loop clears capacity notifications before reading current state,
+        # so a completion between state inspection and this wait cannot be lost.
+        stopping = asyncio.create_task(self.stop.wait())
+        changed = asyncio.create_task(self._capacity_changed.wait())
+        try:
+            await asyncio.wait({stopping, changed}, timeout=max(0, seconds),
+                               return_when=asyncio.FIRST_COMPLETED)
+        finally:
+            stopping.cancel()
+            changed.cancel()
+            await asyncio.gather(stopping, changed, return_exceptions=True)
+
     async def run(self) -> None:
         backoff = .5
+        idle_delay = self.config.poll_seconds
+        idle_cap = max(self.config.poll_seconds, 2.0)
         next_registration = 0.0
         probes = asyncio.create_task(self._probe_loop())
         try:
             while not self.stop.is_set():
+                self._capacity_changed.clear()
                 try:
-                    if time.monotonic() >= next_registration:
+                    if (time.monotonic() >= next_registration or
+                            self._registered_ready_engine_count != self._ready_engine_count):
                         await self.register()
                         next_registration = time.monotonic() + min(self.heartbeat_seconds, 20)
                     available = self.config.slots - len(self.active)
+                    wait_seconds = max(0, next_registration - time.monotonic())
                     if available and self.metrics.engine_ready:
                         result = await self._post("/internal/tasks/claim", {
                             "worker_id": self.config.worker_id, "model": self.config.model, "limit": min(available, 256),
@@ -299,9 +331,19 @@ class Worker:
                         for task in tasks:
                             future = asyncio.create_task(self.execute(task))
                             self.active.add(future)
-                            future.add_done_callback(self.active.discard)
+                            future.add_done_callback(self._task_finished)
+                        if tasks:
+                            # A claim may stop at one batch while more ready
+                            # batches remain. Fill the remaining capacity now.
+                            # Full workers then wait for a completion event.
+                            idle_delay = self.config.poll_seconds
+                            backoff = .5
+                            await asyncio.sleep(0)
+                            continue
+                        wait_seconds = min(wait_seconds, idle_delay * random.uniform(.8, 1.0))
+                        idle_delay = min(idle_delay * 2, idle_cap)
                     backoff = .5
-                    await self._pause(self.config.poll_seconds)
+                    await self._wait_for_capacity(wait_seconds)
                 except (httpx.HTTPError, ValueError, KeyError, StaleAttempt):
                     log.warning("Control plane unavailable; claims paused", exc_info=True)
                     await self._pause(backoff + random.random() * backoff * .2)

@@ -320,3 +320,24 @@ def test_real_http_four_concurrent_batches_32_tasks(client, tmp_path):
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait(timeout=5)
+
+
+def test_worker_liveness_readiness_counts_and_private_metadata_isolation(client):
+    body = {"worker_id": "readiness-worker", "name": "Readiness worker", "model": MODEL, "concurrency": 8, "metadata": {"engine_count": 2, "ready_engine_count": 0, "engine_urls": ["http://private-engine-secret-marker:8000"], "credential": "private-token-secret-marker"}}
+    response = client.post("/internal/workers/register", headers=INTERNAL, json=body)
+    assert response.status_code == 200
+    snapshot = client.get("/v1/overview", headers=PUBLIC)
+    worker = next(worker for worker in snapshot.json()["workers"] if worker["id"] == body["worker_id"])
+    assert worker["status"] == "online"
+    assert worker["engine_count"] == 2 and worker["ready_engine_count"] == 0
+    assert "metadata" not in worker and "engine_urls" not in worker and "credential" not in worker
+    assert "secret-marker" not in snapshot.text
+    body["metadata"]["ready_engine_count"] = 2
+    assert client.post("/internal/workers/register", headers=INTERNAL, json=body).status_code == 200
+    worker = client.get("/v1/overview", headers=PUBLIC).json()["workers"][0]
+    assert worker["status"] == "online" and worker["ready_engine_count"] == 2
+    for engine_count, ready_engine_count in ((True, -1), (4097, "2"), (None, 2.5)):
+        body["metadata"].update(engine_count=engine_count, ready_engine_count=ready_engine_count)
+        assert client.post("/internal/workers/register", headers=INTERNAL, json=body).status_code == 200
+        worker = client.get("/v1/overview", headers=PUBLIC).json()["workers"][0]
+        assert worker["engine_count"] is None and worker["ready_engine_count"] is None

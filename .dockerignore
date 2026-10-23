@@ -1,0 +1,13 @@
+.git
+.venv*
+.runtime
+.env
+.env.*
+**/__pycache__
+**/*.pyc
+**/*.egg-info
+.pytest_cache
+.tools
+secrets
+*.dump
+*.tar.gz

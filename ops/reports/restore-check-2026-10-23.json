@@ -1,0 +1,13 @@
+{
+  "observed_at": "2026-10-23T20:03:20.201337+00:00",
+  "passed": true,
+  "snapshot_sha256": "3e8f8adb371da78978674b6d440b525d6a2925f9df13fd11447d628dd5f3b904",
+  "restored_batches": 70,
+  "restored_tasks": 2091,
+  "restored_tokens": 169144,
+  "batch_task_count_mismatches": 0,
+  "usage_matches_batch_totals": true,
+  "destination": "new temporary local PostgreSQL cluster",
+  "live_database_modified": false,
+  "temporary_cluster_stopped_and_removed": true
+}

@@ -86,6 +86,27 @@ const storage = {
     } catch {}
   }
 };
+const retryAttemptStorageKey = 'batchforge-retry-attempts';
+function loadRetryAttempts() {
+  try {
+    const entries = JSON.parse(sessionStorage.getItem(retryAttemptStorageKey) || '[]');
+    if (!Array.isArray(entries)) return new Map();
+    return new Map(entries.filter(entry => Array.isArray(entry) && entry.length === 2 &&
+      typeof entry[0] === 'string' && typeof entry[1] === 'string'));
+  } catch {
+    return new Map();
+  }
+}
+const retryAttempts = loadRetryAttempts();
+function saveRetryAttempts() {
+  try {
+    sessionStorage.setItem(retryAttemptStorageKey, JSON.stringify([...retryAttempts]));
+  } catch {}
+}
+function newIdempotencyKey() {
+  return globalThis.crypto?.randomUUID?.() ||
+    `console-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
 const state = {
   key: storage.get(),
   connected: false,
@@ -129,7 +150,19 @@ const progress = batch => {
   return c.total ? Math.min(100, Math.round(completedCount(batch) / c.total * 100)) : 0
 };
 const batchName = batch => batch.metadata?.name || batch.metadata?.title || 'Untitled batch';
-const workerOnline = worker => ['online', 'healthy', 'active', 'ready'].includes(worker.status);
+const workerOnline = worker => worker.status === 'online';
+const engineCountReported = value => Number.isInteger(value) && value >= 0 && value <= 4096;
+const workerReadinessReported = worker => engineCountReported(worker.engine_count) &&
+  engineCountReported(worker.ready_engine_count);
+const workerReady = worker => workerOnline(worker) && workerReadinessReported(worker) &&
+  worker.ready_engine_count > 0;
+function workerHealth(worker) {
+  if (!workerOnline(worker)) return {label: 'Offline', style: 'failed'};
+  if (!workerReadinessReported(worker)) return {label: 'Readiness unknown', style: 'queued'};
+  if (!worker.ready_engine_count) return {label: 'Warming / degraded', style: 'queued'};
+  if (worker.ready_engine_count < worker.engine_count) return {label: 'Partially ready', style: 'queued'};
+  return {label: 'Ready', style: 'success'};
+}
 
 function hydrateIcons(scope = document) {
   $$('[data-icon]', scope).forEach(el => {
@@ -204,13 +237,16 @@ function updateConnection() {
   $('#account-description').textContent = state.connected ? 'Manage API connection' : 'API key required';
   const workers = state.overview?.workers || [];
   const online = workers.filter(workerOnline).length;
-  $('#sidebar-health').textContent = !state.connected ? 'Not connected' : online ? 'Cluster operational' :
-    'Waiting for workers';
-  $('#sidebar-health-detail').textContent = !state.connected ? 'Connect to your inference cluster.' : online ?
-    `${online} worker${online===1?'':'s'} available for inference.` :
-    'Start a GPU worker to process queued tasks.';
-  $('#sidebar-health-dot').className = `status-dot ${state.connected?(online?'healthy':'warning'):''}`;
+  const ready = workers.filter(workerReady).length;
+  const fullyReady = online > 0 && workers.filter(workerOnline).every(worker => workerHealth(worker).style === 'success');
+  $('#sidebar-health').textContent = !state.connected ? 'Not connected' : !online ? 'Waiting for workers' :
+    fullyReady ? 'Inference available' : ready ? 'Cluster partially ready' :
+    workers.some(worker => workerOnline(worker) && !workerReadinessReported(worker)) ? 'Readiness unknown' : 'Engines not ready';
+  $('#sidebar-health-detail').textContent = !state.connected ? 'Connect to your inference cluster.' :
+    `${ready} ready / ${online} connected workers.`;
+  $('#sidebar-health-dot').className = `status-dot ${state.connected?(fullyReady?'healthy':'warning'):''}`;
   $('#nav-worker-dot').hidden = !online;
+  $('#nav-worker-dot').classList.toggle('warning', !fullyReady);
   const active = (state.overview?.recent_batches || state.batches).filter(b => !terminal(b)).length;
   $('#nav-batch-count').textContent = number(active);
   $('#nav-batch-count').hidden = !state.connected || !active;
@@ -247,17 +283,22 @@ function overviewView() {
   const resolved = s ? Number(s.completed_tasks) + Number(s.failed_tasks) : 0;
   const success = resolved ? `${(Number(s.completed_tasks)/resolved*100).toFixed(1)}%` : '—';
   const workers = state.overview?.workers || [];
-  return `${pageHeading('Workspace overview','A clear view of every task, token, and worker.',`<a class="button button-secondary" href="#docs">${icon('code')}API reference</a>${createButton()}`)}${connectionBanner()}${errorBanner()}<div class="overview-intro"><span class="live-label"><span class="status-dot ${state.connected?'healthy':''}"></span>${state.connected?'LIVE WORKSPACE':'WORKSPACE PREVIEW'}</span><span>${state.connected?'All-time totals · tenant-scoped data':'Connect to view your cluster’s live activity'}</span></div><div class="metric-grid">${metricCard('Total tasks',s?number(s.total_tasks):dash,s?`<span class="dot"></span><strong>${number(s.queued_tasks)}</strong> queued · ${number(s.running_tasks)} running`:'Across all submitted batches','tasks')}${metricCard('Completed tasks',s?number(s.completed_tasks):dash,s?`<strong>${success}</strong> success among resolved tasks`:'Successfully processed requests','check')}${metricCard('Tokens processed',s?shortNumber(Number(s.prompt_tokens)+Number(s.completion_tokens)):dash,s?`${shortNumber(s.prompt_tokens)} input · ${shortNumber(s.completion_tokens)} output`:'Measured usage from worker results','tokens')}${metricCard('Active workers',state.overview?number(workers.filter(workerOnline).length):dash,state.overview?`${number(workers.length)} registered · ${number(workers.reduce((n,w)=>n+(workerOnline(w)?Number(w.concurrency)||0:0),0))} execution slots`:'Workers reporting to the control plane','workers')}</div><div class="overview-middle"><section class="panel throughput-panel"><div class="panel-header chart-header"><div><div class="panel-title"><h2>Task throughput</h2><span class="tiny-badge">COMPLETIONS</span></div><div class="panel-subtitle">Successful task completions by reporting interval</div></div><span class="period-label">${icon('clock')}Recent activity</span></div><div class="chart-summary"><span class="chart-total">${state.overview?number((state.overview.throughput||[]).reduce((n,b)=>n+Number(b.completed||0),0)):'—'}</span><span class="chart-summary-label">completed in shown window</span></div><div class="chart-container" id="throughput-chart"></div></section>${clusterPanel(workers)}</div><section class="panel"><div class="panel-header"><div class="panel-title"><h2>Recent batches</h2>${s?`<span class="tiny-badge">${number(s.total_batches)}</span>`:''}</div><a class="link-button" href="#batches">View all batches${icon('arrow')}</a></div>${batchTable(state.overview?.recent_batches?.slice(0,5)||[],true)}</section>`
+  return `${pageHeading('Workspace overview','A clear view of every task, token, and worker.',`<a class="button button-secondary" href="#docs">${icon('code')}API reference</a>${createButton()}`)}${connectionBanner()}${errorBanner()}<div class="overview-intro"><span class="live-label"><span class="status-dot ${state.connected?'healthy':''}"></span>${state.connected?'LIVE WORKSPACE':'WORKSPACE PREVIEW'}</span><span>${state.connected?'All-time totals · tenant-scoped data':'Connect to view your cluster’s live activity'}</span></div><div class="metric-grid">${metricCard('Total tasks',s?number(s.total_tasks):dash,s?`<span class="dot"></span><strong>${number(s.queued_tasks)}</strong> queued · ${number(s.running_tasks)} running`:'Across all submitted batches','tasks')}${metricCard('Completed tasks',s?number(s.completed_tasks):dash,s?`<strong>${success}</strong> success among resolved tasks`:'Successfully processed requests','check')}${metricCard('Tokens processed',s?shortNumber(Number(s.prompt_tokens)+Number(s.completion_tokens)):dash,s?`${shortNumber(s.prompt_tokens)} input · ${shortNumber(s.completion_tokens)} output`:'Measured usage from worker results','tokens')}${metricCard('Connected workers',state.overview?number(workers.filter(workerOnline).length):dash,state.overview?`${number(workers.length)} registered · ${number(workers.reduce((n,w)=>n+(Number(w.concurrency)||0),0))} registered slots`:'Workers reporting to the control plane','workers')}</div><div class="overview-middle"><section class="panel throughput-panel"><div class="panel-header chart-header"><div><div class="panel-title"><h2>Task throughput</h2><span class="tiny-badge">COMPLETIONS</span></div><div class="panel-subtitle">Successful task completions by reporting interval</div></div><span class="period-label">${icon('clock')}Recent activity</span></div><div class="chart-summary"><span class="chart-total">${state.overview?number((state.overview.throughput||[]).reduce((n,b)=>n+Number(b.completed||0),0)):'—'}</span><span class="chart-summary-label">completed in shown window</span></div><div class="chart-container" id="throughput-chart"></div></section>${clusterPanel(workers)}</div><section class="panel"><div class="panel-header"><div class="panel-title"><h2>Recent batches</h2>${s?`<span class="tiny-badge">${number(s.total_batches)}</span>`:''}</div><a class="link-button" href="#batches">View all batches${icon('arrow')}</a></div>${batchTable(state.overview?.recent_batches?.slice(0,5)||[],true)}</section>`
 }
 
 function clusterPanel(workers) {
-  const active = workers.filter(workerOnline);
-  const modelIds = [...new Set(active.map(w => w.model))];
-  return `<section class="panel cluster-panel"><div class="panel-header"><div class="panel-title"><h2>Worker cluster</h2></div><span class="tiny-badge">${state.connected?'LIVE':'NOT CONNECTED'}</span></div><div class="cluster-body"><div class="cluster-orbit">${Array.from({length:Math.min(3,Math.max(1,active.length))},()=>` <
-    div class = "gpu-tile ${active.length?'':'offline'}" > $ {
-      icon('workers')
-    } < /div>`).join('')}${active.length>3?`<span class="gpu-more">+${active.length-3}</span >
-    `:''}</div><div class="cluster-row"><span>Worker status</span><strong class="${active.length?'text-green':''}">${!state.connected?'—':active.length?'Operational':'No active workers'}</strong></div><div class="cluster-row"><span>Available workers</span><strong>${state.connected?`${active.length} / ${workers.length}`:'—'}</strong></div><div class="cluster-row"><span>Serving models</span><strong>${state.connected?modelIds.length:'—'}</strong></div></div><div class="cluster-footer"><span>Independent worker leases</span><a href="#workers">Inspect cluster${icon('arrow')}</a></div></section>`
+  const connected = workers.filter(workerOnline);
+  const ready = workers.filter(workerReady);
+  const models = [...new Set(ready.map(worker => worker.model))];
+  const fullyReady = connected.length > 0 && connected.every(worker => workerHealth(worker).style === 'success');
+  const unknown = connected.some(worker => !workerReadinessReported(worker));
+  const label = fullyReady ? 'Ready' : ready.length ? 'Partially ready' : connected.length ?
+    (unknown ? 'Readiness unknown' : 'Engines not ready') : 'No connected workers';
+  const tiles = (connected.length ? connected.slice(0, 3) : [null]).map(worker => {
+    const style = !worker ? 'offline' : workerHealth(worker).style === 'success' ? '' : 'warming';
+    return `<div class="gpu-tile ${style}">${icon('workers')}</div>`;
+  }).join('');
+  return `<section class="panel cluster-panel"><div class="panel-header"><div class="panel-title"><h2>Worker cluster</h2></div><span class="tiny-badge">${state.connected?'LIVE':'NOT CONNECTED'}</span></div><div class="cluster-body"><div class="cluster-orbit">${tiles}${connected.length>3?`<span class="gpu-more">+${connected.length-3}</span>`:''}</div><div class="cluster-row"><span>Inference status</span><strong class="${fullyReady?'text-green':connected.length?'text-orange':''}">${state.connected?label:'—'}</strong></div><div class="cluster-row"><span>Available workers</span><strong>${state.connected?`${ready.length} / ${connected.length}`:'—'}</strong></div><div class="cluster-row"><span>Ready models</span><strong>${state.connected?models.length:'—'}</strong></div></div><div class="cluster-footer"><span>Availability requires ready engines</span><a href="#workers">Inspect cluster${icon('arrow')}</a></div></section>`;
 }
 
 function batchTable(batches, compact = false) {
@@ -293,12 +334,15 @@ function batchesView() {
 
 function workersView() {
   const workers = state.overview?.workers || [];
-  return `${pageHeading('Worker cluster','Inspect the workers consuming your durable inference queue.',`<a class="button button-secondary" href="#docs">${icon('code')}Worker setup</a>`)}${connectionBanner()}${errorBanner()}${workers.length?`<div class="workers-grid">${workers.map(workerCard).join('')}</div>`:`<section class="panel">${emptyState('workers',state.connected?'No workers registered':'Connect to inspect your workers',state.connected?'Start a BatchForge worker connected to an OpenAI-compatible inference engine. Registered workers appear here automatically.':'Worker status, serving models, concurrency, and heartbeat health will appear after you connect.',state.connected?'':'Connect workspace','connect')}</section>`}<div class="panel worker-help"><h3>Execution is isolated from orchestration.</h3><p>GPU workers claim leased tasks, heartbeat during execution, and submit fenced results. If a worker disappears, unfinished tasks can be recovered without accepting stale attempts. Status and capacity here come from registered workers; GPU utilization requires separate engine telemetry.</p></div>`
+  return `${pageHeading('Worker cluster','Inspect the workers consuming your durable inference queue.',`<a class="button button-secondary" href="#docs">${icon('code')}Worker setup</a>`)}${connectionBanner()}${errorBanner()}${workers.length?`<div class="workers-grid">${workers.map(workerCard).join('')}</div>`:`<section class="panel">${emptyState('workers',state.connected?'No workers registered':'Connect to inspect your workers',state.connected?'Start a BatchForge worker connected to an OpenAI-compatible inference engine. Registered workers appear here automatically.':'Worker status, serving models, concurrency, and heartbeat health will appear after you connect.',state.connected?'':'Connect workspace','connect')}</section>`}<div class="panel worker-help"><h3>Execution is isolated from orchestration.</h3><p>GPU workers claim leased tasks, heartbeat during execution, and submit fenced results. If a worker disappears, unfinished tasks can be recovered without accepting stale attempts. Connected describes worker process liveness. Engine readiness is reported separately; configured slots do not guarantee available inference capacity. GPU utilization requires separate engine telemetry.</p></div>`
 }
 
-function workerCard(w) {
-  const alive = workerOnline(w);
-  return `<article class="panel worker-card"><div class="panel-header"><div class="worker-heading"><div class="worker-icon">${icon('workers')}</div><div><h2>${esc(w.name||w.id)}</h2><p>${esc(w.id)}</p></div></div><span class="status-badge ${alive?'success':'failed'}"><span class="status-dot"></span>${esc(w.status||'unknown')}</span></div><div class="worker-body"><dl class="worker-spec"><div><dt>Configured concurrency</dt><dd>${number(w.concurrency)} <span class="muted" style="font-size:10px">slots</span></dd></div><div><dt>Last heartbeat</dt><dd title="${esc(dateText(w.last_seen_at))}">${relativeTime(w.last_seen_at)}</dd></div></dl><div class="worker-model"><span>Serving model</span><span class="model-pill" title="${esc(w.model)}">${esc(w.model)}</span></div></div></article>`
+function workerCard(worker) {
+  const alive = workerOnline(worker);
+  const health = workerHealth(worker);
+  const readiness = workerReadinessReported(worker) ?
+    `${number(worker.ready_engine_count)} / ${number(worker.engine_count)}` : 'Not reported';
+  return `<article class="panel worker-card"><div class="panel-header"><div class="worker-heading"><div class="worker-icon">${icon('workers')}</div><div><h2>${esc(worker.name||worker.id)}</h2><p>${esc(worker.id)}</p></div></div><span class="status-badge ${health.style}"><span class="status-dot"></span>${health.label}</span></div><div class="worker-body"><dl class="worker-spec"><div><dt>Configured concurrency</dt><dd>${number(worker.concurrency)} <span class="muted" style="font-size:10px">registered slots</span></dd></div><div><dt>Ready engines</dt><dd class="${alive&&workerReady(worker)?'text-green':alive?'text-orange':''}">${readiness}</dd></div><div><dt>Worker process</dt><dd>${alive?'Connected':'Offline'}</dd></div><div><dt>Last heartbeat</dt><dd title="${esc(dateText(worker.last_seen_at))}">${relativeTime(worker.last_seen_at)}</dd></div></dl><div class="worker-model"><span>Configured model</span><span class="model-pill" title="${esc(worker.model)}">${esc(worker.model)}</span></div></div></article>`;
 }
 
 function codeBlock(label, text) {
@@ -653,8 +697,7 @@ async function createBatch(event) {
       });
       const name = $('#batch-name').value.trim();
       attempt = {
-        key: globalThis.crypto?.randomUUID?.() ||
-          `console-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        key: newIdempotencyKey(),
         payload: {
           input_file_id: uploaded.id,
           endpoint: '/v1/chat/completions',
@@ -767,42 +810,7 @@ async function refreshDetail() {
   }
 }
 
-function renderDrawer() {
-  const drawer = $('#batch-drawer');
-  const active = document.activeElement;
-  const focusedAction = drawer.contains(active) ? active?.dataset?.action : null;
-  const focusedFile = drawer.contains(active) ? active?.dataset?.downloadFile : null;
-  const scrollTop = drawer.scrollTop;
-  const b = state.detail;
-  if (!b) {
-    $('#batch-drawer').innerHTML =
-      `<div class="drawer-header"><h2>Batch details</h2><button class="icon-button" data-action="close-drawer" aria-label="Close details">${icon('close')}</button></div><div class="empty-state"><span class="spinner"></span><p style="margin-top:15px">Loading batch…</p></div>`;
-    return
-  }
-  const c = counts(b);
-  const errors = state.detailErrors.length ? state.detailErrors : (Array.isArray(b.errors?.data) ? b.errors
-    .data : Array.isArray(b.errors) ? b.errors : []);
-  const detailItems = [
-    ['Created', dateText(b.created_at)],
-    ['Started', dateText(b.in_progress_at)],
-    ['Finished', dateText(b.completed_at || b.failed_at || b.cancelled_at)],
-    ['Endpoint', b.endpoint],
-    ['Completion window', b.completion_window],
-    ['Input file', b.input_file_id]
-  ];
-  $('#batch-drawer').innerHTML =
-    `<div class="drawer-header"><div><span class="eyebrow">BATCH DETAILS</span><h2>${esc(batchName(b))}</h2><span class="batch-id">${esc(b.id)}</span></div><button class="icon-button" data-action="close-drawer" aria-label="Close details">${icon('close')}</button></div><div class="drawer-body"><div class="drawer-status-row">${statusBadge(b.status)}<button class="link-button" data-action="refresh-detail">${icon('refresh')}Refresh</button></div><div class="drawer-progress"><div class="progress-meta"><span>${number(completedCount(b))} of ${number(c.total)} tasks resolved</span><span>${progress(b)}%</span></div><div class="progress-track"><div class="progress-fill ${b.status==='in_progress'?'running':''}" style="width:${progress(b)}%"></div></div></div><section class="drawer-section"><dl class="detail-grid">${[['Completed',c.completed],['Failed',c.failed],['Running',c.running],['Pending',c.pending],['Cancelled',c.cancelled],['Total requests',c.total]].map(([label,value])=>`<div class="detail-item"><dt>${label}</dt><dd class="${label==='Completed'?'text-green':label==='Failed'&&value?'text-red':''}">${number(value)}</dd></div>`).join('')}</dl></section><section class="drawer-section"><h3>Results & recovery</h3><div class="drawer-actions">${b.output_file_id?`<button class="button button-secondary" data-download-file="${esc(b.output_file_id)}" data-filename="${esc(b.id)}-output.jsonl">${icon('download')}Download output</button>`:''}${b.error_file_id?`<button class="button button-secondary" data-download-file="${esc(b.error_file_id)}" data-filename="${esc(b.id)}-errors.jsonl">${icon('download')}Download errors</button>`:''}${terminal(b)&&c.failed?`<button class="button button-secondary" data-action="retry-batch">${icon('refresh')}Retry ${number(c.failed)} failed</button>`:''}${!terminal(b)?`<button class="button button-danger" data-action="cancel-batch">${icon('stop')}Cancel batch</button>`:''}</div><p class="drawer-note">${terminal(b)?'Retry creates a new batch from failed tasks only. Existing results are retained.':'Result files become available when this batch reaches a terminal state. Accepted results are retained if you cancel.'}</p></section>${errors.length?`<section class="drawer-section"><h3>Task errors <span class="muted">· preview, up to 30</span></h3><div class="task-errors">${errors.map(e=>`<div class="task-error"><strong>${esc(e.custom_id||e.code||'Task error')}</strong><p>${esc(e.error?.message||e.message||e.error?.code||'Unknown error')}</p></div>`).join('')}</div></section>`:''}<section class="drawer-section"><h3>Execution details</h3><dl class="detail-list">${detailItems.map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl></section>${b.usage?`<section class="drawer-section"><h3>Token usage</h3><dl class="detail-list"><div><dt>Input tokens</dt><dd>${number(b.usage.prompt_tokens)}</dd></div><div><dt>Output tokens</dt><dd>${number(b.usage.completion_tokens)}</dd></div></dl></section>`:'<p class="drawer-note">Token usage is reported in workspace totals from accepted worker responses. Per-batch token breakdown is not exposed by this API version.</p>'}${Object.keys(b.metadata||{}).length?` <
-    section class = "drawer-section" > < h3 > Metadata <
-    /h3>${codeBlock('JSON',JSON.stringify(b.metadata,null,2))}</section > `:''}</div>`;
-  drawer.scrollTop = scrollTop;
-  if (focusedAction) drawer.querySelector(`[data-action="${focusedAction}"]`)?.focus({
-    preventScroll: true
-  });
-  else if (focusedFile) $$('[data-download-file]', drawer).find(el => el.dataset.downloadFile === focusedFile)
-    ?.focus({
-      preventScroll: true
-    })
-}
+function renderDrawer(){const drawer=$('#batch-drawer');const active=document.activeElement;const focusedAction=drawer.contains(active)?active?.dataset?.action:null;const focusedFile=drawer.contains(active)?active?.dataset?.downloadFile:null;const scrollTop=drawer.scrollTop;const b=state.detail;if(!b){$('#batch-drawer').innerHTML=`<div class="drawer-header"><h2>Batch details</h2><button class="icon-button" data-action="close-drawer" aria-label="Close details">${icon('close')}</button></div><div class="empty-state"><span class="spinner"></span><p style="margin-top:15px">Loading batch…</p></div>`;return}const c=counts(b);const errors=state.detailErrors.length?state.detailErrors:(Array.isArray(b.errors?.data)?b.errors.data:Array.isArray(b.errors)?b.errors:[]);const detailItems=[['Created',dateText(b.created_at)],['Started',dateText(b.in_progress_at)],['Finished',dateText(b.completed_at||b.failed_at||b.cancelled_at)],['Endpoint',b.endpoint],['Completion window',b.completion_window],['Input file',b.input_file_id]];$('#batch-drawer').innerHTML=`<div class="drawer-header"><div><span class="eyebrow">BATCH DETAILS</span><h2>${esc(batchName(b))}</h2><span class="batch-id">${esc(b.id)}</span></div><button class="icon-button" data-action="close-drawer" aria-label="Close details">${icon('close')}</button></div><div class="drawer-body"><div class="drawer-status-row">${statusBadge(b.status)}<button class="link-button" data-action="refresh-detail">${icon('refresh')}Refresh</button></div><div class="drawer-progress"><div class="progress-meta"><span>${number(completedCount(b))} of ${number(c.total)} tasks resolved</span><span>${progress(b)}%</span></div><div class="progress-track"><div class="progress-fill ${b.status==='in_progress'?'running':''}" style="width:${progress(b)}%"></div></div></div><section class="drawer-section"><dl class="detail-grid">${[['Completed',c.completed],['Failed',c.failed],['Running',c.running],['Pending',c.pending],['Cancelled',c.cancelled],['Total requests',c.total]].map(([label,value])=>`<div class="detail-item"><dt>${label}</dt><dd class="${label==='Completed'?'text-green':label==='Failed'&&value?'text-red':''}">${number(value)}</dd></div>`).join('')}</dl></section><section class="drawer-section"><h3>Results & recovery</h3><div class="drawer-actions">${b.output_file_id?`<button class="button button-secondary" data-download-file="${esc(b.output_file_id)}" data-filename="${esc(b.id)}-output.jsonl">${icon('download')}Download output</button>`:''}${b.error_file_id?`<button class="button button-secondary" data-download-file="${esc(b.error_file_id)}" data-filename="${esc(b.id)}-errors.jsonl">${icon('download')}Download errors</button>`:''}${terminal(b)&&c.failed?`<button class="button button-secondary" data-action="retry-batch">${icon('refresh')}Retry ${number(c.failed)} failed</button>`:''}${!terminal(b)?`<button class="button button-danger" data-action="cancel-batch">${icon('stop')}Cancel batch</button>`:''}</div><p class="drawer-note">${terminal(b)?'Retry creates a new batch from failed tasks only. Existing results are retained.':'Result files become available when this batch reaches a terminal state. Accepted results are retained if you cancel.'}</p></section>${errors.length?`<section class="drawer-section"><h3>Task errors <span class="muted">· preview, up to 30</span></h3><div class="task-errors">${errors.map(e=>`<div class="task-error"><strong>${esc(e.custom_id||e.code||'Task error')}</strong><p>${esc(e.error?.message||e.message||e.error?.code||'Unknown error')}</p></div>`).join('')}</div></section>`:''}<section class="drawer-section"><h3>Execution details</h3><dl class="detail-list">${detailItems.map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl></section>${b.usage?`<section class="drawer-section"><h3>Token usage</h3><dl class="detail-list"><div><dt>Input tokens</dt><dd>${number(b.usage.prompt_tokens)}</dd></div><div><dt>Output tokens</dt><dd>${number(b.usage.completion_tokens)}</dd></div></dl></section>`:'<p class="drawer-note">Token usage is reported in workspace totals from accepted worker responses. Per-batch token breakdown is not exposed by this API version.</p>'}${Object.keys(b.metadata||{}).length?`<section class="drawer-section"><h3>Metadata</h3>${codeBlock('JSON',JSON.stringify(b.metadata,null,2))}</section>`:''}</div>`;drawer.scrollTop=scrollTop;if(focusedAction)drawer.querySelector(`[data-action="${focusedAction}"]`)?.focus({preventScroll:true});else if(focusedFile)$$('[data-download-file]',drawer).find(el=>el.dataset.downloadFile===focusedFile)?.focus({preventScroll:true})}
 async function downloadFile(button) {
   const fileId = button.dataset.downloadFile;
   button.disabled = true;
@@ -831,12 +839,20 @@ async function downloadFile(button) {
 }
 async function retryBatch(button) {
   const id = state.detailId;
-  if (!id) return;
+  if (!id || button.disabled) return;
   button.disabled = true;
+  if (!retryAttempts.has(id)) {
+    retryAttempts.set(id, newIdempotencyKey());
+    saveRetryAttempts();
+  }
   try {
     const batch = await api(`/v1/batches/${encodeURIComponent(id)}/retry`, {
-      method: 'POST'
+      method: 'POST',
+      headers: {'Idempotency-Key': retryAttempts.get(id)}
     });
+    if (!batch?.id) throw new APIError('The retry response did not include a batch ID. Retry safely with the same attempt.', 502);
+    retryAttempts.delete(id);
+    saveRetryAttempts();
     toast('A new batch was created for failed tasks.');
     await refresh({
       silent: true,
@@ -845,6 +861,7 @@ async function retryBatch(button) {
     await openBatch(batch.id)
   } catch (error) {
     toast(error.message, 'error');
+  } finally {
     button.disabled = false
   }
 }
@@ -855,11 +872,21 @@ async function cancelBatch(event) {
   const button = $('#confirm-submit');
   button.disabled = true;
   try {
-    await api(`/v1/batches/${encodeURIComponent(id)}/cancel`, {
+    const batch = await api(`/v1/batches/${encodeURIComponent(id)}/cancel`, {
       method: 'POST'
     });
     $('#confirm-dialog').close();
-    toast('Batch cancelled. Accepted results were preserved.');
+    if (state.detailId === id) {
+      state.detail = batch;
+      renderDrawer();
+    }
+    const messages = {
+      cancelled: 'Batch cancelled. Accepted results were preserved.',
+      completed: 'Batch already completed before cancellation. Results are available.',
+      failed: 'Batch already failed before cancellation. Inspect its task errors.',
+      expired: 'Batch already expired before cancellation. Accepted results remain available.'
+    };
+    toast(messages[batch.status] || `Current batch status: ${(batch.status || 'unknown').replaceAll('_', ' ')}.`);
     await refreshDetail();
     await refresh({
       silent: true,

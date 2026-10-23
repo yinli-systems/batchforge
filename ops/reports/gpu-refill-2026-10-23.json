@@ -1,0 +1,744 @@
+{
+  "schema_version": 2,
+  "run_id": "bench-69e6747bd03c",
+  "observed_at": "2026-10-23T19:56:22.147718+00:00",
+  "passed": true,
+  "measurement": "client observed submission through terminal observation; output validation measured separately",
+  "engine_label": "4x H100 shared / Qwen2.5-0.5B / vLLM0.10.2 FP16 eager /32slots /event-driven-refill",
+  "test_fixture_detected": false,
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "requested_tasks": 1024,
+  "submitted_tasks": 1024,
+  "batches": 32,
+  "accepted_batches": 32,
+  "terminal_batches": 32,
+  "requested_max_output_tokens": 64,
+  "elapsed_seconds": 13.125905,
+  "completed": 1024,
+  "failed": 0,
+  "cancelled": 0,
+  "unfinished_batch_ids": [],
+  "submission_errors": [],
+  "output_validation_errors": [],
+  "completed_tasks_per_second": 78.013669,
+  "observed_prompt_tokens": 68992,
+  "observed_completion_tokens": 14336,
+  "output_custom_ids_unique": true,
+  "output_custom_ids_known": true,
+  "output_rows_match_completed": true,
+  "batch_counts_match_submission": true,
+  "batch_ids": [
+    "batch_95c64e438eda9bfbec2e8a693977013e",
+    "batch_a93f60d24d8e2f4831272af70666cbbd",
+    "batch_ff138e7d45dfedb6f2804e7353b3fa36",
+    "batch_49fa8b427671d31574b40b1063c1ff2e",
+    "batch_1a8771e74a01c7bcc9d827bc60156ec3",
+    "batch_1dae676669855662fb8998029df67088",
+    "batch_c21fbd18f23c4acd42ce2c814bb13f0c",
+    "batch_4e989820b9868bfec9209e13d97d4df6",
+    "batch_fa8e6e0c991bc28efc0cfd83c0c480a6",
+    "batch_9f16d565bd369cb2caeb469769e2b27f",
+    "batch_7da040e8271066f7ca9660647eb0e736",
+    "batch_6e004eb6b53deda86c3ad3b87c100f30",
+    "batch_8c5d4a6fd571d9bacc751e5df45de8ff",
+    "batch_490e0102a66981b8cc9712f10bc67d26",
+    "batch_86b74aeafaf2f8ffa1624790e7c94448",
+    "batch_23077acc2ff337766841ce477d7dff1c",
+    "batch_f281c708320dc19c576ab6493ae9802e",
+    "batch_5acb229d0a275079ab5b87bc8870db31",
+    "batch_86d804337a7ad19e8af015f7a54809be",
+    "batch_0308ea72c4628288ea81540c544840e2",
+    "batch_3df1f590260708df5b21d41c36fa74dd",
+    "batch_3e067b568295d6e1b425479deea8b29b",
+    "batch_2803f1e56d6d4b130d7fa36581a6abf4",
+    "batch_12a67aaa1e5d159fc7cf1434d1d27efe",
+    "batch_6c17c1ec4e5256acdd292102a8d7e0c9",
+    "batch_760c97771702e849972c371f57c5eb78",
+    "batch_ae15a43e974d725fecea0242e9dcddb4",
+    "batch_91636670799a5f104d4c8b9c40f268c2",
+    "batch_3dd9225dbe9f4482a7a7c1759fe621e7",
+    "batch_d97298c830e907f8375c588988d370fd",
+    "batch_55b5e49e11938e90c1f332c43632493b",
+    "batch_6496fbfc5edb97b3adabd7436de25161"
+  ],
+  "workload": {
+    "sha256": "3a5228747003d607761618be8dcf5f926bdac55c8e6d824a657623023fc31fcd",
+    "hash_definition": "concatenated exact JSONL bytes in batch_index order",
+    "bytes": 353024,
+    "generation_seconds": 0.007979,
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "prompt": "Return a concise JSON object with label=positive for this review: the product works well.",
+    "message_template": "Request {custom_id}. {prompt}",
+    "max_tokens": 64,
+    "temperature": 0,
+    "tasks_per_batch": [
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32
+    ]
+  },
+  "submission": {
+    "elapsed_seconds": 0.501838,
+    "attempted_http_requests": 64,
+    "successful_http_requests": 64,
+    "requests_per_second": 127.531208,
+    "successful_requests_per_second": 127.531208,
+    "accepted_batches_per_second": 63.765604,
+    "accepted_tasks_per_second": 2040.499328,
+    "upload_latency_seconds": {
+      "samples": 32,
+      "p50": 0.114581,
+      "p95": 0.131421,
+      "max": 0.134732,
+      "mean": 0.116596
+    },
+    "create_latency_seconds": {
+      "samples": 32,
+      "p50": 0.188141,
+      "p95": 0.283802,
+      "max": 0.288895,
+      "mean": 0.19152
+    },
+    "latency_population": "all attempted requests, including failures",
+    "request_population": "POST /v1/files and POST /v1/batches only; excludes polling and downloads"
+  },
+  "batch_turnaround_seconds": {
+    "samples": 32,
+    "p50": 7.579251,
+    "p95": 12.421746,
+    "max": 12.921738,
+    "mean": 7.575091
+  },
+  "batch_after_acceptance_seconds": {
+    "samples": 32,
+    "p50": 7.468111,
+    "p95": 12.200006,
+    "max": 12.742297,
+    "mean": 7.383571
+  },
+  "batch_upload_to_terminal_seconds": {
+    "samples": 32,
+    "p50": 7.700731,
+    "p95": 12.547092,
+    "max": 13.034667,
+    "mean": 7.691688
+  },
+  "percentile_method": "linear interpolation at (n-1)*p",
+  "output_validation_seconds": 0.264245,
+  "poll_interval_seconds": 0.5,
+  "per_batch_deadline_seconds": 600,
+  "batch_observations": [
+    {
+      "index": 0,
+      "tasks": 32,
+      "batch_id": "batch_95c64e438eda9bfbec2e8a693977013e",
+      "status": "completed",
+      "upload_seconds": 0.134732,
+      "create_seconds": 0.168137,
+      "turnaround_seconds": 4.803992,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 1,
+      "tasks": 32,
+      "batch_id": "batch_a93f60d24d8e2f4831272af70666cbbd",
+      "status": "completed",
+      "upload_seconds": 0.105909,
+      "create_seconds": 0.229594,
+      "turnaround_seconds": 4.836787,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 2,
+      "tasks": 32,
+      "batch_id": "batch_ff138e7d45dfedb6f2804e7353b3fa36",
+      "status": "completed",
+      "upload_seconds": 0.105751,
+      "create_seconds": 0.138787,
+      "turnaround_seconds": 5.307659,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 3,
+      "tasks": 32,
+      "batch_id": "batch_49fa8b427671d31574b40b1063c1ff2e",
+      "status": "completed",
+      "upload_seconds": 0.105783,
+      "create_seconds": 0.255449,
+      "turnaround_seconds": 5.852854,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 4,
+      "tasks": 32,
+      "batch_id": "batch_1a8771e74a01c7bcc9d827bc60156ec3",
+      "status": "completed",
+      "upload_seconds": 0.105829,
+      "create_seconds": 0.108926,
+      "turnaround_seconds": 5.818386,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 5,
+      "tasks": 32,
+      "batch_id": "batch_1dae676669855662fb8998029df67088",
+      "status": "completed",
+      "upload_seconds": 0.131191,
+      "create_seconds": 0.253325,
+      "turnaround_seconds": 11.935443,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 6,
+      "tasks": 32,
+      "batch_id": "batch_c21fbd18f23c4acd42ce2c814bb13f0c",
+      "status": "completed",
+      "upload_seconds": 0.131357,
+      "create_seconds": 0.152924,
+      "turnaround_seconds": 8.341524,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 7,
+      "tasks": 32,
+      "batch_id": "batch_4e989820b9868bfec9209e13d97d4df6",
+      "status": "completed",
+      "upload_seconds": 0.1315,
+      "create_seconds": 0.089074,
+      "turnaround_seconds": 7.82807,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 8,
+      "tasks": 32,
+      "batch_id": "batch_fa8e6e0c991bc28efc0cfd83c0c480a6",
+      "status": "completed",
+      "upload_seconds": 0.100758,
+      "create_seconds": 0.269201,
+      "turnaround_seconds": 3.839444,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 9,
+      "tasks": 32,
+      "batch_id": "batch_9f16d565bd369cb2caeb469769e2b27f",
+      "status": "completed",
+      "upload_seconds": 0.101066,
+      "create_seconds": 0.153962,
+      "turnaround_seconds": 4.287634,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 10,
+      "tasks": 32,
+      "batch_id": "batch_7da040e8271066f7ca9660647eb0e736",
+      "status": "completed",
+      "upload_seconds": 0.12509,
+      "create_seconds": 0.269624,
+      "turnaround_seconds": 11.432693,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 11,
+      "tasks": 32,
+      "batch_id": "batch_6e004eb6b53deda86c3ad3b87c100f30",
+      "status": "completed",
+      "upload_seconds": 0.125151,
+      "create_seconds": 0.288895,
+      "turnaround_seconds": 12.443503,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 12,
+      "tasks": 32,
+      "batch_id": "batch_8c5d4a6fd571d9bacc751e5df45de8ff",
+      "status": "completed",
+      "upload_seconds": 0.125297,
+      "create_seconds": 0.191639,
+      "turnaround_seconds": 6.860655,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 13,
+      "tasks": 32,
+      "batch_id": "batch_490e0102a66981b8cc9712f10bc67d26",
+      "status": "completed",
+      "upload_seconds": 0.125504,
+      "create_seconds": 0.148453,
+      "turnaround_seconds": 12.403944,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 14,
+      "tasks": 32,
+      "batch_id": "batch_86b74aeafaf2f8ffa1624790e7c94448",
+      "status": "completed",
+      "upload_seconds": 0.125695,
+      "create_seconds": 0.18363,
+      "turnaround_seconds": 10.916869,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 15,
+      "tasks": 32,
+      "batch_id": "batch_23077acc2ff337766841ce477d7dff1c",
+      "status": "completed",
+      "upload_seconds": 0.125834,
+      "create_seconds": 0.196809,
+      "turnaround_seconds": 11.936084,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 16,
+      "tasks": 32,
+      "batch_id": "batch_f281c708320dc19c576ab6493ae9802e",
+      "status": "completed",
+      "upload_seconds": 0.125978,
+      "create_seconds": 0.118494,
+      "turnaround_seconds": 10.369424,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 17,
+      "tasks": 32,
+      "batch_id": "batch_5acb229d0a275079ab5b87bc8870db31",
+      "status": "completed",
+      "upload_seconds": 0.117422,
+      "create_seconds": 0.288885,
+      "turnaround_seconds": 2.316017,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 18,
+      "tasks": 32,
+      "batch_id": "batch_86d804337a7ad19e8af015f7a54809be",
+      "status": "completed",
+      "upload_seconds": 0.111621,
+      "create_seconds": 0.118691,
+      "turnaround_seconds": 1.774411,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 19,
+      "tasks": 32,
+      "batch_id": "batch_0308ea72c4628288ea81540c544840e2",
+      "status": "completed",
+      "upload_seconds": 0.111859,
+      "create_seconds": 0.273073,
+      "turnaround_seconds": 2.8186,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 20,
+      "tasks": 32,
+      "batch_id": "batch_3df1f590260708df5b21d41c36fa74dd",
+      "status": "completed",
+      "upload_seconds": 0.112044,
+      "create_seconds": 0.110774,
+      "turnaround_seconds": 7.323272,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 21,
+      "tasks": 32,
+      "batch_id": "batch_3e067b568295d6e1b425479deea8b29b",
+      "status": "completed",
+      "upload_seconds": 0.112929,
+      "create_seconds": 0.179441,
+      "turnaround_seconds": 12.921738,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 22,
+      "tasks": 32,
+      "batch_id": "batch_2803f1e56d6d4b130d7fa36581a6abf4",
+      "status": "completed",
+      "upload_seconds": 0.113186,
+      "create_seconds": 0.219751,
+      "turnaround_seconds": 9.872813,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 23,
+      "tasks": 32,
+      "batch_id": "batch_12a67aaa1e5d159fc7cf1434d1d27efe",
+      "status": "completed",
+      "upload_seconds": 0.11146,
+      "create_seconds": 0.087169,
+      "turnaround_seconds": 7.330432,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 24,
+      "tasks": 32,
+      "batch_id": "batch_6c17c1ec4e5256acdd292102a8d7e0c9",
+      "status": "completed",
+      "upload_seconds": 0.113057,
+      "create_seconds": 0.143633,
+      "turnaround_seconds": 6.310631,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 25,
+      "tasks": 32,
+      "batch_id": "batch_760c97771702e849972c371f57c5eb78",
+      "status": "completed",
+      "upload_seconds": 0.113363,
+      "create_seconds": 0.184643,
+      "turnaround_seconds": 7.877601,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 26,
+      "tasks": 32,
+      "batch_id": "batch_ae15a43e974d725fecea0242e9dcddb4",
+      "status": "completed",
+      "upload_seconds": 0.114418,
+      "create_seconds": 0.255173,
+      "turnaround_seconds": 10.926294,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 27,
+      "tasks": 32,
+      "batch_id": "batch_91636670799a5f104d4c8b9c40f268c2",
+      "status": "completed",
+      "upload_seconds": 0.114745,
+      "create_seconds": 0.279644,
+      "turnaround_seconds": 10.416701,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 28,
+      "tasks": 32,
+      "batch_id": "batch_3dd9225dbe9f4482a7a7c1759fe621e7",
+      "status": "completed",
+      "upload_seconds": 0.115171,
+      "create_seconds": 0.227549,
+      "turnaround_seconds": 3.288814,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 29,
+      "tasks": 32,
+      "batch_id": "batch_d97298c830e907f8375c588988d370fd",
+      "status": "completed",
+      "upload_seconds": 0.106293,
+      "create_seconds": 0.084597,
+      "turnaround_seconds": 1.707902,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 30,
+      "tasks": 32,
+      "batch_id": "batch_55b5e49e11938e90c1f332c43632493b",
+      "status": "completed",
+      "upload_seconds": 0.115385,
+      "create_seconds": 0.220905,
+      "turnaround_seconds": 9.404674,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    },
+    {
+      "index": 31,
+      "tasks": 32,
+      "batch_id": "batch_6496fbfc5edb97b3adabd7436de25161",
+      "status": "completed",
+      "upload_seconds": 0.115701,
+      "create_seconds": 0.237803,
+      "turnaround_seconds": 8.898043,
+      "request_counts": {
+        "total": 32,
+        "completed": 32,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    }
+  ],
+  "limitations": [
+    "Not a daily capacity forecast",
+    "Token lengths are measured from outputs, not guaranteed by the prompt",
+    "Batch turnaround starts before POST /v1/batches and ends at first client-observed terminal response; polling adds observation delay",
+    "No per-task inference latency or quality evaluation",
+    "Accepted counts require a received create acknowledgement; uncertain create errors may have committed server-side"
+  ]
+}
