@@ -18,6 +18,7 @@ from .scheduling import estimate_work, profile_from_metadata
 from .blob_storage import BlobCatalog, LocalBlobStore, S3BlobStore, BlobExpired
 from .result_archival import ResultArchiver
 from .retention import guard_retention_errors
+from .admission_metrics import admission_stage, observed_connection, observed_transaction
 
 
 class APIError(Exception):
@@ -123,7 +124,8 @@ class Store:
         digest = body_hash(body)
         # New-key accounting and conflict/replay resolution use the same tenant
         # umbrella as task/file admission, including during the v8-compatible roll.
-        await conn.execute('SELECT id FROM tenants WHERE id=%s FOR NO KEY UPDATE', (tenant,))
+        with admission_stage('idempotency_tenant_lock'):
+            await conn.execute('SELECT id FROM tenants WHERE id=%s FOR NO KEY UPDATE', (tenant,))
         if self.schema_version >= 11:
             await conn.execute('SELECT public.batchforge_idempotency_admit(%s,%s,%s)', (tenant, scope, key))
         await conn.execute("INSERT INTO idempotency(tenant_id,scope,key,body_hash) VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING", (tenant, scope, key, digest))
@@ -142,7 +144,7 @@ class Store:
             return None
         if not 1 <= len(key) <= 128:
             raise APIError(400, 'Idempotency-Key must contain 1 to 128 characters')
-        async with self.pool.connection() as conn:
+        async with observed_connection(self.pool) as conn:
             if self.schema_version >= 11:
                 await conn.execute('SELECT public.batchforge_idempotency_check(%s,%s,%s)', (tenant, scope, key))
             row = await one(conn, 'SELECT body_hash,response FROM idempotency WHERE tenant_id=%s AND scope=%s AND key=%s', (tenant, scope, key))
@@ -159,57 +161,75 @@ class Store:
         # from overshooting the configured queue bound. NO KEY UPDATE stays
         # compatible with KEY SHARE locks acquired by tenant foreign keys
         # (including the preceding idempotency insert).
-        await conn.execute("SELECT id FROM tenants WHERE id=%s FOR NO KEY UPDATE", (tenant,))
+        with admission_stage('tenant_lock'):
+            await conn.execute("SELECT id FROM tenants WHERE id=%s FOR NO KEY UPDATE", (tenant,))
         if self.schema_version >= 9:
             # Limits/counters are database-owned. An API environment flag cannot
             # disable the installed triggers or widen another replica's policy.
-            await conn.execute('SELECT public.batchforge_retention_lock(%s)', (tenant,))
-        queued = await one(conn, "SELECT COALESCE(sum(pending_count+running_count),0) AS n FROM batches WHERE tenant_id=%s AND status='in_progress'", (tenant,))
+            with admission_stage('retention_lock'):
+                await conn.execute('SELECT public.batchforge_retention_lock(%s)', (tenant,))
+        with admission_stage('queue_precheck'):
+            queued = await one(conn, "SELECT COALESCE(sum(pending_count+running_count),0) AS n FROM batches WHERE tenant_id=%s AND status='in_progress'", (tenant,))
         if queued["n"] + len(rows) > self.settings.max_queued_tasks_per_tenant:
             raise APIError(429, "Tenant queue limit reached", "queue_limit")
-        await conn.execute("INSERT INTO tenant_queues(tenant_id,model) VALUES(%s,%s) ON CONFLICT DO NOTHING", (tenant, model))
-        await conn.execute("SELECT tenant_id FROM tenant_queues WHERE tenant_id=%s AND model=%s FOR UPDATE", (tenant, model))
-        await conn.execute("UPDATE tenant_queues SET pending_count=pending_count+%s,next_ready_at=LEAST(next_ready_at,clock_timestamp()) WHERE tenant_id=%s AND model=%s", (len(rows), tenant, model))
+        with admission_stage('queue_insert'):
+            await conn.execute("INSERT INTO tenant_queues(tenant_id,model) VALUES(%s,%s) ON CONFLICT DO NOTHING", (tenant, model))
+        with admission_stage('queue_lock'):
+            await conn.execute("SELECT tenant_id FROM tenant_queues WHERE tenant_id=%s AND model=%s FOR UPDATE", (tenant, model))
+        with admission_stage('queue_update'):
+            await conn.execute("UPDATE tenant_queues SET pending_count=pending_count+%s,next_ready_at=LEAST(next_ready_at,clock_timestamp()) WHERE tenant_id=%s AND model=%s", (len(rows), tenant, model))
         bid = identifier("batch")
-        row = await one(conn, "INSERT INTO batches(id,tenant_id,input_file_id,model,status,metadata,total_count,pending_count) VALUES(%s,%s,%s,%s,'in_progress',%s,%s,%s) RETURNING *", (bid, tenant, input_file_id, model, Jsonb(metadata), len(rows), len(rows)))
-        if self.schema_version >= 6 and runtime_source is not None:
-            await conn.execute('UPDATE batches SET runtime_fingerprint=%s,runtime_compatibility_scope=%s WHERE id=%s',
-                (runtime_source.get('runtime_fingerprint'), runtime_source.get('runtime_compatibility_scope', 'legacy_unverified'), bid))
-        async with conn.cursor() as cursor:
-            if self.settings.scheduler_policy == 'legacy':
-                await cursor.executemany("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts) VALUES(%s,%s,%s,%s,%s,%s,'pending',%s)", [(identifier("task"), tenant, bid, task["custom_id"], model, Jsonb(task["body"]), self.settings.max_attempts) for task in rows])
-            else:
-                values = []
-                for task in rows:
-                    work = estimate_work(task['body'])
-                    values.append((identifier('task'), tenant, bid, task['custom_id'], model,
-                        Jsonb(task['body']), self.settings.max_attempts, work['estimated_input_tokens'],
-                        work['estimated_output_tokens'], work['estimate_source']))
-                await cursor.executemany("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts,estimated_input_tokens,estimated_output_tokens,estimate_source) VALUES(%s,%s,%s,%s,%s,%s,'pending',%s,%s,%s,%s)", values)
+        with admission_stage('batch_insert'):
+            row = await one(conn, "INSERT INTO batches(id,tenant_id,input_file_id,model,status,metadata,total_count,pending_count) VALUES(%s,%s,%s,%s,'in_progress',%s,%s,%s) RETURNING *", (bid, tenant, input_file_id, model, Jsonb(metadata), len(rows), len(rows)))
+            if self.schema_version >= 6 and runtime_source is not None:
+                await conn.execute('UPDATE batches SET runtime_fingerprint=%s,runtime_compatibility_scope=%s WHERE id=%s',
+                    (runtime_source.get('runtime_fingerprint'), runtime_source.get('runtime_compatibility_scope', 'legacy_unverified'), bid))
+        with admission_stage('task_insert'):
+            async with conn.cursor() as cursor:
+                if self.settings.scheduler_policy == 'legacy':
+                    await cursor.executemany("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts) VALUES(%s,%s,%s,%s,%s,%s,'pending',%s)", [(identifier("task"), tenant, bid, task["custom_id"], model, Jsonb(task["body"]), self.settings.max_attempts) for task in rows])
+                else:
+                    values = []
+                    for task in rows:
+                        work = estimate_work(task['body'])
+                        values.append((identifier('task'), tenant, bid, task['custom_id'], model,
+                            Jsonb(task['body']), self.settings.max_attempts, work['estimated_input_tokens'],
+                            work['estimated_output_tokens'], work['estimate_source']))
+                    await cursor.executemany("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts,estimated_input_tokens,estimated_output_tokens,estimate_source) VALUES(%s,%s,%s,%s,%s,%s,'pending',%s,%s,%s,%s)", values)
         return batch_view(row)
 
     async def create(self, tenant, body, key):
-        scope = "/v1/batches"
-        external_rows = None
-        if self.blobs:
-            previous = await self.committed_response(tenant, scope, key, body)
-            if previous is not None:
-                return previous
-            # Network object I/O must not hold an idempotency lock or pool slot.
-            external_rows = validate_rows(await self.blobs.read_input(tenant, body['input_file_id']), self.settings)
-        async with self.pool.connection() as conn, conn.transaction():
-            previous = await self.idempotency(conn, tenant, scope, key, body)
-            if previous is not None:
-                return previous
-            file = await one(conn, "SELECT * FROM files WHERE id=%s AND tenant_id=%s AND kind='input'", (body["input_file_id"], tenant))
-            if not file:
-                raise APIError(404, "Input file not found", "not_found")
-            rows = external_rows if external_rows is not None else validate_rows(bytes(file['content']), self.settings)
+        with admission_stage('total'):
+            scope = "/v1/batches"
+            external_rows = None
             if self.blobs:
-                await self.blobs.admit_batch(conn, tenant, file['id'], len(rows))
-            result = await self.create_rows(conn, tenant, file["id"], rows, body.get("metadata", {}))
-            await self.remember(conn, tenant, scope, key, result)
-            return result
+                with admission_stage('idempotency_precheck'):
+                    previous = await self.committed_response(tenant, scope, key, body)
+                if previous is not None:
+                    return previous
+                # Network object I/O must not hold an idempotency lock or pool slot.
+                with admission_stage('input_read_validate'):
+                    external_rows = validate_rows(await self.blobs.read_input(tenant, body['input_file_id']), self.settings)
+            async with observed_connection(self.pool) as conn, observed_transaction(conn):
+                with admission_stage('idempotency'):
+                    previous = await self.idempotency(conn, tenant, scope, key, body)
+                if previous is not None:
+                    return previous
+                with admission_stage('input_lookup'):
+                    file = await one(conn, "SELECT * FROM files WHERE id=%s AND tenant_id=%s AND kind='input'", (body["input_file_id"], tenant))
+                if not file:
+                    raise APIError(404, "Input file not found", "not_found")
+                rows = external_rows
+                if rows is None:
+                    with admission_stage('inline_validation'):
+                        rows = validate_rows(bytes(file['content']), self.settings)
+                if self.blobs:
+                    with admission_stage('input_admission'):
+                        await self.blobs.admit_batch(conn, tenant, file['id'], len(rows))
+                result = await self.create_rows(conn, tenant, file["id"], rows, body.get("metadata", {}))
+                with admission_stage('idempotency_remember'):
+                    await self.remember(conn, tenant, scope, key, result)
+                return result
 
     async def get_batch(self, tenant, bid):
         async with self.pool.connection() as conn:
