@@ -1,0 +1,230 @@
+"""SYNTHETIC private fixtures only; never publish as real experiment results."""
+import copy
+import contextlib
+from datetime import datetime,timedelta,timezone
+import hashlib
+import io
+import json
+from pathlib import Path
+import runpy
+import tempfile
+import unittest
+from unittest import mock
+
+ROOT=Path(__file__).resolve().parent.parent
+M=runpy.run_path(str(ROOT/'.runtime/verify_matched_v11_receipt.py'),run_name='synthetic_receiver_test')
+TOOLS=M['load_tools']();E,C,COMPARE,PLOT=TOOLS
+
+
+def fill(schema):
+ if isinstance(schema,dict):return {k:fill(v) for k,v in schema.items() if not k.startswith('?')}
+ if isinstance(schema,tuple):
+  if schema[0]=='nullable':return None
+  if schema[0]=='list':return []
+  if schema[0]=='tuple':return [fill(v) for v in schema[1]]
+  if schema[0]=='map':return {}
+  if schema[0]=='pattern':return 'sha256:'+'0'*64 if schema[1].startswith('sha256:') else '0'*64
+ return {'integer':0,'number':0,'string':'SYNTHETIC_FIXTURE','boolean':False}[schema]
+
+def d(n,value=10):return dict(samples=n,p50=value,p95=value,p99=value,max=value,mean=value)
+def ad(n,value):return dict(count=n,min=value,p50=value,p95=value,p99=value,max=value,mean=value,total=n*value)
+def usage():return dict(global_active_tasks=0,controlled_tasks_uncleared=0,controlled_batches_without_ready_purged_archive=0,
+ retained_tasks=30000,charged_payload_bytes=200000000,legacy_charged_payload_bytes=200000000,task_headroom=20000,payload_headroom_bytes=135544320,auxiliary_usage=[['input_files',36,1000]])
+
+
+def round_fixture(label,count):
+ job=M['JOBS'][label];report=fill(E.REPORT);report.update(job_id=job,report_version=1,passed=False,accepted_batches=count//20,
+  accepted_tasks=count,completed_tasks=count,terminal_tasks=count,accepted_exactly_once=True,accepted_usage_matches_task_usage=True,
+  fixed_output_lengths_exact=True,observation_samples=5,elapsed_seconds_including_disconnect_and_validation=2000,
+  started_at='2026-10-24T08:30:00+00:00' if label=='baseline' else '2026-10-24T09:05:00+00:00',
+  finished_at='2026-10-24T09:03:20+00:00' if label=='baseline' else '2026-10-24T09:38:20+00:00')
+ report['configuration'].update(job_id=job,tasks=720,tasks_per_batch=20,seed=20261024,fixed_output=True,arrival_rate=.4,duration_seconds=1800,
+  drain_seconds=900,max_inflight_tasks=80,submission_concurrency=2,poll_seconds=2,sample_seconds=10,hourly_cost=16.10,request_timeout=120,
+  model=C.MODEL,source_sha256=C.FIXTURE_SHA,url='http://127.0.0.1:8080',engine_url='http://127.0.0.1:8300',
+  api=[['api-a','http://127.0.0.1:8082'],['api-b','http://127.0.0.1:8083']],
+  code_sha256={'sustained_benchmark.py':C.RUNNER_SHA,'benchmark.py':'a'*64,'observe_runtime.py':'b'*64})
+ tasks=[]
+ for index in range(count):
+  cap=[32,128,512,2048][index%4]
+  tasks.append(dict(accepted_attempts=1,accepted_completion_tokens=cap,accepted_prompt_tokens=128,attempts=1,
+   batch_id='synthetic-batch-'+label+'-'+str(index//20),completion_seconds=10,completion_tokens=cap,custom_id=f'{job}-{index:08d}',
+   finished_at=report['finished_at'],first_queue_seconds=1,id='synthetic-task-'+label+'-'+str(index),prompt_tokens=128,simulated=False,status='completed',total_attempt_records=1))
+ report.update(tasks=tasks,prompt_tokens=count*128,completion_tokens=sum(t['completion_tokens'] for t in tasks),completed_tasks_per_second=count/2000)
+ for k in ('task_completion_seconds','scheduled_arrival_to_finished_seconds','task_first_queue_seconds','arrival_to_submission_delay_seconds'):
+  report[k]=d(count)
+ report['scheduled_arrival_to_durable_admission_seconds']=d(count//20)
+ report['cost']=dict(allocation_usd=2000*16.10/3600,assumed_whole_pod_usd_per_hour=16.10,basis='SYNTHETIC fixture',usd_per_million_completed_tasks=2000*16.10/3600/count*1e6)
+ report['by_class']={'decode_heavy':dict(completion_seconds=d(count),completion_tokens=report['completion_tokens'],prompt_tokens=count*128,tasks=count)}
+ report['gpu_utilization_percent']={str(i):d(5,70) for i in range(4)}
+ report['sampling_coverage'].update(continuous_sampling_segment_span_seconds=1990,observed_wall_span_seconds=1990,wall_seconds_outside_sampling_segments=10,maximum_sample_or_boundary_gap_seconds=10)
+ source={**M['HISTORICAL_REQUIRED'],**C.PINS}
+ proof=dict(report_sha256='0'*64,engine_runtime_fingerprint='sha256:'+'1'*64,engine_configuration_sha256='2'*64,worker_configuration_sha256='3'*64,service_source_sha256=source)
+ collection=fill(E.COLLECTION);collection.update(phase='complete',completed_count=count,get_reader_leases_expected=True,original_report_passed=False,partial_plan=True)
+ collection['binding'].update(run_id=job,expected_completed=count,collector_source_sha256=C.PINS['scripts/collect_sustained_outputs.py'],url='http://127.0.0.1:8080')
+ audit=fill(E.AUDIT);audit.update(audit_version=1,run_id=job,expected_count=count,observed_count=count,source_sha256=C.PINS['scripts/audit_response_reservation.py'],
+  custom_ids_unique_and_run_prefix_bound=True,preview_only=True,declared_output_caps=[32,128,512,2048],
+  response_jsonb_text_bytes=ad(count,1000),completion_tokens=ad(count,680))
+ audit['completion_tokens']['total']=report['completion_tokens']
+ audit['candidate']=dict(limit_bytes=65536,covered_count=count,coverage_fraction=1,all_observed_responses_fit=True,minimum_headroom_bytes=64536,response_reservation_bytes_for_observed_count=65536*count)
+ audit['original']=dict(limit_bytes=1048576,covered_count=count,minimum_headroom_bytes=1047576,response_reservation_bytes_for_observed_count=1048576*count)
+ audit['reservation_comparison']=dict(response_reservation_reduction_bytes=(1048576-65536)*count,response_reservation_reduction_fraction=1-65536/1048576,scope='SYNTHETIC reservation arithmetic')
+ audit['completion_token_groups']={str(cap):dict(count=count//4,candidate_covered_count=count//4,candidate_minimum_headroom_bytes=64536,response_jsonb_text_bytes=ad(count//4,1000)) for cap in M['CAPS']}
+ for index in range(count//20):
+  members=tasks[index*20:(index+1)*20];filehash=hashlib.sha256(('SYNTHETIC_OUTPUT_HASH_ONLY'+str(index)).encode()).hexdigest()
+  collection['binding']['batch_files'].append(dict(batch_id=members[0]['batch_id'],file_id='synthetic-file-'+label+str(index),index=index))
+  collection['files'][str(index)]=dict(attempts=[],bytes=30000,completion_tokens=sum(t['completion_tokens'] for t in members),count=20,
+   filename=f'batch-{index:06d}-output.jsonl',prompt_tokens=2560,sha256=filehash,stage='complete')
+  file=dict(bytes=30000,completion_tokens=ad(20,680),count=20,file_index=index,response_jsonb_text_bytes=ad(20,1000),sha256=filehash)
+  file['completion_tokens']['total']=sum(t['completion_tokens'] for t in members);audit['input_files'].append(file)
+ collection['raw_output_bytes']=audit['input_bytes']=30000*(count//20)
+ policy=dict(phase='committed',target=list(C.POLICY_BASE if label=='baseline' else C.POLICY_CANDIDATE),previous=list(C.POLICY_CANDIDATE if label=='baseline' else C.POLICY_BASE),
+  only_future_max_response_bytes_changed=True,old_task_limits_immutable=True,started_at=report['started_at'],commit_intent_at=report['started_at'],before_usage=usage(),changed=True,committed_at=report['started_at'])
+ journal=fill(E.ROUND);journal.update(job_id=job,label=label,phase='failed_or_partial',initial_schema_version=11,runner_sha256=C.RUNNER_SHA,
+  source_sha256=source,configuration_sha256={'/synthetic/engine.env':'2'*64,'/synthetic/worker.env':'3'*64},legacy_context_not_comparable=True,
+  protected_services_and_sources_unchanged=True,response_policy=policy,before_usage=usage(),accepted_tasks=count,completed_tasks=count)
+ return {'report.json':report,'runtime-proof.json':proof,'controller.json':journal,'output-collection.json':collection,'response-audit.json':audit}
+
+
+class Fixture:
+ def __init__(self):
+  self.tmp=tempfile.TemporaryDirectory(prefix='matched-receiver-SYNTHETIC-FIXTURE-',dir=ROOT/'.runtime');self.root=Path(self.tmp.name)
+  self.values={label:round_fixture(label,count) for label,count in [('baseline',20),('candidate',40)]};self.manifest={'version':1,'operation':M['OPERATION'],'prepared_plan_sha256':M['PLAN_SHA']}
+  self.persist()
+ def write(self,path,value):path.write_bytes(M['encoded'](value));path.chmod(0o600);return M['sha'](path.read_bytes())
+ def persist(self):
+  summaries={}
+  for label,values in self.values.items():
+   directory=self.root/label;directory.mkdir(mode=0o700,exist_ok=True);job=M['JOBS'][label]
+   report=values['report.json'];journal=values['controller.json'];proof=values['runtime-proof.json'];collection=values['output-collection.json']
+   reportsha=M['sha'](M['encoded'](report));proof['report_sha256']=collection['binding']['report_sha256']=reportsha
+   journal['response_policy_journal_sha256']=M['sha'](C.encoded(journal['response_policy']))
+   for field,name in [('report_sha256','report.json'),('runtime_proof_sha256','runtime-proof.json'),('response_audit_sha256','response-audit.json'),('output_collection_sha256','output-collection.json')]:journal[field]=M['sha'](M['encoded'](values[name]))
+   hashes={name:self.write(directory/(job+'-'+name),values[name]) for name in M['ARTIFACTS']}
+   receipt=dict(validated=True,job_id=job,schema_version=11,completed_tasks=report['completed_tasks'],full_plan_passed=report['passed'],report_sha256=reportsha,
+    source_inputs_sha256=hashes,raw_outputs_exported=False,business_state_modified=False,metadata_files_written={job+'-'+name:value for name,value in hashes.items()})
+   receiptpath=self.root/(label+'-SYNTHETIC-export-receipt.json');receiptsha=self.write(receiptpath,receipt)
+   self.manifest[label]=dict(directory=str(directory),export_receipt=str(receiptpath),export_receipt_sha256=receiptsha)
+   summaries[label]=dict(job_id=job,phase='failed_or_partial',full_plan_passed=False,report_sha256=reportsha)
+  shas={f'{label}_{suffix}':M['sha'](M['encoded'](self.values[label][name])) for label in M['JOBS'] for suffix,name in [('report','report.json'),('runtime_proof','runtime-proof.json')]}
+  result=COMPARE.compare(self.values['baseline']['report.json'],self.values['candidate']['report.json'],self.values['baseline']['runtime-proof.json'],self.values['candidate']['runtime-proof.json'],
+   before_sha=shas['baseline_report'],after_sha=shas['candidate_report'],input_shas=shas)
+  comparisonpath=self.root/'SYNTHETIC-comparison.json';comparisonsha=self.write(comparisonpath,result)
+  self.manifest['comparison']=dict(path=str(comparisonpath),sha256=comparisonsha)
+  self.pair=dict(version=1,operation=M['OPERATION'],phase='complete',started_at='2026-10-24T08:29:00+00:00',plan_sha256=M['PLAN_SHA'],rounds=summaries,
+   automatic_replay=False,business_mutations='future max_response_bytes only plus explicit bounded benchmark workload',limitations=['SYNTHETIC FIXTURE ONLY'],
+   cleanup_observations=[dict(at='2026-10-24T09:39:00+00:00',**usage())],initial_clean_usage=usage(),legacy_charged_payload_baseline_bytes=200000000,
+   finished_at='2026-10-24T09:39:00+00:00',comparison_sha256=comparisonsha,baseline_full_plan_passed=False,candidate_full_plan_passed=False,
+   whole_pair_wall_seconds=4200,assumed_whole_pair_allocation_usd=4200*16.10/3600)
+  self.pairpath=self.root/'SYNTHETIC-pair-journal.json';self.save_pair()
+ def save_pair(self):self.manifest['pair_journal']=dict(path=str(self.pairpath),sha256=self.write(self.pairpath,self.pair))
+ def verify(self):
+  raw=M['encoded'](self.manifest);return M['verify'](raw,M['sha'](raw),TOOLS)
+ def close(self):self.tmp.cleanup()
+
+
+class ReceiverTests(unittest.TestCase):
+ def setUp(self):self.f=Fixture()
+ def tearDown(self):self.f.close()
+ def test_real_scenario_historical_map_has_no_mac_plot(self):
+  for values in self.f.values.values():self.assertNotIn('scripts/plot_sustained_comparison.py',values['runtime-proof.json']['service_source_sha256'])
+  receipt,_=self.f.verify();self.assertTrue(receipt['exact_original_bytes_verified'])
+ def test_local_renderer_drift_still_refused(self):
+  original=Path.read_bytes
+  def altered(path):
+   raw=original(path)
+   return raw+b'\n# SYNTHETIC DRIFT ONLY' if path==ROOT/'scripts/plot_sustained_comparison.py' else raw
+  with mock.patch.object(Path,'read_bytes',altered):
+   with self.assertRaises(M['Refusal']):M['load_tools']()
+ def test_actual_historical_runner_drift_refused(self):
+  for values in self.f.values.values():values['runtime-proof.json']['service_source_sha256']['scripts/sustained_benchmark.py']='0'*64
+  self.f.persist()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_pair_export_schema_only_without_mac_renderer(self):
+  original=Path.read_bytes
+  def unavailable(path):
+   if path==ROOT/'scripts/plot_sustained_comparison.py':raise FileNotFoundError('SYNTHETIC missing local-only renderer')
+   return original(path)
+  raw=self.f.pairpath.read_bytes()
+  with mock.patch.object(Path,'read_bytes',unavailable),contextlib.redirect_stdout(io.StringIO()) as out:
+   code=M['main'](['--export-pair-journal',str(self.f.pairpath),'--pair-journal-sha256',M['sha'](raw)])
+  self.assertEqual(code,0);self.assertTrue(json.loads(out.getvalue())['validated'])
+ def test_five_files_receipts_and_both_partial_flags(self):
+  receipt,audit=self.f.verify()
+  self.assertTrue(receipt['exact_original_bytes_verified']);self.assertFalse(receipt['source_metadata_rewritten'])
+  self.assertEqual({k:v['full_plan_passed'] for k,v in receipt['rounds'].items()},{'baseline':False,'candidate':False})
+  self.assertEqual(receipt['pair_allocation_context']['additional_pair_wall_seconds'],200)
+  self.assertAlmostEqual(receipt['pair_allocation_context']['additional_pair_allocation_usd'],200*16.10/3600)
+  self.assertTrue(audit['pair_allocation_context']['pair_cost_is_not_plotted_in_per_runner_cost_panel'])
+ def test_extra_raw_file_in_round_directory_refused(self):
+  path=Path(self.f.manifest['baseline']['directory'])/'unexpected-SYNTHETIC.jsonl';path.write_bytes(b'SYNTHETIC ONLY');path.chmod(0o600)
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_response_reservation_reduction_must_be_arithmetic(self):
+  self.f.values['baseline']['response-audit.json']['reservation_comparison']['response_reservation_reduction_bytes']+=1;self.f.persist()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_exact_bytes_even_whitespace_change_refused(self):
+  path=Path(self.f.manifest['baseline']['directory'])/(M['JOBS']['baseline']+'-report.json');path.write_bytes(path.read_bytes()+b' ')
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_untrusted_receipt_hash_refused(self):
+  self.f.manifest['candidate']['export_receipt_sha256']='0'*64
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_unknown_nested_raw_field_refused(self):
+  self.f.values['baseline']['controller.json']['response_policy']['raw_output']='synthetic raw placeholder';self.f.persist()
+  with self.assertRaises(E.ExportRefusal):self.f.verify()
+ def test_wrong_candidate_policy_refused_even_rehashed(self):
+  self.f.values['candidate']['controller.json']['response_policy']['target'][2]=1048576;self.f.persist()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_wrong_audit_source_refused_even_rehashed(self):
+  self.f.values['baseline']['response-audit.json']['source_sha256']='0'*64;self.f.persist()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_wrong_collection_usage_refused_even_rehashed(self):
+  self.f.values['candidate']['output-collection.json']['files']['0']['completion_tokens']+=1;self.f.persist()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_audit_file_hash_not_just_total_refused(self):
+  self.f.values['candidate']['response-audit.json']['input_files'][0]['sha256']='0'*64;self.f.persist()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_pair_unknown_secret_field_refused(self):
+  self.f.pair['DATABASE_URL']='synthetic-no-actual-secret';self.f.save_pair()
+  with self.assertRaises(E.ExportRefusal):self.f.verify()
+ def test_pair_quota_headroom_cannot_be_relabelled(self):
+  self.f.pair['initial_clean_usage']['payload_headroom_bytes']+=1;self.f.save_pair()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_pair_initial_queue_must_be_drained(self):
+  self.f.pair['initial_clean_usage']['global_active_tasks']=1;self.f.save_pair()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_pair_cost_arithmetic_refused(self):
+  self.f.pair['assumed_whole_pair_allocation_usd']=1;self.f.save_pair()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_pair_excludes_controller_wall_refused(self):
+  self.f.pair.update(whole_pair_wall_seconds=3999,assumed_whole_pair_allocation_usd=3999*16.10/3600);self.f.save_pair()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_pair_partial_flag_cannot_be_upgraded(self):
+  self.f.pair['baseline_full_plan_passed']=True;self.f.save_pair()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_changed_compared_rate_refused(self):
+  path=Path(self.f.manifest['comparison']['path']);value=M['strict'](path.read_bytes());value['baseline']['completed_tasks_per_whole_wall_second']=100
+  checksum=self.f.write(path,value);self.f.manifest['comparison']['sha256']=checksum;self.f.pair['comparison_sha256']=checksum;self.f.save_pair()
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_symlink_input_refused(self):
+  source=Path(self.f.manifest['baseline']['export_receipt']);link=self.f.root/'symlink-receipt.json';link.symlink_to(source)
+  self.f.manifest['baseline']['export_receipt']=str(link)
+  with self.assertRaises(M['Refusal']):self.f.verify()
+ def test_duplicate_json_key_refused(self):
+  with self.assertRaises(M['Refusal']):M['strict'](b'{"x":1,"x":2}')
+ def test_svg_normalized_before_hash_and_png_unchanged(self):
+  original=b'<svg xmlns="http://www.w3.org/2000/svg">  \n <text>fixture</text> \t\n</svg>\n'
+  artifacts,proof=M['normalize_svg']({'png':b'SYNTHETIC_BYTES_NOT_A_CHART','svg':original})
+  self.assertEqual(artifacts['png'],b'SYNTHETIC_BYTES_NOT_A_CHART');self.assertNotEqual(artifacts['svg'],original)
+  self.assertTrue(all(line==line.rstrip() for line in artifacts['svg'].splitlines()))
+  self.assertEqual(proof['normalized_published_svg_sha256'],M['sha'](artifacts['svg']))
+  self.assertTrue(proof['frozen_renderer_outputs_modified']);self.assertFalse(proof['numeric_dataset_or_plot_layout_modified'])
+ def test_private_pair_export_keeps_original_bytes_and_refuses_overwrite(self):
+  raw=self.f.pairpath.read_bytes();M['validate_pair'](raw,M['sha'](raw),TOOLS);output=self.f.root/'exported-pair.json'
+  M['write_private'](output,raw);self.assertEqual(output.read_bytes(),raw)
+  with self.assertRaises(FileExistsError):M['write_private'](output,raw)
+ def test_default_cli_no_write_and_no_render(self):
+  manifest=self.f.root/'SYNTHETIC-manifest.json';checksum=self.f.write(manifest,self.f.manifest);before=set(self.f.root.iterdir())
+  with contextlib.redirect_stdout(io.StringIO()) as out:
+   code=M['main'](['--manifest',str(manifest),'--manifest-sha256',checksum])
+  self.assertEqual(code,0);value=json.loads(out.getvalue());self.assertTrue(value['validated']);self.assertFalse(value['written']);self.assertFalse(value['rendered'])
+  self.assertEqual(set(self.f.root.iterdir()),before)
+if __name__=='__main__':unittest.main()

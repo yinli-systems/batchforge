@@ -1,0 +1,314 @@
+"""Local exact-byte receipt verification for the fixed schema11 matched pair.
+
+No HTTP, SQL, SSH, GPU or model calls. Default validates only. A separate
+--export-pair-journal mode validates a strict metadata whitelist before copying
+its original bytes; only the operator may run that mode on the serving host.
+Rendering is optional and uses the unchanged frozen plotting source, followed
+by explicitly recorded SVG trailing-whitespace normalization before hashing.
+"""
+from __future__ import annotations
+import argparse
+from collections import Counter,defaultdict
+from datetime import datetime
+import hashlib
+import importlib.util
+import json
+import math
+import os
+from pathlib import Path
+import re
+import stat
+import sys
+
+SELF=Path(__file__).resolve();ROOT=SELF.parent.parent
+sys.path.insert(0,str(ROOT))
+OPERATION='qwen235b-v11-matched-v1'
+PLAN_SHA='8d1b3745c9dfb9a12f11394fcc3d57af7150d33c3a46414646f13c2b02f7a45e'
+JOBS={'baseline':'qwen235b-soak30m-v11-response1m-v1','candidate':'qwen235b-soak30m-v11-response64k-v1'}
+CAPS={32,128,512,2048}
+PINNED={
+ '.runtime/qwen235b-v11-matched-controller.py':'6c5e5895d3cc8ef1826ae75752143ced24f127422a0e612c19b6ad6bb2dd457b',
+ '.runtime/export_sustained_v11_metadata.py':'a73b14599f3a0d5656fcaf2aede81e372a4540b5a3e177011701b539549f3f03',
+ 'scripts/compare_sustained_reports.py':'90df1ebbb26a40d7288fb230ec9ddc484e3ece2414c691b6d993936bd17862c3',
+ 'scripts/plot_sustained_comparison.py':'3a71d665e9d9d3c3569911530da748e7be141c0b6fdbc03378a9bb91cdbad1ff'}
+HISTORICAL_REQUIRED={name:value for name,value in PINNED.items() if name!='scripts/plot_sustained_comparison.py'}
+ARTIFACTS=('report.json','controller.json','runtime-proof.json','output-collection.json','response-audit.json')
+
+class Refusal(ValueError):pass
+def require(value,code):
+ if not value:raise Refusal(code)
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def encoded(value):return (json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode()
+def near(a,b,code='numeric_binding_differs'):
+ require(type(a) in (int,float) and type(b) in (int,float) and math.isfinite(a) and math.isfinite(b)
+  and math.isclose(a,b,rel_tol=1e-9,abs_tol=1e-6),code)
+def local_path(value):
+ require(isinstance(value,str),'local_path_required');path=Path(value)
+ require(path.is_absolute() and path.resolve()==path and path.is_relative_to(ROOT/'.runtime'),'private_runtime_path_required')
+ return path
+
+def read(path,maximum=16*1024**2):
+ path=local_path(str(path));fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+ try:
+  before=os.fstat(fd)
+  require(stat.S_ISREG(before.st_mode) and before.st_uid==os.geteuid() and not before.st_mode&0o077
+   and 0<before.st_size<=maximum,'unsafe_private_metadata')
+  with os.fdopen(fd,'rb',closefd=False) as handle:raw=handle.read(maximum+1)
+  after=os.fstat(fd)
+  require(len(raw)==before.st_size and all(getattr(before,k)==getattr(after,k) for k in ('st_ino','st_dev','st_size','st_mtime_ns','st_ctime_ns')),'metadata_changed')
+  return raw
+ finally:os.close(fd)
+
+def strict(raw):
+ def unique(pairs):
+  value={}
+  for key,item in pairs:require(key not in value,'duplicate_metadata_key');value[key]=item
+  return value
+ def invalid(_):raise Refusal('nonfinite_metadata')
+ return json.loads(raw.decode('utf-8'),object_pairs_hook=unique,parse_constant=invalid)
+
+def load_tools():
+ for name,value in PINNED.items():require(sha((ROOT/name).read_bytes())==value,'frozen_dependency_source_differs')
+ def module(name,path):
+  spec=importlib.util.spec_from_file_location(name,ROOT/path);value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
+ exporter=module('matched_receipt_export_schema','.runtime/export_sustained_v11_metadata.py')
+ controller=module('matched_receipt_controller_definitions','.runtime/qwen235b-v11-matched-controller.py')
+ from scripts import compare_sustained_reports as compare
+ from scripts import plot_sustained_comparison as plot
+ return exporter,controller,compare,plot
+
+def load_pair_export_tools():
+ # The renderer is Mac-only and was never deployed into the historical Pod.
+ # Exporting a metadata-whitelisted journal needs only frozen schema definitions.
+ path=ROOT/'.runtime/export_sustained_v11_metadata.py'
+ require(sha(path.read_bytes())==PINNED['.runtime/export_sustained_v11_metadata.py'],'frozen_export_schema_source_differs')
+ spec=importlib.util.spec_from_file_location('matched_pair_export_schema_only',path)
+ exporter=importlib.util.module_from_spec(spec);spec.loader.exec_module(exporter)
+ return exporter,None,None,None
+
+def validate_pair(raw,expected_sha,tools):
+ exporter,_,_,_=tools
+ require(re.fullmatch(r'[0-9a-f]{64}',expected_sha or '') is not None and sha(raw)==expected_sha,'pair_journal_sha_differs')
+ value=strict(raw);I=exporter.I;S=exporter.S;B=exporter.B;H=exporter.H;N=exporter.N
+ schema={'version':I,'operation':S,'phase':S,'started_at':S,'plan_sha256':H,
+  'rounds':{key:{'job_id':S,'phase':S,'full_plan_passed':B,'report_sha256':H} for key in JOBS},
+  'automatic_replay':B,'business_mutations':S,'limitations':exporter.sequence(S),
+  'cleanup_observations':exporter.sequence({'at':S,**exporter.USAGE}),'initial_clean_usage':exporter.USAGE,
+  'legacy_charged_payload_baseline_bytes':I,'finished_at':S,'comparison_sha256':H,
+  'baseline_full_plan_passed':B,'candidate_full_plan_passed':B,'whole_pair_wall_seconds':N,'assumed_whole_pair_allocation_usd':N}
+ exporter.validate_schema(value,schema);exporter.safe_metadata(value)
+ require(value['version']==1 and value['operation']==OPERATION and value['phase']=='complete' and value['plan_sha256']==PLAN_SHA
+  and value['automatic_replay'] is False and value['business_mutations']=='future max_response_bytes only plus explicit bounded benchmark workload','pair_not_exact_terminal_operation')
+ require(value['whole_pair_wall_seconds']>0,'pair_wall_invalid');near(value['assumed_whole_pair_allocation_usd'],value['whole_pair_wall_seconds']*16.10/3600,'pair_allocation_arithmetic_differs')
+ require(value['cleanup_observations'] and value['initial_clean_usage']['legacy_charged_payload_bytes']==value['legacy_charged_payload_baseline_bytes'],'pair_legacy_baseline_differs')
+ for item in [value['initial_clean_usage'],*value['cleanup_observations']]:
+  require(item['legacy_charged_payload_bytes']==value['legacy_charged_payload_baseline_bytes'],'pair_legacy_charge_changed')
+  require(all(item[k]>=0 for k in ('global_active_tasks','controlled_tasks_uncleared','controlled_batches_without_ready_purged_archive',
+   'retained_tasks','charged_payload_bytes','legacy_charged_payload_bytes','task_headroom','payload_headroom_bytes'))
+   and item['task_headroom']==50000-item['retained_tasks'] and item['payload_headroom_bytes']==335544320-item['charged_payload_bytes'],'pair_usage_or_unchanged_quota_arithmetic_differs')
+ initial=value['initial_clean_usage']
+ require(all(initial[k]==0 for k in ('global_active_tasks','controlled_tasks_uncleared','controlled_batches_without_ready_purged_archive'))
+  and initial['charged_payload_bytes']==initial['legacy_charged_payload_bytes'],'pair_initial_cleanup_not_proven')
+ last=value['cleanup_observations'][-1]
+ require(all(last[k]==0 for k in ('global_active_tasks','controlled_tasks_uncleared','controlled_batches_without_ready_purged_archive'))
+  and last['charged_payload_bytes']==last['legacy_charged_payload_bytes'],'pair_final_cleanup_not_proven')
+ for label,job in JOBS.items():
+  row=value['rounds'][label];passed=value[label+'_full_plan_passed']
+  require(row['job_id']==job and row['full_plan_passed'] is passed and row['phase']==('complete' if passed else 'failed_or_partial'),'pair_round_terminal_flags_differ')
+ return value
+
+def validate_round(label,entry,tools):
+ exporter,controller,compare,_=tools
+ exporter.validate_schema(entry,{'directory':exporter.S,'export_receipt':exporter.S,'export_receipt_sha256':exporter.H})
+ directory=local_path(entry['directory']);info=directory.lstat()
+ require(stat.S_ISDIR(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o077,'unsafe_private_round_directory')
+ require({p.name for p in directory.iterdir()}=={JOBS[label]+'-'+name for name in ARTIFACTS},'round_directory_not_exact_five_metadata_files')
+ receipt_raw=read(local_path(entry['export_receipt']));require(sha(receipt_raw)==entry['export_receipt_sha256'],'export_receipt_sha_differs')
+ receipt=strict(receipt_raw);job=JOBS[label]
+ receipt_schema={'validated':exporter.B,'job_id':exporter.S,'schema_version':exporter.I,'completed_tasks':exporter.I,
+  'full_plan_passed':exporter.B,'report_sha256':exporter.H,'source_inputs_sha256':{name:exporter.H for name in ARTIFACTS},
+  'raw_outputs_exported':exporter.B,'business_state_modified':exporter.B,
+  'metadata_files_written':{job+'-'+name:exporter.H for name in ARTIFACTS}}
+ exporter.validate_schema(receipt,receipt_schema)
+ require(receipt['validated'] is True and receipt['job_id']==job and receipt['schema_version']==11
+  and receipt['raw_outputs_exported'] is False and receipt['business_state_modified'] is False,'export_receipt_not_successful_write')
+ values={};hashes={}
+ for name in ARTIFACTS:
+  filename=job+'-'+name;raw=read(directory/filename);hashes[name]=sha(raw)
+  require(hashes[name]==receipt['source_inputs_sha256'][name]==receipt['metadata_files_written'][filename],'exact_artifact_bytes_or_receipt_differs')
+  values[name]=exporter.validate_artifact(name,raw)
+ report=values['report.json'];journal=values['controller.json'];proof=values['runtime-proof.json'];collection=values['output-collection.json'];audit=values['response-audit.json']
+ summary=compare.validate_report(report);compare.validate_proof(proof,hashes['report.json']);count=summary['completed_tasks'];passed=report['passed']
+ require(report['job_id']==job and receipt['completed_tasks']==count and receipt['full_plan_passed'] is passed
+  and receipt['report_sha256']==hashes['report.json'],'report_receipt_population_differs')
+ require(journal['job_id']==job and journal['label']==label and journal['initial_schema_version']==11 and journal['runner_sha256']==controller.RUNNER_SHA
+  and journal['phase']==('complete' if passed else 'failed_or_partial') and journal['passed'] is passed and journal['full_plan_passed'] is passed
+  and journal['accepted_tasks']==journal['completed_tasks']==count and journal['protected_services_and_sources_unchanged'] is True
+  and journal['service_mutations'] is False and journal['off_pod_data_export'] is False and journal['legacy_context_not_comparable'] is True,'round_controller_not_guarded_terminal')
+ for field,name in [('report_sha256','report.json'),('runtime_proof_sha256','runtime-proof.json'),('response_audit_sha256','response-audit.json'),('output_collection_sha256','output-collection.json')]:
+  require(journal[field]==hashes[name],'round_controller_artifact_sha_differs')
+ require(journal['source_sha256']==proof['service_source_sha256'] and journal['service_identities_before']==journal['service_identities_after'],'round_source_or_process_changed')
+ for name,value in {**HISTORICAL_REQUIRED,**controller.PINS}.items():require(proof['service_source_sha256'].get(name)==value,'observed_protected_source_differs')
+ expected_config=dict(tasks=720,tasks_per_batch=20,seed=20261024,fixed_output=True,arrival_rate=.4,duration_seconds=1800,drain_seconds=900,
+  max_inflight_tasks=80,submission_concurrency=2,poll_seconds=2,sample_seconds=10,hourly_cost=16.10,request_timeout=120,
+  model=controller.MODEL,source_sha256=controller.FIXTURE_SHA,url='http://127.0.0.1:8080')
+ require(all(report['configuration'].get(k)==v for k,v in expected_config.items())
+  and report['configuration']['code_sha256']['sustained_benchmark.py']==controller.RUNNER_SHA,'fixed_workload_or_runner_changed')
+ policy=journal['response_policy'];target=controller.POLICY_BASE if label=='baseline' else controller.POLICY_CANDIDATE
+ previous=controller.POLICY_CANDIDATE if label=='baseline' else controller.POLICY_BASE
+ require(policy['phase']=='committed' and policy['target']==list(target) and policy['previous']==list(previous)
+  and policy['changed'] is (target!=previous) and policy['only_future_max_response_bytes_changed'] is True and policy['old_task_limits_immutable'] is True
+  and sha(controller.encoded(policy))==journal['response_policy_journal_sha256'],'response_policy_or_canonical_commit_receipt_differs')
+ binding=collection['binding']
+ require(binding['run_id']==job and binding['report_sha256']==hashes['report.json'] and binding['expected_completed']==count
+  and binding['collector_source_sha256']==controller.PINS['scripts/collect_sustained_outputs.py'] and binding['url']=='http://127.0.0.1:8080'
+  and collection['phase']=='complete' and collection['completed_count']==count and collection['original_report_passed'] is passed
+  and collection['partial_plan'] is (not passed) and collection['business_state_modified'] is False and collection['get_reader_leases_expected'] is True,'collection_binding_or_terminal_flags_differ')
+ batches=binding['batch_files'];require(len(batches)==summary['accepted_batches'] and len({b['index'] for b in batches})==len(batches)
+  and len({b['batch_id'] for b in batches})==len({b['file_id'] for b in batches})==len(batches),'collection_batch_identity_not_unique')
+ taskgroups=defaultdict(list)
+ for task in report['tasks']:taskgroups[task['batch_id']].append(task)
+ require(set(taskgroups)=={b['batch_id'] for b in batches} and set(collection['files'])=={str(b['index']) for b in batches},'collection_batch_population_differs')
+ require(audit['run_id']==job and audit['expected_count']==audit['observed_count']==count and audit['source_sha256']==controller.PINS['scripts/audit_response_reservation.py']
+  and audit['custom_ids_unique_and_run_prefix_bound'] is True and audit['preview_only'] is True
+  and all(audit[k] is False for k in ('database_read','http_requests','policy_changed')) and set(audit['declared_output_caps'])==CAPS,'audit_cohort_or_source_differs')
+ require(audit['candidate']['limit_bytes']==65536 and audit['candidate']['covered_count']==count and audit['candidate']['coverage_fraction']==1
+  and audit['candidate']['all_observed_responses_fit'] is True and audit['candidate']['minimum_headroom_bytes']>=16384
+  and audit['original']['limit_bytes']==1048576 and audit['original']['covered_count']==count,'audit_response_policy_evidence_differs')
+ require(audit['candidate']['response_reservation_bytes_for_observed_count']==65536*count
+  and audit['original']['response_reservation_bytes_for_observed_count']==1048576*count
+  and audit['reservation_comparison']['response_reservation_reduction_bytes']==(1048576-65536)*count,'audit_reservation_arithmetic_differs')
+ near(audit['reservation_comparison']['response_reservation_reduction_fraction'],1-65536/1048576,'audit_reservation_fraction_differs')
+ require(audit['candidate']['minimum_headroom_bytes']==65536-audit['response_jsonb_text_bytes']['max']
+  and audit['original']['minimum_headroom_bytes']==1048576-audit['response_jsonb_text_bytes']['max'],'audit_headroom_arithmetic_differs')
+ require(len(audit['input_files'])==len(batches),'audit_input_files_population_differs')
+ for file_index,batch in enumerate(sorted(batches,key=lambda b:b['index'])):
+  file=collection['files'][str(batch['index'])];observed=audit['input_files'][file_index];members=taskgroups[batch['batch_id']]
+  require(file['stage']=='complete' and file['filename']==f"batch-{batch['index']:06d}-output.jsonl" and file['count']==len(members)
+   and file['prompt_tokens']==sum(t['prompt_tokens'] for t in members) and file['completion_tokens']==sum(t['completion_tokens'] for t in members),'collected_file_task_usage_differs')
+  require(observed['file_index']==file_index and observed['sha256']==file['sha256'] and observed['bytes']==file['bytes']
+   and observed['count']==file['count'] and observed['response_jsonb_text_bytes']['count']==file['count']
+   and observed['completion_tokens']['count']==file['count'] and observed['completion_tokens']['total']==file['completion_tokens'],'audit_collected_file_sha_or_usage_differs')
+ require(sum(file['bytes'] for file in collection['files'].values())==collection['raw_output_bytes']==audit['input_bytes'],'raw_output_metadata_byte_total_differs')
+ require(audit['completion_tokens']['count']==audit['response_jsonb_text_bytes']['count']==count
+  and audit['completion_tokens']['total']==report['completion_tokens']
+  and sum(f['response_jsonb_text_bytes']['total'] for f in audit['input_files'])==audit['response_jsonb_text_bytes']['total'],'audit_whole_cohort_totals_differ')
+ capcounts=Counter(str(t['completion_tokens']) for t in report['tasks'])
+ require(set(audit['completion_token_groups'])==set(capcounts),'audit_cap_groups_differ')
+ for cap,n in capcounts.items():
+  g=audit['completion_token_groups'][cap]
+  require(g['count']==g['candidate_covered_count']==g['response_jsonb_text_bytes']['count']==n
+   and g['candidate_minimum_headroom_bytes']==65536-g['response_jsonb_text_bytes']['max'],'audit_cap_group_population_or_headroom_differs')
+ return {'report':report,'proof':proof,'journal':journal,'summary':summary,'receipt_sha256':sha(receipt_raw),'artifact_sha256':hashes}
+
+def verify(manifest_raw,expected_sha,tools):
+ require(re.fullmatch(r'[0-9a-f]{64}',expected_sha or '') is not None and sha(manifest_raw)==expected_sha,'manifest_sha_differs')
+ exporter,_,compare,plot=tools;manifest=strict(manifest_raw)
+ entry={'directory':exporter.S,'export_receipt':exporter.S,'export_receipt_sha256':exporter.H}
+ file={'path':exporter.S,'sha256':exporter.H}
+ exporter.validate_schema(manifest,{'version':exporter.I,'operation':exporter.S,'prepared_plan_sha256':exporter.H,
+  'baseline':entry,'candidate':entry,'comparison':file,'pair_journal':file})
+ require(manifest['version']==1 and manifest['operation']==OPERATION and manifest['prepared_plan_sha256']==PLAN_SHA,'exact_matched_operation_required')
+ rounds={label:validate_round(label,manifest[label],tools) for label in JOBS}
+ left,right=rounds['baseline'],rounds['candidate']
+ require(left['journal']['configuration_sha256']==right['journal']['configuration_sha256']
+  and left['journal']['service_identities_before']==right['journal']['service_identities_before'],'cross_round_configuration_or_pid_changed')
+ raw=read(local_path(manifest['comparison']['path']));require(sha(raw)==manifest['comparison']['sha256'],'comparison_sha_differs')
+ shas={f'{label}_{suffix}':rounds[label]['artifact_sha256'][name] for label in JOBS for suffix,name in [('report','report.json'),('runtime_proof','runtime-proof.json')]}
+ result=compare.compare(left['report'],right['report'],left['proof'],right['proof'],before_sha=shas['baseline_report'],after_sha=shas['candidate_report'],input_shas=shas)
+ require(encoded(strict(raw))==encoded(result),'comparison_does_not_match_all_verified_inputs')
+ pair_raw=read(local_path(manifest['pair_journal']['path']));pair=validate_pair(pair_raw,manifest['pair_journal']['sha256'],tools)
+ require(pair['comparison_sha256']==sha(raw),'pair_comparison_sha_differs')
+ for label,value in rounds.items():
+  require(pair['rounds'][label]['report_sha256']==value['artifact_sha256']['report.json']
+   and pair[label+'_full_plan_passed'] is value['report']['passed'],'pair_round_report_or_passed_differs')
+ serial=[pair['started_at'],left['report']['started_at'],left['report']['finished_at'],right['report']['started_at'],right['report']['finished_at'],pair['finished_at']]
+ times=[datetime.fromisoformat(value.replace('Z','+00:00')) for value in serial]
+ require(all(t.utcoffset() is not None for t in times) and times==sorted(times),'pair_serial_timestamp_order_differs')
+ runner_wall=sum(value['summary']['elapsed_seconds_including_disconnect_and_validation'] for value in rounds.values())
+ overhead=pair['whole_pair_wall_seconds']-runner_wall;require(overhead>=0,'pair_wall_shorter_than_runner_windows')
+ runner_cost=sum(value['summary']['cost']['allocation_usd'] for value in rounds.values())
+ context={'pair_wall_seconds':pair['whole_pair_wall_seconds'],'assumed_pair_allocation_usd':pair['assumed_whole_pair_allocation_usd'],
+  'assumed_whole_pod_usd_per_hour':16.10,'sum_runner_wall_seconds':runner_wall,'sum_runner_allocation_usd':runner_cost,
+  'additional_pair_wall_seconds':overhead,'additional_pair_allocation_usd':overhead*16.10/3600,
+  'additional_wall_scope':'controller/collection/audit/inter-round and final cleanup/comparison plus process overhead; no individual stage attribution',
+  'pair_scope_exclusions':'preparation, later metadata export/transport, local rendering and later idle time',
+  'pair_cost_is_not_plotted_in_per_runner_cost_panel':True,'invoice_or_marginal_cost_measured':False}
+ near(context['assumed_pair_allocation_usd'],runner_cost+context['additional_pair_allocation_usd'],'pair_cost_additive_identity_differs')
+ receipt={'verification_version':1,'operation':OPERATION,'prepared_plan_sha256':PLAN_SHA,'manifest_sha256':expected_sha,
+  'receiver_source_sha256':sha(SELF.read_bytes()),'frozen_dependencies_sha256':PINNED,'original_pair_journal_sha256':sha(pair_raw),
+  'comparison_sha256':sha(raw),'exact_original_bytes_verified':True,'source_metadata_rewritten':False,
+  'business_state_modified':False,'raw_model_outputs_read':False,'rounds':{label:{'job_id':JOBS[label],'export_receipt_sha256':v['receipt_sha256'],
+   'original_artifact_sha256':v['artifact_sha256'],'offered_tasks':v['summary']['offered_tasks_within_admission_window'],
+   'accepted_tasks':v['summary']['accepted_tasks'],'completed_tasks':v['summary']['completed_tasks'],
+   'full_plan_passed':v['report']['passed'],'partial_plan':v['summary']['partial_plan']} for label,v in rounds.items()},
+  'pair_allocation_context':context,'limits':['Trusted operator manifest/receipt SHA inputs anchor transport; this is not a signature or an independent re-observation of production',
+   'Raw outputs are not read locally; audit/collection facts are verified against their source-bound exact exported bytes',
+   'Serial N=1; accepted populations can differ; partial-plan passed=false remains false; no GPU kernel/daily/fleet/HA guarantee']}
+ audit=plot.chart_audit(result,{'comparison':sha(raw),**shas})
+ audit.update(receiver_source_sha256=receipt['receiver_source_sha256'],original_pair_journal_sha256=sha(pair_raw),
+  exporter_receipts_sha256={label:v['receipt_sha256'] for label,v in rounds.items()},pair_allocation_context=context)
+ return receipt,audit
+
+def normalize_svg(artifacts):
+ require(set(artifacts)=={'png','svg'},'unexpected_plot_artifacts');original=artifacts['svg']
+ normalized=b'\n'.join(line.rstrip() for line in original.splitlines())+b'\n'
+ import xml.etree.ElementTree as ET
+ ET.fromstring(normalized)
+ return {**artifacts,'svg':normalized},{'method':'SVG splitlines line.rstrip and final LF; PNG unchanged',
+  'original_frozen_renderer_svg_sha256':sha(original),'normalized_published_svg_sha256':sha(normalized),
+  'frozen_renderer_outputs_modified':True,'numeric_dataset_or_plot_layout_modified':False}
+
+def context_markdown(receipt):
+ c=receipt['pair_allocation_context']
+ return ('# Matched pair receipt and allocation context\n\n'
+  'The plot cost panel uses each runner window. This separate table includes the parent operation wall, collection and cleanup.\n\n'
+  '| Scope | Wall seconds | Assumed USD at $16.10/Pod-hour |\n| --- | ---: | ---: |\n'
+  f"| Sum of runner windows | {c['sum_runner_wall_seconds']:.6f} | {c['sum_runner_allocation_usd']:.6f} |\n"
+  f"| Additional pair wall | {c['additional_pair_wall_seconds']:.6f} | {c['additional_pair_allocation_usd']:.6f} |\n"
+  f"| Whole terminal pair | {c['pair_wall_seconds']:.6f} | {c['assumed_pair_allocation_usd']:.6f} |\n\n"
+  +c['additional_wall_scope']+'. '+c['pair_scope_exclusions']+'. No measured invoice or marginal cost.\n\n'
+  +'\n'.join(f"- {label}: offered {v['offered_tasks']}, accepted/completed {v['accepted_tasks']}/{v['completed_tasks']}; full-plan passed={str(v['full_plan_passed']).lower()}, partial_plan={str(v['partial_plan']).lower()}." for label,v in receipt['rounds'].items())
+  +'\n\nSVG bytes were normalized after the unchanged frozen renderer. The chart audit records both pre/post SVG hashes and this wrapper source SHA; it does not claim unmodified original-helper output.\n\n'
+  +f"Manifest SHA256: `{receipt['manifest_sha256']}`. Original terminal pair-journal SHA256: `{receipt['original_pair_journal_sha256']}`. Receiver SHA256: `{receipt['receiver_source_sha256']}`.\n")
+
+def write_private(path,raw):
+ path=local_path(str(path));parent=path.parent;info=parent.lstat()
+ require(parent.resolve()==parent and stat.S_ISDIR(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o077,'private_output_directory_required')
+ fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+ with os.fdopen(fd,'wb') as handle:handle.write(raw);handle.flush();os.fsync(handle.fileno())
+ fd=os.open(parent,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+ try:os.fsync(fd)
+ finally:os.close(fd)
+
+def main(argv=None):
+ parser=argparse.ArgumentParser(description=__doc__)
+ parser.add_argument('--manifest',type=Path);parser.add_argument('--manifest-sha256');parser.add_argument('--write',action='store_true')
+ parser.add_argument('--receipt-output',type=Path);parser.add_argument('--render',action='store_true');parser.add_argument('--output-prefix',type=Path)
+ parser.add_argument('--export-pair-journal',type=Path);parser.add_argument('--pair-journal-sha256');parser.add_argument('--pair-output',type=Path)
+ args=parser.parse_args(argv);os.umask(0o077)
+ try:
+  if args.export_pair_journal is not None:
+   tools=load_pair_export_tools()
+   require(not args.manifest and not args.manifest_sha256 and not args.render and not args.receipt_output and not args.output_prefix,'conflicting_export_arguments')
+   raw=read(args.export_pair_journal);value=validate_pair(raw,args.pair_journal_sha256,tools)
+   if args.write:require(args.pair_output is not None,'pair_output_required');write_private(args.pair_output,raw)
+   print(json.dumps({'validated':True,'phase':value['phase'],'original_pair_journal_sha256':sha(raw),
+    'exact_original_bytes':True,'unknown_fields_refused':True,'written':args.write,'raw_outputs_exported':False}));return 0
+  require(args.manifest is not None and not args.pair_output and not args.pair_journal_sha256,'manifest_required')
+  require(not args.render or args.write and args.output_prefix is not None,'render_requires_write_and_output_prefix')
+  tools=load_tools()
+  receipt,audit=verify(read(args.manifest),args.manifest_sha256,tools)
+  if args.write:
+   require(args.receipt_output is not None,'receipt_output_required')
+   require(not args.receipt_output.exists() and not args.receipt_output.is_symlink(),'receipt_output_exists')
+   if args.render:
+    artifacts,normalization=normalize_svg(tools[3].render(audit));audit['svg_postprocessing']=normalization
+    artifacts['allocation-context.md']=context_markdown(receipt).encode()
+    receipt['plot_artifacts_sha256']=tools[3].write_artifacts(args.output_prefix,artifacts,audit)
+   write_private(args.receipt_output,encoded(receipt))
+  print(json.dumps({'validated':True,'full_plan_passed':{k:v['full_plan_passed'] for k,v in receipt['rounds'].items()},
+   'pair_allocation_context':receipt['pair_allocation_context'],'written':args.write,'rendered':args.render,'receiver_source_sha256':receipt['receiver_source_sha256']},sort_keys=True));return 0
+ except Exception as error:
+  print(json.dumps({'validated':False,'reason_code':str(error) if isinstance(error,Refusal) else type(error).__name__}));return 1
+if __name__=='__main__':raise SystemExit(main())
