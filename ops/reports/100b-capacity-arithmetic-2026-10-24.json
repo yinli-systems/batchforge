@@ -59,6 +59,17 @@
     "daily_at_duty": "measured_inferences_per_second * 86400 * assumed_average_duty_fraction",
     "required_copies": "ceil(target_tasks_per_day / daily_at_duty)",
     "gross_cost_per_million_at_measured_rate": "whole_allocation_usd_per_hour * 1000000 / (measured_inferences_per_second * 3600)",
-    "daily_whole_allocation_cost": "required_copies * whole_allocation_usd_per_hour * 24"
+    "daily_whole_allocation_cost": "required_copies * whole_allocation_usd_per_hour * 24",
+    "raw_input_bytes_per_day": "workload_bytes / requests * target_tasks_per_day"
+  },
+  "raw_input_storage_arithmetic": {
+    "scope": "Frozen primary 120B JSONL bytes, before output, duplicated database bodies, indexes, WAL, retries and retention",
+    "workload_bytes": 530026,
+    "requests": 20,
+    "workload_sha256": "ffe741d9c87bd52ecf571f4b5c6a8ae5c5eac3d46f997399f49b2ff4dcc3f634",
+    "same_distribution_at_target_bytes_per_day": 265013000000.0,
+    "same_distribution_at_target_decimal_gb_per_day": 265.013,
+    "source_report": "primary-gptoss120-natural-durable20-launch-2026-10-24.json",
+    "source_sha256": "76cc55be13d1cd64aaf4f9fdc43537176c69262e58042a09be3961821b11c389"
   }
 }

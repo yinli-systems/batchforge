@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "assembled_at": "2026-10-24T00:01:57.731389+00:00",
+  "scope": "Actual deployment, bounded workload, recovery and verification evidence on the two existing private Pods; not a production SLA or ten-million-per-day acceptance",
+  "repository": "https://github.com/yinli-systems/batchforge",
+  "runtime_implementation_checkpoint": "ffff56f6736955e5088c90cc72a703cd838386bc",
+  "model": {
+    "id": "openai/gpt-oss-120b",
+    "total_parameters": 116829156672,
+    "active_parameters_per_token_approximate": 5100000000,
+    "architecture": "MoE",
+    "dense_120b": false,
+    "both_pods_executed_real_inference": true,
+    "primary": "Shared H100 TP4, native MXFP4 experts and BF16 remaining tensors, eight slots",
+    "secondary": "One Blackwell MIG plus 28 CPU expert layers, GGUF MXFP4/Q8_0, one slot",
+    "identical_numerics_across_pods": false
+  },
+  "final_readiness": {
+    "observed_at": "2026-10-23T23:52:13.602580+00:00",
+    "fresh_ready_workers": 17,
+    "unfinished_tasks": 0,
+    "database_client_tls": true,
+    "database_sslmode": "verify-full",
+    "runtime_role": "bf_runtime",
+    "private_ingress": true
+  },
+  "deployed_primary_source_sha256": {
+    "backend/app.py": "24b7066350e69829c0143af43e0c59c823306c9906e86da96c483e02318a899c",
+    "backend/config.py": "eab5c754dbff44830a9123fcaed908af218d7b13d163e5dd2ad39493ed275b65",
+    "backend/store.py": "45f299bd32b80e373f234e1df303f2854fd6441bee966cd97ef6334b3373df4e",
+    "backend/validation.py": "62f2f509566dd23bb543d238868f5127baf09d8170c133025a3ed53f3269e71f",
+    "worker/runtime.py": "0156ac72d5c4632ee80397eb703658bdb9b58f2c1b3b51d12d18039dcf04bcbe",
+    "ops/manage.py": "cd15563e36f8a0a269378aff74e1b7bc42e575cb7a9062a73d28519bca3bcd85",
+    "ops/supervise.py": "3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0",
+    "ops/engine_members.py": "e4d0b2f2c130dce6fa16a4925d3557ca16475793a5b4f156f62a3d8f2df471ff",
+    "ops/host_memory.py": "e4887b81fd3c95e7f94bd118d0917775d5e8839c7c59e07b7dd8d98552150902",
+    "ops/llama_backend.py": "d27fce11beb565b287d19bce61aa9c3edbf5cb802fd3630fa4788e7aeb31adb4",
+    "scripts/observe_runtime.py": "8860074f6e0689956bd34ceb836443f92e83ad51496251ecec707c343e08cff3"
+  },
+  "diagnostic_source_provenance": {
+    "engine_outage_probe": {
+      "historical_executed_checkpoint": "ffff56f6736955e5088c90cc72a703cd838386bc",
+      "historical_executed_sha256": "c953f4bdca4b799095054bfa554be1edc0a2e8459115933afcf766718ed9b872",
+      "future_local_source": "ops/ha/engine_outage_probe.py",
+      "future_local_sha256": "04bf500ca72e9c359ed1e2fc359897d6fc397c8ab605ca2283b61976d080f764",
+      "future_source_executed_on_pod": false,
+      "future_source_focused_tests_passed": 8,
+      "change": "Select stale-heartbeat candidate from exact reclaimed tasks and record its task ID; historical run supplemented by explicit same-task evidence"
+    },
+    "durable_benchmark": {
+      "historical_executed_source_report": "primary-gptoss120-durable-benchmark-executed-2026-10-24.py",
+      "historical_executed_sha256": "fefc6ea4dd19ad6f8d98084a833072d31c11d1def144385698d589ba4d7d48d6",
+      "current_local_source": "scripts/benchmark.py",
+      "current_local_sha256": "1d9d64f933c59f457187dfe50d42ae46be7591a60490c3d86cf930a498e22066",
+      "current_source_use": "Read-only output content audit; historical benchmark and inference were not replayed"
+    }
+  },
+  "verification": {
+    "runtime_checkpoint_real_postgres_suite_passed": 321,
+    "macos_linux_only_skips": 3,
+    "linux_ops_suite_passed": 50,
+    "linux_suite_covers_macos_skips": true,
+    "counts_are_overlapping_not_additive": true,
+    "frontend_node_tests_passed": 3,
+    "later_diagnostic_probe_tests_passed": 8,
+    "hosted_ci_verified": false,
+    "container_build_verified": false
+  },
+  "report_groups": {
+    "primary_performance": [
+      {
+        "report": "primary-gptoss120-seq1-fifo-2026-10-24.json",
+        "sha256": "e97a3c9ae5b6ccc4dc5f9265570857b021b20861225daf10ac0ff3dfc38ae7e8",
+        "bytes": 37828
+      },
+      {
+        "report": "primary-gptoss120-seq1-shortest-2026-10-24.json",
+        "sha256": "ddf0faef443eef195178d35411a3e95d5ebe1583235bfd5405fe1383fbc457fa",
+        "bytes": 37800
+      },
+      {
+        "report": "primary-gptoss120-seq1-class-fair-2026-10-24.json",
+        "sha256": "c8ce12f9130e4faef7fdca7c7d0122dcf71d0b30b447282278c432516295b886",
+        "bytes": 37847
+      },
+      {
+        "report": "primary-gptoss120-seq4-fifo-2026-10-24.json",
+        "sha256": "231af921f85bbf845e955af75a2438989588603e54b5302c29da05c5fb0a4cc6",
+        "bytes": 38117
+      },
+      {
+        "report": "primary-gptoss120-seq4-shortest-2026-10-24.json",
+        "sha256": "04756884b2300e8813fb05514f318c8092ce5499415855b1ea27391aa7960c24",
+        "bytes": 38134
+      },
+      {
+        "report": "primary-gptoss120-seq4-class-fair-2026-10-24.json",
+        "sha256": "adcf2bb818dd28ef78d90ed1fed08589a14b843a756b8e3845604927b1e69e2a",
+        "bytes": 38108
+      },
+      {
+        "report": "primary-gptoss120-seq8-fifo-2026-10-24.json",
+        "sha256": "5f1669de5c8330ac6dc02b0c208da51e82cb12b0a92a256aea4448227d7858b2",
+        "bytes": 38093
+      },
+      {
+        "report": "primary-gptoss120-seq8-retune-2026-10-24.json",
+        "sha256": "6e64f68aef866050a7a742d9048128486d9fbc0063d324cf2ac1b26555e953ec",
+        "bytes": 16175
+      },
+      {
+        "report": "primary-gptoss120-communication-2026-10-24.json",
+        "sha256": "6164b9406b29aa5dadad4c231dde2eb98782b082b1f72d68a8ab58745e71d2c4",
+        "bytes": 7304
+      }
+    ],
+    "secondary_performance": [
+      {
+        "report": "pod2-gptoss120b-launch-2026-10-24.json",
+        "sha256": "ed8c5d6771e53a896f7ccb90837abefc6852375f61fc8f9fe69ff0997d3b5630",
+        "bytes": 13209
+      },
+      {
+        "report": "pod2-gptoss120b-moe28-tuning-2026-10-24.json",
+        "sha256": "3dcef1e2f12472b302743b367b51cd53fc853443803dff988adce0ffdfb129de",
+        "bytes": 111485
+      },
+      {
+        "report": "pod2-gptoss120b-matrix-fifo-2026-10-24.json",
+        "sha256": "255e54b7464aa9299a219bc97141bb714dcdff5eb84807fc2dfb90c58f3db247",
+        "bytes": 43367
+      },
+      {
+        "report": "pod2-gptoss120b-matrix-stage-analysis-2026-10-24.json",
+        "sha256": "5a72d8ed7c58a0c4795d934517031c4216652e786768f7585e97be8331e89484",
+        "bytes": 2071
+      }
+    ],
+    "natural_output_and_quality": [
+      {
+        "report": "primary-gptoss120-natural-quality-paired8-2026-10-24.json",
+        "sha256": "7e3e876fa0dc045fd4842a1740d8c690b84e06a4b8f301618b025c2623b41a0f",
+        "bytes": 10933
+      },
+      {
+        "report": "primary-gptoss120-natural-durable20-2026-10-24.json",
+        "sha256": "ae5300407ec3d4659357b68395b75f881b342515e6ce22af59f96104a2f13eda",
+        "bytes": 4630
+      },
+      {
+        "report": "primary-gptoss120-natural-durable20-attribution-2026-10-24.json",
+        "sha256": "4f77536d10aafa8047338c57542dcf89e30cb35f0b3322a757639d13685e9c15",
+        "bytes": 17985
+      },
+      {
+        "report": "primary-gptoss120-natural-durable20-low-2026-10-24.json",
+        "sha256": "f7430af3671bc8768d4f89752171bf516f0537bef1f5df7dbcb30f9bca5c9d4b",
+        "bytes": 4662
+      },
+      {
+        "report": "primary-gptoss120-natural-durable20-low-attribution-2026-10-24.json",
+        "sha256": "e23b927b528b41e642b4429ab51e232c9891349e272f63282df84a5cd2f157bb",
+        "bytes": 31075
+      },
+      {
+        "report": "primary-gptoss120-natural-durable20-low-variant-2026-10-24.json",
+        "sha256": "5825b2a0b9a0f13234d76c0cae9d6bf219e7b026ae5c0e5c582375b4ff3200e2",
+        "bytes": 828
+      },
+      {
+        "report": "primary-gptoss120-low-effort-durable1-attribution-2026-10-24.json",
+        "sha256": "2d9aa8cd977366281c390d0a174c8342dce9004c7697ab3e3fce761182bba42d",
+        "bytes": 1852
+      },
+      {
+        "report": "primary-gptoss120-final-content-audit-2026-10-24.json",
+        "sha256": "f50df622e3b93888e052ecaba31a3f3c3da72f354e14c90f60760950c4604f39",
+        "bytes": 39345
+      }
+    ],
+    "recovery": [
+      {
+        "report": "primary-gptoss120-engine-outage-2026-10-24.json",
+        "sha256": "a26166cdccc09b7fe315d9f3a65f141918c0719fcd273feead421b7e5fe0ddec",
+        "bytes": 60502
+      },
+      {
+        "report": "primary-gptoss120-engine-outage-benchmark-2026-10-24.json",
+        "sha256": "f9469acc79d9fd3e02cb5bd0c738b119c89eeb13429d9d0e0822d3441bdd7790",
+        "bytes": 4576
+      },
+      {
+        "report": "primary-gptoss120-engine-outage-same-task-fence-2026-10-24.json",
+        "sha256": "d9cd6ce64cc17a64c4b12d99859cb8240aa4e7bd00ff0ed62e07d8e8f6e5f47f",
+        "bytes": 704
+      },
+      {
+        "report": "pod2-gptoss120b-recovery-crossreference-2026-10-24.json",
+        "sha256": "9c1a148418a5734d30f0c3e85b70fb3a9f6f0a8f7a6cd4911a2356c06d10a1a3",
+        "bytes": 3560
+      },
+      {
+        "report": "pod2-gptoss120b-engine-down-secondary-observation-2026-10-24.json",
+        "sha256": "f1259a1b2bd7d7f65b1b32bce287bafe75b77dbc91bda60522ea26adebb1571b",
+        "bytes": 7160
+      },
+      {
+        "report": "pod2-gptoss120b-engine-down-secondary-utilization-2026-10-24.json",
+        "sha256": "f2153bf8dd6f703b2e7fccacb31b6d40e543f671aed741849f1791bd501bed46",
+        "bytes": 2296
+      }
+    ],
+    "backup": [
+      {
+        "report": "managed-backup-schema3-archive-2026-10-24.json",
+        "sha256": "faaf5d6bae5d8280b11b590ddcb33875bd974b0d0f87e2827f862674a8ca13cb",
+        "bytes": 1105
+      },
+      {
+        "report": "managed-backup-schema3-restore-2026-10-24.json",
+        "sha256": "2c65903472e9d3f1ad11c87250541116f1c2933f112359832ed0e663aa279c93",
+        "bytes": 4751
+      },
+      {
+        "report": "managed-backup-schema3-workflow-2026-10-24.json",
+        "sha256": "cc76e039d93fc7d5a2eef8552b133ca0a65e2daf2c114a8c531cec232554c5b0",
+        "bytes": 4869
+      },
+      {
+        "report": "managed-backup-schema3-offhost-2026-10-24.json",
+        "sha256": "ef96a0e6a0d093a60f94e0d87fd8258448f30a2ec9a8e7dca067b1654731435a",
+        "bytes": 1168
+      },
+      {
+        "report": "managed-backup-schema3-capacity-2026-10-24.json",
+        "sha256": "a25db8c2710de4692a21d5f4cf8742971ddc778d99c87456c3060472a1c6db48",
+        "bytes": 2113
+      },
+      {
+        "report": "managed-backup-schema3-neon-metadata-2026-10-24.json",
+        "sha256": "3a933a10d083f4894cb025f959c594712d38fee5dcb66e2d488be4d4071105e0",
+        "bytes": 1613
+      }
+    ],
+    "readiness_and_verification": [
+      {
+        "report": "primary-gptoss120-final-readiness-2026-10-24.json",
+        "sha256": "a306e839d3403c3c7b2f33b0a1523378ac29ad98859679317cb789c486f02d93",
+        "bytes": 10792
+      },
+      {
+        "report": "pod2-final-model-pools-ready-2026-10-24.json",
+        "sha256": "17b2562120bcd6cc7960693f2db147a34c10d4af0bafcc60add0aea297f7575b",
+        "bytes": 14236
+      },
+      {
+        "report": "local-validation-100b-2026-10-24.json",
+        "sha256": "9f6065860d097b5c59693ff63afca93ddb734a1818e2176aed08ff47848aaa75",
+        "bytes": 2659
+      },
+      {
+        "report": "linux-ops-final-2026-10-24.json",
+        "sha256": "3dbadb245f4ca92f0ef6b79b0f9beff0748c3c69dafacdccf28d2ba2e5c2e365",
+        "bytes": 2057
+      }
+    ],
+    "capacity": [
+      {
+        "report": "100b-capacity-arithmetic-2026-10-24.json",
+        "sha256": "13e72bb6745c0ed04eee474b1c8e07e385f53cbc2ecab40c600d32b0843c3c02",
+        "bytes": 4650
+      }
+    ],
+    "security_remediation": [
+      {
+        "report": "owner-credential-rotation-2026-10-24.json",
+        "sha256": "2e2b5cdfd6d57e397c419e7b22330f211d7c74a213d5bf696e705e7fb1eb3abf",
+        "bytes": 1102
+      }
+    ]
+  },
+  "limitations": [
+    "No whole-Pod replacement, physical GPU reset, regional database failover or live KV migration exercised",
+    "Accepted result and usage fencing does not mean exactly-once physical inference",
+    "Natural final text presence is separate from correctness and completeness; low effort did not improve all quality metrics",
+    "Short, ordered bursts on shared hardware do not establish sustained capacity, statistical tails or a causal scheduling winner",
+    "Recorded whole-allocation cost assumptions are not current invoices or marginal model-serving prices",
+    "Free database, private ingress and process watchdogs do not establish a production SLA",
+    "Raw inputs, raw model outputs, credentials, model weights and backup archive are excluded from git"
+  ],
+  "post_snapshot_owner_credential_rotation": {
+    "observed_at": "2026-10-24T00:11:50.883953+00:00",
+    "explicit_operator_approval": true,
+    "old_owner_password_rejected_direct_and_pooled": true,
+    "runtime_password_changed": false,
+    "runtime_connection_verified": true,
+    "fresh_workers_30s": 17,
+    "unfinished_tasks": 0,
+    "owner_config_mode": "0o600"
+  }
+}

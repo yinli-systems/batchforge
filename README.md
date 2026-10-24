@@ -13,9 +13,16 @@ PostgreSQL 17. Workers use their own local API; inference no longer depends on
 an operator laptop or the other GPU Pod. An app-owned watchdog restarts crashed
 processes with identity checks, bounded backoff and GPU memory gates.
 Fault tests cover API/worker death, lost acknowledgements, stale attempts,
-read-only database rejection and transactional usage.
+read-only database rejection and transactional usage. A real 121.85-second
+primary engine/worker outage moved all seven captured unfinished 120B tasks
+to the second Pod, with one accepted result per task and guarded primary
+restoration. This exercised application loss and task re-execution; physical
+GPU reset, whole-Pod replacement and live KV migration remain untested.
 See [100B validation](docs/100b-validation.md) for real inference and workload
 evidence, and [earlier validation](docs/validation.md) for the 7B baselines.
+The final snapshot found 17 ready workers and no unfinished tasks. The
+[evidence index](ops/reports/100b-release-evidence-2026-10-24.json) records report
+hashes, actual deployed source versions and the limits of these measurements.
 The managed database is currently on its free plan, without a production SLA.
 Public paid ingress was prepared and deferred by the operator; access remains
 private. See [availability](docs/ha.md), [ingress](docs/ingress.md), and
@@ -27,7 +34,7 @@ private. See [availability](docs/ha.md), [ingress](docs/ingress.md), and
 - Follow progress, queue depth, worker health and measured token usage.
 - Cancel work, retry terminal failures and download result/error JSONL.
 - Run multiple GPU workers against independent OpenAI-compatible engines.
-- Route each batch to its configured model and context-capacity pool.
+- Route each batch by its requested model ID or explicit long-context alias.
 - Recover expired leases and reject stale results after retry or cancellation.
 - Gate restarts on per-rank GPU memory and CPU-expert cgroup headroom; clean up
   previously observed engine descendants using verified Linux process identities.

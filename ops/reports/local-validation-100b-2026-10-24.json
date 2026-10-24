@@ -4,7 +4,8 @@
     "passed": 321,
     "skipped_linux_only": 3,
     "seconds": 24.54,
-    "isolated_real_postgresql": true
+    "isolated_real_postgresql": true,
+    "implementation_checkpoint": "ffff56f6736955e5088c90cc72a703cd838386bc"
   },
   "frontend_tests": {
     "passed": 3,
@@ -55,5 +56,13 @@
     ],
     "wheel_rebuilt": false,
     "live_database_queried": false
+  },
+  "post_drill_probe_tests": {
+    "passed": 8,
+    "seconds": 0.28,
+    "runner": "python -m pytest ops/ha/test_engine_outage_probe.py -q",
+    "probe_sha256": "04bf500ca72e9c359ed1e2fc359897d6fc397c8ab605ca2283b61976d080f764",
+    "test_sha256": "de32db2ba61c8763e5725bbfc085d24f9efae23f17ca4ffd11472a1ab62e72e0",
+    "scope": "Diagnostic helper only; selects and records the exact reclaimed task for stale heartbeat fencing; deployed runtime unchanged"
   }
 }

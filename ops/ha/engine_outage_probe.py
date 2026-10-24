@@ -256,9 +256,11 @@ class EngineProbe:
                 self.stop.wait(2)
             self.report.update(pair_unavailable_through=timestamp(), observed_pair_loss_seconds=self.clock()-down_at,
                                captured_tasks_reclaimed_by_secondary=recovery["reclaimed_by_exact_secondary"])
-            candidate = next(row for row in held if row["id"] in recovery["expired_task_ids"])
+            reclaimed_ids = {row["id"] for row in recovery["reclaimed_tasks"]}
+            candidate = next((row for row in held if row["id"] in reclaimed_ids), None)
+            require(candidate is not None, "reclaimed_task_missing_from_captured_leases")
             self.controller.fence(self.api, self.token, candidate)
-            self.report["expired_attempt_heartbeat_status"] = 409
+            self.report.update(expired_attempt_heartbeat_status=409, fenced_task_id=candidate["id"])
             self.restore()
             restored = True
             require(all(self.controller.record(row) == before_records[f"{row['role']}-{row['name']}"] for row in self.protected), "unreleased_process_identity_changed")

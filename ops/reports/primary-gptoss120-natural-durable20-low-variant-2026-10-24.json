@@ -1,0 +1,20 @@
+{
+  "source_sha256": "ffe741d9c87bd52ecf571f4b5c6a8ae5c5eac3d46f997399f49b2ff4dcc3f634",
+  "source_bytes": 530026,
+  "variant_sha256": "fd72b398a64698319196bb6e5d9f63a823765208e9cd821c024dc91963f4baf6",
+  "variant_bytes": 530526,
+  "tasks": 20,
+  "only_body_difference": "reasoning_effort='low'",
+  "all_20_body_only_difference_checks_passed": true,
+  "max_tokens": [
+    32,
+    128,
+    512,
+    2048
+  ],
+  "model": "openai/gpt-oss-120b",
+  "benchmark_source_sha256": "fefc6ea4dd19ad6f8d98084a833072d31c11d1def144385698d589ba4d7d48d6",
+  "default_comparison_run_id": "bench-67f164a1f231",
+  "default_comparison_batch_id": "batch_ddf2b610e83a2519378d106e6a1907f3",
+  "scope": "Natural durable final-answer-yield comparison; no forced EOS/minimum; runtime placement may differ; not replacing paired8 answer quality evidence"
+}

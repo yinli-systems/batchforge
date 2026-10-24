@@ -1,8 +1,19 @@
 # Bounded GPT-OSS engine recovery drill
 
-This is a prepared operator procedure. It has not been executed. Wait for the
-coordinator's explicit fault release after both Pods' matrices and quality
-experiments finish. Do not run the submission merely because the code is ready.
+This is the operator procedure prepared for the bounded recovery drill. Every
+new execution requires the coordinator's explicit fault release after both
+Pods' matrices and quality experiments finish. Do not rerun the submission
+merely because the code is ready.
+
+The historical run `bench-45c4387884b3` executed probe SHA256
+`c953f4bdca4b799095054bfa554be1edc0a2e8459115933afcf766718ed9b872`,
+preserved in checkpoint `ffff56f` and the original operator archive. That
+version selected the first expired captured lease for its heartbeat fence
+check. The subsequent local helper selects a **reclaimed** captured task and
+records `fenced_task_id`, so its 409 evidence is explicitly on that same task.
+This diagnostic fix did not replace the historical operator or change any
+application service. Treat the historical report and any explicit post-probe
+same-task fence supplement as separate evidence from a later helper version.
 
 The selected primary service names are `worker-gptoss120` and
 `engine-gptoss120`; their worker ID is `primary-gptoss120-tp4`. The exact fallback

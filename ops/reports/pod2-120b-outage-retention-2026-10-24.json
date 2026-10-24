@@ -1,0 +1,18 @@
+{
+  "observed_at": "2026-10-23T23:31:50.672548+00:00",
+  "run_id": "bench-45c4387884b3",
+  "requested_retention_start": "2026-10-23T23:30:31+00:00",
+  "source": ".runtime/observability/controlplane-secondary-120b-recovery-20261024.jsonl",
+  "source_bytes_at_checkpoint": 2603518,
+  "source_sha256_at_checkpoint": "11afc2983230466b35a42d8834e3242f229ae11612d541d66d9b1e0b7985f75a",
+  "retained_samples_since_requested_start": 39,
+  "first_retained_sample_at": "2026-10-23T23:30:32.836985+00:00",
+  "last_retained_sample_at": "2026-10-23T23:31:49.123869+00:00",
+  "observer_identity": {
+    "pid": 134254,
+    "start_ticks": "24975695",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "stream_is_append_only_and_preserved": true,
+  "no_new_db_gpu_requests": true
+}

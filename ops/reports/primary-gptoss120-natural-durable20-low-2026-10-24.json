@@ -1,0 +1,153 @@
+{
+  "schema_version": 2,
+  "run_id": "bench-ab407809daa4",
+  "observed_at": "2026-10-23T23:48:42.473295+00:00",
+  "measurement_started_at": "2026-10-23T23:47:56.111739+00:00",
+  "terminal_observation_ended_at": "2026-10-23T23:48:42.400349+00:00",
+  "passed": true,
+  "measurement": "client observed submission through terminal observation; output validation measured separately",
+  "engine_label": "Actual shared 4xH100 TP4 MXFP4 primary plus CPU-expert secondary; natural paired20 reasoning_effort=low; caps unchanged; no forced EOS/min",
+  "test_fixture_detected": false,
+  "model": "openai/gpt-oss-120b",
+  "requested_tasks": 20,
+  "submitted_tasks": 20,
+  "batches": 1,
+  "accepted_batches": 1,
+  "terminal_batches": 1,
+  "requested_max_output_tokens": 2048,
+  "elapsed_seconds": 46.288586,
+  "completed": 20,
+  "failed": 0,
+  "cancelled": 0,
+  "unfinished_batch_ids": [],
+  "submission_errors": [],
+  "output_validation_errors": [],
+  "completed_tasks_per_second": 0.432072,
+  "observed_prompt_tokens": 109054,
+  "observed_completion_tokens": 8742,
+  "prompt_tokens_per_task": {
+    "samples": 20,
+    "p50": 2048.0,
+    "p95": 16384.0,
+    "p99": 16384.0,
+    "max": 16384,
+    "mean": 5452.7
+  },
+  "completion_tokens_per_task": {
+    "samples": 20,
+    "p50": 128.0,
+    "p95": 2048.0,
+    "p99": 2048.0,
+    "max": 2048,
+    "mean": 437.1
+  },
+  "output_finish_reasons": {
+    "length": 14,
+    "stop": 6
+  },
+  "output_custom_ids_unique": true,
+  "output_custom_ids_known": true,
+  "output_rows_match_completed": true,
+  "batch_counts_match_submission": true,
+  "batch_ids": [
+    "batch_a1678e67c4ecc8ddbc4d5eb548a4044d"
+  ],
+  "workload": {
+    "sha256": "7186eb9c5c407aee0f659ffe4e559bc2a8e66da1c8c871d4c78315deccbe9dc2",
+    "hash_definition": "concatenated exact JSONL bytes in batch_index order",
+    "provided_source_sha256": "fd72b398a64698319196bb6e5d9f63a823765208e9cd821c024dc91963f4baf6",
+    "bytes": 531326,
+    "generation_seconds": 0.0141,
+    "model": "openai/gpt-oss-120b",
+    "prompt": null,
+    "generation_mode": "provided-jsonl",
+    "message_template": "exact provided messages; run_id prepended to custom_id",
+    "max_tokens": 2048,
+    "temperature": 0,
+    "tasks_per_batch": [
+      20
+    ]
+  },
+  "submission": {
+    "elapsed_seconds": 1.035123,
+    "attempted_http_requests": 2,
+    "successful_http_requests": 2,
+    "requests_per_second": 1.932138,
+    "successful_requests_per_second": 1.932138,
+    "accepted_batches_per_second": 0.966069,
+    "accepted_tasks_per_second": 19.321382,
+    "upload_latency_seconds": {
+      "samples": 1,
+      "p50": 0.463664,
+      "p95": 0.463664,
+      "p99": 0.463664,
+      "max": 0.463664,
+      "mean": 0.463664
+    },
+    "create_latency_seconds": {
+      "samples": 1,
+      "p50": 0.518551,
+      "p95": 0.518551,
+      "p99": 0.518551,
+      "max": 0.518551,
+      "mean": 0.518551
+    },
+    "latency_population": "all attempted requests, including failures",
+    "request_population": "POST /v1/files and POST /v1/batches only; excludes polling and downloads"
+  },
+  "batch_turnaround_seconds": {
+    "samples": 1,
+    "p50": 45.773269,
+    "p95": 45.773269,
+    "p99": 45.773269,
+    "max": 45.773269,
+    "mean": 45.773269
+  },
+  "batch_after_acceptance_seconds": {
+    "samples": 1,
+    "p50": 45.254719,
+    "p95": 45.254719,
+    "p99": 45.254719,
+    "max": 45.254719,
+    "mean": 45.254719
+  },
+  "batch_upload_to_terminal_seconds": {
+    "samples": 1,
+    "p50": 46.236934,
+    "p95": 46.236934,
+    "p99": 46.236934,
+    "max": 46.236934,
+    "mean": 46.236934
+  },
+  "percentile_method": "linear interpolation at (n-1)*p",
+  "output_validation_seconds": 0.072416,
+  "poll_interval_seconds": 1.0,
+  "per_batch_deadline_seconds": 2400.0,
+  "batch_observations": [
+    {
+      "index": 0,
+      "tasks": 20,
+      "batch_id": "batch_a1678e67c4ecc8ddbc4d5eb548a4044d",
+      "status": "completed",
+      "upload_seconds": 0.463664,
+      "create_seconds": 0.518551,
+      "turnaround_seconds": 45.773269,
+      "request_counts": {
+        "total": 20,
+        "completed": 20,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    }
+  ],
+  "limitations": [
+    "Not a daily capacity forecast",
+    "Token lengths are measured from outputs, not guaranteed by the prompt",
+    "Batch turnaround starts before POST /v1/batches and ends at first client-observed terminal response; polling adds observation delay",
+    "No per-task inference latency or quality evaluation",
+    "Accepted counts require a received create acknowledgement; uncertain create errors may have committed server-side"
+  ]
+}

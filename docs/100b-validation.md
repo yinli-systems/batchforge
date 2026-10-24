@@ -15,6 +15,8 @@ No additional GPU allocation was purchased.
 | Primary natural request | Correct final `42`, 82 input / 47 generated tokens, 1.258 s | One engine request |
 | Primary full-context request | 16,384 actual input / 2,048 generated, 38.445 s, final content present | Output reached its cap; not a quality score |
 | Primary durable batch | 3/3 accepted, final answers `42`, `437`, `Paris`; 242 input / 169 generated | Real authenticated upload, queue, worker, output and database commit |
+| Post-recovery natural mixed batch | 20/20 durably completed in 43.884 s; 109,050 input / 9,292 generated | 10/20 have final text; 10 are reasoning-only; 15 hit the cap |
+| Explicit low-effort platform smoke | Correct final `42`, 80 input / 16 generated, natural stop | One accepted CPU/MIG task; choice persisted and forwarded |
 | Secondary natural request, cap 32 | 80 input / 32 generated, no final answer | Reasoning consumed the cap; retained as a failed answer probe |
 | Secondary natural request, cap 128 | Correct final `4`, 80 input / 39 generated | 75 input tokens reused; 1.076 s is a warm-cache observation |
 
@@ -24,6 +26,27 @@ Sources: [primary direct requests](../ops/reports/primary-gptoss120-natural-long
 The report format separates durable completion, final text presence, reasoning
 only responses and truncation. A valid protocol response does not establish a
 useful answer or customer acceptance.
+
+The post-recovery mixed batch used the frozen 20 source bodies and original
+32–2,048 output caps, with natural EOS and no forced minimum. The primary
+accepted 17 tasks and the secondary three. Downloaded output usage matches
+the task, attempt and batch ledgers, with one accepted attempt per task and no
+failed, cancelled or unfinished tasks. Actual rendered input differs between
+the two runtime templates; primary-only manifest counts are not imposed on
+the fallback. [Natural batch](../ops/reports/primary-gptoss120-natural-durable20-2026-10-24.json),
+[per-task attribution](../ops/reports/primary-gptoss120-natural-durable20-attribution-2026-10-24.json).
+
+The output audit found final text in 0/5 requests capped at 32 tokens, 1/5 at
+128, 4/5 at 512 and 5/5 at 2,048. Two of the last group still reached their
+cap. Final text presence does not establish correctness or completeness.
+The actual executing benchmark was an older pinned version without these
+content counters; its source and original report are preserved. A separate
+read-only audit used the current helper against the downloaded original bytes,
+matched each custom ID to its frozen manifest cap, and joined each result to
+its accepted worker and usage. No inference was replayed to fill this
+observation gap. [Output audit](../ops/reports/primary-gptoss120-final-content-audit-2026-10-24.json),
+[executed benchmark source](../ops/reports/primary-gptoss120-durable-benchmark-executed-2026-10-24.py),
+[low-effort smoke](../ops/reports/primary-gptoss120-low-effort-durable1-attribution-2026-10-24.json).
 
 The first primary configuration failed after loading weights because its
 2,048-token prefill chunk left insufficient KV memory. A 1,024-token chunk kept
@@ -216,6 +239,33 @@ questions may also have appeared in training. The evaluator rejects missing
 final text, duplicate JSON keys and nonfinite values separately from transport
 success. [Paired natural-output evidence](../ops/reports/primary-gptoss120-natural-quality-paired8-2026-10-24.json).
 
+A subsequent durable comparison reused all 20 frozen mixed-length request
+bodies and their output caps, adding only `reasoning_effort: "low"`. Both
+cohorts used natural EOS and no forced minimum. All 40 tasks had one accepted
+attempt; downloaded output usage matched the task, attempt and batch ledgers.
+
+| Effort | Durable completion | Final text present | Length capped | Generated tokens | Elapsed seconds |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Omitted, runtime default | 20/20 | 10/20 | 15/20 | 9,292 | 43.884 |
+| Explicit `low` | 20/20 | 20/20 | 14/20 | 8,742 | 46.289 |
+
+Each output-cap group (32, 128, 512 and 2,048) had final text in 5/5 low-effort
+responses. All five 32-token responses still hit their cap. This measures
+final-text presence, not correctness or completeness. The low cohort used
+5.9% fewer generated tokens but took 5.5% longer in this ordered observation.
+Placement changed from 17 primary / 3 secondary tasks to 19 / 1: only 16 pairs
+used the same runtime; four are explicitly placement-confounded. The audit
+retains that split instead of attributing the whole change to effort alone.
+Within the 16 same-runtime pairs, all on the primary, final text increased
+from 9/16 to 16/16; the four changed-runtime pairs increased from 1/4 to 4/4.
+These results do not overturn the eight-question quality regression above or
+justify changing the default.
+
+See the [low-effort batch](../ops/reports/primary-gptoss120-natural-durable20-low-2026-10-24.json),
+[launcher input comparison](../ops/reports/primary-gptoss120-natural-durable20-low-variant-2026-10-24.json),
+[accepted-task attribution](../ops/reports/primary-gptoss120-natural-durable20-low-attribution-2026-10-24.json)
+and [paired content audit](../ops/reports/primary-gptoss120-final-content-audit-2026-10-24.json).
+
 ## Cost and the daily target
 
 The previously recorded complete allocation rates are $16.10/hour for the
@@ -259,9 +309,10 @@ previous 20-engine deployment. It is not current 120B throughput and must not
 be extrapolated into a 120B GPU count. A dedicated H100 with the full memory
 available is also a different configuration from this shared TP4 allocation.
 
-The recorded 7B mixed-length JSONL contains 513,957 bytes for 20 requests.
+The frozen primary 120B mixed-length JSONL contains 530,026 bytes for 20 requests,
+with SHA-256 `ffe741d9c87bd52ecf571f4b5c6a8ae5c5eac3d46f997399f49b2ff4dcc3f634`.
 At ten million requests of that byte distribution, raw input alone would be
-**256.98 GB/day**, before output, duplicate storage, indexes, WAL and retries.
+**265.013 GB/day**, before output, duplicate storage, indexes, WAL and retries.
 The current free database cannot serve as that payload archive. Object storage,
 streaming input/output, retention and a funded database capacity plan are
 required in addition to inference throughput; multiplying GPU count alone does
@@ -275,14 +326,37 @@ measurements. The [selection assessment](100b-model-feasibility.md) preserves
 weight size, precision, runtime and failed startup evidence. Private prompts,
 credentials and model weights are excluded from the repository.
 
-Managed engines now have per-rank memory admission, observed-child identity
-tracking and pidfd cleanup; the CPU-expert lane also checks actual cgroup
-headroom before each restart. Linux tests prove owned orphan cleanup without
-signaling an unrelated process. Cross-node recovery must additionally prove a
-captured task's lease expiry, a different accepted attempt on the exact second
-worker and rejection of the stale attempt; a hardware reset or entire-Pod loss
-is a different experiment. The managed database remains a free Neon instance,
-and the private ingress and process watchdogs do not establish a production SLA.
+Managed engines have per-rank memory admission. TP4 additionally enables
+observed-child identity tracking and pidfd cleanup; the CPU-expert lane also
+checks actual cgroup headroom before each restart. Linux tests prove TP4 owned
+orphan cleanup without signaling an unrelated process. Single-GPU engines
+retain leader identity checks; descendant cleanup after their leader dies
+has not been exercised.
+
+The real engine-loss exercise captured **seven valid primary leases** in the
+eight-task run `bench-45c4387884b3`. The owned primary engine and worker were
+unavailable from 23:30:38.245804 through 23:32:40.099379 UTC on October 23:
+**121.853536 seconds**. All seven captured tasks expired with `lease_expired`
+and were accepted exactly once by `secondpod-gptoss120b-cpu-expert`, with the
+last accepted by 23:32:33.910420. The full batch completed 8/8, zero failures or
+cancellations, with 1,008 accepted input and 1,336 generated tokens. These are
+the fallback runtime's actual counts, not eight times a primary template target.
+
+The primary restart passed its fresh 2,048-MiB margin gate, and engine, worker
+and watchdog restoration completed at 23:33:36.651825 UTC. Both primary API
+processes and its gateway retained their identities throughout the sampled
+exercise. Lease recovery was automatic; primary restoration was controlled by
+the fault operator. This proves **task re-execution and accepted-result
+fencing**, not live KV-cache migration, physical GPU reset recovery, whole-Pod
+replacement or database failover. [Probe evidence](../ops/reports/primary-gptoss120-engine-outage-2026-10-24.json),
+[durable batch](../ops/reports/primary-gptoss120-engine-outage-benchmark-2026-10-24.json).
+An explicit follow-up selected one of those reclaimed tasks, read its original
+expired primary attempt token into memory, and sent an old heartbeat. It returned
+`409 stale_attempt`; the task still had exactly one accepted secondary result
+and unchanged usage. The report records the task ID and attempt number without
+persisting the token. [Same-task fence supplement](../ops/reports/primary-gptoss120-engine-outage-same-task-fence-2026-10-24.json).
+The managed database remains a free Neon instance; private ingress and process
+watchdogs do not establish a production SLA.
 
 The current schema-v3 backup was actually restored into a uniquely named
 temporary database, checked, and removed. The 103,379,878-byte archive contains
@@ -292,3 +366,22 @@ uniqueness passed. Pure restore took 8.452 seconds; restore, checks and cleanup
 took 26.509 seconds. A private off-host copy matches the archive SHA-256.
 This tests the archive on the same Neon branch; it does not restore runtime
 roles/secrets or prove regional failover. See the [backup and capacity limits](backup.md).
+
+The final post-cohort snapshot at 23:52:13 UTC on October 23 found 17 fresh,
+ready workers across three model pools, zero pending/running tasks and no
+in-progress batches. All five primary managed services were ready; its API
+and gateway process identities survived the engine-loss exercise. The runtime
+database connection used client TLS with `sslmode=verify-full` and the
+least-privilege `bf_runtime` role. The separately observed Neon server-side
+`pg_stat_ssl` leg was false; it is not the client connection's TLS state.
+[Final readiness](../ops/reports/primary-gptoss120-final-readiness-2026-10-24.json).
+The [release evidence index](../ops/reports/100b-release-evidence-2026-10-24.json)
+records source hashes, executed-versus-observer versions and verification scope.
+
+At 00:11:50 UTC on October 24, an approved owner-only credential rotation
+remediated an administrative password accidentally displayed during a tool-log
+configuration check. Fresh connections rejected the old password through both
+direct and pooled endpoints. The new owner connection and unchanged runtime
+connection passed; 17 workers remained fresh with no unfinished tasks. The
+primary owner configuration and local owner credential are mode 600, and no
+service restart was required. [Rotation verification](../ops/reports/owner-credential-rotation-2026-10-24.json).

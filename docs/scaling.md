@@ -183,11 +183,19 @@ For the newer **120B equal-cell mixed workload**, use the separate
 primary 0.42766 and secondary 0.03001 engine inferences/s. Their separately
 measured sum at an assumed 70% duty is about 27,680/day, roughly 361× below
 ten million/day. The larger-model workload has different lengths, precision and
-active parameter count from the 7B analysis run above. Its input alone extrapolates
-to 256.98 GB/day using the recorded 7B equal-cell source byte distribution.
+active parameter count from the 7B analysis run above. Its frozen primary JSONL
+contains 530,026 bytes for 20 requests: input alone extrapolates to
+265.013 GB/day at ten million requests, before outputs, indexes, WAL or retries.
 
 The next measured engineering steps are:
 
+- Reduce idle queue traffic with model-scoped wake-up hints and bounded fallback
+  polling, while retaining database claims as the source of truth. During the
+  121.85-second engine-loss window, the second Pod recorded 1,062 claim HTTP
+  calls and eight completion calls across all its model pools. These are call
+  counters, not unique tasks or evidence of slow SQL; the mostly idle pools
+  still consume control-plane work and keep the free database active.
+  [Observed secondary window](../ops/reports/pod2-gptoss120b-engine-down-secondary-observation-2026-10-24.json).
 - Keep PostgreSQL responsible for task/attempt fences and accepted usage, but
   move large immutable input/output bodies to checksummed object storage with
   explicit lifecycle and streaming exports. Count duplicated payloads, WAL and

@@ -8,7 +8,7 @@ owner's selected policy. Short runs below establish observed behavior, not a
 
 ## Correctness and deployability
 
-The latest implementation passed the full local suite of **321 tests**, with
+The deployed implementation checkpoint passed the full local suite of **321 tests**, with
 three Linux-only cases skipped on macOS (24.54 seconds, isolated real PostgreSQL).
 The final supervisor and owned-descendant suite also ran on Linux: **50 passed
 in 2.85 seconds**, including the macOS-skipped cases, leader loss, orphan cleanup
@@ -18,6 +18,11 @@ incorrectly looked for PID files deliberately removed by successful cleanup;
 that raw error remains recorded. A follow-up checked the five exact test PIDs
 and found none running ([final report](../ops/reports/linux-ops-final-2026-10-24.json),
 [initial observer](../ops/reports/linux-ops-final-initial-observer-2026-10-24.json)).
+After the live recovery drill, a diagnostic-only helper change made its stale
+heartbeat check select and record the exact reclaimed task; its focused suite
+passed **8/8 in 0.28 seconds**, including an expired-but-not-reclaimed decoy.
+The live run retains its original source version and separate same-task fence
+supplement. This change does not modify the deployed API, worker or engine.
 The full suite exercises all four combinations of Python/SQL claim and completion
 paths over real PostgreSQL: tenant isolation, capacity, admission and fair queue
 accounting, cancellation/deadline races, lease expiry, duplicate replay,

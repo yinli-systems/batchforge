@@ -41,7 +41,9 @@ class Progress:
     def recovery(self, captured):
         count = int(self.event.now >= 120)
         return {"captured": 1, "lease_expired": count, "reclaimed_by_exact_secondary": count,
-                "expired_task_ids": ["real-task-id"] if count else [], "reclaimed_tasks": []}
+                "expired_task_ids": ["real-task-id"] if count else [],
+                "reclaimed_tasks": [{"id": "real-task-id", "accepted_worker": self.secondary_worker_id,
+                    "accepted_count": 1, "prompt_tokens": 7, "completion_tokens": 2}] if count else []}
 
 
 def fixture(tmp_path, *, capture=True, fail_during=False, fail_start_once=None):
@@ -81,6 +83,7 @@ def test_only_released_pair_stops_and_same_task_secondary_reclaim_precedes_resto
     assert report["observed_pair_loss_seconds"] >= 120
     assert report["captured_tasks_reclaimed_by_secondary"] == 1
     assert report["expired_attempt_heartbeat_status"] == 409
+    assert report["fenced_task_id"] == "real-task-id"
     stopped = [key for action, key in manager.calls if action == "stop"]
     assert stopped == ["supervisor-primary", "worker-tp4", "engine-tp4"]
     assert manager.calls.index(("fence", "api-a")) < manager.calls.index(("start", "engine-tp4"))
@@ -98,6 +101,31 @@ def test_no_claimed_lease_or_wrong_run_count_refuses_without_stopping_anything(t
     probe.expected = 999
     assert probe.run()["error"] == "run_task_count_or_model_scope_mismatch"
     assert manager.calls == []
+
+
+def test_fenced_old_token_belongs_to_the_reclaimed_task_not_first_expired_task(tmp_path):
+    probe, manager, event = fixture(tmp_path)
+    capture, recovery, fence = probe.progress.capture, probe.progress.recovery, manager.fence
+    def two_captured(worker_id):
+        original = capture(worker_id)[0]
+        return [{**original, "id": "expired-unreclaimed-first", "attempt_token": "never-report-other-token"}, original]
+    def one_reclaimed(captured):
+        result = recovery(captured)
+        if result["lease_expired"]:
+            result["lease_expired"] = 2
+            result["expired_task_ids"].insert(0, "expired-unreclaimed-first")
+        return result
+    fenced = []
+    def record_fence(api, token, candidate):
+        fenced.append(candidate["id"])
+        return fence(api, token, candidate)
+    probe.progress.capture, probe.progress.recovery, manager.fence = two_captured, one_reclaimed, record_fence
+    report = probe.run()
+    assert report["status"] == "passed" and report["held_valid_leases_after_loss"] == 2
+    assert report["recovery_samples"][-1]["expired_task_ids"][0] == "expired-unreclaimed-first"
+    assert report["fenced_task_id"] == "real-task-id" and fenced == ["real-task-id"]
+    assert report["expired_attempt_heartbeat_status"] == 409
+    assert "never-report" not in json.dumps(report)
 
 
 def test_observation_failure_during_loss_restores_pair_then_watchdog(tmp_path):

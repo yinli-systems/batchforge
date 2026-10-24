@@ -1,0 +1,983 @@
+{
+  "schema_version": 2,
+  "observed_at": "2026-10-23T23:52:13.360455+00:00",
+  "run_id": "bench-ab407809daa4",
+  "passed": true,
+  "tasks": [
+    {
+      "id": "task_49391e6442fd1f59e536fa813e5e1ace",
+      "custom_id": "bench-ab407809daa4-mix-0-128-128",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 128,
+      "completion_tokens": 91,
+      "reasoning_effort": "low",
+      "requested_output_cap": 128,
+      "finish_reason": "stop",
+      "source_custom_id": "mix-0-128-128",
+      "attempt_history": [
+        {
+          "task_id": "task_49391e6442fd1f59e536fa813e5e1ace",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 128,
+          "completion_tokens": 91,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_c519599d32f2e31afc0fb90c07022eb6",
+      "custom_id": "bench-ab407809daa4-mix-0-128-2048",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 128,
+      "completion_tokens": 70,
+      "reasoning_effort": "low",
+      "requested_output_cap": 2048,
+      "finish_reason": "stop",
+      "source_custom_id": "mix-0-128-2048",
+      "attempt_history": [
+        {
+          "task_id": "task_c519599d32f2e31afc0fb90c07022eb6",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 128,
+          "completion_tokens": 70,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_5a1fdddaf8256973f2bc1c108431353a",
+      "custom_id": "bench-ab407809daa4-mix-0-128-32",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 128,
+      "completion_tokens": 32,
+      "reasoning_effort": "low",
+      "requested_output_cap": 32,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-128-32",
+      "attempt_history": [
+        {
+          "task_id": "task_5a1fdddaf8256973f2bc1c108431353a",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 128,
+          "completion_tokens": 32,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_c536fbf41102817eb575841474b6fcd2",
+      "custom_id": "bench-ab407809daa4-mix-0-128-512",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 128,
+      "completion_tokens": 258,
+      "reasoning_effort": "low",
+      "requested_output_cap": 512,
+      "finish_reason": "stop",
+      "source_custom_id": "mix-0-128-512",
+      "attempt_history": [
+        {
+          "task_id": "task_c536fbf41102817eb575841474b6fcd2",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 128,
+          "completion_tokens": 258,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_2315e373ea4bae229b2a7b917088d709",
+      "custom_id": "bench-ab407809daa4-mix-0-16384-128",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 16384,
+      "completion_tokens": 128,
+      "reasoning_effort": "low",
+      "requested_output_cap": 128,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-16384-128",
+      "attempt_history": [
+        {
+          "task_id": "task_2315e373ea4bae229b2a7b917088d709",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 16384,
+          "completion_tokens": 128,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_6c474683a4ceea9c42211a120b04a52b",
+      "custom_id": "bench-ab407809daa4-mix-0-16384-2048",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 16384,
+      "completion_tokens": 2048,
+      "reasoning_effort": "low",
+      "requested_output_cap": 2048,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-16384-2048",
+      "attempt_history": [
+        {
+          "task_id": "task_6c474683a4ceea9c42211a120b04a52b",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 16384,
+          "completion_tokens": 2048,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_3463b67a04aaf0f57692685dee05f331",
+      "custom_id": "bench-ab407809daa4-mix-0-16384-32",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 16384,
+      "completion_tokens": 32,
+      "reasoning_effort": "low",
+      "requested_output_cap": 32,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-16384-32",
+      "attempt_history": [
+        {
+          "task_id": "task_3463b67a04aaf0f57692685dee05f331",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 16384,
+          "completion_tokens": 32,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_75ed1e41e3991e324e37ffba2fbb8ef2",
+      "custom_id": "bench-ab407809daa4-mix-0-16384-512",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 16384,
+      "completion_tokens": 512,
+      "reasoning_effort": "low",
+      "requested_output_cap": 512,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-16384-512",
+      "attempt_history": [
+        {
+          "task_id": "task_75ed1e41e3991e324e37ffba2fbb8ef2",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 16384,
+          "completion_tokens": 512,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_b6c4cd348c643cf48730e0d0f4067742",
+      "custom_id": "bench-ab407809daa4-mix-0-2048-128",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 2048,
+      "completion_tokens": 128,
+      "reasoning_effort": "low",
+      "requested_output_cap": 128,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-2048-128",
+      "attempt_history": [
+        {
+          "task_id": "task_b6c4cd348c643cf48730e0d0f4067742",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 2048,
+          "completion_tokens": 128,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_e1700814b9f4cb78de3eb92039b2a7f9",
+      "custom_id": "bench-ab407809daa4-mix-0-2048-2048",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 2048,
+      "completion_tokens": 1237,
+      "reasoning_effort": "low",
+      "requested_output_cap": 2048,
+      "finish_reason": "stop",
+      "source_custom_id": "mix-0-2048-2048",
+      "attempt_history": [
+        {
+          "task_id": "task_e1700814b9f4cb78de3eb92039b2a7f9",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 2048,
+          "completion_tokens": 1237,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_e13204eb394911eabb533153a56eab92",
+      "custom_id": "bench-ab407809daa4-mix-0-2048-32",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 2048,
+      "completion_tokens": 32,
+      "reasoning_effort": "low",
+      "requested_output_cap": 32,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-2048-32",
+      "attempt_history": [
+        {
+          "task_id": "task_e13204eb394911eabb533153a56eab92",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 2048,
+          "completion_tokens": 32,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_270d4b5905cfe94021d4754b7d628fab",
+      "custom_id": "bench-ab407809daa4-mix-0-2048-512",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 2048,
+      "completion_tokens": 512,
+      "reasoning_effort": "low",
+      "requested_output_cap": 512,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-2048-512",
+      "attempt_history": [
+        {
+          "task_id": "task_270d4b5905cfe94021d4754b7d628fab",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 2048,
+          "completion_tokens": 512,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_14e105cbe8033c3271fd75a24ba597b5",
+      "custom_id": "bench-ab407809daa4-mix-0-512-128",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 512,
+      "completion_tokens": 128,
+      "reasoning_effort": "low",
+      "requested_output_cap": 128,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-512-128",
+      "attempt_history": [
+        {
+          "task_id": "task_14e105cbe8033c3271fd75a24ba597b5",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 512,
+          "completion_tokens": 128,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_ef4cc9335579b84075e726b98e1e42bb",
+      "custom_id": "bench-ab407809daa4-mix-0-512-2048",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 512,
+      "completion_tokens": 417,
+      "reasoning_effort": "low",
+      "requested_output_cap": 2048,
+      "finish_reason": "stop",
+      "source_custom_id": "mix-0-512-2048",
+      "attempt_history": [
+        {
+          "task_id": "task_ef4cc9335579b84075e726b98e1e42bb",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 512,
+          "completion_tokens": 417,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_8ae0ea4c8378bb5bc81eb7d48c450b9c",
+      "custom_id": "bench-ab407809daa4-mix-0-512-32",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 512,
+      "completion_tokens": 32,
+      "reasoning_effort": "low",
+      "requested_output_cap": 32,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-512-32",
+      "attempt_history": [
+        {
+          "task_id": "task_8ae0ea4c8378bb5bc81eb7d48c450b9c",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 512,
+          "completion_tokens": 32,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_167a248e931967af44a76b563d91b65a",
+      "custom_id": "bench-ab407809daa4-mix-0-512-512",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 512,
+      "completion_tokens": 365,
+      "reasoning_effort": "low",
+      "requested_output_cap": 512,
+      "finish_reason": "stop",
+      "source_custom_id": "mix-0-512-512",
+      "attempt_history": [
+        {
+          "task_id": "task_167a248e931967af44a76b563d91b65a",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 512,
+          "completion_tokens": 365,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_a9fef87593d57fe63a2a8153ffcc5010",
+      "custom_id": "bench-ab407809daa4-mix-0-8192-128",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 8192,
+      "completion_tokens": 128,
+      "reasoning_effort": "low",
+      "requested_output_cap": 128,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-8192-128",
+      "attempt_history": [
+        {
+          "task_id": "task_a9fef87593d57fe63a2a8153ffcc5010",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 8192,
+          "completion_tokens": 128,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_b6fb3a76823d846fa6a609257b1bad41",
+      "custom_id": "bench-ab407809daa4-mix-0-8192-2048",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 8192,
+      "completion_tokens": 2048,
+      "reasoning_effort": "low",
+      "requested_output_cap": 2048,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-8192-2048",
+      "attempt_history": [
+        {
+          "task_id": "task_b6fb3a76823d846fa6a609257b1bad41",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 8192,
+          "completion_tokens": 2048,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_11e14d40c7f107cb01c34f6c6c9476ee",
+      "custom_id": "bench-ab407809daa4-mix-0-8192-32",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "primary-gptoss120-tp4",
+      "attempts": 1,
+      "prompt_tokens": 8192,
+      "completion_tokens": 32,
+      "reasoning_effort": "low",
+      "requested_output_cap": 32,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-8192-32",
+      "attempt_history": [
+        {
+          "task_id": "task_11e14d40c7f107cb01c34f6c6c9476ee",
+          "worker_id": "primary-gptoss120-tp4",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 8192,
+          "completion_tokens": 32,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    },
+    {
+      "id": "task_0beb88e4daf8a8a98bc7e9bf2a46f4e3",
+      "custom_id": "bench-ab407809daa4-mix-0-8192-512",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "worker_id": "secondpod-gptoss120b-cpu-expert",
+      "attempts": 1,
+      "prompt_tokens": 8190,
+      "completion_tokens": 512,
+      "reasoning_effort": "low",
+      "requested_output_cap": 512,
+      "finish_reason": "length",
+      "source_custom_id": "mix-0-8192-512",
+      "attempt_history": [
+        {
+          "task_id": "task_0beb88e4daf8a8a98bc7e9bf2a46f4e3",
+          "worker_id": "secondpod-gptoss120b-cpu-expert",
+          "number": 1,
+          "status": "completed",
+          "prompt_tokens": 8190,
+          "completion_tokens": 512,
+          "error_code": null
+        }
+      ],
+      "accepted_attempt_count": 1
+    }
+  ],
+  "batches": [
+    {
+      "id": "batch_a1678e67c4ecc8ddbc4d5eb548a4044d",
+      "model": "openai/gpt-oss-120b",
+      "status": "completed",
+      "total_count": 20,
+      "pending_count": 0,
+      "running_count": 0,
+      "completed_count": 20,
+      "failed_count": 0,
+      "cancelled_count": 0,
+      "prompt_tokens": 109054,
+      "completion_tokens": 8742
+    }
+  ],
+  "accepted_by_worker": {
+    "primary-gptoss120-tp4": {
+      "tasks": 19,
+      "prompt_tokens": 100864,
+      "completion_tokens": 8230,
+      "all_accepted_once": true
+    },
+    "secondpod-gptoss120b-cpu-expert": {
+      "tasks": 1,
+      "prompt_tokens": 8190,
+      "completion_tokens": 512,
+      "all_accepted_once": true
+    }
+  },
+  "attempts_by_worker_status": [
+    {
+      "worker_id": "secondpod-gptoss120b-cpu-expert",
+      "status": "completed",
+      "count": 1
+    },
+    {
+      "worker_id": "primary-gptoss120-tp4",
+      "status": "completed",
+      "count": 19
+    }
+  ],
+  "one_accepted_attempt_per_task": true,
+  "accepted_usage_equal_across_batch_task_attempt": true,
+  "forced_minimum_tokens": false,
+  "ignore_eos": false,
+  "benchmark_executed_source_sha256": "fefc6ea4dd19ad6f8d98084a833072d31c11d1def144385698d589ba4d7d48d6",
+  "frozen_primary_workload": {
+    "bytes": 530026,
+    "sha256": "ffe741d9c87bd52ecf571f4b5c6a8ae5c5eac3d46f997399f49b2ff4dcc3f634"
+  },
+  "scope": "Durable accepted usage and placement only; primary Harmony/MXFP4 vs secondary llama/GGUF runtime differences remain; no forced-output or answer-quality assertion",
+  "variant_proof": {
+    "source_sha256": "ffe741d9c87bd52ecf571f4b5c6a8ae5c5eac3d46f997399f49b2ff4dcc3f634",
+    "source_bytes": 530026,
+    "variant_sha256": "fd72b398a64698319196bb6e5d9f63a823765208e9cd821c024dc91963f4baf6",
+    "variant_bytes": 530526,
+    "tasks": 20,
+    "only_body_difference": "reasoning_effort='low'",
+    "all_20_body_only_difference_checks_passed": true,
+    "max_tokens": [
+      32,
+      128,
+      512,
+      2048
+    ],
+    "model": "openai/gpt-oss-120b",
+    "benchmark_source_sha256": "fefc6ea4dd19ad6f8d98084a833072d31c11d1def144385698d589ba4d7d48d6",
+    "default_comparison_run_id": "bench-67f164a1f231",
+    "default_comparison_batch_id": "batch_ddf2b610e83a2519378d106e6a1907f3",
+    "scope": "Natural durable final-answer-yield comparison; no forced EOS/minimum; runtime placement may differ; not replacing paired8 answer quality evidence"
+  },
+  "paired_default_run_id": "bench-67f164a1f231",
+  "placement_pairs": [
+    {
+      "source_custom_id": "mix-0-128-128",
+      "default_task_id": "task_a77695047a6b1bfaccc15574bc7efa57",
+      "low_task_id": "task_49391e6442fd1f59e536fa813e5e1ace",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 128,
+        "completion_tokens": 128
+      },
+      "low_usage": {
+        "prompt_tokens": 128,
+        "completion_tokens": 91
+      },
+      "requested_output_cap": 128
+    },
+    {
+      "source_custom_id": "mix-0-128-2048",
+      "default_task_id": "task_f29f55c9341248287aa249ff1aa1c3b6",
+      "low_task_id": "task_c519599d32f2e31afc0fb90c07022eb6",
+      "default_accepted_worker": "secondpod-gptoss120b-cpu-expert",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": false,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 126,
+        "completion_tokens": 164
+      },
+      "low_usage": {
+        "prompt_tokens": 128,
+        "completion_tokens": 70
+      },
+      "requested_output_cap": 2048
+    },
+    {
+      "source_custom_id": "mix-0-128-32",
+      "default_task_id": "task_1d7d80eee262f4de818ee901761151dd",
+      "low_task_id": "task_5a1fdddaf8256973f2bc1c108431353a",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 128,
+        "completion_tokens": 32
+      },
+      "low_usage": {
+        "prompt_tokens": 128,
+        "completion_tokens": 32
+      },
+      "requested_output_cap": 32
+    },
+    {
+      "source_custom_id": "mix-0-128-512",
+      "default_task_id": "task_dd39a20f796a75e4b6b97568703a0105",
+      "low_task_id": "task_c536fbf41102817eb575841474b6fcd2",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 128,
+        "completion_tokens": 293
+      },
+      "low_usage": {
+        "prompt_tokens": 128,
+        "completion_tokens": 258
+      },
+      "requested_output_cap": 512
+    },
+    {
+      "source_custom_id": "mix-0-16384-128",
+      "default_task_id": "task_11a514a8f9e07588616c7ed599fba37b",
+      "low_task_id": "task_2315e373ea4bae229b2a7b917088d709",
+      "default_accepted_worker": "secondpod-gptoss120b-cpu-expert",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": false,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 16382,
+        "completion_tokens": 128
+      },
+      "low_usage": {
+        "prompt_tokens": 16384,
+        "completion_tokens": 128
+      },
+      "requested_output_cap": 128
+    },
+    {
+      "source_custom_id": "mix-0-16384-2048",
+      "default_task_id": "task_892d2b2af3bf231b179612e3a3ef1ee0",
+      "low_task_id": "task_6c474683a4ceea9c42211a120b04a52b",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 16384,
+        "completion_tokens": 2048
+      },
+      "low_usage": {
+        "prompt_tokens": 16384,
+        "completion_tokens": 2048
+      },
+      "requested_output_cap": 2048
+    },
+    {
+      "source_custom_id": "mix-0-16384-32",
+      "default_task_id": "task_442f208c68fdade3e8ea68f45cf84dce",
+      "low_task_id": "task_3463b67a04aaf0f57692685dee05f331",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 16384,
+        "completion_tokens": 32
+      },
+      "low_usage": {
+        "prompt_tokens": 16384,
+        "completion_tokens": 32
+      },
+      "requested_output_cap": 32
+    },
+    {
+      "source_custom_id": "mix-0-16384-512",
+      "default_task_id": "task_9fa480b1a4c4d849a1649cf3a43734c2",
+      "low_task_id": "task_75ed1e41e3991e324e37ffba2fbb8ef2",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 16384,
+        "completion_tokens": 512
+      },
+      "low_usage": {
+        "prompt_tokens": 16384,
+        "completion_tokens": 512
+      },
+      "requested_output_cap": 512
+    },
+    {
+      "source_custom_id": "mix-0-2048-128",
+      "default_task_id": "task_6c86574e6670ee96d283ae04965ed60d",
+      "low_task_id": "task_b6c4cd348c643cf48730e0d0f4067742",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 2048,
+        "completion_tokens": 128
+      },
+      "low_usage": {
+        "prompt_tokens": 2048,
+        "completion_tokens": 128
+      },
+      "requested_output_cap": 128
+    },
+    {
+      "source_custom_id": "mix-0-2048-2048",
+      "default_task_id": "task_1528a4683337b1012d28f2506f25d7e0",
+      "low_task_id": "task_e1700814b9f4cb78de3eb92039b2a7f9",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 2048,
+        "completion_tokens": 1547
+      },
+      "low_usage": {
+        "prompt_tokens": 2048,
+        "completion_tokens": 1237
+      },
+      "requested_output_cap": 2048
+    },
+    {
+      "source_custom_id": "mix-0-2048-32",
+      "default_task_id": "task_a8fe9265c7a4c21bd3e1b89cebcb92ba",
+      "low_task_id": "task_e13204eb394911eabb533153a56eab92",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 2048,
+        "completion_tokens": 32
+      },
+      "low_usage": {
+        "prompt_tokens": 2048,
+        "completion_tokens": 32
+      },
+      "requested_output_cap": 32
+    },
+    {
+      "source_custom_id": "mix-0-2048-512",
+      "default_task_id": "task_dacc91420ed6a544d6a2700a177507ed",
+      "low_task_id": "task_270d4b5905cfe94021d4754b7d628fab",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 2048,
+        "completion_tokens": 512
+      },
+      "low_usage": {
+        "prompt_tokens": 2048,
+        "completion_tokens": 512
+      },
+      "requested_output_cap": 512
+    },
+    {
+      "source_custom_id": "mix-0-512-128",
+      "default_task_id": "task_922e054f8d3da7d1abcc5714249cac47",
+      "low_task_id": "task_14e105cbe8033c3271fd75a24ba597b5",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 512,
+        "completion_tokens": 128
+      },
+      "low_usage": {
+        "prompt_tokens": 512,
+        "completion_tokens": 128
+      },
+      "requested_output_cap": 128
+    },
+    {
+      "source_custom_id": "mix-0-512-2048",
+      "default_task_id": "task_f0f84f5f0dd386f23ee3a2984a696971",
+      "low_task_id": "task_ef4cc9335579b84075e726b98e1e42bb",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 512,
+        "completion_tokens": 443
+      },
+      "low_usage": {
+        "prompt_tokens": 512,
+        "completion_tokens": 417
+      },
+      "requested_output_cap": 2048
+    },
+    {
+      "source_custom_id": "mix-0-512-32",
+      "default_task_id": "task_971fc3988b7ae99c736518c638436f26",
+      "low_task_id": "task_8ae0ea4c8378bb5bc81eb7d48c450b9c",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 512,
+        "completion_tokens": 32
+      },
+      "low_usage": {
+        "prompt_tokens": 512,
+        "completion_tokens": 32
+      },
+      "requested_output_cap": 32
+    },
+    {
+      "source_custom_id": "mix-0-512-512",
+      "default_task_id": "task_581649926a11b47f8613e401220fdcf3",
+      "low_task_id": "task_167a248e931967af44a76b563d91b65a",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 512,
+        "completion_tokens": 413
+      },
+      "low_usage": {
+        "prompt_tokens": 512,
+        "completion_tokens": 365
+      },
+      "requested_output_cap": 512
+    },
+    {
+      "source_custom_id": "mix-0-8192-128",
+      "default_task_id": "task_ceb9ac4803f60c7888188ed2cfa96f33",
+      "low_task_id": "task_a9fef87593d57fe63a2a8153ffcc5010",
+      "default_accepted_worker": "secondpod-gptoss120b-cpu-expert",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": false,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 8190,
+        "completion_tokens": 128
+      },
+      "low_usage": {
+        "prompt_tokens": 8192,
+        "completion_tokens": 128
+      },
+      "requested_output_cap": 128
+    },
+    {
+      "source_custom_id": "mix-0-8192-2048",
+      "default_task_id": "task_885b5a8fa32f20a596674ce9c5e89bf0",
+      "low_task_id": "task_b6fb3a76823d846fa6a609257b1bad41",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 8192,
+        "completion_tokens": 2048
+      },
+      "low_usage": {
+        "prompt_tokens": 8192,
+        "completion_tokens": 2048
+      },
+      "requested_output_cap": 2048
+    },
+    {
+      "source_custom_id": "mix-0-8192-32",
+      "default_task_id": "task_157aa06dffe95ff6ec857066ea85e941",
+      "low_task_id": "task_11e14d40c7f107cb01c34f6c6c9476ee",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "primary-gptoss120-tp4",
+      "same_runtime": true,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 8192,
+        "completion_tokens": 32
+      },
+      "low_usage": {
+        "prompt_tokens": 8192,
+        "completion_tokens": 32
+      },
+      "requested_output_cap": 32
+    },
+    {
+      "source_custom_id": "mix-0-8192-512",
+      "default_task_id": "task_1d70708b6416e93fdb14d993cf02bb9a",
+      "low_task_id": "task_0beb88e4daf8a8a98bc7e9bf2a46f4e3",
+      "default_accepted_worker": "primary-gptoss120-tp4",
+      "low_accepted_worker": "secondpod-gptoss120b-cpu-expert",
+      "same_runtime": false,
+      "default_attempts": 1,
+      "low_attempts": 1,
+      "default_usage": {
+        "prompt_tokens": 8192,
+        "completion_tokens": 512
+      },
+      "low_usage": {
+        "prompt_tokens": 8190,
+        "completion_tokens": 512
+      },
+      "requested_output_cap": 512
+    }
+  ],
+  "same_runtime_pairs": 16
+}

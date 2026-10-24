@@ -445,8 +445,10 @@ The long-context alias is necessary to keep 16K inputs out of 4K workers.
 
 ## Current model pools
 
-The model-specific worker identities prevent a 16K or 117B request from being
-claimed by a short-context 7B engine. The current secondary has 16 engines,
+Workers claim only their registered model ID. Callers must select the `-18k`
+alias for long-context 7B inputs; a 16K input labelled with the short-context
+model ID is not automatically rerouted or tokenizer-validated at admission.
+The 117B model ID is isolated from both 7B pools. The current secondary has 16 engines,
 16 workers, two APIs and one gateway: 35 supervised services, plus the watchdog
 process itself. It reserves 229 inference slots across three pools:
 
@@ -552,8 +554,10 @@ response hashes instead of publishing response text. A persistent exclusive
 `.started` marker prevents an uncertain request from being automatically
 replayed under the same report name.
 
-Direct llama.cpp measurements set `cache_prompt=false` per request, and actual
-usage must show zero cached tokens. This field is an engine-only measurement
+The designated uncached long probes and fixed matrix set `cache_prompt=false`
+per direct llama.cpp request and require actual usage to show zero cached
+tokens. The startup warm probe and durable tenant requests do not establish
+this condition. This field is an engine-only measurement
 option, not a newly exposed tenant API field. The 7B engines separately disable
 vLLM prefix caching. The fixed-capacity pilot verified that `ignore_eos=true`
 with a cap of 128 produced exactly 128 tokens, whereas natural generation on
@@ -645,3 +649,60 @@ read-only observer continued through a non-overlapping pidfd handoff at
 23:17:02.624497 UTC into a separate recovery stream; it did not signal or overlap
 its predecessor. Its PID and source hash are preserved in the
 [handoff record](../ops/reports/pod2-observer-120b-recovery-handoff-2026-10-24.json).
+
+### 117B GPU-service loss observation
+
+Run `bench-45c4387884b3`, batch
+`batch_dc092916916ab244a878ac618de40884`, exercised the primary GPU engine and
+worker becoming unavailable while its APIs remained alive. The secondary made
+no service changes. The exact primary pair-down interval was
+23:30:38.245804–23:32:40.099379 UTC (121.853536 seconds); guarded primary recovery
+finished at 23:33:36.651825 UTC. This is an inference-service process failure,
+not a physical GPU reset, Pod power loss or database failover.
+
+The [secondary down-window observation](../ops/reports/pod2-gptoss120b-engine-down-secondary-observation-2026-10-24.json)
+retains 61 fully contained samples, with no API scrape failures or excluded
+counter-reset intervals. It records 1062 claim HTTP calls with mean 47.783 ms
+and p95 bucket 25–50 ms, and eight completion HTTP calls with mean 50.162 ms
+and p95 bucket 50–75 ms. These are observed HTTP calls; exact task acceptance,
+lease expiry and worker attribution come from the separately operated probe's
+attempt ledger, not these global counters. The broader
+[capture-to-ready window](../ops/reports/pod2-gptoss120b-capture-to-ready-secondary-observation-2026-10-24.json)
+is bounded to 23:30:34.732786–23:33:36.651825 UTC and retains 91 samples.
+
+The [existing-sample utilization summary](../ops/reports/pod2-gptoss120b-engine-down-secondary-utilization-2026-10-24.json)
+contains six physical-parent GPU rows, but all utilization and memory numeric
+fields returned unavailable under MIG. It does not infer utilization from
+worker capacity or substitute the earlier isolated model-memory measurement
+into this fault window. The raw observer slices are immutable and hashed;
+extracting these summaries made no new database or GPU requests.
+
+The [recovery crossreference](../ops/reports/pod2-gptoss120b-recovery-crossreference-2026-10-24.json)
+verifies the existing primary probe artifacts: seven pre-loss valid primary
+leases expired, and those same seven task IDs each have one accepted attempt
+from `secondpod-gptoss120b-cpu-expert`. A stale heartbeat on one already-reclaimed
+task returned `409 stale_attempt` without changing its accepted state. This
+proves accepted-result fencing, not exactly-once inference execution.
+
+The final natural cohort `bench-67f164a1f231` completed 20/20 tasks with zero
+failures in 43.883948 seconds, bounded to 23:40:46.407179–23:41:30.291152 UTC.
+Actual accepted usage was 109,050 prompt and 9,292 output tokens across the two
+runtimes; fifteen responses reached their output cap and five stopped naturally.
+It used no forced minimum or ignored EOS. See the [durable run](../ops/reports/primary-gptoss120-natural-durable20-2026-10-24.json)
+and [22-sample strict secondary observation](../ops/reports/pod2-gptoss120b-natural20-secondary-observation-2026-10-24.json).
+Inference completion is separate from final-answer presence and task quality.
+The [final-content audit](../ops/reports/primary-gptoss120-final-content-audit-2026-10-24.json)
+found ten final-text responses and ten reasoning-only responses: final text
+appeared in 0/5 cases at cap32, 1/5 at cap128, 4/5 at cap512 and 5/5 at cap2048.
+Default-cohort placement was seventeen primary and three secondary acceptances.
+
+The final paired low-effort cohort changed only each body's
+`reasoning_effort` to `low`, retaining the original messages and output caps.
+Run `bench-ab407809daa4` completed 20/20 tasks with zero failures in 46.288586
+seconds, bounded to 23:47:56.111739–23:48:42.400349 UTC. Actual usage was 109,054
+prompt and 8,742 output tokens; fourteen responses reached their caps and six
+stopped naturally. Platform defaults and runtime settings were not changed.
+This is not a claim that every accepted inference produced a complete answer.
+See the [body-only variant check](../ops/reports/primary-gptoss120-natural-durable20-low-variant-2026-10-24.json),
+[durable run](../ops/reports/primary-gptoss120-natural-durable20-low-2026-10-24.json)
+and [23-sample strict secondary observation](../ops/reports/pod2-gptoss120b-natural20-low-secondary-observation-2026-10-24.json).

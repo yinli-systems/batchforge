@@ -1,0 +1,88 @@
+{
+  "observed_at": "2026-10-23T23:44:23.477404+00:00",
+  "passed": true,
+  "run_id": "bench-45c4387884b3",
+  "batch_id": "batch_dc092916916ab244a878ac618de40884",
+  "model": "openai/gpt-oss-120b",
+  "secondary_worker_id": "secondpod-gptoss120b-cpu-expert",
+  "scope": "Crossreference existing sanitized primary attempt-ledger/fence artifacts with secondPod modelpool and observer records; no new DBquery,inference or service actions",
+  "source_sha256_at_read": {
+    "primary-gptoss120-engine-outage-2026-10-24.json": "a26166cdccc09b7fe315d9f3a65f141918c0719fcd273feead421b7e5fe0ddec",
+    "primary-gptoss120-engine-outage-same-task-fence-2026-10-24.json": "d9cd6ce64cc17a64c4b12d99859cb8240aa4e7bd00ff0ed62e07d8e8f6e5f47f",
+    "pod2-final-model-pools-ready-2026-10-24.json": "17b2562120bcd6cc7960693f2db147a34c10d4af0bafcc60add0aea297f7575b",
+    "pod2-gptoss120b-engine-down-secondary-observation-2026-10-24.json": "f1259a1b2bd7d7f65b1b32bce287bafe75b77dbc91bda60522ea26adebb1571b"
+  },
+  "pre_loss_valid_primary_leases": 7,
+  "valid_leases_still_held_after_loss": 7,
+  "primary_pair_unavailable_at": "2026-10-23T23:30:38.245804+00:00",
+  "primary_pair_unavailable_through": "2026-10-23T23:32:40.099379+00:00",
+  "seven_same_task_ids_expired_and_accepted_by_exact_secondary": [
+    {
+      "id": "task_335f6835c7126ebdc6eb1e6818d42461",
+      "accepted_worker": "secondpod-gptoss120b-cpu-expert",
+      "accepted_count": 1,
+      "prompt_tokens": 126,
+      "completion_tokens": 167
+    },
+    {
+      "id": "task_60021a3b6787c3a6c86ebc5cd59c408b",
+      "accepted_worker": "secondpod-gptoss120b-cpu-expert",
+      "accepted_count": 1,
+      "prompt_tokens": 126,
+      "completion_tokens": 167
+    },
+    {
+      "id": "task_6021faa330cba6172813dd234ba37399",
+      "accepted_worker": "secondpod-gptoss120b-cpu-expert",
+      "accepted_count": 1,
+      "prompt_tokens": 126,
+      "completion_tokens": 167
+    },
+    {
+      "id": "task_698fb3f2a472f00cc1ab06b4e792acd6",
+      "accepted_worker": "secondpod-gptoss120b-cpu-expert",
+      "accepted_count": 1,
+      "prompt_tokens": 126,
+      "completion_tokens": 167
+    },
+    {
+      "id": "task_c30b8561e44b75a96c980fc036178231",
+      "accepted_worker": "secondpod-gptoss120b-cpu-expert",
+      "accepted_count": 1,
+      "prompt_tokens": 126,
+      "completion_tokens": 167
+    },
+    {
+      "id": "task_f3be8d934d45236d5a2ed620b2d306e1",
+      "accepted_worker": "secondpod-gptoss120b-cpu-expert",
+      "accepted_count": 1,
+      "prompt_tokens": 126,
+      "completion_tokens": 167
+    },
+    {
+      "id": "task_f610e7f1e6369baa86b66768c21c4247",
+      "accepted_worker": "secondpod-gptoss120b-cpu-expert",
+      "accepted_count": 1,
+      "prompt_tokens": 126,
+      "completion_tokens": 167
+    }
+  ],
+  "all_have_exactly_one_accepted_attempt": true,
+  "same_task_old_heartbeat_fence": {
+    "task_id": "task_335f6835c7126ebdc6eb1e6818d42461",
+    "original_worker": "primary-gptoss120-tp4",
+    "old_attempt_status": "expired",
+    "old_attempt_error_code": "lease_expired",
+    "accepted_worker": "secondpod-gptoss120b-cpu-expert",
+    "accepted_attempts": 1,
+    "old_heartbeat_status": 409,
+    "old_heartbeat_error_code": "stale_attempt",
+    "accepted_state_unchanged": true,
+    "attempt_token_persisted": false
+  },
+  "limitations": [
+    "Exactly one accepted durable result doesnot imply inference executed only once",
+    "Observer HTTPcalls are not used to derive per-task attribution",
+    "Failure was owned primary engine/worker processes,not physicalGPU orPodpowerloss"
+  ]
+}

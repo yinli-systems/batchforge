@@ -1,0 +1,67 @@
+{
+  "scope": "Existing observer whole-visible-physical-GPU aggregate, includes other MIG slices/workloads; cannotattribute to117Bmodel or BatchForge exclusively",
+  "sample_count": 91,
+  "source_raw_sha256": "7559fe6e163a67758b9d3fdc5e070b8453b0ac6265380736908913bd4f5d69b8",
+  "first_sample_at": "2026-10-23T23:30:34.837131+00:00",
+  "last_sample_at": "2026-10-23T23:33:35.128637+00:00",
+  "gpu_query_error_samples": 0,
+  "gpu_devices": [
+    {
+      "index": "0",
+      "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "sample_count": 91,
+      "valid_utilization_samples": 0,
+      "utilization_percent": null,
+      "memory_used_mib": null,
+      "memory_total_mib_values": []
+    },
+    {
+      "index": "1",
+      "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "sample_count": 91,
+      "valid_utilization_samples": 0,
+      "utilization_percent": null,
+      "memory_used_mib": null,
+      "memory_total_mib_values": []
+    },
+    {
+      "index": "2",
+      "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "sample_count": 91,
+      "valid_utilization_samples": 0,
+      "utilization_percent": null,
+      "memory_used_mib": null,
+      "memory_total_mib_values": []
+    },
+    {
+      "index": "3",
+      "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "sample_count": 91,
+      "valid_utilization_samples": 0,
+      "utilization_percent": null,
+      "memory_used_mib": null,
+      "memory_total_mib_values": []
+    },
+    {
+      "index": "4",
+      "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "sample_count": 91,
+      "valid_utilization_samples": 0,
+      "utilization_percent": null,
+      "memory_used_mib": null,
+      "memory_total_mib_values": []
+    },
+    {
+      "index": "5",
+      "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "sample_count": 91,
+      "valid_utilization_samples": 0,
+      "utilization_percent": null,
+      "memory_used_mib": null,
+      "memory_total_mib_values": []
+    }
+  ],
+  "own_mig_sm_utilization": "N/A: earlier exact-MIG NVML returns NOT_SUPPORTED3; no inferred SM%",
+  "no_new_gpu_or_db_requests": true,
+  "exact_task_worker_attribution": "Separate primaryprobe DBattempt/acceptedresult evidence; thisglobalobserver doesnot identify per-task attempts"
+}

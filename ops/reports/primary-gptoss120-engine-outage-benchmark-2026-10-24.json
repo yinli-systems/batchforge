@@ -1,0 +1,152 @@
+{
+  "schema_version": 2,
+  "run_id": "bench-45c4387884b3",
+  "observed_at": "2026-10-23T23:32:34.023246+00:00",
+  "measurement_started_at": "2026-10-23T23:30:32.193899+00:00",
+  "terminal_observation_ended_at": "2026-10-23T23:32:33.969128+00:00",
+  "passed": true,
+  "measurement": "client observed submission through terminal observation; output validation measured separately",
+  "engine_label": "real:GPTOSS120B;primary-TP4-vLLM+secondary-llamacpp-CPUexpert;app-engine-worker-loss120s",
+  "test_fixture_detected": false,
+  "model": "openai/gpt-oss-120b",
+  "requested_tasks": 8,
+  "submitted_tasks": 8,
+  "batches": 1,
+  "accepted_batches": 1,
+  "terminal_batches": 1,
+  "requested_max_output_tokens": 512,
+  "elapsed_seconds": 121.775209,
+  "completed": 8,
+  "failed": 0,
+  "cancelled": 0,
+  "unfinished_batch_ids": [],
+  "submission_errors": [],
+  "output_validation_errors": [],
+  "completed_tasks_per_second": 0.065695,
+  "observed_prompt_tokens": 1008,
+  "observed_completion_tokens": 1336,
+  "prompt_tokens_per_task": {
+    "samples": 8,
+    "p50": 126.0,
+    "p95": 126.0,
+    "p99": 126.0,
+    "max": 126,
+    "mean": 126.0
+  },
+  "completion_tokens_per_task": {
+    "samples": 8,
+    "p50": 167.0,
+    "p95": 167.0,
+    "p99": 167.0,
+    "max": 167,
+    "mean": 167.0
+  },
+  "output_finish_reasons": {
+    "stop": 8
+  },
+  "output_custom_ids_unique": true,
+  "output_custom_ids_known": true,
+  "output_rows_match_completed": true,
+  "batch_counts_match_submission": true,
+  "batch_ids": [
+    "batch_dc092916916ab244a878ac618de40884"
+  ],
+  "workload": {
+    "sha256": "396bb70433f6de6d9de8646cf148a34ee37be6b6c2bdb0c0071a2870232e3def",
+    "hash_definition": "concatenated exact JSONL bytes in batch_index order",
+    "provided_source_sha256": "ca25093e7028a00a9bd8428b600807b120f724f108bf22cf5f1fce94f6ceda60",
+    "bytes": 4104,
+    "generation_seconds": 0.000345,
+    "model": "openai/gpt-oss-120b",
+    "prompt": null,
+    "generation_mode": "provided-jsonl",
+    "message_template": "exact provided messages; run_id prepended to custom_id",
+    "max_tokens": 512,
+    "temperature": 0,
+    "tasks_per_batch": [
+      8
+    ]
+  },
+  "submission": {
+    "elapsed_seconds": 0.267075,
+    "attempted_http_requests": 2,
+    "successful_http_requests": 2,
+    "requests_per_second": 7.488544,
+    "successful_requests_per_second": 7.488544,
+    "accepted_batches_per_second": 3.744272,
+    "accepted_tasks_per_second": 29.954176,
+    "upload_latency_seconds": {
+      "samples": 1,
+      "p50": 0.063804,
+      "p95": 0.063804,
+      "p99": 0.063804,
+      "max": 0.063804,
+      "mean": 0.063804
+    },
+    "create_latency_seconds": {
+      "samples": 1,
+      "p50": 0.14991,
+      "p95": 0.14991,
+      "p99": 0.14991,
+      "max": 0.14991,
+      "mean": 0.14991
+    },
+    "latency_population": "all attempted requests, including failures",
+    "request_population": "POST /v1/files and POST /v1/batches only; excludes polling and downloads"
+  },
+  "batch_turnaround_seconds": {
+    "samples": 1,
+    "p50": 121.659188,
+    "p95": 121.659188,
+    "p99": 121.659188,
+    "max": 121.659188,
+    "mean": 121.659188
+  },
+  "batch_after_acceptance_seconds": {
+    "samples": 1,
+    "p50": 121.50928,
+    "p95": 121.50928,
+    "p99": 121.50928,
+    "max": 121.50928,
+    "mean": 121.50928
+  },
+  "batch_upload_to_terminal_seconds": {
+    "samples": 1,
+    "p50": 121.722993,
+    "p95": 121.722993,
+    "p99": 121.722993,
+    "max": 121.722993,
+    "mean": 121.722993
+  },
+  "percentile_method": "linear interpolation at (n-1)*p",
+  "output_validation_seconds": 0.053669,
+  "poll_interval_seconds": 1.0,
+  "per_batch_deadline_seconds": 2400.0,
+  "batch_observations": [
+    {
+      "index": 0,
+      "tasks": 8,
+      "batch_id": "batch_dc092916916ab244a878ac618de40884",
+      "status": "completed",
+      "upload_seconds": 0.063804,
+      "create_seconds": 0.14991,
+      "turnaround_seconds": 121.659188,
+      "request_counts": {
+        "total": 8,
+        "completed": 8,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    }
+  ],
+  "limitations": [
+    "Not a daily capacity forecast",
+    "Token lengths are measured from outputs, not guaranteed by the prompt",
+    "Batch turnaround starts before POST /v1/batches and ends at first client-observed terminal response; polling adds observation delay",
+    "No per-task inference latency or quality evaluation",
+    "Accepted counts require a received create acknowledgement; uncertain create errors may have committed server-side"
+  ]
+}

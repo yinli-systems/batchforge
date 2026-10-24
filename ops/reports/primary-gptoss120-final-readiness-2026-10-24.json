@@ -1,0 +1,374 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-23T23:52:13.602580+00:00",
+  "passed": true,
+  "scope": "Compact primary post-all-cohorts readiness; secondary two APIs covered by independent secondary report",
+  "database": {
+    "role": "bf_runtime",
+    "client_tls": true,
+    "sslmode": "verify-full",
+    "pg_stat_ssl_server_leg": false,
+    "schema": [
+      {
+        "version": 1,
+        "checksum": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219"
+      },
+      {
+        "version": 2,
+        "checksum": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b"
+      },
+      {
+        "version": 3,
+        "checksum": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003"
+      }
+    ]
+  },
+  "unfinished": {
+    "pending": 0,
+    "running": 0,
+    "in_progress_batches": 0,
+    "unfinished_tasks": 0
+  },
+  "fresh_ready_workers": 17,
+  "workers": [
+    {
+      "id": "primary-gptoss120-tp4",
+      "model": "openai/gpt-oss-120b",
+      "concurrency": 8,
+      "last_seen_at": "2026-10-23 23:52:13.249220+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-18k-mig15",
+      "model": "Qwen/Qwen2.5-7B-Instruct-18k",
+      "concurrency": 4,
+      "last_seen_at": "2026-10-23 23:52:12.940816+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig0",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:11.920141+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig1",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:13.310394+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig10",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:12.977274+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig11",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:12.976243+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig12",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:13.139006+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig13",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:13.181002+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig2",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:12.071695+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig3",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:12.444609+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig4",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:12.690850+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig5",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:12.641152+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig6",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:12.506292+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig7",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:12.925446+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig8",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:12.884550+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-7b-mig9",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "concurrency": 16,
+      "last_seen_at": "2026-10-23 23:52:12.628486+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    },
+    {
+      "id": "secondpod-gptoss120b-cpu-expert",
+      "model": "openai/gpt-oss-120b",
+      "concurrency": 1,
+      "last_seen_at": "2026-10-23 23:52:13.177990+00:00",
+      "engine_count": "1",
+      "ready_engine_count": "1"
+    }
+  ],
+  "primary_services": [
+    {
+      "role": "api",
+      "name": "a",
+      "pid": 148371,
+      "start_ticks": "32149419",
+      "cwd": "/root/batchforge-runtime/app",
+      "port": 8082,
+      "ready": true
+    },
+    {
+      "role": "api",
+      "name": "b",
+      "pid": 148378,
+      "start_ticks": "32149538",
+      "cwd": "/root/batchforge-runtime/app",
+      "port": 8083,
+      "ready": true
+    },
+    {
+      "role": "gateway",
+      "name": "edge",
+      "pid": 123284,
+      "start_ticks": "31612200",
+      "cwd": "/root/batchforge-runtime/app",
+      "port": 8080,
+      "ready": true
+    },
+    {
+      "role": "engine",
+      "name": "gptoss120",
+      "pid": 148901,
+      "start_ticks": "32180031",
+      "cwd": "/root/batchforge-runtime/app",
+      "port": 8300,
+      "ready": true
+    },
+    {
+      "role": "worker",
+      "name": "gptoss120",
+      "pid": 149974,
+      "start_ticks": "32185282",
+      "cwd": "/root/batchforge-runtime/app",
+      "port": 9105,
+      "ready": true
+    }
+  ],
+  "supervisor": {
+    "pid": 149977,
+    "start_ticks": "32185338",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "api_gateway_identities_preserved_from_fault_baseline": true,
+  "catalogs": [
+    {
+      "port": 8080,
+      "status": 200,
+      "models": [
+        "Qwen/Qwen2.5-7B-Instruct",
+        "Qwen/Qwen2.5-7B-Instruct-18k",
+        "openai/gpt-oss-120b"
+      ]
+    },
+    {
+      "port": 8082,
+      "status": 200,
+      "models": [
+        "Qwen/Qwen2.5-7B-Instruct",
+        "Qwen/Qwen2.5-7B-Instruct-18k",
+        "openai/gpt-oss-120b"
+      ]
+    },
+    {
+      "port": 8083,
+      "status": 200,
+      "models": [
+        "Qwen/Qwen2.5-7B-Instruct",
+        "Qwen/Qwen2.5-7B-Instruct-18k",
+        "openai/gpt-oss-120b"
+      ]
+    }
+  ],
+  "worker_metrics": {
+    "batchforge_worker_capacity": 8.0,
+    "batchforge_worker_inflight": 0.0,
+    "batchforge_worker_reserved_context_tokens": 0.0,
+    "batchforge_worker_ready_engines": 1.0
+  },
+  "owned_engine_leader": {
+    "pid": 148901,
+    "start_ticks": "32180031",
+    "pgid": 148901,
+    "session": 148901,
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "owned_engine_live_children": [
+    {
+      "pid": 149434,
+      "start_ticks": "32181731",
+      "pgid": 148901,
+      "session": 148901,
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    {
+      "pid": 149435,
+      "start_ticks": "32181731",
+      "pgid": 148901,
+      "session": 148901,
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    {
+      "pid": 149575,
+      "start_ticks": "32182295",
+      "pgid": 148901,
+      "session": 148901,
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    {
+      "pid": 149576,
+      "start_ticks": "32182295",
+      "pgid": 148901,
+      "session": 148901,
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    {
+      "pid": 149577,
+      "start_ticks": "32182295",
+      "pgid": 148901,
+      "session": 148901,
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    {
+      "pid": 149578,
+      "start_ticks": "32182297",
+      "pgid": 148901,
+      "session": 148901,
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  ],
+  "owned_gpu_ranks": [
+    {
+      "pid": 149575,
+      "gpu_uuid": "GPU-c43133f3-8aec-31fb-3ccd-06cc7b64de08",
+      "resident_mib": 21968
+    },
+    {
+      "pid": 149576,
+      "gpu_uuid": "GPU-635baa6f-767c-a497-55ba-c5e9b453131e",
+      "resident_mib": 21968
+    },
+    {
+      "pid": 149577,
+      "gpu_uuid": "GPU-8d6feb38-a161-e269-a1de-39c63eef2699",
+      "resident_mib": 21968
+    },
+    {
+      "pid": 149578,
+      "gpu_uuid": "GPU-04ad4dbe-0838-169d-b041-42126335b711",
+      "resident_mib": 21968
+    }
+  ],
+  "source_sha256": {
+    "backend/app.py": "24b7066350e69829c0143af43e0c59c823306c9906e86da96c483e02318a899c",
+    "backend/config.py": "eab5c754dbff44830a9123fcaed908af218d7b13d163e5dd2ad39493ed275b65",
+    "backend/store.py": "45f299bd32b80e373f234e1df303f2854fd6441bee966cd97ef6334b3373df4e",
+    "backend/validation.py": "62f2f509566dd23bb543d238868f5127baf09d8170c133025a3ed53f3269e71f",
+    "worker/runtime.py": "0156ac72d5c4632ee80397eb703658bdb9b58f2c1b3b51d12d18039dcf04bcbe",
+    "ops/manage.py": "cd15563e36f8a0a269378aff74e1b7bc42e575cb7a9062a73d28519bca3bcd85",
+    "ops/supervise.py": "3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0",
+    "ops/engine_members.py": "e4d0b2f2c130dce6fa16a4925d3557ca16475793a5b4f156f62a3d8f2df471ff",
+    "ops/host_memory.py": "e4887b81fd3c95e7f94bd118d0917775d5e8839c7c59e07b7dd8d98552150902",
+    "ops/llama_backend.py": "d27fce11beb565b287d19bce61aa9c3edbf5cb802fd3630fa4788e7aeb31adb4",
+    "scripts/benchmark.py": "fefc6ea4dd19ad6f8d98084a833072d31c11d1def144385698d589ba4d7d48d6",
+    "scripts/observe_runtime.py": "8860074f6e0689956bd34ceb836443f92e83ad51496251ecec707c343e08cff3"
+  },
+  "engine_configuration": {
+    "MODEL_NAME": "openai/gpt-oss-120b",
+    "ENGINE_REVISION": "b5c939de8f754692c1647ca79fbf85e8c1e70f8a",
+    "ENGINE_DTYPE": "bfloat16",
+    "ENGINE_TENSOR_PARALLEL_SIZE": "4",
+    "CUDA_VISIBLE_DEVICES": null,
+    "ENGINE_MAX_MODEL_LEN": "18440",
+    "ENGINE_MAX_NUM_SEQS": "8",
+    "ENGINE_MAX_NUM_BATCHED_TOKENS": "1024",
+    "ENGINE_GPU_MEMORY_UTILIZATION": ".26",
+    "ENGINE_GPU_MEMORY_MARGIN_MIB": "2048",
+    "ENGINE_ENABLE_PREFIX_CACHING": "0",
+    "ENGINE_ENABLE_CHUNKED_PREFILL": "1"
+  },
+  "engine_env_sha256": "08c9f32b3b12c39b170667b9f07fea604f2859d93b09d57e7218d137c561ebf6",
+  "manifest_sha256": "ac943e1c51277f3c4f0489803f51842cea60bdbb351ad9e5e7b49ae530cd96a7",
+  "completed_runs": [
+    "bench-45c4387884b3",
+    "bench-67f164a1f231",
+    "bench-0cbb7f61f630",
+    "bench-ab407809daa4"
+  ],
+  "limitations": [
+    "No inference, fault or service changes during this snapshot",
+    "Device-wide GPU utilization and unrelated workload process data excluded",
+    "Accepted usage uniqueness is not exactly-once inference",
+    "17 workers span different models/capacities"
+  ]
+}

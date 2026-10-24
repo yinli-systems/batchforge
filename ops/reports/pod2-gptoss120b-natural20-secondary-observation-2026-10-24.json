@@ -1,0 +1,243 @@
+{
+  "sample_count": 22,
+  "first_sample_at": "2026-10-23T23:40:46.877774+00:00",
+  "last_sample_at": "2026-10-23T23:41:29.146401+00:00",
+  "operations": [
+    {
+      "method": "GET",
+      "route": "/metrics",
+      "count": 42.0,
+      "sum_seconds": 1.9952209559560288,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 41.0,
+        "0.075": 42.0,
+        "0.1": 42.0,
+        "0.25": 42.0,
+        "0.5": 42.0,
+        "0.75": 42.0,
+        "1.0": 42.0,
+        "2.5": 42.0,
+        "5.0": 42.0,
+        "7.5": 42.0,
+        "10.0": 42.0,
+        "+Inf": 42.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.047505260856095924,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/readyz",
+      "count": 156.0,
+      "sum_seconds": 13.857650422112783,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 0.0,
+        "0.075": 0.0,
+        "0.1": 156.0,
+        "0.25": 156.0,
+        "0.5": 156.0,
+        "0.75": 156.0,
+        "1.0": 156.0,
+        "2.5": 156.0,
+        "5.0": 156.0,
+        "7.5": 156.0,
+        "10.0": 156.0,
+        "+Inf": 156.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.08883109244944092,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.075,
+        "upper_inclusive_seconds": 0.1,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.075,
+        "upper_inclusive_seconds": 0.1,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/internal/tasks/claim",
+      "count": 368.0,
+      "sum_seconds": 17.227896713797236,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 365.0,
+        "0.075": 366.0,
+        "0.1": 366.0,
+        "0.25": 368.0,
+        "0.5": 368.0,
+        "0.75": 368.0,
+        "1.0": 368.0,
+        "2.5": 368.0,
+        "5.0": 368.0,
+        "7.5": 368.0,
+        "10.0": 368.0,
+        "+Inf": 368.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.046814936722275095,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/internal/tasks/{tid}/complete",
+      "count": 3.0,
+      "sum_seconds": 0.14414061297429726,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 2.0,
+        "0.075": 3.0,
+        "0.1": 3.0,
+        "0.25": 3.0,
+        "0.5": 3.0,
+        "0.75": 3.0,
+        "1.0": 3.0,
+        "2.5": 3.0,
+        "5.0": 3.0,
+        "7.5": 3.0,
+        "10.0": 3.0,
+        "+Inf": 3.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.04804687099143242,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.05,
+        "upper_inclusive_seconds": 0.075,
+        "upper_unbounded": false
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/internal/workers/register",
+      "count": 32.0,
+      "sum_seconds": 1.4783110011776444,
+      "bucket_deltas": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.025": 0.0,
+        "0.05": 32.0,
+        "0.075": 32.0,
+        "0.1": 32.0,
+        "0.25": 32.0,
+        "0.5": 32.0,
+        "0.75": 32.0,
+        "1.0": 32.0,
+        "2.5": 32.0,
+        "5.0": 32.0,
+        "7.5": 32.0,
+        "10.0": 32.0,
+        "+Inf": 32.0
+      },
+      "apis_observed": [
+        "api-a",
+        "api-b"
+      ],
+      "mean_seconds": 0.046197218786801386,
+      "p50_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      },
+      "p95_bucket": {
+        "lower_exclusive_seconds": 0.025,
+        "upper_inclusive_seconds": 0.05,
+        "upper_unbounded": false
+      }
+    }
+  ],
+  "counter_resets_excluded_intervals": {},
+  "api_scrape_failures": {},
+  "first_durable_queue": {
+    "pending": 0,
+    "running": 0,
+    "completed": 24963,
+    "failed": 179,
+    "cancelled": 0,
+    "batches": 344
+  },
+  "last_durable_queue": {
+    "pending": 0,
+    "running": 2,
+    "completed": 24981,
+    "failed": 179,
+    "cancelled": 0,
+    "batches": 345
+  },
+  "measurement_bounds": [
+    "HTTP statistics are deltas between successful scrapes of each observed API process; activity before its first scrape is excluded",
+    "Intervals spanning a process restart/counter reset are excluded; unobserved requests during such intervals are not reconstructed",
+    "p50/p95 are containing Prometheus histogram bucket bounds, not exact quantiles or interpolated point estimates",
+    "HTTP durations measure API request handling, not GPU inference task latency; all traffic on observed replicas is included",
+    "Database counters aggregate the database; PostgreSQL wait samples are periodic observations, not wait-time durations",
+    "Runtime-role visibility of other roles' activity may be redacted; WAL statistics can include other databases on the same cluster",
+    "GPU utilization/memory include all workloads visible on each GPU, including unrelated tenants; no GPU process inventory is queried",
+    "Database statistics, metrics and GPU probes finish at different times; each source includes its own elapsed time",
+    "Polling, metrics aggregation and sampling themselves consume some control-plane/database capacity"
+  ],
+  "requested_window_start": "2026-10-23T23:40:46.407179+00:00",
+  "requested_window_end": "2026-10-23T23:41:30.291152+00:00",
+  "window_rule": "sample.started_at >= window_start AND sample.finished_at <= window_end",
+  "partial_coverage": false,
+  "source_streams": [
+    {
+      "path": ".runtime/observability/controlplane-secondary-120b-recovery-20261024.jsonl",
+      "bytes_at_capture": 4907423,
+      "sha256_at_capture": "9b93b54770ce41e0511295aa1f6883c57c039839047c65f1033060d2c72d0c8e"
+    }
+  ],
+  "original_stream_preserved": true,
+  "coverage_limitation": "Only fully-contained samples are retained; first scrape and endpoint slivers are excluded from metric deltas",
+  "frozen_raw_path": ".runtime/observability/controlplane-secondary-gptoss120b-natural20.jsonl",
+  "frozen_raw_bytes": 144233,
+  "frozen_raw_sha256": "0706a849c988b18d2c0059e8525e717b6d1caf5c89e6348cb6cd8ea6d03e60a1",
+  "maximum_between_sample_gap_seconds": 1.734473
+}
