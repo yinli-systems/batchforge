@@ -1,0 +1,75 @@
+FINAL LOCAL-QUALIFIED PROPOSAL; ROOT OWNS ANY ACTUAL EXECUTION
+Runner .runtime/run_qwen235b_execution_cohorts_guarded_proposed.py:
+d622d20a1499e8256dde5cfbe39ea57fa79b2dd1c2902ca9f473d518ac1b9602
+Explicit maker .runtime/make_qwen235b_dormant_profiler_receipt.py:
+12343b84b9db41d569ce25056b911278ae69888915e38f23e6d349c60b544ed7
+Tests .runtime/test_run_qwen235b_execution_cohorts_guarded_proposed.py:
+7b208f85306831b2d0cb950755549e2457bab8065ca065da68857330a9e56074
+Tests .runtime/test_qwen235b_dormant_profiler.py:
+693d15b750b3064d0c97bdfcc5ebdab14a185b729c32e2087aae23fe40f9bed0
+Author51PASS/0skip1.03s; independent history reviewer51PASS/0skip1.08s.
+Original frozen1ae runner/e14 tests remain unchanged. No production by agents.
+
+Preconditions: all earlier workload/policy operations complete, global drain,
+stable current six roles/source/env/profile. Do not prepare during an API roll.
+Root reported current original engine231820/start35991291 after complete engine
+fault. Proof path APP/.runtime/engine-fault100-v1-probe-report.json; trusted SHA
+940e1905ca6888ca83ecdf1b8e938bb7ec70aad70d4d1da68231bcff57ef169b.
+These actual facts were supplied by root; no live query was made by this agent.
+
+APP=/root/batchforge-runtime/app
+PY=/root/batchforge-runtime/venv/bin/python
+SOURCE=$APP/.runtime/run_qwen235b_execution_cohorts_guarded_proposed.py
+SOURCE_SHA=d622d20a1499e8256dde5cfbe39ea57fa79b2dd1c2902ca9f473d518ac1b9602
+MAKER=$APP/.runtime/make_qwen235b_dormant_profiler_receipt.py
+PROOF=$APP/.runtime/engine-fault100-v1-probe-report.json
+PROOF_SHA=940e1905ca6888ca83ecdf1b8e938bb7ec70aad70d4d1da68231bcff57ef169b
+
+1. Hash exact staged sources. Root runs this readonly offset discovery:
+"$PY" "$MAKER" --cohort-source "$SOURCE" --cohort-source-sha256 "$SOURCE_SHA" \
+ --generation-kind engine_fault --generation-proof "$PROOF" \
+ --generation-proof-sha256 "$PROOF_SHA" --find-generation-log-offset
+It emits only current PID/start/cwd, byte offset, marker count and proof SHA.
+No raw log/environment or path value is printed. Current-generation marker is
+required, and any profiler-control marker after the chosen offset refuses.
+
+2. Root explicitly confirms its own no-control-RPC assertion and repeats the
+same generation/source args, replacing --find-generation-log-offset with:
+ --engine-log-start-offset RETURNED_OFFSET --attest-no-profiler-control-rpcs \
+ --write --receipt "$APP/.runtime/qwen235b-original-dormant-profiler-v1.json"
+Receipt is exclusive0600, parentprivate0700, fsynced. No overwrite or implicit
+attestation. Without --write there is only a SHA preview and no receipt path.
+Record the actual write's returned SHA, since log append may change a preview.
+
+3. Use SOURCE for original cohort prepare and execute, with original immutable
+source-roll receipt53f33 arguments, plus BOTH:
+ --profiler-receipt "$APP/.runtime/qwen235b-original-dormant-profiler-v1.json" \
+ --profiler-receipt-sha256 EXACT_WRITTEN_RECEIPT_SHA
+Execute still requires a separate exact prepared plan SHA. Existing fixed100
+mixed+100 naturalQA/quality/output validation/stage snapshots are unchanged.
+Candidate eager-B/graph-B activation additionally requires wrapper4510 complete
+11-action journal/provenance; unsafe parent-only f647 activation is refused.
+
+For EACH new guarded4510 activation, root makes a fresh separate receipt with
+--generation-kind guarded_activation and the exact final activation report/SHA.
+Old original/fault receipt must not carry across new engine/worker/watchdog PIDs.
+The activation-source constructor controller remains honestly f647; lifecycle
+source is wrapper4510. Common B is externally selected, never silently shrunk.
+
+Evidence scope: vLLM0.10.2 GPU Worker and AsyncLLM constructors configure profiler
+objects but start only through explicit profiling RPC. Exact DIR+four0flags are
+allowed on engine only; none on worker; unknown profiler/NSYS/KINETO/ET prefixes,
+empty DIR, partial/nonzero flags, missing receipt or any binding drift refuse.
+Receipt binds full effective-env hashes, six current process bindings, whole
+current source/config/FP metadata and generation-proof SHA. Trace inventory is
+bounded metadata only and must remain identical. Logs may append normal serving
+messages, but inode/original prefix are immutable and profiling start/stop
+markers refuse. No raw DIR or trace filename is persisted in the receipt.
+
+This is configured-unstarted profiling UNDER EXPLICIT OPERATOR CONTROL, not a
+direct in-memory profiler-state attestation. No trace change alone does not prove
+inactivity: a profiler can flush only on stop. Maker and runner never start/stop
+profiling. Source facts: immutable official vLLM v0.10.2 gpu_worker.py65-89,425-431;
+async_llm.py151-169,572-581; api_server.py1167-1183; PyTorch v2.8.0 profiler.py
+constructor and start transitions. Empty VLLM_TORCH_PROFILER_DIR resolves to cwd
+in vLLM envs.py636-639 and must not be used as a disabling shortcut.

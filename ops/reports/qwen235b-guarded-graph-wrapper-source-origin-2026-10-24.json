@@ -1,0 +1,68 @@
+{
+  "files": [
+    {
+      "bytes": 23054,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-guarded-graph-wrapper-source-2026-10-24.py.txt",
+      "sha256": "4510b4686f54e30d9856cf360daf6a9749a4fbbbb40cd9ad90e27586389af8b4",
+      "source": ".runtime/safe_decode_graph_qwen235b.py"
+    },
+    {
+      "bytes": 21550,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-guarded-graph-wrapper-tests-2026-10-24.py.txt",
+      "sha256": "35ecbebcf366879085f6bab17c7602ce5b27432c5ca4b81043247f11af5111fb",
+      "source": ".runtime/test_safe_decode_graph_qwen235b.py"
+    },
+    {
+      "bytes": 3211,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-old-graph-control-audit-tests-2026-10-24.py.txt",
+      "sha256": "e49aef1744cbb161a82ccedecc448b709eec8e6b4756bacbe719715500c2e338",
+      "source": ".runtime/test_graph_unknown_control_audit.py"
+    }
+  ],
+  "not_included": [
+    "raw startup logs",
+    "runtime environment/configuration",
+    "prompts or model outputs",
+    "database dumps",
+    "production secrets"
+  ],
+  "operation_contract": {
+    "durable_pending_before_each_lifecycle_action": true,
+    "original_eager_then_eagerB_then_exact_restore_then_graphB_then_exact_restore": "Separate fresh operations; no nested activation",
+    "parent_numerical_profile_capture_logic_sha256": "f6479ca7bf69f47619fad5c4fa1bd724929d284725d91fb2568e50d7e9d588a2",
+    "same_pod_secret_effective_environment_snapshots": "Required for restore; remain private and are NOT included here",
+    "startup_capture_is_runtime_replay_proof": false,
+    "unknown_outcome": "manual; no automatic replay, rollback, exclusion, adoption or watchdog restart"
+  },
+  "review": {
+    "independent_agent": "history_retirement",
+    "unresolved_p1_p2": false
+  },
+  "scope": "Local source and test qualification; production, actual Linux pidfd qualification, GPU activation/restore, inference and CUDA runtime replay NOT_EXECUTED by these records",
+  "source_originals": "Ignored local operator sources; root must independently hash approved bytes before any later production use",
+  "status": "NOT_EXECUTED",
+  "tests": {
+    "combined_own_old_control_parent_graph_collective_engine_execution_members": {
+      "elapsed_seconds": 4.09,
+      "passed": 161,
+      "skipped_linux_only": 3
+    },
+    "compile_and_diff_check": "PASS",
+    "independent_own_local": {
+      "passed": 44,
+      "skipped_linux_only": 1
+    },
+    "old_control_audit": {
+      "passed": 3
+    },
+    "own_local": {
+      "passed": 44,
+      "skipped_linux_only": 1
+    },
+    "real_linux_owned_child_qualification": "NOT_EXECUTED; one test included for root to execute after production window"
+  },
+  "version": 1
+}

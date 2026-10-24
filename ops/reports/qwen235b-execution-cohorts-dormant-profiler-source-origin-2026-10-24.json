@@ -1,0 +1,89 @@
+{
+  "actual_native_qualification_metadata": {
+    "exact_decorated_function_fragment_sha256": "e4072ebb5999c94aa0a5f0b10508b25c97805bd9894854cea91ed577a404b7e3",
+    "full_model_activation_or_CUDA_replay_qualified": false,
+    "local_fragment_hash_recomputed": true,
+    "v1": {
+      "result": "collection failure before lifecycle test",
+      "review_copy": "ops/reports/qwen235b-safe-graph-native-qualification-v1-2026-10-24.json",
+      "sha256": "c4fd29ee087a88222edc14ed9b995fa49ad760e72fee9b4602950d321dc9832c"
+    },
+    "v2": {
+      "gpu_requests": 0,
+      "production_services_changed": false,
+      "result": "1 passed in0.43s",
+      "review_copy": "ops/reports/qwen235b-safe-graph-native-qualification-v2-2026-10-24.json",
+      "sha256": "cbe9ca599d1732a789859d54e716a75e4c67bff366d6328a9e56f6a01c5ca5fe"
+    }
+  },
+  "files": [
+    {
+      "bytes": 30967,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-execution-cohorts-guarded-source-2026-10-24.py.txt",
+      "sha256": "d622d20a1499e8256dde5cfbe39ea57fa79b2dd1c2902ca9f473d518ac1b9602",
+      "source": ".runtime/run_qwen235b_execution_cohorts_guarded_proposed.py"
+    },
+    {
+      "bytes": 23374,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-execution-cohorts-guarded-tests-2026-10-24.py.txt",
+      "sha256": "7b208f85306831b2d0cb950755549e2457bab8065ca065da68857330a9e56074",
+      "source": ".runtime/test_run_qwen235b_execution_cohorts_guarded_proposed.py"
+    },
+    {
+      "bytes": 4381,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-dormant-profiler-receipt-maker-source-2026-10-24.py.txt",
+      "sha256": "12343b84b9db41d569ce25056b911278ae69888915e38f23e6d349c60b544ed7",
+      "source": ".runtime/make_qwen235b_dormant_profiler_receipt.py"
+    },
+    {
+      "bytes": 8612,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-dormant-profiler-gate-tests-2026-10-24.py.txt",
+      "sha256": "693d15b750b3064d0c97bdfcc5ebdab14a185b729c32e2087aae23fe40f9bed0",
+      "source": ".runtime/test_qwen235b_dormant_profiler.py"
+    },
+    {
+      "bytes": 4914,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-dormant-profiler-operator-notes-2026-10-24.txt",
+      "sha256": "6512a82388961384607210b688a7c79bb21f56f7c86987eee880c1f44a803fbc",
+      "source": ".runtime/qwen235b-dormant-profiler-operator-notes.txt"
+    }
+  ],
+  "frozen_original_cohort_source_unchanged": "1ae9808db35c1d44c2cb27c1a1eee1c4672c6b9221bec36d85353329dc2726e0",
+  "frozen_original_tests_unchanged": "e14b4d305311757e21f68f746c3f5b6a415d69aef7a43e01e2bd6d46fc6d8172",
+  "lifecycle_scope": "Cohort accepts only successful guarded4510 activation provenance; no activation/restore/fault/service mutation by cohort. Original constructor mathematical profile remains f647.",
+  "local_tests": {
+    "author_seconds": 1.03,
+    "compile": "PASS",
+    "independent_reviewer": "history_retirement",
+    "independent_seconds": 1.08,
+    "passed": 51,
+    "production_or_GPU_test_by_agents": false,
+    "skipped": 0
+  },
+  "not_included": [
+    "raw environment values",
+    "trace paths or contents",
+    "raw prompts or model outputs",
+    "live configuration",
+    "credentials",
+    "database dumps"
+  ],
+  "production_status_as_of_root_handoff": {
+    "actual_native_owned_child_qualification": "ROOT_REPORTED_1_PASS_0.43s, receipt cbe9ca599d1732a789859d54e716a75e4c67bff366d6328a9e56f6a01c5ca5fe; actual receipt not included here",
+    "basis": "Root operator message, not independent live re-observation or final execution receipt",
+    "eagerB_graphB_activation_cohorts": "NOT_EXECUTED as of this handoff",
+    "explicit_dormant_receipt_write": "Prior root message reported in progress; later root reported baseline running under the receipt gate. Actual receipt bytes/SHA are not included in this source inventory.",
+    "generation_log_offset_discovery": "ROOT_REPORTED_PASS, offset2305831,current engine231820/start35991291,2106 markers,no profile RPC observed",
+    "original_100_plus_qa_cohort": "ROOT_REPORTED_RUNNING PID235473; no final result received at this record",
+    "proposed_cohort_and_maker": "ROOT_REPORTED_STAGED exact d622/1234"
+  },
+  "profiler_scope": "Exact inherited configuration permitted only with explicit externally SHA-anchored operator attestation, current generation/full environment/source/config/process bindings and log/trace metadata fences; not direct in-memory state attestation. No profiling control RPC is issued by maker/cohort.",
+  "recorded_at": "2026-10-24T10:43:28.446467+00:00",
+  "status": "SOURCE_REVIEW_AND_ROOT_REPORTED_STAGING_PROGRESS",
+  "version": 1
+}

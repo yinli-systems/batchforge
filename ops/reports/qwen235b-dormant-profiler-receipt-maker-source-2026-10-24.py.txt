@@ -1,0 +1,47 @@
+"""Explicit local operator attestation; no profiler/service/workload mutation."""
+from __future__ import annotations
+import argparse,hashlib,json,os,re,sys
+from pathlib import Path
+from types import ModuleType,SimpleNamespace
+
+ROOT=Path(__file__).resolve().parents[1]
+def main(argv=None):
+ p=argparse.ArgumentParser(description=__doc__)
+ p.add_argument('--cohort-source',type=Path,required=True);p.add_argument('--cohort-source-sha256',required=True)
+ p.add_argument('--generation-kind',choices=['engine_fault','guarded_activation'],required=True)
+ p.add_argument('--generation-proof',type=Path,required=True);p.add_argument('--generation-proof-sha256',required=True)
+ p.add_argument('--engine-log-start-offset',type=int);p.add_argument('--find-generation-log-offset',action='store_true')
+ p.add_argument('--receipt',type=Path);p.add_argument('--attest-no-profiler-control-rpcs',action='store_true');p.add_argument('--write',action='store_true')
+ a=p.parse_args(argv);context=None;os.umask(0o077);sys.dont_write_bytecode=True
+ try:
+  if ROOT!=Path('/root/batchforge-runtime/app') or sys.platform!='linux':raise ValueError('same_pod_only')
+  if a.cohort_source not in {ROOT/'.runtime/run_qwen235b_execution_cohorts_guarded_proposed.py',ROOT/'.runtime/run_qwen235b_execution_cohorts.py'}:raise ValueError('exact_cohort_source_path_required')
+  raw=a.cohort_source.read_bytes()
+  if a.cohort_source.is_symlink() or hashlib.sha256(raw).hexdigest()!=a.cohort_source_sha256:raise ValueError('reviewed_cohort_source_sha_required')
+  m=ModuleType('explicit_dormant_receipt_cohort');m.__file__=str(a.cohort_source);exec(compile(raw,str(a.cohort_source),'exec'),m.__dict__)
+  U,*_=m.tools()
+  args=SimpleNamespace(operation='worker-fault100-v1',manifest=ROOT/'.runtime/services-primary.json',env_file=ROOT.parent/'api-a.env',supervisor_env=ROOT.parent/'supervisor.env',
+   benchmark_env=ROOT/'.runtime/scheduler-v6/benchmark.env',fixture=ROOT/'.runtime/qwen235b-v1/workload-20.jsonl',source_roll_baseline=a.generation_kind=='engine_fault',
+   activation_report=a.generation_proof if a.generation_kind=='guarded_activation' else None,activation_sha256=a.generation_proof_sha256 if a.generation_kind=='guarded_activation' else None)
+  context=U.Context(args);context.healthy();current=context.processes()
+  m.profiler_generation(context,U,current,a.generation_kind,a.generation_proof,a.generation_proof_sha256)
+  if a.find_generation_log_offset:
+   U.require(not a.write and a.receipt is None and a.engine_log_start_offset is None,'offset_discovery_only')
+   # Bounded local private log, no raw lines or environment values leave stdout.
+   path=ROOT/'.runtime/engine-qwen235b.log';raw=U.read(path,64*1024**2)
+   pid=str(current['engine-qwen235b']['pid']).encode();pattern=re.compile(rb'(?:\(APIServer pid='+pid+rb'\)|Started server process \['+pid+rb'\])')
+   hits=[match.start() for match in pattern.finditer(raw)];U.require(hits,'current_engine_log_marker_missing')
+   offset=raw.rfind(b'\n',0,hits[0])+1;m.profiler_log_metadata(U,current['engine-qwen235b']['pid'],offset)
+   print(json.dumps({'phase':'readonly_offset_candidate','engine_identity':{k:current['engine-qwen235b'][k] for k in ('pid','start_ticks','cwd')},'engine_log_start_offset':offset,'marker_count':len(hits),'generation_proof_sha256':a.generation_proof_sha256}));return 0
+  U.require(a.attest_no_profiler_control_rpcs and a.engine_log_start_offset is not None,'explicit_attestation_and_log_offset_required')
+  receipt=m.make_profiler_receipt(context,U,a.generation_kind,a.generation_proof,a.generation_proof_sha256,a.engine_log_start_offset,m.PROFILER_ATTESTATION)
+  body=U.encoded(receipt)
+  if a.write:
+   U.require(a.receipt is not None and a.receipt.is_relative_to(ROOT/'.runtime'),'private_receipt_path_required');U.write(a.receipt,receipt)
+  else:U.require(a.receipt is None,'preview_does_not_write_receipt')
+  print(json.dumps({'phase':'written' if a.write else 'preview','receipt_sha256':m.sha(body),'generation_proof_sha256':a.generation_proof_sha256,
+   'operator_attestation':True,'direct_in_memory_profiler_state_verified':False,'automatic_profiler_control':False}));return 0
+ except Exception as error:print(json.dumps({'phase':'refused','error_type':type(error).__name__,'automatic_replay':False}));return 1
+ finally:
+  if context is not None:context.close()
+if __name__=='__main__':raise SystemExit(main())

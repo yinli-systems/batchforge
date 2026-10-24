@@ -1,0 +1,11 @@
+{
+  "finished_at": "2026-10-24T10:24:35.335314+00:00",
+  "gpu_requests": 0,
+  "job": "safe-graph-linux-qualification-v1",
+  "production_services_changed": false,
+  "returncode": 2,
+  "started_at": "2026-10-24T10:24:34.777734+00:00",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": "\n==================================== ERRORS ====================================\n_________ ERROR collecting .runtime/test_safe_decode_graph_qwen235b.py _________\nImportError while importing test module '/root/batchforge-runtime/app/.runtime/test_safe_decode_graph_qwen235b.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/lib/python3.12/importlib/__init__.py:90: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.runtime/test_safe_decode_graph_qwen235b.py:14: in <module>\n    from ops.ha.test_collective_qwen235b import prepared as baseline\nE   ModuleNotFoundError: No module named 'ops.ha.test_collective_qwen235b'\n=========================== short test summary info ============================\nERROR .runtime/test_safe_decode_graph_qwen235b.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.22s\n"
+}

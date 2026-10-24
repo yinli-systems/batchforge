@@ -1,0 +1,224 @@
+"""Pure/local private synthetic fixtures, no production/HTTP/SQL/GPU/model calls."""
+import argparse
+from contextlib import nullcontext
+from copy import deepcopy
+import hashlib,json,os
+from pathlib import Path
+import runpy,tempfile,unittest
+from types import SimpleNamespace
+from unittest.mock import patch
+ROOT=Path(__file__).resolve().parents[1]
+M=runpy.run_path(str(ROOT/'.runtime/run_qwen235b_execution_cohorts_guarded_proposed.py'),run_name='execution_cohort_test')
+G=M['Job'].__init__.__globals__;TOOLS=M['tools']();ORIGINAL_U,C,A,D,Q=TOOLS
+RID='bench-0123456789ab'
+def rows(n):return [{'custom_id':'squad-'+str(i),'method':'POST','url':'/v1/chat/completions','body':{'model':ORIGINAL_U.MODEL,'messages':[{'role':'user','content':'SYNTHETIC'}],'max_tokens':96}} for i in range(n)]
+def private(path,raw):
+ path.parent.mkdir(parents=True,exist_ok=True,mode=0o700);path.write_bytes(raw);path.chmod(0o600)
+def report(label,source,items,repeats,fixed):
+ expected=M['expected_rows'](items,RID,repeats,fixed)
+ tasks=[dict(id='task'+str(i),custom_id=r['custom_id'],status='completed',accepted_attempts=1,prompt_tokens=128,completion_tokens=96 if fixed else 8,output_cap=96) for i,r in enumerate(expected)]
+ return dict(run_id=RID,passed=True,engine_label=label,model=ORIGINAL_U.MODEL,test_fixture_detected=False,requested_tasks=100,submitted_tasks=100,completed=100,batches=1,accepted_batches=1,terminal_batches=1,failed=0,cancelled=0,database_schema_version=11,
+  accepted_exactly_once=True,output_custom_ids_unique=True,output_custom_ids_known=True,output_rows_match_completed=True,batch_counts_match_submission=True,unfinished_batch_ids=[],submission_errors=[],output_validation_errors=[],
+  experiment={'source_sha256':source,'controlled_output_length':fixed},all_output_lengths_exact=True,tasks=tasks,observed_prompt_tokens=12800,observed_completion_tokens=sum(t['completion_tokens'] for t in tasks))
+
+class Context:
+ def __init__(self,args):
+  assert args.operation=='worker-fault100-v1' # Explicit readonly adapter, no fault method.
+  self.rows=rows(20);self.engine={'port':8399};self.closed=False
+ def close(self):self.closed=True
+ def static(self):return {'runtime':'SYNTHETIC_STABLE'}
+ def processes(self):return {'worker-qwen235b':{'pid':123,'start_ticks':'5','cwd':'/root/batchforge-runtime/app'}}
+ def healthy(self):pass
+ def bind_run(self,rid):assert rid==RID
+ def scope(self,label):return True
+ def final(self):return {'tasks':100,'accepted_once':True,'durable_usage_matches':True}
+
+class FlowTests(unittest.TestCase):
+ def setUp(self):
+  self.temp=tempfile.TemporaryDirectory(prefix='bf-execution-fixture-',dir=ROOT/'.runtime');self.root=Path(self.temp.name).resolve();(self.root/'.runtime').mkdir(mode=0o700)
+  self.original_root=G['ROOT'];self.original_qa=G['QA_SHA'];self.original_activation=G['activation'];G['ROOT']=self.root
+  G['activation']=lambda *a:{'mode':'eager','worker_budget_tokens':280000,'activation_sha256':'a'*64}
+  self.qa_rows=rows(100);payload=b''.join(ORIGINAL_U.encoded(r) for r in self.qa_rows);G['QA_SHA']=hashlib.sha256(payload).hexdigest()
+  self.qa=self.root/'.runtime/qa.jsonl';private(self.qa,payload)
+  self.manifest=self.root/'.runtime/qa-manifest.json';private(self.manifest,ORIGINAL_U.encoded({'tasks':100,'model':ORIGINAL_U.MODEL,'profile':'answer','workload_sha256':G['QA_SHA'],'dataset_sha256':'b'*64,'examples':{r['custom_id']:{'gold_answers':['SYNTHETIC']} for r in self.qa_rows}}))
+  for name in M['PINS']:private(self.root/name,(ROOT/name).read_bytes())
+  self.args=argparse.Namespace(operation='qwen235b-eager-b-cohorts-v1',activation_report=self.root/'.runtime/activation/report.json',activation_sha256='a'*64,source_roll_baseline=False,source_roll_report=None,source_roll_sha256=None,manifest=self.root/'.runtime/services.json',env_file=self.root/'api.env',supervisor_env=self.root/'watch.env',benchmark_env=self.root/'bench.env',mixed_fixture=self.root/'.runtime/mixed.jsonl',qa_fixture=self.qa,qa_manifest=self.manifest,execute=False,prepared_sha256=None)
+  self.calls=[];self.snapshots=0;self.mode=None
+  self.U=SimpleNamespace(**vars(ORIGINAL_U));self.U.locked=lambda:nullcontext();self.U.Child=self.child
+  self.collector=SimpleNamespace(collect=self.snapshot,write_snapshot=C.write_snapshot)
+ def tearDown(self):G['ROOT']=self.original_root;G['QA_SHA']=self.original_qa;G['activation']=self.original_activation;self.temp.cleanup()
+ def snapshot(self,*a):
+  count=self.snapshots;self.snapshots+=1;metrics=[]
+  labels={'stage':'tokenize','outcome':'ok'}
+  for bound in sorted(C.BUCKETS):metrics.append({'name':C.PREFIX+'bucket','labels':{**labels,'le':'+Inf' if bound==float('inf') else str(bound)},'value':count if bound>=.5 else 0})
+  metrics.extend([{'name':C.PREFIX+'sum','labels':labels,'value':count*.5},{'name':C.PREFIX+'count','labels':labels,'value':count}])
+  return ORIGINAL_U.encoded({'version':1,'observed_at':'2026-10-24T00:00:0'+str(count)+'+00:00','worker_identity':{'pid':123,'start_ticks':'5','cwd':'/root/batchforge-runtime/app'},'source_sha256':C.SOURCES,'worker_configuration_sha256':'a'*64,'metrics':metrics})
+ def child(self,argv,log):
+  label=argv[argv.index('--label')+1];kind='mixed' if label.endswith('-mixed') else 'qa';self.calls.append((kind,argv))
+  journal=ORIGINAL_U.load((log.parent.parent/'journal.json').read_bytes());self.assertEqual(journal['pending_action']['stage'],kind+'-spawn');self.assertEqual(journal['pending_action']['argv_sha256'],ORIGINAL_U.sha(ORIGINAL_U.encoded(argv)))
+  self.assertEqual(self.snapshots,1 if kind=='mixed' else 3)
+  ORIGINAL_U.write(log,{'phase':'reserved'});items=rows(20) if kind=='mixed' else self.qa_rows;repeats=5 if kind=='mixed' else 1;fixed=kind=='mixed';source=ORIGINAL_U.FIXTURE_SHA if fixed else G['QA_SHA']
+  submitted=log.parent/(label+'-submitted');submitted.mkdir(mode=0o700);private(submitted/(RID+'-0.jsonl'),b''.join(ORIGINAL_U.encoded(r) for r in M['expected_rows'](items,RID,repeats,fixed)))
+  value=report(label,source,items,repeats,fixed)
+  if self.mode=='wrong_mode':value['experiment']['controlled_output_length']=not fixed
+  ORIGINAL_U.write(log.parent/'report.json',value)
+  if kind=='qa':
+   outputs=log.parent/(label+'-outputs');outputs.mkdir(mode=0o700)
+   records=[{'custom_id':r['custom_id'],'response':{'body':{'choices':[{'finish_reason':'stop','message':{'content':'{"answer":"SYNTHETIC"}'}}]}}} for r in M['expected_rows'](items,RID,repeats,fixed)]
+   private(outputs/(RID+'-0-output.jsonl'),b''.join(ORIGINAL_U.encoded(r) for r in records))
+  mode=self.mode
+  class Fake:
+   def identity(self):return {'pid':999,'start_ticks':'6','cwd':str(ROOT)}
+   def poll(self):return 0
+   def finish(self):return {'returncode':1 if mode=='child_failed' else 0,'pipes':{'stdout':{'sha256':'c'*64,'bytes':1}}}
+  return Fake()
+ def job(self):return M['Job'](self.args,loaded=[self.U,self.collector,A,D,Q],context_factory=Context)
+ def test_prepare_no_workload_and_exact_once_two_cohorts(self):
+  job=self.job();plan=job.prepare();self.assertFalse(self.calls);self.assertEqual(self.snapshots,0);result=job.execute(plan['prepared_sha256'])
+  self.assertEqual(result['phase'],'complete');self.assertEqual([x[0] for x in self.calls],['mixed','qa']);self.assertEqual(self.snapshots,4)
+  self.assertIn('--fixed-output',self.calls[0][1]);self.assertNotIn('--fixed-output',self.calls[1][1]);self.assertEqual(self.calls[0][1][self.calls[0][1].index('--repeats')+1],'5');self.assertEqual(self.calls[1][1][self.calls[1][1].index('--repeats')+1],'1')
+  journal=ORIGINAL_U.load((job.run/'journal.json').read_bytes());self.assertFalse(journal.get('pending_action'));self.assertEqual(journal['execution_completed_tasks'],200)
+  for name in ('mixed','qa'):
+   delta=ORIGINAL_U.load((job.run/name/'stage-delta.json').read_bytes());self.assertEqual(delta['stages'][0]['observations'],1);self.assertEqual(delta['stages'][0]['mean_seconds'],.5)
+  quality=ORIGINAL_U.load((job.run/'qa/quality.json').read_bytes());self.assertEqual(quality['answer_exact_match_over_expected'],1.0);self.assertFalse(result['raw_outputs_exported'])
+  before=(job.run/'journal.json').read_bytes()
+  with self.assertRaises(ORIGINAL_U.Refusal):self.job().execute(plan['prepared_sha256'])
+  self.assertEqual(before,(job.run/'journal.json').read_bytes());self.assertEqual(len(self.calls),2)
+ def test_unknown_spawn_pending_kept_and_no_second_cohort_or_replay(self):
+  job=self.job();plan=job.prepare()
+  def fail(*a):raise OSError('SYNTHETIC_SECRET_NOT_LOGGED')
+  self.U.Child=fail
+  with self.assertRaises(OSError):job.execute(plan['prepared_sha256'])
+  journal=ORIGINAL_U.load((job.run/'journal.json').read_bytes());self.assertEqual(journal['phase'],'manual_recovery_required');self.assertEqual(journal['pending_action']['stage'],'mixed-spawn');self.assertEqual(journal['error_code'],'OSError');self.assertNotIn('SYNTHETIC_SECRET',str(journal))
+  with self.assertRaises(ORIGINAL_U.Refusal):self.job().execute(plan['prepared_sha256'])
+ def test_wrong_fixed_mode_or_failed_child_never_starts_qa(self):
+  job=self.job();plan=job.prepare();self.mode='wrong_mode'
+  with self.assertRaises(ORIGINAL_U.Refusal):job.execute(plan['prepared_sha256'])
+  self.assertEqual([x[0] for x in self.calls],['mixed'])
+ def test_qa_fixture_or_manifest_drift_refuses_before_spawn(self):
+  job=self.job();plan=job.prepare();private(self.manifest,self.manifest.read_bytes()+b' ')
+  with self.assertRaisesRegex(ORIGINAL_U.Refusal,'same_runtime'):job.execute(plan['prepared_sha256'])
+  self.assertFalse(self.calls);self.assertFalse((job.run/'execution-marker.json').exists())
+ def test_stage_identity_drift_fails_analyzer_not_reset_or_zero_fill(self):
+  before=self.snapshot();after=ORIGINAL_U.load(self.snapshot());after['worker_identity']['pid']+=1;raw=ORIGINAL_U.encoded(after)
+  with self.assertRaisesRegex(ValueError,'changed'):A.analyze(before,ORIGINAL_U.sha(before),raw,ORIGINAL_U.sha(raw))
+ def test_generic_submission_rejects_duplicate_or_changed_rows(self):
+  job=self.job();job.prepare();run=job.run/'test';run.mkdir(mode=0o700);label='synthetic-mixed';sub=run/(label+'-submitted');sub.mkdir(mode=0o700)
+  expected=M['expected_rows'](rows(20),RID,5,True);expected[1]['custom_id']=expected[0]['custom_id'];private(sub/(RID+'-0.jsonl'),b''.join(ORIGINAL_U.encoded(x) for x in expected))
+  with self.assertRaisesRegex(ORIGINAL_U.Refusal,'submitted_rows'):M['benchmark_proof'](report(label,ORIGINAL_U.FIXTURE_SHA,rows(20),5,True),label,ORIGINAL_U.FIXTURE_SHA,rows(20),5,True,run,ORIGINAL_U)
+
+class PureTests(unittest.TestCase):
+ def test_pinned_definitions_load_without_context_or_model_calls(self):self.assertEqual(len(M['tools']()),5)
+ def test_no_main_on_wrong_host(self):self.assertEqual(M['main'](['--operation','qwen235b-eager-b-cohorts-v1','--activation-report','/unused/report.json','--activation-sha256','a'*64]),1)
+ def test_expected_qa_never_inserts_min_tokens_and_keeps_one_repeat(self):
+  result=M['expected_rows'](rows(100),RID,1,False);self.assertEqual(len(result),100);self.assertTrue(all('min_tokens' not in r['body'] for r in result));self.assertTrue(all(r['custom_id'].startswith(RID+'-repeat0-') for r in result))
+
+class OriginTests(unittest.TestCase):
+ def setUp(self):
+  self.temp=tempfile.TemporaryDirectory(prefix='bf-origin-fixture-',dir=ROOT/'.runtime');self.root=Path(self.temp.name).resolve();self.old_root=G['ROOT'];G['ROOT']=self.root
+  self.env={role:self.root/'.runtime'/(role+'.env') for role in ('engine','worker','api','watch')}
+  for role,path in self.env.items():private(path,('ROLE='+role+'\n').encode())
+  self.run=self.root/'.runtime/activation';self.run.mkdir(mode=0o700)
+  services=[{'role':role,'name':'qwen235b' if role in {'engine','worker'} else 'a','env_file':str(self.env[role])} for role in ('engine','worker','api')]
+  self.original={'services':services};self.manifest=self.root/'.runtime/services.json';private(self.manifest,ORIGINAL_U.encoded(self.original))
+  self.profile={'runtime_fingerprint':M['ORIGINAL_FP']};self.ids={role+'-'+('qwen235b' if role in {'worker','engine'} else 'a'):dict(pid=100+i,start_ticks='5',cwd='/root/batchforge-runtime/app') for i,role in enumerate(('engine','worker','api'))};self.ids['supervisor-primary']=dict(pid=104,start_ticks='6',cwd='/root/batchforge-runtime/app')
+  self.context=SimpleNamespace(profile=self.profile,worker_env={'WORKER_TOKEN_BUDGET':'298384'},manifest=self.manifest,worker=services[1],engine=services[0],all=[*services,{'role':'supervisor','name':'primary','env_file':str(self.env['watch'])}],processes=lambda:deepcopy(self.ids))
+  private(self.root/'backend/core.py',b'# SYNTHETIC\n');private(self.root/'worker/__init__.py',b'');private(self.root/'frontend/app.js',b'// SYNTHETIC\n')
+  self.source={'backend/core.py':ORIGINAL_U.sha((self.root/'backend/core.py').read_bytes()),'worker/__init__.py':ORIGINAL_U.sha(b'')}
+  self.context.static=lambda:{'source_sha256':{**self.source,'.runtime/ignored-helper.py':'f'*64}}
+  self.receipt={'phase':'complete','manual_recovery_required':False,'pending_action':None,'watchdog_state':'known_restored','worker_state':'ready64','engine_configuration_changed':False,'manifest_bytes_unchanged':True,'binding':{
+   'dependencies':{'backend/core.py':self.source['backend/core.py']},'target_sources':{'worker/__init__.py':self.source['worker/__init__.py'],'frontend/app.js':ORIGINAL_U.sha(b'// SYNTHETIC\n')},'manifest_sha256':ORIGINAL_U.sha(self.manifest.read_bytes()),'environment_sha256':{str(p):ORIGINAL_U.sha(p.read_bytes()) for p in self.env.values()},'patched_worker_env_sha256':ORIGINAL_U.sha(self.env['worker'].read_bytes()),'processes':{'historical-not-current':{'pid':1}}}}
+  self.path=self.root/'.runtime/rollout-report.json';private(self.path,ORIGINAL_U.encoded(self.receipt));self.old_roll=G['SOURCE_ROLL_SHA'];G['SOURCE_ROLL_SHA']=ORIGINAL_U.sha(self.path.read_bytes())
+  self.args=SimpleNamespace(source_roll_report=self.path,source_roll_sha256=G['SOURCE_ROLL_SHA'])
+  self.runtime=patch.dict(G,execution_state=lambda *a:{'ENGINE_ENFORCE_EAGER':'1'});self.runtime.start();self.decode=SimpleNamespace(manage=SimpleNamespace(engine_execution_configuration=lambda _: {'enforce_eager':True}))
+ def tearDown(self):self.runtime.stop();G['ROOT']=self.old_root;G['SOURCE_ROLL_SHA']=self.old_roll;self.temp.cleanup()
+ def test_original_baseline_uses_current_context_not_old_rollout_pids(self):
+  value=M['source_roll_baseline'](self.args,self.context,ORIGINAL_U,self.decode);self.assertEqual(value['runtime_fingerprint'],M['ORIGINAL_FP']);self.assertEqual(value['worker_budget_tokens'],298384)
+ def test_original_baseline_rejects_wrong_external_receipt_sha(self):
+  self.args.source_roll_sha256='0'*64
+  with self.assertRaisesRegex(ORIGINAL_U.Refusal,'exact_completed_source_roll'):M['source_roll_baseline'](self.args,self.context,ORIGINAL_U,self.decode)
+ def test_original_baseline_rejects_current_source_env_budget_or_fp_drift(self):
+  for which in ('source','environment','budget','fingerprint'):
+   with self.subTest(which=which):
+    context=deepcopy(self.context)
+    if which=='source':context.static=lambda:{'source_sha256':{'backend/core.py':'f'*64}}
+    elif which=='environment':private(self.env['worker'],b'ROLE=CHANGED\n')
+    elif which=='budget':context.worker_env['WORKER_TOKEN_BUDGET']='280000'
+    else:context.profile={'runtime_fingerprint':'sha256:'+'f'*64}
+    try:
+     with self.assertRaises(ORIGINAL_U.Refusal):M['source_roll_baseline'](self.args,context,ORIGINAL_U,self.decode)
+    finally:private(self.env['worker'],b'ROLE=worker\n')
+ def activation_fixture(self):
+  snapshot={'original-manifest.json':ORIGINAL_U.encoded(self.original),'original-engine.env':self.env['engine'].read_bytes(),'original-worker.env':self.env['worker'].read_bytes(),'engine.env':b'ENGINE_ENABLE_PREFIX_CACHING=0\n','worker.env':b'BUDGET=298384\n'}
+  for name,raw in snapshot.items():private(self.run/name,raw)
+  candidate=ORIGINAL_U.load(snapshot['original-manifest.json'])
+  for service in candidate['services']:
+   if service['role'] in {'engine','worker'}:service['env_file']=str(self.run/(service['role']+'.env'))
+  private(self.manifest,json.dumps(candidate,separators=(',',':')).encode());self.context.worker=candidate['services'][1];self.context.engine=candidate['services'][0]
+  self.context.all=[*candidate['services'],{'role':'supervisor','name':'primary','env_file':str(self.env['watch'])}]
+  self.activation={'phase':'complete','watchdog_restored':True,'restored':False,'operation':'qwen235b-shared-budget-execution-experiment','mode':'eager','model':ORIGINAL_U.MODEL,'profile':self.profile,'worker_budget_tokens':298384,
+   'prepared_binding':{'controller_sha256':M['PINS']['ops/ha/decode_graph_qwen235b.py'],'mode':'eager','worker_budget_tokens':298384,'snapshot_sha256':{k:ORIGINAL_U.sha(v) for k,v in snapshot.items()},'owned_identities':deepcopy(self.ids),'environment_sha256':{str(p):ORIGINAL_U.sha(p.read_bytes()) for p in self.env.values()},'support':{'source_sha256':{str(self.root/'backend/core.py'):self.source['backend/core.py']}}},
+   'engine_identity_after':self.ids['engine-qwen235b'],'worker_identity_after':self.ids['worker-qwen235b'],'watchdog_identity_after':self.ids['supervisor-primary']}
+  for name in M['SAFE_HELPERS']|{M['SAFE_WRAPPER']}:private(self.root/name,(ROOT/name).read_bytes())
+  effective={}
+  for key in self.ids:
+   path=self.run/('original-effective-'+key+'.json');private(path,ORIGINAL_U.encoded({'SYNTHETIC_SECRET':'PRIVATE NEVER EXPORT'}));effective[str(path)]=ORIGINAL_U.sha(path.read_bytes())
+  events=[{'stage':stage,'at':'2026-10-24T00:00:00+00:00','confirmed_at':'2026-10-24T00:00:01+00:00'} for stage in M['SAFE_ACTIONS']]
+  for index,role in ((7,'engine'),(9,'worker'),(10,'watchdog')):events[index]['result']={'status':'started','identity':self.activation[role+'_identity_after']}
+  self.activation.update(wrapper_source_sha256=M['SAFE_WRAPPER_SHA'],safe_action_journal_complete=True,manual_recovery_required=False,pending_action=None,automatic_replay=False,protected_services_unchanged=True,
+   safe_action_events=events,safe_state_machine_binding={'wrapper_source_sha256':M['SAFE_WRAPPER_SHA'],'helper_source_sha256':{name:ORIGINAL_U.sha((self.root/name).read_bytes()) for name in M['SAFE_HELPERS']},'serving_source_sha256':self.source.copy(),'private_original_effective_sha256':effective})
+  path=self.run/'report.json';private(path,ORIGINAL_U.encoded(self.activation));return SimpleNamespace(activation_report=path,activation_sha256=ORIGINAL_U.sha(path.read_bytes()),operation='qwen235b-eager-b-cohorts-v1')
+ def test_activation_current_manifest_snapshot_sources_profile_and_pids(self):
+  args=self.activation_fixture();d=SimpleNamespace(SNAPSHOTS=D.SNAPSHOTS)
+  self.assertEqual(M['activation'](args,self.context,ORIGINAL_U,d)['mode'],'eager')
+  for which in ('pid','snapshot','manifest','source'):
+   with self.subTest(which=which):
+    if which=='pid':self.ids['worker-qwen235b']['pid']+=1
+    elif which=='snapshot':private(self.run/'worker.env',b'DRIFT=1\n')
+    elif which=='manifest':private(self.manifest,self.manifest.read_bytes()+b' ')
+    else:private(self.root/'backend/core.py',b'# DRIFT\n')
+    with self.assertRaises(ORIGINAL_U.Refusal):M['activation'](args,self.context,ORIGINAL_U,d)
+    if which=='pid':self.ids['worker-qwen235b']['pid']-=1
+    elif which=='snapshot':private(self.run/'worker.env',b'BUDGET=298384\n')
+    elif which=='manifest':private(self.manifest,self.manifest.read_bytes().rstrip())
+    else:private(self.root/'backend/core.py',b'# SYNTHETIC\n')
+
+
+ def guarded_call(self,args):
+  private(args.activation_report,ORIGINAL_U.encoded(self.activation));args.activation_sha256=ORIGINAL_U.sha(args.activation_report.read_bytes())
+  return M['activation'](args,self.context,ORIGINAL_U,SimpleNamespace(SNAPSHOTS=D.SNAPSHOTS))
+ def test_plain_parent_activation_is_not_accepted_even_with_external_sha(self):
+  args=self.activation_fixture()
+  for field in ('wrapper_source_sha256','safe_state_machine_binding','safe_action_events','safe_action_journal_complete','manual_recovery_required','pending_action','automatic_replay','protected_services_unchanged'):self.activation.pop(field,None)
+  with self.assertRaisesRegex(ORIGINAL_U.Refusal,'approved_safe_wrapper'):self.guarded_call(args)
+ def test_both_modes_accept_exact_safe_wrapper_and_keep_constructor_f647(self):
+  args=self.activation_fixture()
+  for mode,operation in [('eager','qwen235b-eager-b-cohorts-v1'),('decode_graph','qwen235b-graph-b-cohorts-v1')]:
+   self.activation['mode']=self.activation['prepared_binding']['mode']=mode;args.operation=operation
+   value=self.guarded_call(args);self.assertEqual(value['wrapper_source_sha256'],M['SAFE_WRAPPER_SHA']);self.assertTrue(value['safe_action_journal_complete'])
+   self.assertEqual(self.activation['prepared_binding']['controller_sha256'],M['PINS']['ops/ha/decode_graph_qwen235b.py'])
+ def test_incomplete_unknown_unsafe_or_conflicting_action_proofs_refuse(self):
+  args=self.activation_fixture();original=deepcopy(self.activation)
+  changes=[('top_wrapper',lambda a:a.update(wrapper_source_sha256='0'*64)),('bound_wrapper',lambda a:a['safe_state_machine_binding'].update(wrapper_source_sha256='0'*64)),
+   ('incomplete',lambda a:a.update(safe_action_journal_complete=False)),('bool_alias',lambda a:a.update(safe_action_journal_complete=1)),('pending',lambda a:a.update(pending_action={'stage':'start:worker-qwen235b'})),('missing_pending',lambda a:a.pop('pending_action')),
+   ('manual',lambda a:a.update(manual_recovery_required=True)),('replay',lambda a:a.update(automatic_replay=True)),('unprotected',lambda a:a.update(protected_services_unchanged=False)),
+   ('missing_event',lambda a:a['safe_action_events'].pop()),('unconfirmed',lambda a:a['safe_action_events'][0].pop('confirmed_at')),('wrong_order',lambda a:a['safe_action_events'].reverse()),
+   ('start_identity',lambda a:a['safe_action_events'][7].update(result={'status':'started','identity':{'pid':999}})),
+   ('helper_set',lambda a:a['safe_state_machine_binding']['helper_source_sha256'].update({'../../foreign.py':'f'*64})),('helper_sha',lambda a:a['safe_state_machine_binding']['helper_source_sha256'].update({'ops/manage.py':'f'*64})),
+   ('serving_source',lambda a:a['safe_state_machine_binding']['serving_source_sha256'].update({'worker/__init__.py':'f'*64})),('private_set',lambda a:a['safe_state_machine_binding']['private_original_effective_sha256'].clear()),('private_sha',lambda a:a['safe_state_machine_binding']['private_original_effective_sha256'].update({str(self.run/'original-effective-engine-qwen235b.json'):'f'*64}))]
+  for name,change in changes:
+   with self.subTest(name=name):
+    self.activation=deepcopy(original);change(self.activation)
+    with self.assertRaises(ORIGINAL_U.Refusal):self.guarded_call(args)
+  self.activation=original;self.assertEqual(self.guarded_call(args)['mode'],'eager')
+ def test_wrapper_helper_and_private_restore_snapshot_drift_refuse(self):
+  args=self.activation_fixture()
+  for path in (self.root/M['SAFE_WRAPPER'],self.root/'ops/manage.py',self.run/'original-effective-engine-qwen235b.json'):
+   with self.subTest(path=path.name):
+    before=path.read_bytes();private(path,b'CHANGED SYNTHETIC\n')
+    try:
+     with self.assertRaises(ORIGINAL_U.Refusal):self.guarded_call(args)
+    finally:private(path,before)
+  self.assertEqual(self.guarded_call(args)['mode'],'eager')
+
+if __name__=='__main__':unittest.main()

@@ -1,0 +1,89 @@
+{
+  "execution_contract": {
+    "arrival_offsets_seconds": [
+      0,
+      0.1,
+      0.2,
+      0.3,
+      2,
+      2.1,
+      2.2,
+      2.3
+    ],
+    "automatic_POST_retry": false,
+    "cross_round_serving_and_private_tool_source_hashes_fixed": true,
+    "default_prepare": true,
+    "exact_prepared_SHA_for_execute": true,
+    "externally_pinned_completed_fair_reference_for_cost": true,
+    "max_create_POSTs": 8,
+    "max_upload_POSTs": 8,
+    "operations": [
+      "qwen235b-policy-fair160-v1",
+      "qwen235b-policy-cost160-v1"
+    ],
+    "per_operation_batches": 8,
+    "per_operation_tasks": 160,
+    "policy_or_service_mutation_by_sender": false,
+    "strict_claim_counterfactual_attribution": "inconclusive"
+  },
+  "files": [
+    {
+      "bytes": 33125,
+      "original_bytes_preserved": true,
+      "private_source": ".runtime/run_qwen235b_policy_cohort.py",
+      "review_copy": "ops/reports/qwen235b-policy160-sender-source-2026-10-24.py.txt",
+      "sha256": "a7da1c04c66b9db6d0e5aeaf9d9ac67b1ab9b185abbf800ad9324e536b4c3a23"
+    },
+    {
+      "bytes": 22933,
+      "original_bytes_preserved": true,
+      "private_source": ".runtime/test_run_qwen235b_policy_cohort.py",
+      "review_copy": "ops/reports/qwen235b-policy160-sender-tests-2026-10-24.py.txt",
+      "sha256": "485b057315d9db2dadd2d5cfeea4260b66db4de32ae6564a45d123231f604cda"
+    },
+    {
+      "bytes": 19057,
+      "original_bytes_preserved": true,
+      "private_source": ".runtime/qwen235b_policy_evidence.py",
+      "review_copy": "ops/reports/qwen235b-policy160-evidence-source-2026-10-24.py.txt",
+      "sha256": "023936c69afec87c390aa9515e4e26b416e2ce9a0ab7c75e58221ae4048444ed"
+    },
+    {
+      "bytes": 16483,
+      "original_bytes_preserved": true,
+      "private_source": ".runtime/test_qwen235b_policy_evidence.py",
+      "review_copy": "ops/reports/qwen235b-policy160-evidence-tests-2026-10-24.py.txt",
+      "sha256": "296c73328be7bea4d2e011dbbee776cded283ea93aeb924cfa2d5ba11d92c646"
+    },
+    {
+      "bytes": 6247,
+      "original_bytes_preserved": true,
+      "private_source": ".runtime/qwen235b-policy160-operator-notes.txt",
+      "review_copy": "ops/reports/qwen235b-policy160-operator-notes-2026-10-24.txt",
+      "sha256": "5261e5e0184a7cfc3252c0d1a638ed4f733ecc40b8dc234721b7aa85eac2ad53"
+    }
+  ],
+  "independent_review": {
+    "evidence": "APPROVED exact023936; independent new Unix-only PG16.2/full migrations11/bf_runtime SELECT-only",
+    "sender": "APPROVED exact a7da1c04; final two-field source-pin diff independently inverted to prior approved bytes"
+  },
+  "inventory_version": 1,
+  "local_validation": {
+    "combined_tests_passed": 34,
+    "evidence_isolated_postgresql_16_2_tests": 11,
+    "linux_qualification_claimed": false,
+    "production_database_used": false,
+    "sender_tests": 23,
+    "ssh_gpu_http_production_calls": false,
+    "temporary_cluster_stopped_and_removed": true
+  },
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "prepared_date": "2026-10-24",
+  "safety_scope": [
+    "No raw prompts, model outputs, credentials, environment bytes or SQL dump copied",
+    "Do not infer production readiness, throughput, savings, daily capacity, heterogeneous placement or HA from local validation",
+    "Only root may stage/run separately after GPU windows; no commit or push made in this task"
+  ],
+  "scope": "Reviewed private operator source and tests; not a production execution or completed policy comparison",
+  "status": "NOT_EXECUTED"
+}

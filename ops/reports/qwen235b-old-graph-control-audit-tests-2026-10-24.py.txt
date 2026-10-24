@@ -1,0 +1,55 @@
+"""Pure reproduction of old graph controller uncertainty behavior; no live I/O."""
+from types import SimpleNamespace
+import pytest
+from ops.ha.adaptive_qwen235b import AdaptiveRoll
+from ops.ha.collective_qwen235b import CollectiveRoll
+from ops.ha.restore_collective_qwen235b import RestoreCollective
+
+def test_existing_stop_reissues_action_after_unknown_runtime_error():
+    calls=[];tick=[0]
+    def invoke(service,action):
+        calls.append((service,action))
+        if len(calls)==1:raise RuntimeError('SYNTHETIC UNKNOWN MANAGED STOP')
+        return {'status':'stopped'}
+    fake=SimpleNamespace(clock=lambda:tick[0],sleep=lambda n:tick.__setitem__(0,tick[0]+n),invoke=invoke)
+    assert AdaptiveRoll.stop(fake,'engine')=={'status':'stopped'}
+    assert calls==[('engine','stop'),('engine','stop')]
+
+def fixture():
+    actions=[];engine={'role':'engine','name':'qwen235b'};worker={'role':'worker','name':'qwen235b'};watch={'role':'supervisor','name':'primary'}
+    candidate_engine={**engine,'candidate':True};candidate_worker={**worker,'candidate':True}
+    fake=SimpleNamespace(report={'phase':'prepared','events':[]},guard=lambda **_:None,assert_drained=lambda:None,
+        path_observer=lambda _: {},profile_observer=lambda _: {},original_profile={},profile={},save=lambda:None,
+        watchdog=watch,worker=worker,engine=engine,candidate_worker=candidate_worker,candidate_engine=candidate_engine,
+        engine_only={'engine':'candidate'},original_engine_only={'engine':'original'},candidate={'engine':'candidate','worker':'candidate'},
+        identity=lambda s:{'pid':1,'start_ticks':'1','cwd':'SYNTHETIC'},ready=lambda *_:None)
+    fake.stop=lambda s:actions.append(('stop',s))
+    fake._manifest=lambda doc=None:actions.append(('manifest',doc))
+    fake.invoke=lambda s,a:actions.append((a,s)) or {'status':'started'}
+    def start(service,candidate):
+        actions.append(('start_engine',service))
+        if service==candidate_engine:raise TimeoutError('SYNTHETIC UNKNOWN START ACK')
+        return {}
+    fake.start_engine=start
+    return fake,actions
+
+def test_existing_activation_rolls_back_and_restarts_watchdog_after_unknown_start():
+    fake,actions=fixture()
+    with pytest.raises(TimeoutError):CollectiveRoll.apply(fake)
+    failed=actions.index(('start_engine',fake.candidate_engine))
+    later=actions[failed+1:]
+    assert ('start_engine',fake.engine) in later
+    assert ('start',fake.worker) in later and ('start',fake.watchdog) in later
+    assert fake.report['phase']=='rolled_back'
+
+def test_existing_restore_performs_followon_exclusion_after_unknown_stop():
+    fake,actions=fixture();original=fake.stop;once=[False]
+    def stop(service):
+        original(service)
+        if service==fake.candidate_engine and not once[0]:once[0]=True;raise TimeoutError('SYNTHETIC UNKNOWN ENGINE STOP')
+    fake.stop=stop
+    with pytest.raises(TimeoutError):RestoreCollective.apply(fake)
+    failed=actions.index(('stop',fake.candidate_engine));later=actions[failed+1:]
+    assert ('manifest',fake.original_engine_only) in later
+    assert ('stop',fake.worker) in later and ('start',fake.watchdog) in later
+    assert fake.report['worker_excluded_and_owned_worker_stopped'] is True

@@ -1,0 +1,121 @@
+"""Synthetic PID/environment/log/trace fixtures only; no real /proc or services."""
+from copy import deepcopy
+import hashlib,json,os
+from pathlib import Path
+import runpy
+from types import SimpleNamespace
+import pytest
+
+ROOT=Path(__file__).resolve().parents[1]
+M=runpy.run_path(str(ROOT/'.runtime/run_qwen235b_execution_cohorts_guarded_proposed.py'),run_name='dormant_profiler_test')
+G=M['profiler_evidence'].__globals__;U=M['tools']()[0]
+
+@pytest.fixture
+def f(tmp_path,monkeypatch):
+ (tmp_path/'.runtime').mkdir(mode=0o700);monkeypatch.setitem(G,'ROOT',tmp_path)
+ directory=tmp_path/'.runtime/traces';directory.mkdir(mode=0o700)
+ environments={'engine-qwen235b':{M['PROFILER_DIR']:str(directory).encode(),**{k:b'0' for k in M['PROFILER_FLAGS']}},'worker-qwen235b':{}}
+ current={'engine-qwen235b':{'pid':123456,'start_ticks':'55','cwd':str(tmp_path),'environment_sha256':'','argv_sha256':'a'*64},'worker-qwen235b':{'pid':123457,'start_ticks':'66','cwd':str(tmp_path),'environment_sha256':'','argv_sha256':'b'*64},'api-a':{'pid':123458,'start_ticks':'77','cwd':str(tmp_path),'environment_sha256':'c'*64,'argv_sha256':'d'*64}}
+ raw_env={}
+ def refresh():
+  for key in environments:
+   raw=b''.join(k+b'='+v+b'\0' for k,v in environments[key].items());raw_env[current[key]['pid']]=raw;current[key]['environment_sha256']=hashlib.sha256(raw).hexdigest()
+ refresh();original_read=Path.read_bytes
+ def reader(path):
+  if path.parent.parent==Path('/proc') and path.name=='environ':
+   pid=int(path.parent.name);assert pid in raw_env;return raw_env[pid]
+  return original_read(path)
+ monkeypatch.setattr(Path,'read_bytes',reader)
+ static={'source_sha256':{'backend/core.py':'e'*64,'.runtime/fault.py':'f'*64},'configuration_sha256':{'SYNTHETIC':'a'*64},'runtime_fingerprint':'sha256:'+'b'*64}
+ proof={'phase':'complete','status':'passed','manual_recovery_required':False,'watchdog_restored':True,'restored_engine_pid':123456,'source_sha256':{'backend/core.py':'e'*64}}
+ proof_path=tmp_path/'.runtime/generation.json'
+ def save(path,value):
+  path.write_bytes(U.encoded(value));path.chmod(0o600);return hashlib.sha256(path.read_bytes()).hexdigest()
+ proof_sha=save(proof_path,proof)
+ args=SimpleNamespace(source_roll_baseline=True,profiler_receipt=tmp_path/'.runtime/receipt.json',profiler_receipt_sha256=None,activation_report=None,activation_sha256=None)
+ context=SimpleNamespace(args=args,processes=lambda:deepcopy(current),static=lambda:deepcopy(static))
+ log=tmp_path/'.runtime/engine-qwen235b.log';log.write_bytes(b'(APIServer pid=123456) starting server\nINFO normal\n');log.chmod(0o600)
+ def receipt():
+  result=M['make_profiler_receipt'](context,U,'engine_fault',proof_path,hashlib.sha256(proof_path.read_bytes()).hexdigest(),0,M['PROFILER_ATTESTATION'])
+  args.profiler_receipt_sha256=save(args.profiler_receipt,result);return result
+ return SimpleNamespace(root=tmp_path,directory=directory,env=environments,current=current,refresh=refresh,static=static,proof=proof,proof_path=proof_path,proof_sha=proof_sha,args=args,context=context,log=log,save=save,receipt=receipt)
+
+def test_exact_explicit_dormant_receipt_and_normal_log_append(f):
+ r=f.receipt();out=M['profiler_evidence'](f.context,U,f.current)
+ assert out['direct_in_memory_profiler_state_verified'] is False and out['receipt_sha256']==f.args.profiler_receipt_sha256
+ assert str(f.directory) not in json.dumps(r) and 'VLLM_TORCH_PROFILER_DIR' not in json.dumps(r)
+ with f.log.open('ab') as log:log.write(b'INFO normal serving statistics\n')
+ assert M['profiler_evidence'](f.context,U,f.current)==out
+
+def test_no_profiler_environment_remains_allowed_without_receipt(f):
+ f.env['engine-qwen235b'].clear();f.refresh();f.args.profiler_receipt=None
+ assert M['profiler_evidence'](f.context,U,f.current)=={'profiler_configuration':'absent'}
+
+@pytest.mark.parametrize('change',['worker','unknown','emptydir','flag1','flagempty','missingflag','outside','execution_trace'])
+def test_only_exact_engine_directory_and_four_zero_flags_are_permitted(f,change):
+ env=f.env['engine-qwen235b']
+ if change=='worker':f.env['worker-qwen235b'][b'TORCH_PROFILER_DIR']=b'PRIVATE'
+ elif change=='unknown':env[b'VLLM_TORCH_PROFILER_UNKNOWN']=b'0'
+ elif change=='emptydir':env[M['PROFILER_DIR']]=b''
+ elif change=='flag1':env[next(iter(M['PROFILER_FLAGS']))]=b'1'
+ elif change=='flagempty':env[next(iter(M['PROFILER_FLAGS']))]=b''
+ elif change=='missingflag':env.pop(next(iter(M['PROFILER_FLAGS'])))
+ elif change=='outside':env[M['PROFILER_DIR']]=b'/tmp/SYNTHETIC-OTHER-ROOT'
+ else:env[b'ENABLE_PYTORCH_EXECUTION_TRACE']=b'1'
+ f.refresh()
+ with pytest.raises(U.Refusal):M['profiler_evidence'](f.context,U,f.current)
+
+def test_external_receipt_and_operator_attestation_are_mandatory(f):
+ with pytest.raises(U.Refusal,match='explicit_dormant'):M['profiler_evidence'](f.context,U,f.current)
+ with pytest.raises(U.Refusal,match='explicit_operator'):M['make_profiler_receipt'](f.context,U,'engine_fault',f.proof_path,f.proof_sha,0,'')
+ f.receipt();f.args.profiler_receipt_sha256='0'*64
+ with pytest.raises(U.Refusal,match='receipt_sha'):M['profiler_evidence'](f.context,U,f.current)
+
+@pytest.mark.parametrize('change',['proofsha','enginepid','manual','phase','source','process','config','receipt_attestation'])
+def test_generation_runtime_identity_configuration_and_attestation_drift_refuse(f,change):
+ r=f.receipt()
+ if change=='proofsha':f.save(f.proof_path,{**f.proof,'EXTRA':'CHANGED'})
+ elif change=='enginepid':f.current['engine-qwen235b']['start_ticks']='99'
+ elif change=='manual':f.save(f.proof_path,{**f.proof,'manual_recovery_required':True})
+ elif change=='phase':f.save(f.proof_path,{**f.proof,'phase':'starting_engine'})
+ elif change=='source':f.static['source_sha256']['backend/core.py']='0'*64
+ elif change=='process':f.current['api-a']['pid']+=1
+ elif change=='config':f.static['configuration_sha256']['SYNTHETIC']='0'*64
+ else:r['attestation']='NOT_ATTESTED';f.args.profiler_receipt_sha256=f.save(f.args.profiler_receipt,r)
+ with pytest.raises(U.Refusal):M['profiler_evidence'](f.context,U,f.current)
+
+@pytest.mark.parametrize('token',M['PROFILER_CONTROLS'])
+def test_profiler_control_log_anywhere_after_generation_offset_refuses(f,token):
+ f.receipt()
+ with f.log.open('ab') as log:log.write(token+b'\n')
+ with pytest.raises(U.Refusal,match='profiler_control'):M['profiler_evidence'](f.context,U,f.current)
+
+@pytest.mark.parametrize('change',['trace_created','trace_modified','trace_symlink','log_replaced','log_prefix','log_truncated'])
+def test_trace_metadata_and_original_log_identity_prefix_are_fenced(f,change):
+ if change=='trace_modified':(f.directory/'old.trace').write_bytes(b'OLD')
+ f.receipt()
+ if change=='trace_created':(f.directory/'new.trace').write_bytes(b'NEW')
+ elif change=='trace_modified':(f.directory/'old.trace').write_bytes(b'NEW')
+ elif change=='trace_symlink':(f.directory/'foreign').symlink_to(f.proof_path)
+ elif change=='log_replaced':other=f.log.with_suffix('.new');other.write_bytes(f.log.read_bytes());other.chmod(0o600);os.replace(other,f.log)
+ elif change=='log_prefix':f.log.write_bytes(f.log.read_bytes().replace(b'normal',b'CHANGE'))
+ else:f.log.write_bytes(b'')
+ with pytest.raises(U.Refusal):M['profiler_evidence'](f.context,U,f.current)
+
+def test_generation_log_marker_and_explicit_valid_offset_required(f):
+ for offset in (-1,True,100000):
+  with pytest.raises(U.Refusal):M['profiler_log_metadata'](U,123456,offset)
+ with pytest.raises(U.Refusal):M['profiler_log_metadata'](U,999999,0)
+
+def test_new_guarded_activation_generation_needs_own_exact_receipt(f):
+ f.args.source_roll_baseline=False;f.args.activation_report=f.proof_path
+ proof={'phase':'complete','wrapper_source_sha256':M['SAFE_WRAPPER_SHA'],'safe_action_journal_complete':True,'manual_recovery_required':False,'pending_action':None,'engine_identity_after':{k:f.current['engine-qwen235b'][k] for k in ('pid','start_ticks','cwd')}}
+ f.args.activation_sha256=f.save(f.proof_path,proof)
+ r=M['make_profiler_receipt'](f.context,U,'guarded_activation',f.proof_path,f.args.activation_sha256,0,M['PROFILER_ATTESTATION']);f.args.profiler_receipt_sha256=f.save(f.args.profiler_receipt,r)
+ assert M['profiler_evidence'](f.context,U,f.current)['generation_proof_sha256']==f.args.activation_sha256
+ f.args.activation_sha256='0'*64
+ with pytest.raises(U.Refusal):M['profiler_evidence'](f.context,U,f.current)
+
+def test_changed_process_environment_hash_refuses_before_using_profile_keys(f):
+ f.receipt();f.current['engine-qwen235b']['environment_sha256']='0'*64
+ with pytest.raises(U.Refusal,match='process_environment_changed'):M['profiler_evidence'](f.context,U,f.current)

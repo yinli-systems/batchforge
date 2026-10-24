@@ -1,0 +1,36 @@
+{
+  "execution_status": "REVIEWED_READY; root alone stages and executes; this inventory does not attest later execution or production results",
+  "files": [
+    {
+      "bytes": 97378,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-fault-metadata-packet-source-2026-10-24.py.txt",
+      "sha256": "09c6e41a79b83250cf91b63cb449e324750eaa395ebcffef8503e628ed301aa4",
+      "source_path": ".runtime/export_fault_metadata_packet.py"
+    },
+    {
+      "bytes": 12496,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-fault-metadata-packet-tests-2026-10-24.py.txt",
+      "sha256": "c75bef33c76650755fc105e2dd4d5a8c8d63d80a7697b49f0fdfd85de5f22a72",
+      "source_path": ".runtime/test_export_fault_metadata_packet.py"
+    },
+    {
+      "bytes": 6073,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-fault-metadata-packet-notes-2026-10-24.txt",
+      "sha256": "801786f638f98735a871be59c4e4cf468b71830ad8afad19ddd94abba0756553",
+      "source_path": ".runtime/fault-metadata-packet-notes.txt"
+    }
+  ],
+  "independently_reviewed": true,
+  "local_tests": {
+    "independent_review_passed": 46,
+    "passed": 46
+  },
+  "prepared_at": "2026-10-24T10:36:54.765770+00:00",
+  "production_execution_by_author": false,
+  "scope": "Exact reviewed local-only fault metadata helper, tests and operator notes; no raw inference input/output, configuration, credentials or database dump",
+  "trust_scope": "Source SHA inventory is not a signature or independent observation of production",
+  "version": 1
+}

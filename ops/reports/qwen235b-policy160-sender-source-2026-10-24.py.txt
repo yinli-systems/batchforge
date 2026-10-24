@@ -1,0 +1,313 @@
+"""Prepare/once-run exactly8 homogeneous20-task batches; no policy or service writes.
+
+Raw fixtures/output and credentials stay private. No POST is retried. Unknown
+outcome preserves intent and forbids replay; candidate samples do not prove a
+later claim's counterfactual visibility. Root separately owns policy switching.
+"""
+from __future__ import annotations
+import argparse,asyncio,copy,fcntl,hashlib,json,os,re,signal,stat,sys,threading,time
+from contextlib import ExitStack,contextmanager
+from pathlib import Path
+from types import SimpleNamespace
+SELF=Path(__file__).resolve();ROOT=SELF.parent.parent;sys.dont_write_bytecode=True
+if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
+OPS={'qwen235b-policy-fair160-v1':'fair','qwen235b-policy-cost160-v1':'cost_aware'}
+HELPER_SHA='35b8b852d4093ebcaf7fa4342d4fc3d13badc3c53bea89303f401d3a2495c655'
+EVIDENCE_SHA='023936c69afec87c390aa9515e4e26b416e2ce9a0ab7c75e58221ae4048444ed'
+ORIGINAL_FP='sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3'
+OFFSETS=(0.,.1,.2,.3,2.,2.1,2.2,2.3)
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def tools():
+    result=[]
+    for name,digest in [('.runtime/run_qwen235b_fault_cohort.py',HELPER_SHA),('.runtime/qwen235b_policy_evidence.py',EVIDENCE_SHA)]:
+        path=ROOT/name;raw=path.read_bytes()
+        if path.is_symlink() or sha(raw)!=digest:raise ValueError('reviewed_dependency_sha_differs')
+        ns={'__name__':'policy_cohort_readonly_dependency','__file__':str(path)};exec(compile(raw,str(path),'exec'),ns);result.append(SimpleNamespace(**ns))
+    return result
+@contextmanager
+def locks(U):
+    with ExitStack() as stack:
+        for name in ('scheduler-policy.lock','qwen235b-maintenance.lock','single-pod-worker-fault.lock','postpair-source-rollout.lock','fault-cohort-launcher.lock'):
+            fd=os.open(ROOT/'.runtime'/name,os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW,0o600);stack.callback(os.close,fd);s=os.fstat(fd)
+            U.require(stat.S_ISREG(s.st_mode) and s.st_uid==os.geteuid() and s.st_nlink==1 and not s.st_mode&0o077,'unsafe_shared_operator_lock')
+            fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        yield
+
+def workload(U,rows,operation):
+    selected={c:next((r for r in rows if r['custom_id']==name),None) for c,name in [('L','mix-0-2048-128'),('S','mix-0-128-32')]}
+    U.require(all(selected.values()),'exact_two_fixture_cells_missing');result=[]
+    for i,offset in enumerate(OFFSETS):
+        c='L' if i<4 else 'S';source=selected[c];cap=128 if c=='L' else 32
+        U.require(source.get('method')=='POST' and source.get('url')=='/v1/chat/completions' and source['body'].get('max_tokens')==cap,'fixture_cell_shape_differs')
+        entries=[]
+        for n in range(20):
+            row=copy.deepcopy(source);row['custom_id']=f'{operation}-{c}{i%4}-{n:02d}';row['body']['min_tokens']=cap;entries.append(row)
+        raw=b''.join(U.encoded(r) for r in entries)
+        result.append(dict(index=i,class_label=c,offset=offset,rows=entries,raw=raw,sha256=sha(raw),bytes=len(raw)))
+    return result
+
+def database_state(context,U,operation):
+    conn=context.conn;row=conn.execute("SELECT current_user AS role,current_setting('transaction_read_only') AS readonly").fetchone()
+    U.require(row['role']=='bf_runtime' and row['readonly']=='on','readonly_bf_runtime_required')
+    ledger=conn.execute('SELECT version,checksum FROM batchforge_schema_migrations ORDER BY version').fetchall()
+    U.require({str(r['version']):r['checksum'] for r in ledger}==context.ledger and len(ledger)==11,'exact_schema11_runtime_ledger_required')
+    key=sha(context.bench_env['BATCHFORGE_API_KEY'].encode())
+    U.require(conn.execute("SELECT count(*) AS n FROM api_keys WHERE key_hash=%s AND tenant_id='default' AND NOT revoked",(key,)).fetchone()['n']==1,'live_default_benchmark_key_required')
+    limits=conn.execute("SELECT to_jsonb(l) AS value FROM tenant_retention_limits l WHERE tenant_id='default'").fetchone()
+    U.require(limits and limits['value']['max_response_bytes']==65536 and limits['value']['max_error_bytes']==32768,'released_retention_caps_required')
+    history=conn.execute("SELECT to_jsonb(p) AS value FROM tenant_history_retirement_policy p WHERE tenant_id='default'").fetchone()
+    U.require(not history or not history['value']['enabled'],'default_history_must_be_disabled_for_collection')
+    aux=conn.execute("SELECT to_jsonb(l) AS value FROM tenant_auxiliary_limits l WHERE tenant_id='default' ORDER BY resource").fetchall()
+    outside=conn.execute("""SELECT jsonb_build_object('tasks',count(*),'prompt_tokens',coalesce(sum(t.prompt_tokens),0),
+      'completion_tokens',coalesce(sum(t.completion_tokens),0),'pending',count(*) FILTER(WHERE t.status='pending'),
+      'running',count(*) FILTER(WHERE t.status='running'),'completed',count(*) FILTER(WHERE t.status='completed'),
+      'failed',count(*) FILTER(WHERE t.status='failed'),'cancelled',count(*) FILTER(WHERE t.status='cancelled')) AS value
+      FROM tasks t JOIN batches b ON b.id=t.batch_id WHERE b.metadata->>'benchmark_run' IS DISTINCT FROM %s""",(operation,)).fetchone()['value']
+    U.require(outside['pending']==outside['running']==0,'other_unfinished_work_refused')
+    return dict(limits=limits['value'],auxiliary=[r['value'] for r in aux],history=history['value'] if history else None,outside=outside)
+
+def capacity(context,U,items,state):
+    from psycopg.types.json import Jsonb
+    conn=context.conn;bodies=[r['body'] for item in items for r in item['rows']]
+    bodybytes=int(conn.execute('SELECT sum(public.batchforge_json_bytes(v)) AS n FROM jsonb_array_elements(%s) v',(Jsonb(bodies),)).fetchone()['n'])
+    usage=conn.execute("""SELECT retained_tasks,charged_payload_bytes,(SELECT count(*) FROM tasks WHERE tenant_id='default') AS actual_tasks,
+      (SELECT coalesce(sum(retention_body_bytes+retention_response_bytes+retention_error_bytes),0)::bigint FROM tasks WHERE tenant_id='default') AS actual_payload
+      FROM tenant_retention_usage WHERE tenant_id='default'""").fetchone()
+    U.require(usage and usage['retained_tasks']==usage['actual_tasks'] and usage['charged_payload_bytes']==usage['actual_payload'],'retention_counter_invariant_failed')
+    need=bodybytes+160*(65536+4*32768);lim=state['limits']
+    U.require(usage and usage['retained_tasks']+160<=lim['max_retained_tasks'] and usage['charged_payload_bytes']+need<=lim['max_payload_bytes'],'insufficient_task_or_payload_headroom')
+    blob=conn.execute("SELECT stored_bytes,reserved_bytes,held_tasks FROM tenant_blob_usage WHERE tenant_id='default'").fetchone() or dict(stored_bytes=0,reserved_bytes=0,held_tasks=0)
+    result=conn.execute("SELECT stored_bytes,reserved_bytes FROM tenant_result_usage WHERE tenant_id='default'").fetchone() or dict(stored_bytes=0,reserved_bytes=0)
+    inputbytes=sum(i['bytes'] for i in items);api=context.api_env
+    U.require(blob['stored_bytes']+blob['reserved_bytes']+inputbytes<=int(api.get('MAX_STORED_INPUT_BYTES_PER_TENANT',256*1024**2))
+      and blob['held_tasks']+160<=int(api.get('MAX_QUEUED_TASKS_PER_TENANT',100000)),'insufficient_input_or_queue_headroom')
+    U.require(result['stored_bytes']+result['reserved_bytes']+160*(65536+32768+4096)<=int(api.get('MAX_ARCHIVED_BYTES_PER_TENANT',1024**3)),'insufficient_archive_headroom')
+    existing={r['resource']:r for r in conn.execute("SELECT resource,rows,bytes FROM tenant_auxiliary_usage WHERE tenant_id='default'").fetchall()}
+    increments={'input_files':8,'upload_reservations':8,'idempotency':8,'blob_generations':8,'archive_runs':8,'archive_chunks':16,'input_read_leases':8,'result_read_leases':8}
+    U.require(set(existing)==set(increments)=={r['resource'] for r in state['auxiliary']},'auxiliary_policy_resources_differ')
+    for l in state['auxiliary']:
+        u=existing[l['resource']];amount=increments[l['resource']];extra=amount*l['max_row_bytes'] if l['resource']=='idempotency' else 0
+        U.require(u['rows']+amount<=l['max_rows'] and (not l['max_bytes'] or u['bytes']+extra<=l['max_bytes']),'insufficient_auxiliary_headroom')
+        if l['resource']=='input_files':U.require(max(i['bytes'] for i in items)<=l['max_row_bytes'],'input_file_byte_ceiling')
+    return dict(body_bytes=bodybytes,required_payload_bytes=need,input_bytes=inputbytes,retained_before=dict(usage))
+
+def summarize(final,arrivals,terminal,expected):
+    from datetime import datetime
+    from scripts.benchmark import distribution
+    batches={b['id']:b for b in final['batches']};tasks={t['id']:t for t in final['tasks']};result={}
+    for kind in ('L','S'):
+        members=[t for t in final['tasks'] if expected[t['custom_id']]==kind];attempts=[a for a in final['attempt_decisions'] if expected[tasks[a['task_id']]['custom_id']]==kind]
+        indices=[str(i) for i in range(8) if ('L' if i<4 else 'S')==kind]
+        queue=[(datetime.fromisoformat(a['claim_transaction_started_at'])-datetime.fromisoformat(batches[tasks[a['task_id']]['batch_id']]['created_at'])).total_seconds() for a in attempts]
+        result[kind]=dict(tasks=len(members),prompt_tokens=sum(t['prompt_tokens'] for t in members),completion_tokens=sum(t['completion_tokens'] for t in members),
+          DB_batch_created_to_task_finish_seconds=distribution([t['db_created_to_finish_seconds'] for t in members]),
+          DB_batch_created_to_claim_transaction_start_seconds=distribution(queue),claim_transaction_start_to_SQL_finish_seconds=distribution([a['observed_attempt_seconds'] for a in attempts]),
+          scheduled_to_client_admission_ACK_seconds=distribution([arrivals[i]['ack_offset']-OFFSETS[int(i)] for i in indices]),
+          scheduled_to_client_batch_terminal_observation_seconds=distribution([terminal[i]['observed_offset']-OFFSETS[int(i)] for i in indices]))
+    return dict(by_class=result,latency_semantics='DB start/update timestamps are not durable COMMIT; client terminal population is4 batches/class, SQL task population80/class')
+
+class Job:
+    def __init__(self,args,loaded=None,context_factory=None,client_factory=None,clock=time.monotonic,sleep=asyncio.sleep):
+        self.args=args;self.U,self.E=loaded or tools();U=self.U
+        compatibility=vars(args).copy();compatibility['operation']='worker-fault100-v1' # constructor/read-only methods ONLY
+        self.context=(context_factory or U.Context)(SimpleNamespace(**compatibility));self.run=ROOT/'.runtime/policy-cohorts'/args.operation
+        self.items=workload(U,self.context.rows,args.operation);self.expected={r['custom_id']:i['class_label'] for i in self.items for r in i['rows']}
+        self.clock,self.sleep=clock,sleep;self.stop=threading.Event();self.obs_stop=threading.Event();self.obs_ready=threading.Event();self.samples=[];self.obs_errors=[]
+        self.client_factory=client_factory;self.journal=None;self.armed=False;self.binding=None;self.observer=None
+    def close(self):self.context.close()
+    def binding_now(self):
+        U=self.U;c=self.context;apis=[U.env_values(U.read(Path(s['env_file']))) for s in c.services if s['role']=='api'];engine=U.env_values(U.read(Path(c.engine['env_file'])))
+        U.require(len(apis)==2 and all(a.get('SCHEDULER_POLICY')==OPS[self.args.operation] for a in apis),'effective_matching_selected_policy_required')
+        for a in apis:
+            U.require(a.get('DATABASE_URL')==c.bench_env['DATABASE_URL'] and a.get('MODEL_NAME')==U.MODEL and a.get('MAX_ATTEMPTS','3')=='3'
+              and a.get('SCHEDULER_AGING_SECONDS','60')=='60' and a.get('SCHEDULER_WORKER_FRESHNESS_SECONDS','60')=='60'
+              and a.get('BLOB_STORAGE_BACKEND')=='s3' and all(a.get(k,'').lower() in {'true','1'} for k in ('SQL_CLAIM_ENABLED','SQL_COMPLETION_ENABLED','SQL_RECOVERY_ENABLED','RETENTION_ADMISSION_ENABLED','RESULT_READERS_ENABLED','RESULT_ARCHIVE_ENABLED')),'released_api_controls_required')
+        for name,default in [('MAX_UPLOAD_BYTES','10485760'),('MAX_TASKS_PER_BATCH','10000'),('MAX_STORED_INPUT_BYTES_PER_TENANT','268435456'),('MAX_QUEUED_TASKS_PER_TENANT','100000'),('MAX_ARCHIVED_BYTES_PER_TENANT','1073741824')]:
+            U.require(apis[0].get(name,default)==apis[1].get(name,default),'replica_admission_caps_differ')
+        U.require(all(int(a.get('MAX_TASKS_PER_BATCH','10000'))>=20 for a in apis),'batch_task_ceiling')
+        U.require(engine.get('ENGINE_ENABLE_PREFIX_CACHING','0')=='0' and c.worker_env.get('WORKER_TOKEN_BUDGET')=='298384','original_kv_budget_prefix_off_required')
+        U.require(max(i['bytes'] for i in self.items)<=min(int(a.get('MAX_UPLOAD_BYTES',10*1024**2)) for a in apis),'api_upload_ceiling')
+        from ops import manage
+        U.require(c.profile['runtime_fingerprint']==ORIGINAL_FP and manage.engine_execution_configuration(engine)=={'enforce_eager':True},'original_eager_execution_required')
+        processes=c.processes();arguments=SimpleNamespace(role='engine',python=c.engine['python'],port=c.engine['port'],gpu=c.engine['gpu'])
+        argv=b'\0'.join(v.encode() for v in manage.command(arguments,engine))+b'\0'
+        U.require(processes['engine-qwen235b']['argv_sha256']==sha(argv),'actual_original_eager_argv_required')
+        state=database_state(c,U,self.args.operation);runtime=c.static();normalized=dict(runtime['configuration_sha256'])
+        api_paths={s['env_file'] for s in c.services if s['role']=='api'}
+        for path in api_paths:
+            values=U.env_values(U.read(Path(path)));values.pop('SCHEDULER_POLICY',None);normalized[path]=sha(U.encoded(values))
+        controls=dict(controller_sha256=sha(U.read(SELF,512*1024,private=False)),evidence_sha256=sha(U.read(ROOT/'.runtime/qwen235b_policy_evidence.py',512*1024,private=False)),runtime={**runtime,'configuration_sha256':normalized},protected_processes={k:v for k,v in processes.items() if k.startswith(('worker-','engine-','gateway-'))},
+          limits=state['limits'],auxiliary_limits=state['auxiliary'],history_policy=state['history'])
+        reference=None
+        if OPS[self.args.operation]=='cost_aware':
+            root=ROOT/'.runtime/policy-cohorts/qwen235b-policy-fair160-v1';raw=U.read(root/'report.json');journal_raw=U.read(root/'journal.json');baseline=U.load(raw);journal=U.load(journal_raw)
+            U.require(sha(raw)==getattr(self.args,'baseline_sha256',None) and journal['phase']=='complete' and not journal['pending_actions'] and journal['report_sha256']==sha(raw)
+              and baseline['operation']=='qwen235b-policy-fair160-v1' and baseline['policy']=='fair' and baseline['integrity_passed'] is True and baseline['pair_controls']==controls,'completed_exact_fair_reference_controls_required')
+            reference=dict(report_sha256=sha(raw),journal_sha256=sha(journal_raw),fair_arrival_protocol_valid=baseline['arrival_protocol_valid'])
+        return dict(runtime=runtime,processes=processes,database=state,pair_controls=controls,reference=reference,operator_sha256=sha(U.read(SELF,512*1024,private=False)),evidence_sha256=sha(U.read(ROOT/'.runtime/qwen235b_policy_evidence.py',512*1024,private=False)))
+    def guard(self,drained=False,full=True):
+        self.U.require(not self.stop.is_set(),'interrupted_no_new_writes')
+        if full:
+            self.context.healthy(drained=drained);self.U.require(self.binding_now()==self.binding,'source_configuration_pid_schema_or_protected_usage_drift')
+        else:
+            # Keep DB/readiness round trips outside the0.1s create trace. Still
+            # rehash ALL sources/config and exact effective owned processes before EVERY POST.
+            now=dict(runtime=self.context.static(),processes=self.context.processes(),operator_sha256=sha(self.U.read(SELF,512*1024,private=False)),
+              evidence_sha256=sha(self.U.read(ROOT/'.runtime/qwen235b_policy_evidence.py',512*1024,private=False)))
+            self.U.require(all(self.binding[k]==v for k,v in now.items()),'source_configuration_or_pid_drift')
+            if self.binding.get('reference'):
+                root=ROOT/'.runtime/policy-cohorts/qwen235b-policy-fair160-v1';ref=self.binding['reference']
+                self.U.require(sha(self.U.read(root/'report.json'))==ref['report_sha256'] and sha(self.U.read(root/'journal.json'))==ref['journal_sha256'],'baseline_reference_drift')
+        for item in self.items:self.U.require(sha(self.U.read(self.run/f'input-{item["index"]}.jsonl',4*1024**2))==item['sha256'],'private_input_drift')
+    def save(self):self.U.write(self.run/'journal.json',self.journal,exclusive=False)
+    def intent(self,key,**data):
+        self.U.require(key not in self.journal['pending_actions'] and not any(e['action']==key for e in self.journal['events']),'action_no_replay')
+        candidate=copy.deepcopy(self.journal);candidate['pending_actions'][key]={'at':self.U.stamp(),**data}
+        self.U.write(self.run/'journal.json',candidate,exclusive=False);self.journal=candidate
+    def confirm(self,key,**data):
+        candidate=copy.deepcopy(self.journal);candidate['events'].append(dict(action=key,at=self.U.stamp(),**data));candidate['pending_actions'].pop(key)
+        self.U.write(self.run/'journal.json',candidate,exclusive=False);self.journal=candidate
+    def prepare(self):
+        U=self.U;self.context.healthy();self.binding=self.binding_now();need=capacity(self.context,U,self.items,self.binding['database'])
+        U.require(self.context.conn.execute("SELECT count(*) AS n FROM batches WHERE metadata->>'benchmark_run'=%s",(self.args.operation,)).fetchone()['n']==0,'existing_stable_operation_no_replay')
+        U.require(self.context.conn.execute("SELECT count(*) AS n FROM files WHERE tenant_id='default' AND filename=ANY(%s)",([f'{self.args.operation}-{i}.jsonl' for i in range(8)],)).fetchone()['n']==0,'existing_stable_uploads_no_replay')
+        parent=self.run.parent
+        if not parent.exists():U.directory(parent,fresh=True);U.sync(parent.parent)
+        U.directory(parent);U.directory(self.run,fresh=True);U.sync(parent)
+        for item in self.items:
+            fd=os.open(self.run/f'input-{item["index"]}.jsonl',os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+            with os.fdopen(fd,'wb') as f:f.write(item['raw']);f.flush();os.fsync(f.fileno())
+        U.sync(self.run)
+        plan=dict(version=1,operation=self.args.operation,arguments={k:str(v) for k,v in vars(self.args).items() if k not in {'execute','prepared_sha256'}},binding=self.binding,capacity=need,
+          inputs=[{k:i[k] for k in ('index','class_label','offset','sha256','bytes')} for i in self.items],fixed_trace=list(OFFSETS),tasks=160,automatic_replay=False)
+        U.write(self.run/'plan.json',plan);self.journal=dict(phase='prepared',operation=self.args.operation,prepared_sha256=sha(U.read(self.run/'plan.json')),pending_actions={},events=[],uploads={},batches={},automatic_replay=False)
+        U.write(self.run/'journal.json',self.journal);return dict(phase='prepared',prepared_sha256=self.journal['prepared_sha256'],submitted_tasks=0)
+    async def http(self,method,path,maximum=65536,**kwargs):
+        async with self.client.stream(method,path,**kwargs) as reply:
+            self.U.require(reply.status_code in {200,201},f'http_{reply.status_code}_no_post_retry')
+            chunks=[];size=0
+            async for raw in reply.aiter_bytes():
+                size+=len(raw);self.U.require(size<=maximum,'http_response_byte_ceiling');chunks.append(raw)
+            return b''.join(chunks)
+    def start_observer(self):
+        def observe():
+            import psycopg
+            from psycopg.rows import dict_row
+            began=self.clock()
+            try:
+                with psycopg.connect(self.context.bench_env['DATABASE_URL'],autocommit=True,row_factory=dict_row,connect_timeout=3,
+                  options='-c default_transaction_read_only=on -c statement_timeout=3000 -c lock_timeout=100',application_name='batchforge-policy160-readonly') as conn:
+                    while not self.obs_stop.is_set() and len(self.samples)+len(self.obs_errors)<120 and self.clock()-began<60:
+                        started=self.clock()
+                        try:self.samples.append(self.E.observe(conn,self.args.operation,self.context.worker_env['WORKER_ID'],self.U.MODEL,self.context.profile,self.args.operation))
+                        except Exception as error:self.obs_errors.append(dict(error_type=type(error).__name__,at=self.U.stamp()))
+                        self.U.write(self.run/'observations.json',dict(samples=self.samples,errors=self.obs_errors,later_claim_visibility='inconclusive'),exclusive=False);self.obs_ready.set()
+                        self.obs_stop.wait(max(0,.5-(self.clock()-started)))
+            except Exception as error:self.obs_errors.append(dict(error_type=type(error).__name__,at=self.U.stamp()));self.obs_ready.set()
+        self.observer=threading.Thread(target=observe,name='policy160-readonly',daemon=True);self.observer.start()
+    async def upload(self,item):
+        self.guard(drained=True);i=str(item['index']);key='upload:'+i;self.intent(key,input_sha256=item['sha256'],bytes=item['bytes'])
+        raw=await self.http('POST','/v1/files',data={'purpose':'batch'},files={'file':(f'{self.args.operation}-{i}.jsonl',item['raw'],'application/jsonl')});value=self.U.load(raw)
+        self.U.require(re.fullmatch('file_[0-9a-f]{32}',value.get('id','')) and value.get('bytes')==item['bytes'] and value.get('purpose')=='batch','upload_ack_shape_unknown')
+        self.journal['uploads'][i]=value['id']
+        row=self.context.conn.execute("""SELECT f.bytes,f.admission_tasks,o.sha256,o.state,o.backend FROM files f JOIN blob_objects o ON o.id=f.blob_id AND o.tenant_id=f.tenant_id
+          WHERE f.id=%s AND f.tenant_id='default' AND f.kind='input' AND f.storage_deleted_at IS NULL AND f.storage_expires_at>clock_timestamp()""",(value['id'],)).fetchone()
+        self.U.require(row and row['bytes']==item['bytes'] and row['admission_tasks']==20 and row['sha256']==item['sha256'] and row['state']=='ready' and row['backend']=='s3','uploaded_input_provenance_differs')
+        self.confirm(key,file_id=value['id'],response_sha256=sha(raw));self.guard(drained=True)
+    async def create(self,item,t0,epoch):
+        i=str(item['index']);target=t0+item['offset'];await self.sleep(max(0,target-self.clock()))
+        if self.stop.is_set():return {'not_sent':True}
+        action='create:'+i
+        try:
+            self.guard(full=False);key=f'bf1.{epoch:010d}.'+sha((self.args.operation+':'+i).encode())[:32]
+            self.intent(action,input_file_id=self.journal['uploads'][i],key_sha256=sha(key.encode()),scheduled_offset=item['offset'])
+            started=self.clock();self.journal.setdefault('arrivals',{})[i]=dict(started_offset=started-t0,lateness_seconds=max(0,started-target));self.save()
+            raw=await self.http('POST','/v1/batches',json={'input_file_id':self.journal['uploads'][i],'endpoint':'/v1/chat/completions','completion_window':'24h',
+              'metadata':{'benchmark_run':self.args.operation,'engine_label':self.args.operation,'policy_class':item['class_label'],'batch_index':i}},headers={'Idempotency-Key':key})
+            from scripts.benchmark import checked_batch
+            value=checked_batch(self.U.load(raw));self.U.require(re.fullmatch('batch_[0-9a-f]{32}',value.get('id','')) and value['request_counts']['total']==20
+              and value.get('input_file_id')==self.journal['uploads'][i] and value.get('model')==self.U.MODEL and value.get('metadata')=={'benchmark_run':self.args.operation,'engine_label':self.args.operation,'policy_class':item['class_label'],'batch_index':i},'create_ack_shape_unknown')
+            self.journal['batches'][i]=value['id'];self.journal['arrivals'][i]['ack_offset']=self.clock()-t0
+            self.confirm(action,batch_id=value['id'],response_sha256=sha(raw));return None
+        except BaseException as error:self.stop.set();return {'error_type':type(error).__name__}
+    async def run_workload(self):
+        U=self.U;self.execution_started=self.clock()
+        for item in self.items:await self.upload(item)
+        self.guard(drained=True);epoch=int(self.context.conn.execute('SELECT extract(epoch FROM clock_timestamp())::bigint AS n').fetchone()['n'])-1
+        U.require(epoch>=(self.binding['database']['history'] or {}).get('replay_floor',0),'new_key_epoch_below_floor')
+        self.start_observer();await asyncio.to_thread(self.obs_ready.wait,4);U.require(self.samples and not self.obs_errors,'initial_readonly_observation_required')
+        t0=self.clock()+5;self.journal.update(phase='running',release_at=U.stamp(),fixed_trace=list(OFFSETS),db_key_epoch=epoch);self.save()
+        outcomes=await asyncio.gather(*(self.create(item,t0,epoch) for item in self.items));self.journal['create_outcomes']=outcomes;self.save()
+        U.require(not self.stop.is_set() and len(self.journal['batches'])==8 and not self.journal['pending_actions'],'incomplete_or_unknown_admission_no_replay')
+        from scripts.benchmark import checked_batch
+        deadline=t0+1200;terminal={}
+        while len(terminal)<8:
+            self.guard();U.require(self.clock()<deadline,'terminal_timeout_no_resubmit')
+            for index,bid in self.journal['batches'].items():
+                if index in terminal:continue
+                row=checked_batch(U.load(await self.http('GET',f'/v1/batches/{bid}')),bid)
+                if row['status'] in {'completed','failed','cancelled'}:
+                    U.require(row['status']=='completed' and row['request_counts']['completed']==20 and row['request_counts']['failed']==row['request_counts']['cancelled']==0,'terminal_batch_failed')
+                    U.require(re.fullmatch('file_[0-9a-f]{32}',row.get('output_file_id','')),'output_file_id_missing');terminal[index]={'id':bid,'output_file_id':row['output_file_id'],'observed_offset':self.clock()-t0}
+            if len(terminal)<8:await self.sleep(.5)
+        terminal_elapsed=max(v['observed_offset'] for v in terminal.values());final=self.E.final_rows(self.context.conn,self.args.operation,self.expected,U.MODEL,OPS[self.args.operation],self.context.profile)
+        U.require(final['worker_ids']==[self.context.worker_env['WORKER_ID']],'unexpected_execution_worker')
+        U.require({b['batch_index']:b['id'] for b in final['batches']}==self.journal['batches'],'accepted_batches_differ_from_acknowledged_ids')
+        links=self.context.conn.execute("SELECT id,input_file_id FROM batches WHERE metadata->>'benchmark_run'=%s",(self.args.operation,)).fetchall()
+        U.require({r['id']:r['input_file_id'] for r in links}=={bid:self.journal['uploads'][i] for i,bid in self.journal['batches'].items()},'accepted_input_file_links_differ')
+        outputs={}
+        for item in self.items:
+            index=str(item['index']);raw=await self.http('GET','/v1/files/'+terminal[index]['output_file_id']+'/content',maximum=8*1024**2)
+            proof=self.E.validate_output(raw,{r['custom_id']:item['class_label'] for r in item['rows']},final['tasks'],U.MODEL)
+            fd=os.open(self.run/f'output-{index}.jsonl',os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+            with os.fdopen(fd,'wb') as f:f.write(raw);f.flush();os.fsync(f.fileno())
+            U.sync(self.run);outputs[index]=proof
+        self.obs_stop.set()
+        if self.observer:await asyncio.to_thread(self.observer.join,5);U.require(not self.observer.is_alive(),'observer_exit_unknown')
+        self.guard(drained=True);arr=self.journal['arrivals'];valid=all(v['lateness_seconds']<=.25 for v in arr.values()) and max(arr[str(i)]['ack_offset'] for i in range(4))<min(arr[str(i)]['started_offset'] for i in range(4,8))
+        elapsed=self.clock()-self.execution_started;report=dict(version=1,operation=self.args.operation,policy=OPS[self.args.operation],integrity_passed=True,arrival_protocol_valid=valid,
+          sampled_candidate_overlap_observed=any(s.get('overlap',False) for s in self.samples),observation_errors=len(self.obs_errors),observation_samples=len(self.samples),
+          strict_later_claim_visibility='inconclusive_no_same_claim_candidate_audit',allocation=dict(whole_pod_usd_per_hour_scenario=16.10,full_operation_seconds=elapsed,full_operation_usd=elapsed*16.10/3600,basis='Preupload validation through output validation and final drain; excludes prepare/policy roll/final report writes; scenario not invoice',T0_to_terminal_seconds=terminal_elapsed,T0_to_terminal_usd=terminal_elapsed*16.10/3600),
+          pair_controls=self.binding['pair_controls'],fair_reference=self.binding['reference'],pair_arrival_comparable=valid and (self.binding['reference'] is None or self.binding['reference']['fair_arrival_protocol_valid']),final=final,latencies=summarize(final,arr,terminal,self.expected),completed_tasks_per_full_operation_second=160/elapsed,completed_tasks_per_T0_to_terminal_second=160/terminal_elapsed,output_proofs=outputs,arrivals=arr,source_binding_sha256=sha(U.encoded(self.binding)),limits_unchanged=True,protected_other_business_totals_unchanged=True,
+          limitations=['Serial N=1; fixed offered trace; no heterogeneous GPU or invoice claim','Candidate overlap proves only sampled snapshot; no later claim counterfactual','DB start/update timestamps are not durable COMMIT acknowledgement','Identical body prompts repeated; prefix caching disabled; fixed output work is not quality','Source hashes bind on-disk operator files; separate managed deployment/activation proof is required'])
+        U.write(self.run/'report.json',report);self.journal.update(phase='complete',finished_at=U.stamp(),report_sha256=sha(U.read(self.run/'report.json')),manual_recovery_required=False);self.save()
+        return dict(phase='complete',integrity_passed=True,arrival_protocol_valid=valid,report_sha256=self.journal['report_sha256'],strict_later_claim_visibility='inconclusive')
+    def execute(self,expected):
+        U=self.U;U.directory(self.run);raw=U.read(self.run/'plan.json');U.require(sha(raw)==expected,'exact_prepared_sha_required');plan=U.load(raw)
+        U.require(plan['operation']==self.args.operation and plan['arguments']=={k:str(v) for k,v in vars(self.args).items() if k not in {'execute','prepared_sha256'}},'prepared_arguments_differ')
+        self.journal=U.load(U.read(self.run/'journal.json'));U.require(self.journal['phase']=='prepared' and self.journal['prepared_sha256']==expected and not self.journal['pending_actions'],'existing_operation_no_replay')
+        self.binding=plan['binding'];self.guard(drained=True);capacity(self.context,U,self.items,self.binding['database']);self.armed=True
+        try:
+            self.intent('execute');U.write(self.run/'execution-marker.json',dict(prepared_sha256=expected,at=U.stamp()));self.confirm('execute')
+            import httpx
+            async def execute_http():
+                factory=self.client_factory or httpx.AsyncClient
+                async with factory(base_url='http://127.0.0.1:8082',headers={'Authorization':'Bearer '+self.context.bench_env['BATCHFORGE_API_KEY']},timeout=30,trust_env=False,follow_redirects=False) as client:
+                    self.client=client;return await self.run_workload()
+            return asyncio.run(execute_http())
+        except BaseException as error:
+            self.stop.set();self.obs_stop.set();self.journal.update(phase='manual_recovery_required',manual_recovery_required=True,error_type=type(error).__name__,automatic_replay=False)
+            try:self.save()
+            except BaseException:pass
+            raise
+        finally:
+            self.obs_stop.set()
+            if self.observer:self.observer.join(5)
+
+def main(argv=None):
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--operation',required=True,choices=OPS)
+    for name,path in [('manifest',ROOT/'.runtime/services-primary.json'),('env-file',ROOT.parent/'api-a.env'),('supervisor-env',ROOT.parent/'supervisor.env'),('benchmark-env',ROOT/'.runtime/scheduler-v6/benchmark.env'),('fixture',ROOT/'.runtime/qwen235b-v1/workload-20.jsonl')]:p.add_argument('--'+name,type=Path,default=path)
+    p.add_argument('--execute',action='store_true');p.add_argument('--prepared-sha256');p.add_argument('--baseline-sha256');a=p.parse_args(argv);os.umask(0o077);job=None
+    try:
+        if ROOT!=Path('/root/batchforge-runtime/app') or sys.platform!='linux':raise ValueError('same_pod_linux_only')
+        if a.execute!=bool(a.prepared_sha256):raise ValueError('execute_requires_exact_prepared_sha')
+        if (OPS[a.operation]=='cost_aware')!=bool(a.baseline_sha256) or (a.baseline_sha256 and not re.fullmatch('[0-9a-f]{64}',a.baseline_sha256)):raise ValueError('cost_requires_exact_completed_fair_report_sha')
+        U,E=tools()
+        with locks(U):
+            job=Job(a,loaded=[U,E])
+            for sig in (signal.SIGTERM,signal.SIGINT,signal.SIGHUP):signal.signal(sig,lambda *_:job.stop.set())
+            print(json.dumps(job.execute(a.prepared_sha256) if a.execute else job.prepare()));return 0
+    except BaseException as error:print(json.dumps(dict(refused_or_manual=True,error_type=type(error).__name__,automatic_replay=False)));return 1
+    finally:
+        if job:job.close()
+if __name__=='__main__':raise SystemExit(main())

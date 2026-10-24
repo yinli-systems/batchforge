@@ -1,0 +1,299 @@
+"""Private once-only activation/restoration around unchanged f647 graph mathematics.
+
+No parent apply/stop/rollback runs. Unknown action or confirmation keeps pending,
+maintenance and original evidence for manual review; no automatic compensation.
+"""
+from __future__ import annotations
+import argparse
+from contextlib import ExitStack,contextmanager
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import select
+import signal
+import stat
+import sys
+import threading
+import time
+from types import SimpleNamespace,ModuleType
+
+SELF=Path(__file__).resolve();ROOT=SELF.parents[1]
+PINS={'ops/ha/decode_graph_qwen235b.py':'f6479ca7bf69f47619fad5c4fa1bd724929d284725d91fb2568e50d7e9d588a2',
+ '.runtime/deploy_postpair_sources.py':'7910f4438d374e26fb3c9f6cca95f86b1324157f2b249b83551b7cc579f8d865',
+ 'ops/ha/single_pod_fault_probe.py':'54b33493e0b4e1869b48bda24a59d86cc947576f2a9f8e1b1f570ed1e5f17d09',
+ 'ops/ha/single_pod_engine_fault_probe.py':'a1d62e89cd0daa302fd9d5c62016708859cf7bd7e60daa09327ee106f174d990',
+ 'ops/manage.py':'159fc37c6f9a64e36e5e0f20bc97a8adf08d6ce93934f988339bab534879d0a0',
+ 'ops/engine_members.py':'e4d0b2f2c130dce6fa16a4925d3557ca16475793a5b4f156f62a3d8f2df471ff',
+ 'ops/supervise.py':'3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0'}
+sys.dont_write_bytecode=True
+sys.path.insert(0,str(ROOT))
+class Refusal(ValueError):pass
+def require(ok,code):
+ if not ok:raise Refusal(code)
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def checked_module(name,relative):
+ path=ROOT/relative;raw=path.read_bytes();require(not path.is_symlink() and sha(raw)==PINS[relative],'reviewed_helper_source_differs')
+ module=ModuleType(name);module.__file__=str(path);exec(compile(raw,str(path),'exec'),module.__dict__);return module
+G=checked_module('safe_graph_parent_f647','ops/ha/decode_graph_qwen235b.py')
+H=checked_module('safe_graph_io_7910','.runtime/deploy_postpair_sources.py')
+from ops import manage,engine_members
+from ops.supervise import Manager,private_read,load_manifest
+from ops.ha.single_pod_fault_probe import source_hashes
+from ops.ha.single_pod_engine_fault_probe import EngineFaultController
+
+def sync(path):
+ fd=os.open(path,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+ try:os.fsync(fd)
+ finally:os.close(fd)
+@contextmanager
+def locked(path):
+ fd=os.open(path,os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW|os.O_NONBLOCK,0o600)
+ try:
+  info=os.fstat(fd);require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o022 and info.st_nlink==1,'unsafe_operation_lock')
+  fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB);yield
+ finally:os.close(fd)
+def simple(record):return None if record is None else {k:record[k] for k in ('pid','start_ticks','cwd')}
+
+def exact_engine_stop(roll,service):
+ """Held role lock; each mutating boundary has its own durable action intent."""
+ key=roll.key(service);record=roll.full_records[key];pidfile=roll.root/'.runtime'/('engine-'+service['name']+'.json')
+ members=pidfile.with_suffix('.members.json')
+ require(record is not None and record.get('track_members') is True,'owned_tp4_members_required')
+ with locked(pidfile.with_suffix('.lock')):
+  def capture():
+   require(roll.controller.record(service)==record,'engine_identity_changed_before_capture')
+   proof=roll.controller.capture_members(service,record);sync(members.parent)
+   snapshot=engine_members.read(members)
+   require(snapshot['leader']==simple(record),'captured_member_leader_differs')
+   roll.member_release={'record':record,'snapshot_sha256':sha(private_read(members)),'snapshot':snapshot}
+   return proof
+  roll.action('engine_member_capture',capture,service=key,pid=record['pid'],start_ticks=record['start_ticks'])
+  def leader_stop():
+   require(roll.controller.record(service)==record and sha(private_read(members))==roll.member_release['snapshot_sha256'],'engine_identity_or_members_changed_before_pidfd')
+   fd=os.pidfd_open(record['pid'])
+   try:
+    require(roll.controller.record(service)==record,'engine_identity_changed_after_pidfd')
+    signal.pidfd_send_signal(fd,signal.SIGTERM);poll=select.poll();poll.register(fd,select.POLLIN);end=roll.clock()+60
+    while not poll.poll(250):roll.guard(stopping=key);require(roll.clock()<end,'engine_leader_term_timeout')
+    require(engine_members.read(pidfile)==record,'engine_original_pidfile_changed')
+    roll.expected[key]=None;roll.full_records[key]=None
+   finally:os.close(fd)
+  roll.action('stop:'+key,leader_stop,service=key,pid=record['pid'],start_ticks=record['start_ticks'])
+  def reap_once():
+   proof=roll.member_release
+   require(sha(private_read(members))==proof['snapshot_sha256'] and engine_members.read(pidfile)==record,'captured_member_or_pidfile_drift')
+   require(roll.controller.record(service) is None,'engine_leader_not_stopped')
+   outcome=engine_members.reap(members,record)  # Exactly once; no retry after any uncertainty.
+   require(outcome.get('status') in {'reaped','nothing_to_reap'},'engine_reap_not_acknowledged')
+   end=roll.clock()+60
+   while any(engine_members.identity(m['pid'])==m for m in proof['snapshot']['members']):
+    roll.guard();require(roll.clock()<end,'captured_members_still_exiting');roll.sleep(.1)
+   require(engine_members.read(pidfile)==record and sha(private_read(members))==proof['snapshot_sha256'],'engine_stop_proof_changed')
+   pidfile.unlink();sync(pidfile.parent);roll.engine_released=True
+   return {'status':outcome['status'],'signalled':outcome.get('signalled',0),'remaining':0}
+  roll.action('engine_members_reap',reap_once,service=key,pid=record['pid'],members_sha256=roll.member_release['snapshot_sha256'])
+
+class ReadOnlyMemoryGate(Manager):
+ """Reuse exact reviewed four-GPU arithmetic; no real internal reap invocation."""
+ def __init__(self,roll):super().__init__(root=roll.root,timeout=300);self.roll=roll
+ def invoke(self,service,action):
+  require(action=='reap','memory_adapter_only_allows_membership_read')
+  roll=self.roll;roll.guard();require(roll.engine_released,'journaled_member_release_required')
+  require(roll.controller.record(service) is None,'engine_leader_reappeared')
+  proof=roll.member_release;path=roll.root/'.runtime'/('engine-'+service['name']+'.members.json')
+  require(sha(private_read(path))==proof['snapshot_sha256'],'released_membership_changed')
+  require(not any(engine_members.identity(m['pid'])==m for m in proof['snapshot']['members']),'released_member_reappeared')
+  return {'status':'nothing_to_reap','remaining':0},None
+
+class SafeDecodeGraphRoll(G.DecodeGraphRoll):
+ def __init__(self,*,stop_event=None,controller=None,process_reader=None,starter=None,**kwargs):
+  self.safe_initialized=False;self.unknown=False;self.armed=False;self.stop_event=stop_event or threading.Event()
+  self.controller=controller or EngineFaultController(root=kwargs['root']);self.reader=process_reader or H.process_data;self.starter=starter or H.invoke_start
+  previous=kwargs.get('previous');self.wrapper_sha=sha(SELF.read_bytes());self.member_release=None;self.engine_released=False
+  super().__init__(**kwargs)
+  self.live_manifest=private_read(self.manifest_path)
+  self.active={self.key(s):s for s in [*self.services,self.watchdog]}
+  if self.restoring:self.active.update({self.key(self.engine):self.candidate_engine,self.key(self.worker):self.candidate_worker})
+  self.full_records={};self.process_env={};self.process_argv={};safe={}
+  for key,service in self.active.items():
+   record,environment,argv,binding=self.reader(self.controller,service)
+   require(simple(record)==self.expected[key] and all(environment.get(k)==v for k,v in H.values(private_read(Path(service['env_file']))).items()),'initial_effective_process_differs')
+   self.full_records[key]=record;self.process_env[key]=environment;self.process_argv[key]=argv;safe[key]=binding
+  self.original_effective={k:dict(v) for k,v in self.process_env.items()}
+  require(set(self.active)=={'api-a','api-b','gateway-edge','worker-qwen235b','engine-qwen235b','supervisor-primary'},'exact_six_owned_roles_required')
+  effective_root=self.activation_path.parent if self.restoring else self.output_run
+  self.effective_snapshots={}
+  for key in self.active:
+   path=effective_root/('original-effective-'+key+'.json')
+   if previous is None and not self.restoring:
+    require(not path.exists() and not path.is_symlink(),'existing_effective_environment_snapshot')
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'wb') as out:out.write(H.encoded(self.original_effective[key]));out.flush();os.fsync(out.fileno())
+    sync(path.parent)
+   raw=H.private_file(path,2*1024**2);value=H.load(raw)
+   require(type(value) is dict and all(type(k) is str and type(v) is str for k,v in value.items()),'private_effective_environment_schema')
+   if not self.restoring:require(value==self.original_effective[key],'effective_environment_snapshot_changed')
+   self.original_effective[key]=value;self.effective_snapshots[str(path)]=sha(raw)
+  require(float(self.worker_env.get('WORKER_SHUTDOWN_SECONDS','0'))>=600,'worker_shutdown_600_required')
+  binding={'wrapper_source_sha256':self.wrapper_sha,'helper_source_sha256':PINS,'serving_source_sha256':source_hashes(self.root),
+   'effective_processes':safe,'initial_manifest_sha256':sha(self.live_manifest),
+   'private_original_effective_sha256':self.effective_snapshots}
+  if self.restoring:
+   activation=json.loads(private_read(self.activation_path))
+   require(activation.get('wrapper_source_sha256')==self.wrapper_sha and activation.get('safe_action_journal_complete') is True
+    and activation.get('manual_recovery_required') is False,'same_guarded_wrapper_activation_required')
+   require(activation['safe_state_machine_binding']['private_original_effective_sha256']==self.effective_snapshots,'activation_effective_snapshots_changed')
+  if previous is not None:require(self.report.get('safe_state_machine_binding')==binding and self.report.get('pending_action') is None,'safe_prepared_binding_differs')
+  else:
+   self.report.update(wrapper_source_sha256=self.wrapper_sha,safe_state_machine_binding=binding,pending_action=None,
+    safe_action_events=[],safe_action_journal_complete=False,automatic_replay=False,manual_recovery_required=False,
+    execution_controller='f647 constructor/profile/capture logic; private guarded wrapper controls every lifecycle action',
+    failure_policy='Unknown action or validation failure: manual recovery, no automatic retry/rollback/exclusion/watchdog restart')
+   self.save()
+  self.safe_initialized=True;self.guard(initial=True);self.drained();self.memory=ReadOnlyMemoryGate(self)
+ def save(self,value=None):
+  document=self.report if value is None else value;H.save(self.output_run/'report.json',document)
+  if value is not None:self.report=value
+ def drained(self):
+  apis=[s for s in self.services if s['role']=='api'];env={str(k):v for k,v in self.env_bytes.items()}
+  require(len(apis)==2 and H.values(env[apis[0]['env_file']])['DATABASE_URL']==H.values(env[apis[1]['env_file']])['DATABASE_URL'],'single_runtime_database_required')
+  H.Deployment._drained(SimpleNamespace(api=apis[0],env=env))
+ def guard(self,*,initial=False,stopping=None):
+  if not self.safe_initialized:return G.DecodeGraphRoll.guard(self,initial=initial)
+  require(not self.unknown and not self.stop_event.is_set(),'unknown_or_interrupted_no_followon')
+  require(private_read(self.manifest_path)==self.live_manifest,'exact_current_manifest_changed')
+  require(all(private_read(p)==v for p,v in self.env_bytes.items()),'original_configuration_changed')
+  bound=self.report['prepared_binding'];require(set(bound['snapshot_sha256'])==G.SNAPSHOTS and all(sha(private_read(self.run/n))==v for n,v in bound['snapshot_sha256'].items()),'snapshot_changed')
+  require(all(sha(Path(p).read_bytes())==v for p,v in self.support['source_sha256'].items()),'reviewed_parent_runtime_changed')
+  safe=self.report['safe_state_machine_binding'];require(all(sha(H.private_file(Path(p),2*1024**2))==v for p,v in safe['private_original_effective_sha256'].items()),'private_effective_snapshot_changed')
+  require(source_hashes(self.root)==safe['serving_source_sha256'] and sha(SELF.read_bytes())==self.wrapper_sha,'wrapper_or_serving_source_changed')
+  require(all(sha((self.root/n).read_bytes())==v for n,v in PINS.items()),'wrapper_dependency_changed')
+  if self.restoring:require(sha(private_read(self.activation_path))==self.report['restore_binding']['activation_sha256'],'activation_changed')
+  for key,service in self.active.items():
+   if key==stopping:
+    pending=self.report['pending_action'];require(pending and pending['stage']=='stop:'+key and pending['pid']==self.expected[key]['pid'] and pending['start_ticks']==self.expected[key]['start_ticks'],'invalid_stopping_target');continue
+   require(self.identity(service)==self.expected[key] and self.controller.record(service)==self.full_records[key],'owned_process_changed')
+   if self.expected[key] is None:continue
+   record,environment,argv,_=self.reader(self.controller,service)
+   require(record==self.full_records[key] and environment==self.process_env[key] and argv==self.process_argv[key],'effective_process_changed')
+   if (initial or service['role'] in {'api','gateway'}) and service.get('port') is not None:require(self.manager.readiness(service),'protected_service_not_ready')
+  self.drained()
+ def action(self,stage,callback,**safe):
+  self.guard();require(self.armed and self.report.get('pending_action') is None,'action_requires_once_claim')
+  intent={'stage':stage,'at':H.stamp(),**safe};self.save({**self.report,'pending_action':intent})
+  try:
+   result=callback();event={**intent,'confirmed_at':H.stamp()}
+   if result is not None:event['result']=result
+   self.save({**self.report,'pending_action':None,'safe_action_events':[*self.report['safe_action_events'],event]});return result
+  except BaseException:
+   self.unknown=True;raise
+ def stop(self,service):
+  key=self.key(service);require(self.expected[key] is not None,'stop_requires_known_live_identity')
+  if service['role']=='engine':return exact_engine_stop(self,service)
+  record=self.full_records[key]
+  def stopped():
+   self.controller.graceful_stop(service,record,600 if service['role']=='worker' else 30,lambda:self.guard(stopping=key));sync(self.root/'.runtime')
+   require(self.controller.record(service) is None,'stop_ack_not_absent');self.expected[key]=None;self.full_records[key]=None
+   return {'status':'stopped'}
+  return self.action('stop:'+key,stopped,service=key,pid=record['pid'],start_ticks=record['start_ticks'])
+ def invoke(self,service,action):
+  require(action=='start','only_explicit_start_supported');key=self.key(service)
+  require(self.expected[key] is None and self.controller.record(service) is None,'start_requires_known_absence')
+  def started():
+   environment={**self.original_effective[key],**H.values(private_read(Path(service['env_file']))),'PYTHONUNBUFFERED':'1'}
+   if service.get('gpu') is not None:environment['CUDA_VISIBLE_DEVICES']=service['gpu']
+   args=SimpleNamespace(role=service['role'],python=service['python'],port=service.get('port'),gpu=service.get('gpu'))
+   expected_argv=b'\0'.join(s.encode() for s in manage.command(args,environment))+b'\0'
+   ack=self.starter(self.root,service,self.original_effective[key]);record,actual,argv,_=self.reader(self.controller,service)
+   require(ack.get('status')=='started' and ack.get('pid')==record['pid'] and actual==environment and argv==expected_argv,'start_ack_identity_or_effective_configuration_unknown')
+   self.active[key]=service;self.expected[key]=simple(record);self.full_records[key]=record;self.process_env[key]=actual;self.process_argv[key]=argv
+   return {'status':'started','identity':simple(record)}
+  return self.action('start:'+key,started,service=key)
+ def _manifest(self,document=None):
+  raw=self.original if document is None else json.dumps(document,separators=(',',':')).encode()
+  def changed():
+   require(private_read(self.manifest_path)==self.live_manifest,'manifest_cas_failed');H.atomic_bytes(self.manifest_path,raw)
+   require(private_read(self.manifest_path)==raw,'manifest_ack_unknown');self.live_manifest=raw;self.allowed_manifest_bytes.add(raw)
+   return {'sha256':sha(raw)}
+  return self.action('manifest_transition',changed,previous_sha256=sha(self.live_manifest),target_sha256=sha(raw))
+ def gate(self,service):
+  end=self.clock()+120
+  while True:
+   self.guard();allowed,reason=self.memory.start_gate(service)
+   self.report['last_memory_gate']={'allowed':allowed,'reason':reason,'readonly_membership_check':True};self.save()
+   if allowed:return
+   require(self.clock()<end,'physical_memory_gate_refused');self.sleep(2)
+ def ready(self,service,seconds):
+  end=self.clock()+seconds
+  while True:
+   self.guard();require(self.identity(service)==self.expected[self.key(service)],'warming_identity_changed')
+   if self.manager.readiness(service):return
+   require(self.clock()<end,'owned_service_readiness_timeout');self.sleep(.5)
+ def idle(self,profile):
+  self.guard();self.profile_observer(profile)
+  require(self.controller.engine_quiescence(self.engine).get('quiescent') is True,'engine_not_quiescent')
+ def apply(self):
+  require(self.report['phase']=='prepared' and self.report.get('pending_action') is None,'existing_operation_no_replay')
+  marker=self.output_run/'execution-claim.json';require(not marker.exists() and not marker.is_symlink(),'existing_execution_claim_no_replay')
+  self.guard(initial=True);self.idle(self.profile if self.restoring else self.original_profile)
+  self.report['original_collective_proof']=self.path_observer(self.restoring);self.save();self.armed=True
+  try:
+   def claim():
+    fd=os.open(marker,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'wb') as out:out.write(b'{"automatic_replay":false}\n');out.flush();os.fsync(out.fileno())
+    sync(marker.parent)
+   self.action('execution_claim',claim);self.save({**self.report,'phase':'restoring' if self.restoring else 'applying','started_at':H.stamp()})
+   self.stop(self.watchdog);self.stop(self.candidate_worker if self.restoring else self.worker);self.stop(self.candidate_engine if self.restoring else self.engine)
+   self._manifest(self.original_engine_only if self.restoring else self.engine_only)
+   target_engine=self.engine if self.restoring else self.candidate_engine
+   self.report['restored_engine_preflight' if self.restoring else 'candidate_engine_preflight']=self.start_engine(target_engine,not self.restoring)
+   self.save();self._manifest(None if self.restoring else self.candidate)
+   target_worker=self.worker if self.restoring else self.candidate_worker
+   self.invoke(target_worker,'start');self.ready(target_worker,60)
+   desired=self.original_profile if self.restoring else self.profile;self.idle(desired)
+   self.report['restored_worker_preflight' if self.restoring else 'candidate_worker_preflight']=self.profile_observer(desired);self.save()
+   self.invoke(self.watchdog,'start');self.guard();self.idle(desired)
+   self.save({**self.report,'phase':'complete','completed_at':H.stamp(),'restored':self.restoring,'watchdog_restored':True,
+    'manual_recovery_required':False,'safe_action_journal_complete':True,'protected_services_unchanged':True,
+    'engine_identity_after':self.identity(target_engine),'worker_identity_after':self.identity(target_worker),'watchdog_identity_after':self.identity(self.watchdog)})
+  except BaseException as error:
+   try:self.save({**self.report,'phase':'manual_recovery_required','manual_recovery_required':True,'failure_type':type(error).__name__,
+    'safe_action_journal_complete':False,'automatic_rollback_or_replay':False,'watchdog_followon_after_failure':False})
+   except BaseException:pass
+   raise
+  return self.report
+
+def main(argv=None):
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--operation',required=True);p.add_argument('--mode',choices=['eager','decode_graph']);p.add_argument('--shared-token-budget',type=int)
+ p.add_argument('--restore',action='store_true');p.add_argument('--activation-operation');p.add_argument('--activation-sha256');p.add_argument('--apply',action='store_true');p.add_argument('--prepared-sha256');args=p.parse_args(argv);os.umask(0o077)
+ try:
+  require(ROOT==Path('/root/batchforge-runtime/app') and sys.platform=='linux' and hasattr(os,'pidfd_open'),'same_pod_linux_pidfd_required')
+  require(bool(args.prepared_sha256)==args.apply,'apply_requires_external_prepared_sha')
+  require(re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]{0,63}',args.operation) is not None,'unique_operation_required')
+  require((args.restore and args.activation_operation and args.activation_sha256 and args.mode is None and args.shared_token_budget is None)
+   or (not args.restore and args.mode is not None and args.shared_token_budget is not None and not args.activation_operation and not args.activation_sha256),'activation_or_exact_restore_arguments_required')
+  run=ROOT/'.runtime'/args.operation
+  with ExitStack() as stack:
+   for name in ('qwen235b-maintenance.lock','single-pod-worker-fault.lock','postpair-source-rollout.lock','scheduler-policy.lock','fault-cohort-launcher.lock'):
+    stack.enter_context(locked(ROOT/'.runtime'/name))
+   if not run.exists():require(not args.apply,'apply_requires_preparation');H.directory(run,fresh=True);sync(run.parent)
+   else:H.directory(run)
+   previous=json.loads(private_read(run/'report.json',2*1024**2)) if (run/'report.json').exists() else None
+   if args.apply:require(previous is not None and sha(private_read(run/'report.json',2*1024**2))==args.prepared_sha256,'exact_prepared_report_sha_required')
+   activation=None
+   if args.restore:
+    require(re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]{0,63}',args.activation_operation) is not None,'exact_activation_operation_required')
+    activation=ROOT/'.runtime'/args.activation_operation;H.directory(activation);require(activation!=run,'separate_restore_operation_required')
+   manifest,services,_=load_manifest(ROOT/'.runtime/services-primary.json');engine=next(s for s in services if s['role']=='engine')
+   stop=threading.Event()
+   for sig in (signal.SIGTERM,signal.SIGINT):signal.signal(sig,lambda *_:stop.set())
+   roll=SafeDecodeGraphRoll(root=ROOT,run=run,manifest_path=manifest,watchdog={'role':'supervisor','name':'primary','env_file':str(ROOT.parent/'supervisor.env'),'python':str(ROOT.parent/'venv/bin/python')},
+    services=services,support=G.source_evidence(ROOT,engine),mode=args.mode,shared_token_budget=args.shared_token_budget,previous=previous,activation_run=activation,activation_sha256=args.activation_sha256,stop_event=stop)
+   if args.apply:roll.apply()
+   print(json.dumps({'phase':roll.report['phase'],'report_sha256':sha(private_read(run/'report.json',2*1024**2)),'wrapper_source_sha256':sha(SELF.read_bytes()),'restoring':args.restore}));return 0
+ except BaseException as error:
+  print(json.dumps({'phase':'refused_or_manual','reason_code':str(error) if type(error) is Refusal else type(error).__name__,'automatic_replay':False}));return 1
+if __name__=='__main__':raise SystemExit(main())

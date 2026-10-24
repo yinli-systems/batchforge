@@ -1,0 +1,14 @@
+{
+  "approved_test_source_sha256": "35ecbebcf366879085f6bab17c7602ce5b27432c5ca4b81043247f11af5111fb",
+  "exact_native_function_body_sha256": "e4072ebb5999c94aa0a5f0b10508b25c97805bd9894854cea91ed577a404b7e3",
+  "extracted_module_sha256": "4422899c7a955eb80607584ba92301228baedbd0229a61c6bac6be5a002faf85",
+  "finished_at": "2026-10-24T10:25:43.533781+00:00",
+  "gpu_requests": 0,
+  "job": "safe-graph-linux-qualification-v2",
+  "production_services_changed": false,
+  "returncode": 0,
+  "started_at": "2026-10-24T10:25:42.708593+00:00",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": ".                                                                        [100%]\n1 passed in 0.43s\n"
+}

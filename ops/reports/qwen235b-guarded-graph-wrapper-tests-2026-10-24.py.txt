@@ -1,0 +1,320 @@
+"""Private fake lifecycle tests; never real signals/manager/DB/GPU or HTTP."""
+import copy
+import json
+import os
+from pathlib import Path
+import runpy
+import signal
+import subprocess
+import sys
+import time
+from types import SimpleNamespace
+from unittest import mock
+import pytest
+from ops.ha.test_collective_qwen235b import prepared as baseline
+from ops.ha.retune_full_gpu import write_env,file_env
+
+ROOT=Path(__file__).resolve().parents[1]
+M=runpy.run_path(str(ROOT/'.runtime/safe_decode_graph_qwen235b.py'),run_name='safe_graph_fake_tests')
+S=M['SafeDecodeGraphRoll'];G=S.__init__.__globals__
+GRAPH_LOG=(b'GPU KV cache size: 314,096 tokens\ncompilation_config={level:0,cudagraph_mode:FULL_DECODE_ONLY,cudagraph_capture_sizes:[64,48,32,24,16,8,4,2,1]}\nCapturing CUDA graphs (decode, FULL): 100%\nGraph capturing finished in 8 secs, took 0.75 GiB\n')
+CAP={'vllm_version':'0.10.2','flash_attention_version':3,'cudagraph_support':'ALWAYS'}
+
+class Fixture:
+ def __init__(self,root,monkeypatch,mode='decode_graph'):
+  base,self.manager,kwargs=baseline(root);self.root=root;self.calls=[];self.active={};self.environ={};self.argv={};self.roll=None
+  worker=base.worker;env=file_env(Path(worker['env_file']));env['WORKER_SHUTDOWN_SECONDS']='600';write_env(Path(worker['env_file']),env)
+  base.watchdog['python']=base.services[0]['python'];base.watchdog.pop('port',None)
+  for service in [*base.services,base.watchdog]:
+   key=S.key(service);self.active[key]=service;self.environ[key]={**file_env(Path(service['env_file'])),'AMBIENT_SECRET':'SYNTHETIC NEVER EXPORT','PYTHONUNBUFFERED':'1'}
+   if service.get('gpu'):self.environ[key]['CUDA_VISIBLE_DEVICES']=service['gpu']
+   self.argv[key]=self.command(service,self.environ[key])
+  monkeypatch.setitem(G,'PINS',{})
+  monkeypatch.setattr(S,'drained',lambda self:None)
+  monkeypatch.setitem(G,'exact_engine_stop',self.engine_stop)
+  monkeypatch.setattr(M['ReadOnlyMemoryGate'],'start_gate',lambda self,service:(True,None))
+  run=root/'.runtime/safe-activation';run.mkdir(mode=0o700)
+  self.kwargs={**kwargs,'run':run,'mode':mode,'shared_token_budget':280000,'watchdog':base.watchdog,
+   'support':{'source_sha256':base.support['source_sha256'],'capability':CAP},'controller':self,'process_reader':self.read,'starter':self.start,
+   'path_observer':lambda candidate:{'candidate':candidate,'argv_verified':True}}
+  self.roll=S(**self.kwargs)
+  self.manager.before_start=lambda service:setattr(self.manager,'cache_log',GRAPH_LOG.decode() if service['env_file']==self.roll.candidate_engine['env_file'] and mode=='decode_graph' else 'GPU KV cache size: 314,096 tokens\n')
+ @staticmethod
+ def command(service,env):
+  args=SimpleNamespace(role=service['role'],python=service['python'],port=service.get('port'),gpu=service.get('gpu'))
+  return b'\0'.join(x.encode() for x in M['manage'].command(args,env))+b'\0'
+ def record(self,service):
+  record=self.manager.identity(service)
+  if record is None:return None
+  key=S.key(service)
+  return {**record,'command':self.argv[key].decode().rstrip('\0').split('\0'),'track_members':service['role']=='engine'}
+ def read(self,controller,service):
+  key=S.key(service);record=self.record(service);assert record is not None
+  env=copy.deepcopy(self.environ[key]);argv=self.argv[key]
+  return record,env,argv,{**M['simple'](record),'process_environ_sha256':M['sha'](M['H'].encoded(env)),'process_argv_sha256':M['sha'](argv)}
+ def engine_quiescence(self,service):return {'quiescent':True,'error':None}
+ def graceful_stop(self,service,expected,grace,check):
+  key=S.key(service);assert self.record(service)==expected;self.calls.append(('stop',key));check()
+  self.manager.invoke(service,'stop');check()
+ def start(self,root,service,ambient):
+  key=S.key(service);self.calls.append(('start',key));value,error=self.manager.invoke(service,'start');assert error is None
+  self.active[key]=service;self.environ[key]={**ambient,**file_env(Path(service['env_file'])),'PYTHONUNBUFFERED':'1'}
+  if service.get('gpu'):self.environ[key]['CUDA_VISIBLE_DEVICES']=service['gpu']
+  self.argv[key]=self.command(service,self.environ[key]);return value
+ def engine_stop(self,roll,service):
+  key=S.key(service);record=self.record(service)
+  roll.action('engine_member_capture',lambda:{'observed_members':4},service=key,pid=record['pid'],start_ticks=record['start_ticks'])
+  def stop():
+   self.calls.append(('stop',key));roll.guard(stopping=key);self.manager.invoke(service,'stop');roll.guard(stopping=key)
+   roll.expected[key]=None;roll.full_records[key]=None
+  roll.action('stop:'+key,stop,service=key,pid=record['pid'],start_ticks=record['start_ticks'])
+  def reap():self.calls.append(('reap',key));roll.engine_released=True
+  roll.action('engine_members_reap',reap,service=key)
+ def restore(self,root):
+  run=root/'.runtime/safe-restore';run.mkdir(mode=0o700)
+  kwargs={**self.kwargs,'run':run,'activation_run':self.roll.output_run,'activation_sha256':M['sha']((self.roll.output_run/'report.json').read_bytes())}
+  kwargs.pop('mode');kwargs.pop('shared_token_budget');self.calls.clear();restored=S(**kwargs);self.roll=restored;return restored
+
+@pytest.mark.parametrize('mode',['eager','decode_graph'])
+def test_success_preserves_parent_proofs_math_and_completes_watchdog_last(tmp_path,monkeypatch,mode):
+ f=Fixture(tmp_path,monkeypatch,mode);r=f.roll;original=copy.deepcopy(r.original_profile);result=r.apply()
+ assert result['phase']=='complete' and result['watchdog_restored'] and result['safe_action_journal_complete'] and result['restored'] is False
+ assert result['operation']=='qwen235b-shared-budget-execution-experiment'
+ assert result['prepared_binding']['controller_sha256']==M['PINS']['ops/ha/decode_graph_qwen235b.py']
+ assert result['wrapper_source_sha256']==M['sha'](M['SELF'].read_bytes())
+ assert result['candidate_engine_preflight']['preserved_budget_tokens']==280000
+ assert all(result['profile'][k]==original[k] for k in ['prefill_tokens_per_second','decode_tokens_per_second','hourly_cost_usd'])
+ assert f.calls[-1]==('start','supervisor-primary') and not any(k.startswith(('api-','gateway-')) for _,k in f.calls)
+ assert result['pending_action'] is None and 'SYNTHETIC NEVER EXPORT' not in json.dumps(result)
+ assert all(p.stat().st_mode&0o777==0o600 for p in r.output_run.glob('original-effective-*.json'))
+ before=list(f.calls)
+ with pytest.raises(ValueError):r.apply()
+ assert f.calls==before
+
+@pytest.mark.parametrize('mode',['eager','decode_graph'])
+def test_exact_restore_reloads_original_budget_profile_env_and_new_identities(tmp_path,monkeypatch,mode):
+ f=Fixture(tmp_path,monkeypatch,mode);activation=f.roll;activation.apply();before=(activation.output_run/'report.json').read_bytes();restored=f.restore(tmp_path);result=restored.apply()
+ assert result['phase']=='complete' and result['restored'] is True and result['watchdog_restored'] is True
+ assert result['restored_engine_preflight']['preserved_budget_tokens']==298384
+ assert Path(restored.manifest_path).read_bytes()==restored.original
+ assert f.environ['worker-qwen235b']['WORKER_TOKEN_BUDGET']=='298384'
+ assert f.environ['worker-qwen235b']['SCHEDULER_PROFILE_JSON']==restored.worker_env['SCHEDULER_PROFILE_JSON']
+ assert 'ENGINE_COMPILATION_CONFIG' not in f.environ['engine-qwen235b']
+ assert f.manager.identity(restored.engine)!=activation.report['engine_identity_after']
+ assert (activation.output_run/'report.json').read_bytes()==before
+
+@pytest.mark.parametrize('stage',['execution_claim','stop:supervisor-primary','stop:worker-qwen235b','engine_member_capture','stop:engine-qwen235b','engine_members_reap','manifest_transition','start:engine-qwen235b','start:worker-qwen235b','start:supervisor-primary'])
+@pytest.mark.parametrize('when',['before','after'])
+def test_unknown_at_each_action_has_no_replay_rollback_or_followon(tmp_path,monkeypatch,stage,when):
+ f=Fixture(tmp_path,monkeypatch);r=f.roll;action=r.action;hit=[False];at=[]
+ def fail(selected,callback,**safe):
+  def wrapped():
+   if selected==stage and not hit[0]:
+    hit[0]=True
+    if when=='after':callback()
+    at.extend(f.calls);raise TimeoutError('SYNTHETIC UNKNOWN NEVER PRINT')
+   return callback()
+  return action(selected,wrapped,**safe)
+ r.action=fail
+ with pytest.raises(TimeoutError):r.apply()
+ assert hit[0] and f.calls==at and r.report['phase']=='manual_recovery_required' and r.report['pending_action']['stage']==stage
+ assert r.report['safe_action_journal_complete'] is False and 'SYNTHETIC UNKNOWN' not in json.dumps(r.report)
+ before=list(f.calls)
+ with pytest.raises(ValueError):r.apply()
+ assert before==f.calls
+
+@pytest.mark.parametrize('failure',['skip','oom','insufficient_kv'])
+def test_capture_or_memory_evidence_failure_never_starts_candidate_worker_or_watchdog(tmp_path,monkeypatch,failure):
+ f=Fixture(tmp_path,monkeypatch);r=f.roll
+ def bad(service):
+  if service['role']=='engine':
+   raw=GRAPH_LOG+(b'Skipping CUDA graph capture\n' if failure=='skip' else b'CUDA out of memory\n' if failure=='oom' else b'')
+   if failure=='insufficient_kv':raw=raw.replace(b'314,096',b'280,000')
+   f.manager.cache_log=raw.decode()
+ f.manager.before_start=bad
+ with pytest.raises(RuntimeError):r.apply()
+ assert r.report['phase']=='manual_recovery_required'
+ assert ('start','worker-qwen235b') not in f.calls and ('start','supervisor-primary') not in f.calls
+ assert len([x for x in f.calls if x==('start','engine-qwen235b')])==1
+ assert not any(s['role']=='worker' for s in json.loads(r.manifest_path.read_bytes())['services'])
+
+def test_unknown_confirmation_fsync_retains_pending_after_known_stop(tmp_path,monkeypatch):
+ f=Fixture(tmp_path,monkeypatch);r=f.roll;save=M['H'].save
+ def fail(path,doc):
+  if doc.get('safe_action_events') and doc['safe_action_events'][-1]['stage']=='stop:worker-qwen235b' and doc.get('pending_action') is None:
+   save(path,doc);raise OSError('SYNTHETIC DIRECTORY FSYNC UNKNOWN')
+  return save(path,doc)
+ monkeypatch.setattr(M['H'],'save',fail)
+ with pytest.raises(OSError):r.apply()
+ assert r.report['pending_action']['stage']=='stop:worker-qwen235b' and ('start','supervisor-primary') not in f.calls
+
+def test_intent_fsync_failure_performs_zero_service_action(tmp_path,monkeypatch):
+ f=Fixture(tmp_path,monkeypatch);r=f.roll;save=M['H'].save
+ def fail(path,doc):
+  if doc.get('pending_action'):raise OSError('SYNTHETIC INTENT FAILURE')
+  return save(path,doc)
+ monkeypatch.setattr(M['H'],'save',fail)
+ with pytest.raises(OSError):r.apply()
+ assert not f.calls
+
+@pytest.mark.parametrize('kind',['manifest','effective','private_env','snapshot','source','protected_pid'])
+def test_preapply_drift_causes_zero_managed_actions(tmp_path,monkeypatch,kind):
+ f=Fixture(tmp_path,monkeypatch);r=f.roll
+ if kind=='manifest':r.manifest_path.write_bytes(b'{}')
+ elif kind=='effective':f.environ['api-a']['AMBIENT_SECRET']='CHANGED'
+ elif kind=='private_env':Path(next(iter(r.effective_snapshots))).write_bytes(b'{}')
+ elif kind=='snapshot':(r.run/'engine.env').write_bytes(b'bad')
+ elif kind=='source':Path(next(iter(r.support['source_sha256']))).write_bytes(b'changed')
+ elif kind=='protected_pid':f.manager.identities['api-a']['pid']+=1
+ with pytest.raises(Exception):r.apply()
+ assert f.calls==[]
+
+def test_reprepare_same_binding_and_private_effective_env_preserved(tmp_path,monkeypatch):
+ f=Fixture(tmp_path,monkeypatch);r=f.roll;before={p:p.read_bytes() for p in r.output_run.iterdir()}
+ second=S(**f.kwargs,previous=copy.deepcopy(r.report));assert second.report==r.report
+ assert all(p.read_bytes()==raw for p,raw in before.items())
+
+def test_pins_match_real_local_sources_and_cli_refuses_nonpod():
+ for name,digest in M['PINS'].items():assert M['sha']((ROOT/name).read_bytes())==digest
+ assert M['main'](['--operation','local-not-run','--mode','eager','--shared-token-budget','280000'])==1
+
+@pytest.fixture
+def native(tmp_path,monkeypatch):
+ root=tmp_path;runtime=root/'.runtime';runtime.mkdir(mode=0o700);service={'role':'engine','name':'qwen235b','gpu':'0,1,2,3','python':'/SYNTHETIC/python','env_file':str(runtime/'engine.env')}
+ record={'pid':123456,'start_ticks':'10','cwd':str(root),'track_members':True,'command':['SYNTHETIC']}
+ member={'pid':123457,'start_ticks':'20','cwd':str(root),'pgid':123456,'session':123456};snapshot={'leader':M['simple'](record),'members':[member],'boot_id':'SYNTHETIC_BOOT'}
+ pidfile=runtime/'engine-qwen235b.json';pidfile.write_bytes(M['H'].encoded(record));pidfile.chmod(0o600)
+ alive=[True];ticks=[0];stages=[];signals=[];reaps=[];mode={'value':None};member_alive=[True]
+ class Controller:
+  def record(self,selected):return record if alive[0] else None
+  def capture_members(self,selected,expected):
+   assert selected==service and expected==record;path=runtime/'engine-qwen235b.members.json';path.write_bytes(M['H'].encoded(snapshot));path.chmod(0o600)
+   return {'observed_members':1,'snapshot_sha256':M['sha'](path.read_bytes())}
+ class Roll:
+  def key(self,s):return S.key(s)
+  def guard(self,stopping=None):
+   assert stopping in (None,'engine-qwen235b')
+  def action(self,stage,callback,**safe):stages.append(stage);return callback()
+  def sleep(self,n):ticks[0]+=n
+ roll=Roll();roll.root=root;roll.controller=Controller();roll.full_records={'engine-qwen235b':record};roll.expected={'engine-qwen235b':M['simple'](record)};roll.clock=lambda:ticks[0];roll.engine_released=False
+ class Poll:
+  def register(self,*_):pass
+  def poll(self,*_):return [(987,1)]
+ def signal(fd,kind):assert fd==987;signals.append(kind);alive[0]=False
+ def reap(path,expected):
+  assert expected==record;reaps.append(path)
+  if mode['value']=='unknown':raise TimeoutError('SYNTHETIC REAP ACK LOST')
+  if mode['value']=='foreign_pidfile':pidfile.write_bytes(M['H'].encoded({**record,'pid':999}))
+  member_alive[0]=False;return {'status':'reaped','signalled':1,'remaining':0}
+ original_close=M['os'].close
+ monkeypatch.setattr(M['os'],'pidfd_open',lambda pid:987,raising=False)
+ monkeypatch.setattr(M['signal'],'pidfd_send_signal',signal,raising=False)
+ monkeypatch.setattr(M['select'],'poll',Poll)
+ monkeypatch.setattr(M['os'],'close',lambda fd:None if fd==987 else original_close(fd))
+ monkeypatch.setattr(M['engine_members'],'reap',reap)
+ monkeypatch.setattr(M['engine_members'],'identity',lambda pid:member if pid==member['pid'] and member_alive[0] else None)
+ return SimpleNamespace(root=root,service=service,record=record,member=member,snapshot=snapshot,pidfile=pidfile,roll=roll,stages=stages,signals=signals,reaps=reaps,mode=mode,alive=alive)
+
+def test_native_engine_has_owned_term_then_one_journaled_reap_and_durable_pidfile_release(native):
+ n=native;M['exact_engine_stop'](n.roll,n.service)
+ assert n.stages==['engine_member_capture','stop:engine-qwen235b','engine_members_reap']
+ assert n.signals==[M['signal'].SIGTERM] and len(n.reaps)==1 and not n.pidfile.exists()
+ assert n.roll.expected['engine-qwen235b'] is None and n.roll.engine_released is True
+
+@pytest.mark.parametrize('kind',['unknown','foreign_pidfile'])
+def test_native_unknown_reap_or_foreign_pidfile_never_retries_or_unlinks_foreign(native,kind):
+ n=native;n.mode['value']=kind
+ with pytest.raises(Exception):M['exact_engine_stop'](n.roll,n.service)
+ assert len(n.reaps)==1 and n.signals==[M['signal'].SIGTERM] and n.pidfile.exists()
+ assert n.roll.engine_released is False
+
+def test_native_foreign_engine_identity_prevents_any_term_or_reap(native,monkeypatch):
+ n=native;monkeypatch.setattr(n.roll.controller,'record',lambda _:dict(n.record,pid=999))
+ with pytest.raises(Exception):M['exact_engine_stop'](n.roll,n.service)
+ assert not n.signals and not n.reaps and n.pidfile.exists()
+
+def test_memory_adapter_member_check_is_readonly_and_refuses_live_member(native,monkeypatch):
+ n=native;M['exact_engine_stop'](n.roll,n.service);before=list(n.reaps);gate=M['ReadOnlyMemoryGate'](n.roll)
+ assert gate.invoke(n.service,'reap')==({'status':'nothing_to_reap','remaining':0},None)
+ assert n.reaps==before
+ monkeypatch.setattr(M['engine_members'],'identity',lambda pid:n.member)
+ with pytest.raises(M['Refusal'],match='member_reappeared'):gate.invoke(n.service,'reap')
+ assert n.reaps==before
+
+def test_repeated_physical_memory_polls_use_reviewed_math_without_any_reap(native,monkeypatch):
+ n=native;M['exact_engine_stop'](n.roll,n.service);before=list(n.reaps);gate=M['ReadOnlyMemoryGate'](n.roll)
+ import ops.supervise as supervise
+ monkeypatch.setattr(supervise,'engine_settings',lambda _: {'ENGINE_GPU_MEMORY_UTILIZATION':'.90'})
+ monkeypatch.setattr(supervise,'engine_memory_margin_bytes',lambda _:1)
+ monkeypatch.setattr(supervise,'engine_parallel_size',lambda *_:4)
+ calls=[]
+ def probe(*args,**kwargs):
+  calls.append(args);return SimpleNamespace(returncode=0,stdout=json.dumps({'device_count':4,'devices':[{'rank':i,'free':100,'total':100} for i in range(4)]}).encode())
+ monkeypatch.setattr(supervise.subprocess,'run',probe)
+ assert gate.start_gate(n.service)==(True,None) and gate.start_gate(n.service)==(True,None)
+ assert len(calls)==2 and n.reaps==before
+
+def test_original_snapshot_private_values_not_exported_or_inherited_from_graph_on_restore(tmp_path,monkeypatch):
+ f=Fixture(tmp_path,monkeypatch);r=f.roll;r.apply();restore=f.restore(tmp_path)
+ assert all('SYNTHETIC NEVER EXPORT' in Path(p).read_text() for p in restore.effective_snapshots)
+ assert 'SYNTHETIC NEVER EXPORT' not in json.dumps(restore.report)
+ restore.apply();assert 'ENGINE_COMPILATION_CONFIG' not in f.environ['engine-qwen235b']
+
+@pytest.mark.skipif(sys.platform!='linux' or not hasattr(os,'pidfd_open') or not hasattr(signal,'pidfd_send_signal'),reason='Linux owned-child pidfd qualification only')
+def test_linux_owned_leader_child_term_once_reap_and_readonly_membership(tmp_path,monkeypatch):
+ """Real isolated sleep children only: no production ROOT, DB, GPU or HTTP."""
+ runtime=tmp_path/'.runtime';runtime.mkdir(mode=0o700)
+ service={'role':'engine','name':'qwen235b','gpu':'0,1,2,3','python':sys.executable,'env_file':str(runtime/'unused.env')}
+ code="import json,subprocess,sys,time; from pathlib import Path; child=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); Path('owned-child-ready.json').write_text(json.dumps({'pid':child.pid})); time.sleep(60)"
+ leader=subprocess.Popen([sys.executable,'-c',code],cwd=tmp_path,start_new_session=True,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+ captured=[];reap_calls=[];original_reap=M['engine_members'].reap
+ try:
+  ready=tmp_path/'owned-child-ready.json';deadline=time.monotonic()+5
+  while not ready.exists():
+   assert leader.poll() is None and time.monotonic()<deadline;time.sleep(.01)
+  child_pid=json.loads(ready.read_bytes())['pid'];child_identity=M['engine_members'].identity(child_pid);assert child_identity is not None
+  captured.append(child_identity)
+  leader_identity=M['engine_members'].identity(leader.pid);assert leader_identity is not None
+  record={**M['simple'](leader_identity),'track_members':True,'command':[sys.executable,'-c',code]}
+  pidfile=runtime/'engine-qwen235b.json';M['H'].save(pidfile,record)
+  class Controller(M['EngineFaultController']):
+   def record(self,selected):
+    assert selected==service
+    current=M['engine_members'].identity(record['pid'])
+    if current is None:return None
+    assert M['simple'](current)==M['simple'](record)
+    assert M['engine_members'].read(pidfile)==record
+    return record
+  class Roll:
+   def key(self,selected):return S.key(selected)
+   def guard(self,stopping=None):
+    assert stopping in (None,'engine-qwen235b')
+    if stopping is None:assert self.controller.record(service)==self.full_records['engine-qwen235b']
+   def action(self,stage,callback,**safe):
+    self.guard();assert self.report['pending_action'] is None
+    self.report={**self.report,'pending_action':{'stage':stage,**safe}};M['H'].save(runtime/'test-journal.json',self.report)
+    result=callback()
+    self.report={**self.report,'pending_action':None,'events':[*self.report['events'],{'stage':stage,'result':result}]};M['H'].save(runtime/'test-journal.json',self.report)
+    return result
+  roll=Roll();roll.root=tmp_path;roll.controller=Controller(root=tmp_path);roll.full_records={'engine-qwen235b':record};roll.expected={'engine-qwen235b':M['simple'](record)}
+  roll.clock=time.monotonic;roll.sleep=time.sleep;roll.engine_released=False;roll.report={'pending_action':None,'events':[]}
+  def counted_reap(*args,**kwargs):reap_calls.append(1);return original_reap(*args,**kwargs)
+  monkeypatch.setattr(M['engine_members'],'reap',counted_reap)
+  M['exact_engine_stop'](roll,service);leader.wait(timeout=5)
+  assert leader.returncode==-signal.SIGTERM and len(reap_calls)==1 and not pidfile.exists()
+  assert roll.engine_released and M['engine_members'].identity(child_pid)!=child_identity
+  assert [e['stage'] for e in roll.report['events']]==['engine_member_capture','stop:engine-qwen235b','engine_members_reap']
+  assert roll.report['pending_action'] is None
+  gate=M['ReadOnlyMemoryGate'](roll)
+  assert gate.invoke(service,'reap')==({'status':'nothing_to_reap','remaining':0},None)
+  assert gate.invoke(service,'reap')==({'status':'nothing_to_reap','remaining':0},None) and len(reap_calls)==1
+ finally:
+  # Cleanup can signal only this test's exact captured identities.
+  for own in captured:
+   if M['engine_members'].identity(own['pid'])==own:
+    fd=os.pidfd_open(own['pid'])
+    try:
+     if M['engine_members'].identity(own['pid'])==own:signal.pidfd_send_signal(fd,signal.SIGKILL)
+    finally:os.close(fd)
+  if leader.poll() is None:leader.kill()
+  leader.wait(timeout=5)

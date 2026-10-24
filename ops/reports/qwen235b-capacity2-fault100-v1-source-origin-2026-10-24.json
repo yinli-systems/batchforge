@@ -1,0 +1,57 @@
+{
+  "automatic_watchdog_recovery_measured": false,
+  "controlled_watchdog_paused": true,
+  "files": [
+    {
+      "bytes": 18984,
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/fault-cohorts/capacity2-fault100-v1/plan.json",
+      "review_copy": "ops/reports/qwen235b-capacity2-fault100-v1-plan-2026-10-24.json",
+      "sha256": "79853d1a0f66abbad2735b94b6f6b41509fb8c1f60b05f9488ecc0f79cd17725"
+    },
+    {
+      "bytes": 4676,
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/fault-cohorts/capacity2-fault100-v1/journal.json",
+      "review_copy": "ops/reports/qwen235b-capacity2-fault100-v1-cohort-2026-10-24.json",
+      "sha256": "09b1206ad9eadd4c4b3945b99f075f774565e16a12ecf4e235b36255c1fe13c0"
+    },
+    {
+      "bytes": 278633,
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/fault-cohorts/capacity2-fault100-v1/benchmark-report.json",
+      "review_copy": "ops/reports/qwen235b-capacity2-fault100-v1-benchmark-2026-10-24.json",
+      "sha256": "c138e5007581d13cec51ff3863f2172af2ef49c7593f8656c9ae6ebb8ceedfba"
+    },
+    {
+      "bytes": 343525,
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/capacity2-fault100-v1-probe-report.json",
+      "review_copy": "ops/reports/qwen235b-capacity2-fault100-v1-probe-2026-10-24.json",
+      "sha256": "044fd68c3dfb72d6b1c1ca3f276ae22b20cf55888eafdb054f6d6f8d76b20f84"
+    }
+  ],
+  "launcher_source_sha256": "35b8b852d4093ebcaf7fa4342d4fc3d13badc3c53bea89303f401d3a2495c655",
+  "local_frozen_validator_pass": true,
+  "measurement_scope": "Worker crash plus configured admission capacity64\u21922\u219264, same single TP4 engine/physical GPUs. No GPU capacity removal, engine stop, cross-node migration, whole-Pod loss or automatic watchdog failover.",
+  "operation": "capacity2-fault100-v1",
+  "packet_validator_sha256": "7aff8c357a4ebe71507ea14f4c791bb681c203062f95c511391b8c9bcabc8cf8",
+  "packet_validator_version_scope": "7aff v2 adds only known producer phase recovery_before_original_worker to original09c schema; original09c preserved and used separately for engine packet",
+  "prepared_at": "2026-10-24T10:42:30.596316+00:00",
+  "proof_crosslinks_verified": true,
+  "run_id": "bench-eb18663a3613",
+  "runtime_fingerprint": "sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3",
+  "safe_transport_scope": "Exact metadata bytes anchored by trusted operator SHA inputs; not a signature or independent production re-observation; exact four metadata artifacts only, benchmark.workload.prompt null, no raw inputs/outputs/configuration/credentials/dump",
+  "same_pod_original_probe_and_journal_identical": true,
+  "single_batch_no_fault_reference_status": "Fresh original-eager mixed100 and QA100 root-reported RUNNING; no reference result received and no matched overhead inference made here",
+  "source_bound_fixture_sha256": "52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f",
+  "status": "COMPLETE_PASS",
+  "transport_manifest": {
+    "bytes": 1451,
+    "externally_trusted_sha_supplied_by_root": true,
+    "original_bytes_preserved": true,
+    "review_copy": "ops/reports/qwen235b-capacity2-fault100-v1-transport-manifest-2026-10-24.json",
+    "sha256": "d299cd4b7dd172e004741f7eb8977cbd60d609d28cf16ef9d2ee33e139ce5b3d"
+  },
+  "version": 1
+}

@@ -1,0 +1,165 @@
+"""Local metadata/FS tests only. Capacity/engine positive packets are SYNTHETIC;
+no real capacity/engine result is generated, claimed, exported or queried here.
+"""
+import copy,hashlib,json,runpy
+from pathlib import Path
+import pytest
+ROOT=Path(__file__).resolve().parents[1]
+M=runpy.run_path(str(ROOT/'.runtime/export_fault_metadata_packet.py'),run_name='metadata_packet_test')
+G=M['validate_packet'].__globals__
+Refusal=M['Refusal']
+
+def documents(operation='worker-fault100-v1'):
+ values={k:json.loads((ROOT/'.runtime/worker-fault100-v1-metadata'/(k+'.json')).read_bytes()) for k in M['NAMES']}
+ if operation=='worker-fault100-v1':return values
+ # Relabel only this isolated in-memory synthetic test population. Real input
+ # provenance is always checked against externally pinned original plan bytes.
+ text=json.dumps(values).replace('worker-fault100-v1',operation);v=json.loads(text);p,c,b,q=(v[k] for k in M['NAMES']);now='2026-10-24T10:00:00+00:00'
+ if operation=='capacity2-fault100-v1':
+  q.update(original_configured_slots=64,reduced_configured_slots=2,reduced_worker_env_sha256='a'*64,server_capacity_after_restart=2,capacity_reduced_at=now,
+   reduced_capacity_observed_with_pending_work=True,reduced_positive_samples=3,capacity_reduction_proven=True,capacity_drain_started_at=now,capacity_drain_finished_at=now,
+   drained_valid_attempts=2,graceful_drain_attempts_accepted=True,capacity_drain_seconds=1.0,pending_before_capacity_restore=97,restored_server_capacity=64,
+   temporary_worker_configuration_removed=True,capacity_restored_under_load_at=now,capacity_reexpansion_proven=True,capacity_reexpansion_observed_at=now)
+ else:
+  q.pop('executed_source_sha256');q.update(required_benchmark_batches=1,restored_engine_pid=p['processes']['engine-qwen235b']['pid']+1,engine_reload_seconds=90.0,observed_lease_recovery_seconds=90.0,
+   final_acceptance={'tasks':100,'all_completed':True,'accepted_once':True,'durable_usage_matches':True,'simulated_results':False},owned_engine_membership={'observed_members':5,'snapshot_sha256':'a'*64},
+   protected_process_pids={k:v['pid'] for k,v in p['processes'].items() if k in {'api-a','api-b','gateway-edge'}},captured_valid_leases=64,captured_tasks_reaccepted_once=64,
+   engine_restart_gates=[{'at':now,'allowed':True,'reason':None}],engine_quiescence_gates=[{'at':now,'quiescent':True,'error':None}])
+  c['final_processes']['engine-qwen235b']['pid']=q['restored_engine_pid']
+  for name in ('gpu_memory_before','gpu_memory_pair_down','gpu_memory_after'):
+   q[name]={'observed_at':now,'available':True,'device_wide_metadata_not_exclusive_job_attribution':True,'devices':[{'index':str(i),'name':'NVIDIA H100 80GB HBM3','utilization_percent':0.0,'memory_used_mib':10.0,'memory_total_mib':81559.0} for i in range(4)]}
+ return v
+
+def bodies(docs):
+ d=copy.deepcopy(docs);p,c,b,q=(d[k] for k in M['NAMES']);out={k:M['encoded'](d[k]) for k in ('plan','benchmark','probe')}
+ c.update(prepared_sha256=M['sha'](out['plan']),benchmark_report_sha256=M['sha'](out['benchmark']),probe_report_sha256=M['sha'](out['probe']),probe_journal_sha256=M['sha'](out['probe']))
+ out['cohort']=M['encoded'](c);return out
+def checked(docs):
+ raw=bodies(docs);return M['validate_packet'](raw,docs['plan']['operation'],M['sha'](raw['plan']))
+
+def test_existing_four_original_worker_packet_bytes_and_hashes_unchanged():
+ raw={k:(ROOT/'.runtime/worker-fault100-v1-metadata'/(k+'.json')).read_bytes() for k in M['NAMES']}
+ result=M['validate_packet'](raw,'worker-fault100-v1','096ce26429d5d468e5de078a886da17ae1ad8c824b6e354141413656211cef1b')
+ assert result['completed']==100 and result['attempt_decisions']==164 and result['prompt_tokens']==545280 and result['completion_tokens']==68000
+ assert result['probe_journal_bytes_equal_report'] and not result['automatic_watchdog_recovery_measured']
+
+@pytest.mark.parametrize('operation',M['OPS'])
+def test_synthetic_completed_operation_metadata_only_contract(operation):
+ proof=checked(documents(operation));assert proof['completed']==100 and proof['operation']==operation and proof['raw_text_or_credentials_included'] is False
+
+@pytest.mark.parametrize('path,value',[
+ (('benchmark','workload','prompt'),'PRIVATE PROMPT'),(('benchmark','workload','messages'),[{'content':'PRIVATE ANSWER'}]),
+ (('benchmark','tasks',0,'raw_output'),'PRIVATE ANSWER'),(('probe','BATCHFORGE_API_KEY'),'plain-token'),
+ (('cohort','final_proof','dsn'),'postgresql://user:secret@host/db'),(('plan','binding','extra'),{'content':'PRIVATE'}),
+ (('benchmark','workload','temperature'),'Bearer private-token'),(('benchmark','measurement'),'PRIVATE ANSWER'),
+ (('benchmark','tasks',0,'custom_id'),'PRIVATE PROMPT'),(('probe','owned_supervisor_before','cwd'),'/root/PRIVATE PROMPT')])
+def test_nested_raw_secrets_and_unknown_fields_fail_closed_even_when_rehashed(path,value):
+ docs=documents();target=docs
+ for key in path[:-1]:target=target[key]
+ target[path[-1]]=value
+ with pytest.raises(Refusal):checked(docs)
+
+def test_null_prompt_placeholder_allowed_only_at_original_exact_path():
+ docs=documents();assert checked(docs)['completed']==100
+ docs['benchmark']['tasks'][0]['prompt']=None
+ with pytest.raises(Refusal,match='unknown_metadata_field'):checked(docs)
+
+@pytest.mark.parametrize('kind',('mixed_plan','wrong_run','missing_task','duplicate_accepted','wrong_usage','unfinished','not_restored','wrong_protected_pid','wrong_fixture','false_cost','nonfinite'))
+def test_crossfile_and_semantic_mutations_refuse_with_all_hashes_rebound(kind):
+ d=documents()
+ if kind=='mixed_plan':d['plan']['operation']='capacity2-fault100-v1'
+ elif kind=='wrong_run':d['probe']['run_id']='bench-ffffffffffff'
+ elif kind=='missing_task':d['benchmark']['tasks'].pop()
+ elif kind=='duplicate_accepted':d['benchmark']['attempt_decisions'].append(copy.deepcopy(d['benchmark']['attempt_decisions'][-1]))
+ elif kind=='wrong_usage':d['benchmark']['tasks'][0]['completion_tokens']+=1
+ elif kind=='unfinished':d['probe']['samples'][-1]['pending']=1
+ elif kind=='not_restored':d['probe']['watchdog_restored']=False
+ elif kind=='wrong_protected_pid':d['cohort']['final_processes']['engine-qwen235b']['pid']+=1
+ elif kind=='wrong_fixture':d['benchmark']['experiment']['source_sha256']='f'*64
+ elif kind=='false_cost':d['benchmark']['cost']['run_allocation_usd']*=2
+ else:d['benchmark']['elapsed_seconds']=float('inf')
+ with pytest.raises((Refusal,ValueError)):checked(d)
+
+@pytest.mark.parametrize('kind',('capacity_not_observed','capacity_wrong','engine_wrong_gpu','engine_failed_reload','engine_wrong_pid'))
+def test_operation_specific_transition_proof_required(kind):
+ d=documents('capacity2-fault100-v1' if kind.startswith('capacity') else 'engine-fault100-v1');q=d['probe']
+ if kind=='capacity_not_observed':q['reduced_positive_samples']=2
+ elif kind=='capacity_wrong':q['restored_server_capacity']=2
+ elif kind=='engine_wrong_gpu':q['gpu_memory_after']['devices'][3]['index']='2'
+ elif kind=='engine_failed_reload':q['final_acceptance']['accepted_once']=False
+ else:q['restored_engine_pid']+=1
+ with pytest.raises(Refusal):checked(d)
+
+@pytest.mark.parametrize('operation',M['OPS'])
+def test_fixed100_scope_requires_exact64captured_expired_and_reaccepted(operation):
+ d=documents(operation);q=d['probe'];key='captured_valid_leases' if operation.startswith('engine-') else 'captured_leases';q[key]=63
+ with pytest.raises(Refusal,match='captured_lease_recovery'):checked(d)
+ d=documents(operation);d['probe']['captured_attempt_status_counts']['expired']=63
+ with pytest.raises(Refusal,match='captured_lease_recovery'):checked(d)
+
+def test_probe_journal_sha_must_equal_original_probe_not_only_safe_flag():
+ raw=bodies(documents());c=json.loads(raw['cohort']);c['probe_journal_sha256']='a'*64;raw['cohort']=M['encoded'](c)
+ with pytest.raises(Refusal,match='original_report_crosslink'):M['validate_packet'](raw,'worker-fault100-v1',M['sha'](raw['plan']))
+
+@pytest.fixture
+def local(tmp_path,monkeypatch):
+ (tmp_path/'.runtime').mkdir(mode=0o700);monkeypatch.setitem(G,'ROOT',tmp_path)
+ return tmp_path
+def put(path,raw):path.write_bytes(raw);path.chmod(0o600)
+def stage(root,operation='capacity2-fault100-v1'):
+ directory=root/'.runtime/staged';directory.mkdir(mode=0o700);raw=bodies(documents(operation));proof=M['validate_packet'](raw,operation,M['sha'](raw['plan']));doc=M['manifest'](operation,raw,proof)
+ for k,v in raw.items():put(directory/(k+'.json'),v)
+ path=root/'.runtime/transport.json';put(path,M['encoded'](doc));return directory,path,M['sha'](path.read_bytes()),raw
+def test_receiver_default_no_writes_then_exact_copy_once_and_external_anchor(local):
+ source,manifest,digest,raw=stage(local);target=local/'.runtime/received'
+ result=M['receive'](manifest,digest,source,target);assert result['phase']=='validated' and not target.exists()
+ with pytest.raises(Refusal,match='external_transport'):M['receive'](manifest,'0'*64,source,target)
+ result=M['receive'](manifest,digest,source,target,True);assert result['phase']=='complete'
+ for k,v in raw.items():assert (target/'metadata'/(k+'.json')).read_bytes()==v and (target/'metadata'/(k+'.json')).stat().st_mode&0o777==0o600
+ with pytest.raises(Refusal,match='new_destination'):M['receive'](manifest,digest,source,target,True)
+
+def test_export_default_reads_only_then_preserves_exact_four_private_bytes_once(local):
+ operation='engine-fault100-v1';raw=bodies(documents(operation));paths=M['originals'](operation)
+ paths['plan'].parent.mkdir(mode=0o700,parents=True)
+ for k,path in paths.items():put(path,raw[k])
+ target=local/'.runtime/exported';plan_sha=M['sha'](raw['plan'])
+ assert M['export'](operation,plan_sha,target)['written'] is False and not target.exists()
+ result=M['export'](operation,plan_sha,target,True);assert result['phase']=='complete' and result['completed']==100
+ for k,v in raw.items():assert (target/'metadata'/(k+'.json')).read_bytes()==v and paths[k].read_bytes()==v
+ manifest=json.loads((target/'transport-manifest.json').read_bytes());assert len(manifest['files'])==4 and manifest['prepared_plan_sha256']==plan_sha
+ with pytest.raises(Refusal,match='new_destination'):M['export'](operation,plan_sha,target,True)
+
+def test_receiver_refuses_nested_destination_to_preserve_exact_staging_scope(local):
+ source,path,digest,_=stage(local)
+ with pytest.raises(Refusal,match='must_be_disjoint'):M['receive'](path,digest,source,source/'nested',True)
+ assert not (source/'nested').exists()
+
+@pytest.mark.parametrize('kind',('symlink','hardlink','public','extra','sha','path'))
+def test_receiver_unsafe_metadata_or_manifest_scope_rejected(local,kind):
+ source,path,digest,raw=stage(local);file=source/'probe.json'
+ if kind=='symlink':file.rename(source/'saved.json');file.symlink_to(source/'saved.json')
+ elif kind=='hardlink':(local/'.runtime/probe-second-link.json').hardlink_to(file)
+ elif kind=='public':file.chmod(0o644)
+ elif kind=='extra':put(source/'raw-output.jsonl',b'PRIVATE')
+ elif kind=='sha':file.write_bytes(file.read_bytes()+b' ')
+ else:
+  doc=json.loads(path.read_bytes());doc['files'][0]['source_path']='/root/secret.env';put(path,M['encoded'](doc));digest=M['sha'](path.read_bytes())
+ with pytest.raises(Refusal,match='owned_bounded_0600_file_required' if kind=='hardlink' else None):M['receive'](path,digest,source,local/'.runtime/receive')
+
+def test_partial_write_keeps_exclusive_intent_and_forbids_automatic_retry(local,monkeypatch):
+ source,path,digest,_=stage(local);write=M['write']
+ def fail(path,raw):
+  if path.name=='cohort.json':raise OSError('PRIVATE parser or credential detail')
+  return write(path,raw)
+ monkeypatch.setitem(G,'write',fail);target=local/'.runtime/partial'
+ with pytest.raises(OSError):M['receive'](path,digest,source,target,True)
+ assert json.loads((target/'intent.json').read_bytes())['automatic_replay'] is False and not (target/'receipt.json').exists()
+ monkeypatch.setitem(G,'write',write)
+ with pytest.raises(Refusal,match='new_destination'):M['receive'](path,digest,source,target,True)
+
+def test_duplicate_keys_utf8_and_cli_errors_do_not_echo_sensitive_input(local,capsys):
+ with pytest.raises(Refusal,match='duplicate'):M['strict'](b'{"a":1,"a":2}')
+ with pytest.raises(UnicodeDecodeError):M['strict'](b'\xff')
+ path=local/'.runtime/broken.json';put(path,b'PRIVATE TOKEN INVALID JSON')
+ assert M['main'](['--receive','--transport-manifest',str(path),'--transport-manifest-sha256',M['sha'](path.read_bytes()),'--input-directory',str(local/'.runtime'),'--destination',str(local/'.runtime/out')])==1
+ assert 'PRIVATE' not in capsys.readouterr().out

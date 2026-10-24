@@ -1,0 +1,299 @@
+"""Once-run mixed100 then natural-QA100 under one completed owned activation.
+No activation/restore/fault/warmup/profiler calls. Root owns engine qualification.
+Only metadata may leave the Pod; raw QA/fixtures/outputs remain private.
+"""
+from __future__ import annotations
+import argparse,copy,hashlib,json,os,re,signal,stat,sys,time
+from pathlib import Path
+from types import SimpleNamespace
+SELF=Path(__file__).resolve();ROOT=SELF.parent.parent;sys.dont_write_bytecode=True
+OPS={'qwen235b-original-eager-cohorts-v1':'eager','qwen235b-eager-b-cohorts-v1':'eager','qwen235b-graph-b-cohorts-v1':'decode_graph'}
+SOURCE_ROLL_SHA='53f33be3a068a7424cf9a497987e025c76da8c594f6cbc9c328e62c10b9ce444'
+ORIGINAL_FP='sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3'
+SAFE_WRAPPER='.runtime/safe_decode_graph_qwen235b.py'
+SAFE_WRAPPER_SHA='4510b4686f54e30d9856cf360daf6a9749a4fbbbb40cd9ad90e27586389af8b4'
+SAFE_HELPERS={'.runtime/deploy_postpair_sources.py','ops/ha/decode_graph_qwen235b.py','ops/ha/single_pod_fault_probe.py','ops/ha/single_pod_engine_fault_probe.py','ops/manage.py','ops/engine_members.py','ops/supervise.py'}
+SAFE_ACTIONS=['execution_claim','stop:supervisor-primary','stop:worker-qwen235b','engine_member_capture','stop:engine-qwen235b','engine_members_reap','manifest_transition','start:engine-qwen235b','manifest_transition','start:worker-qwen235b','start:supervisor-primary']
+PINS={'.runtime/run_qwen235b_fault_cohort.py':'35b8b852d4093ebcaf7fa4342d4fc3d13badc3c53bea89303f401d3a2495c655',
+ '.runtime/collect_worker_stage_snapshot.py':'e81a27b00112076bf444d2ba85dc8c96bc5b28c402e489169d9ebd7831edaaec',
+ '.runtime/analyze_worker_stage_deltas.py':'0a0385d0c154d9efb232b49ad2769cc549f261cbf9d78b9a36f3c595ccf01d5a',
+ 'ops/ha/decode_graph_qwen235b.py':'f6479ca7bf69f47619fad5c4fa1bd724929d284725d91fb2568e50d7e9d588a2',
+ 'scripts/public_workload.py':'982dbb03062d118a75971b707eff4fbdeebf919ce0dde873f03c7e582824fe8c'}
+QA_SHA='07be70950c5ae5272242bb30722d55c22f9fce7ab498450de4def210c1377304'
+PROFILER_PREFIXES=(b'VLLM_TORCH_PROFILER',b'TORCH_PROFILER',b'KINETO',b'NSYS',b'CUDA_PROFILE',b'ENABLE_PYTORCH_EXECUTION_TRACE')
+PROFILER_DIR=b'VLLM_TORCH_PROFILER_DIR'
+PROFILER_FLAGS={b'VLLM_TORCH_PROFILER_'+v for v in (b'RECORD_SHAPES',b'WITH_PROFILE_MEMORY',b'WITH_STACK',b'WITH_FLOPS')}
+PROFILER_ATTESTATION='NO_START_STOP_PROFILE_OR_COLLECTIVE_PROFILE_RPC_SINCE_THIS_OWNED_ENGINE_GENERATION'
+PROFILER_CONTROLS=(b'Starting profiler',b'Profiler started.',b'Stopping profiler',b'Profiler stopped.',b'POST /start_profile',b'POST /stop_profile')
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def tools():
+ result=[]
+ for name,digest in PINS.items():
+  path=ROOT/name;raw=path.read_bytes()
+  if sha(raw)!=digest:raise ValueError('reviewed_dependency_sha_differs')
+  namespace={'__name__':'execution_cohort_dependency','__file__':str(path),'__package__':'scripts' if name.startswith('scripts/') else None};exec(compile(raw,str(path),'exec'),namespace);result.append(SimpleNamespace(**namespace))
+ return result
+
+def activation(args,context,U,D):
+ raw=U.read(args.activation_report);U.require(sha(raw)==args.activation_sha256,'activation_sha_differs');a=U.load(raw)
+ safe=a.get('safe_state_machine_binding');events=a.get('safe_action_events')
+ U.require(a.get('wrapper_source_sha256')==SAFE_WRAPPER_SHA and type(safe) is dict and safe.get('wrapper_source_sha256')==SAFE_WRAPPER_SHA
+  and sha(U.read(ROOT/SAFE_WRAPPER,512*1024,private=False))==SAFE_WRAPPER_SHA,'approved_safe_wrapper_required')
+ U.require(a.get('safe_action_journal_complete') is True and a.get('manual_recovery_required') is False and 'pending_action' in a and a['pending_action'] is None
+  and a.get('automatic_replay') is False and a.get('protected_services_unchanged') is True,'completed_known_safe_actions_required')
+ U.require(type(events) is list and all(type(e) is dict for e in events) and [e.get('stage') for e in events]==SAFE_ACTIONS
+  and all(type(e.get('at')) is str and e['at'] and type(e.get('confirmed_at')) is str and e['confirmed_at'] for e in events),'complete_safe_action_journal_required')
+ for index,role in ((7,'engine'),(9,'worker'),(10,'watchdog')):
+  U.require(events[index].get('result')=={'status':'started','identity':a.get(role+'_identity_after')},'safe_start_receipt_identity_differs')
+ helpers=safe.get('helper_source_sha256');U.require(type(helpers) is dict and set(helpers)==SAFE_HELPERS,'safe_helper_allowlist_differs')
+ for name,digest in helpers.items():U.require(sha(U.read(ROOT/name,512*1024,private=False))==digest,'safe_helper_source_differs')
+ current={k:v for k,v in context.static()['source_sha256'].items() if not k.startswith('.runtime/')}
+ U.require(safe.get('serving_source_sha256')==current,'safe_activation_serving_source_differs')
+ effective=safe.get('private_original_effective_sha256');keys=a['prepared_binding']['owned_identities']
+ U.require(type(effective) is dict and set(effective)=={str(args.activation_report.parent/('original-effective-'+k+'.json')) for k in keys},'safe_restore_snapshot_set_differs')
+ for name,digest in effective.items():U.require(sha(U.read(Path(name),2*1024**2))==digest,'safe_restore_snapshot_differs')
+ U.require(a.get('phase')=='complete' and a.get('watchdog_restored') is True and a.get('restored') is False
+  and a.get('operation')=='qwen235b-shared-budget-execution-experiment' and a.get('mode')==OPS[args.operation]
+  and a.get('model')==U.MODEL and a.get('profile')==context.profile and a.get('worker_budget_tokens')==int(context.worker_env['WORKER_TOKEN_BUDGET']),'completed_current_activation_required')
+ run=args.activation_report.parent;U.directory(run)
+ binding=a['prepared_binding'];U.require(binding['controller_sha256']==PINS['ops/ha/decode_graph_qwen235b.py'] and binding['mode']==a['mode'] and binding['worker_budget_tokens']==a['worker_budget_tokens'],'activation_binding_differs')
+ for name,digest in binding['snapshot_sha256'].items():U.require(name in D.SNAPSHOTS and sha(U.read(run/name))==digest,'activation_snapshot_differs')
+ U.require(set(binding['snapshot_sha256'])==D.SNAPSHOTS,'complete_activation_snapshots_required')
+ document=U.load(U.read(run/'original-manifest.json'))
+ for service in document['services']:
+  if service['role'] in {'engine','worker'}:service['env_file']=str(run/(service['role']+'.env'))
+ U.require(U.read(context.manifest)==json.dumps(document,separators=(',',':')).encode(),'active_candidate_manifest_differs')
+ U.require(U.read(Path(context.worker['env_file']))==U.read(run/'worker.env') and U.read(Path(context.engine['env_file']))==U.read(run/'engine.env'),'active_candidate_environment_differs')
+ for service in context.all:
+  if service['role'] not in {'engine','worker'}:U.require(sha(U.read(Path(service['env_file'])))==binding['environment_sha256'][service['env_file']],'activation_protected_environment_differs')
+ expected=copy.deepcopy(binding['owned_identities'])
+ for role in ('engine','worker','watchdog'):expected[('supervisor-primary' if role=='watchdog' else role+'-qwen235b')]=a[role+'_identity_after']
+ current=context.processes();U.require({k:{f:v[f] for f in ('pid','start_ticks','cwd')} for k,v in current.items()}==expected,'activation_owned_pids_differs')
+ for path,digest in binding['support']['source_sha256'].items():U.require(sha(U.read(Path(path),4*1024**2,private=False,allow_empty=True))==digest,'activation_support_source_differs')
+ execution_state(context,U,D)
+ return {'activation_sha256':sha(raw),'mode':a['mode'],'worker_budget_tokens':a['worker_budget_tokens'],'runtime_fingerprint':context.profile['runtime_fingerprint'],'wrapper_source_sha256':SAFE_WRAPPER_SHA,'safe_action_journal_complete':True}
+
+def process_profiler_environment(context,U,current):
+ environments={}
+ for key in ('engine-qwen235b','worker-qwen235b'):
+  environment=(Path('/proc')/str(current[key]['pid'])/'environ').read_bytes()
+  U.require(sha(environment)==current[key]['environment_sha256'],'profiler_process_environment_changed')
+  pairs=[part.split(b'=',1) for part in environment.split(b'\0') if b'=' in part];U.require(len({k for k,v in pairs})==len(pairs),'duplicate_process_environment')
+  environments[key]={k:v for k,v in pairs if k.startswith(PROFILER_PREFIXES)}
+ U.require(context.processes()==current,'profiler_owned_process_changed_during_read')
+ U.require(not environments['worker-qwen235b'],'worker_profiler_environment_refused')
+ prof=environments['engine-qwen235b']
+ if not prof:return None
+ U.require(set(prof)==PROFILER_FLAGS|{PROFILER_DIR} and all(prof[k]==b'0' for k in PROFILER_FLAGS),'profiler_environment_refused')
+ path=Path(prof[PROFILER_DIR].decode());U.require(path.is_absolute() and path.resolve()==path and path.is_relative_to(ROOT/'.runtime'),'private_canonical_profiler_directory_required')
+ return path
+
+def profiler_trace_metadata(path,U):
+ U.require(path.is_absolute() and path.resolve()==path and path.is_relative_to(ROOT/'.runtime'),'private_canonical_profiler_directory_required')
+ if not path.exists():return {'exists':False,'directory_sha256':sha(str(path).encode()),'entries':0,'inventory_sha256':sha(b'[]')}
+ pending=[path];entries=[];directories=0;discovered=1
+ while pending:
+  item=pending.pop();info=item.lstat();U.require(stat.S_ISDIR(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o022,'unsafe_profiler_directory');directories+=1
+  U.require(directories<=64,'profiler_directory_bound_exceeded')
+  entries.append([str(item.relative_to(path)),info.st_dev,info.st_ino,info.st_mode,info.st_mtime_ns,info.st_ctime_ns])
+  with os.scandir(item) as children:
+   for child in children:
+    discovered+=1;U.require(discovered<=512,'profiler_inventory_bound_exceeded');p=Path(child.path);s=child.stat(follow_symlinks=False)
+    if stat.S_ISDIR(s.st_mode):U.require(len(p.relative_to(path).parts)<=4,'profiler_directory_depth_exceeded');pending.append(p)
+    else:
+     U.require(stat.S_ISREG(s.st_mode) and s.st_uid==os.geteuid() and s.st_nlink==1 and not s.st_mode&0o022,'unsafe_profiler_inventory_entry')
+     entries.append([str(p.relative_to(path)),s.st_dev,s.st_ino,s.st_mode,s.st_size,s.st_mtime_ns,s.st_ctime_ns])
+ return {'exists':True,'directory_sha256':sha(str(path).encode()),'entries':len(entries),'inventory_sha256':sha(U.encoded(sorted(entries)))}
+
+def profiler_log_metadata(U,engine_pid,offset,expected=None):
+ path=ROOT/'.runtime/engine-qwen235b.log';U.require(type(offset) is int and offset>=0,'explicit_generation_log_offset_required')
+ fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+ try:
+  a=os.fstat(fd);U.require(stat.S_ISREG(a.st_mode) and a.st_uid==os.geteuid() and a.st_nlink==1 and not a.st_mode&0o077 and offset<=a.st_size<=offset+16*1024**2,'bounded_private_engine_log_required')
+  with os.fdopen(fd,'rb',closefd=False) as handle:handle.seek(offset);raw=handle.read(a.st_size-offset)
+  b=os.fstat(fd);U.require(len(raw)==a.st_size-offset and (a.st_dev,a.st_ino)==(b.st_dev,b.st_ino) and b.st_size>=a.st_size,'engine_log_changed_while_reading')
+ finally:os.close(fd)
+ marker=re.compile(rb'(?:\(APIServer pid='+str(engine_pid).encode()+rb'\)|Started server process \['+str(engine_pid).encode()+rb'\])')
+ U.require(marker.search(raw) is not None and not any(token in raw for token in PROFILER_CONTROLS),'generation_log_missing_or_profiler_control_observed')
+ if expected is None:return {'offset':offset,'dev':a.st_dev,'ino':a.st_ino,'initial_bytes':len(raw),'initial_sha256':sha(raw)}
+ U.require(set(expected)=={'offset','dev','ino','initial_bytes','initial_sha256'} and expected['offset']==offset and (expected['dev'],expected['ino'])==(a.st_dev,a.st_ino)
+  and type(expected['initial_bytes']) is int and 0<=expected['initial_bytes']<=len(raw) and sha(raw[:expected['initial_bytes']])==expected['initial_sha256'],'original_engine_log_prefix_changed')
+ return expected
+
+def profiler_generation(context,U,current,kind,path,digest):
+ raw=U.read(path);U.require(sha(raw)==digest,'profiler_generation_proof_sha_differs');proof=U.load(raw);engine={k:current['engine-qwen235b'][k] for k in ('pid','start_ticks','cwd')}
+ if kind=='engine_fault':
+  U.require(getattr(context.args,'source_roll_baseline',False) and proof.get('phase')=='complete' and proof.get('status')=='passed' and proof.get('manual_recovery_required') is False
+   and proof.get('watchdog_restored') is True and proof.get('restored_engine_pid')==engine['pid'] and proof.get('source_sha256')=={k:v for k,v in context.static()['source_sha256'].items() if not k.startswith('.runtime/')},'completed_current_engine_fault_generation_required')
+ else:
+  U.require(kind=='guarded_activation' and not getattr(context.args,'source_roll_baseline',False) and path==context.args.activation_report and digest==context.args.activation_sha256
+   and proof.get('phase')=='complete' and proof.get('wrapper_source_sha256')==SAFE_WRAPPER_SHA and proof.get('safe_action_journal_complete') is True and proof.get('manual_recovery_required') is False
+   and 'pending_action' in proof and proof['pending_action'] is None and proof.get('engine_identity_after')==engine,'completed_guarded_activation_generation_required')
+ return {'kind':kind,'path':str(path),'sha256':digest,'engine_identity':engine}
+
+def make_profiler_receipt(context,U,kind,path,digest,offset,attestation):
+ U.require(attestation==PROFILER_ATTESTATION,'explicit_operator_profiler_attestation_required');current=context.processes();directory=process_profiler_environment(context,U,current)
+ U.require(directory is not None,'dormant_receipt_requires_exact_configured_profiler');generation=profiler_generation(context,U,current,kind,path,digest)
+ result={'version':1,'scope':'configured-unstarted-profiler-under-explicit-operator-control; not direct in-memory state attestation','attestation':attestation,
+  'generation':generation,'runtime':context.static(),'processes':current,'trace_metadata':profiler_trace_metadata(directory,U),'log_metadata':profiler_log_metadata(U,current['engine-qwen235b']['pid'],offset)}
+ U.require(context.processes()==current and context.static()==result['runtime'],'profiler_receipt_capture_binding_changed');return result
+
+def profiler_evidence(context,U,current):
+ directory=process_profiler_environment(context,U,current)
+ if directory is None:return {'profiler_configuration':'absent'}
+ args=context.args;path=getattr(args,'profiler_receipt',None);digest=getattr(args,'profiler_receipt_sha256',None)
+ U.require(path is not None and digest is not None,'explicit_dormant_profiler_receipt_required');raw=U.read(path);U.require(sha(raw)==digest,'dormant_profiler_receipt_sha_differs');r=U.load(raw)
+ U.require(set(r)=={'version','scope','attestation','generation','runtime','processes','trace_metadata','log_metadata'} and type(r['version']) is int and r['version']==1 and r['attestation']==PROFILER_ATTESTATION
+  and r['scope']=='configured-unstarted-profiler-under-explicit-operator-control; not direct in-memory state attestation' and r['runtime']==context.static() and r['processes']==current,'dormant_profiler_receipt_binding_differs')
+ g=r['generation'];U.require(set(g)=={'kind','path','sha256','engine_identity'} and profiler_generation(context,U,current,g['kind'],Path(g['path']),g['sha256'])==g,'dormant_profiler_generation_differs')
+ U.require(profiler_trace_metadata(directory,U)==r['trace_metadata'],'profiler_trace_metadata_changed');profiler_log_metadata(U,current['engine-qwen235b']['pid'],r['log_metadata']['offset'],r['log_metadata'])
+ return {'profiler_configuration':'configured-unstarted-under-operator-attestation','receipt_sha256':digest,'generation_proof_sha256':g['sha256'],'direct_in_memory_profiler_state_verified':False}
+
+def execution_state(context,U,D):
+ current=context.processes();engine=U.env_values(U.read(Path(context.engine['env_file'])))
+ U.require(engine.get('ENGINE_ENABLE_PREFIX_CACHING','0')=='0','prefix_cache_must_be_off')
+ profiler_evidence(context,U,current)
+ D.running_execution(ROOT,context.engine,engine) # owned argv/environment only; no CUDA/inference call
+ return engine
+
+def source_roll_baseline(args,context,U,D):
+ raw=U.read(args.source_roll_report);U.require(args.source_roll_sha256==SOURCE_ROLL_SHA and sha(raw)==SOURCE_ROLL_SHA,'exact_completed_source_roll_sha_required');receipt=U.load(raw);binding=receipt['binding']
+ U.require(receipt.get('phase')=='complete' and receipt.get('manual_recovery_required') is False and receipt.get('pending_action') is None
+  and receipt.get('watchdog_state')=='known_restored' and receipt.get('worker_state')=='ready64' and receipt.get('engine_configuration_changed') is False
+  and receipt.get('manifest_bytes_unchanged') is True,'completed_source_roll_required')
+ current={k:v for k,v in context.static()['source_sha256'].items() if not k.startswith('.runtime/')}
+ expected={**binding['dependencies'],**{k:v for k,v in binding['target_sources'].items() if k.endswith(('.py','.sql'))}}
+ U.require(current==expected and sha(U.read(context.manifest))==binding['manifest_sha256'],'source_roll_full_source_or_manifest_differs')
+ for name,digest in binding['target_sources'].items():U.require(sha(U.read(ROOT/name,512*1024,private=False,allow_empty=True))==digest,'source_roll_target_differs')
+ for service in context.all:
+  path=service['env_file'];digest=binding['patched_worker_env_sha256'] if service['role']=='worker' else binding['environment_sha256'][path]
+  U.require(sha(U.read(Path(path)))==digest,'source_roll_current_configuration_differs')
+ engine=execution_state(context,U,D)
+ U.require(context.profile['runtime_fingerprint']==ORIGINAL_FP and int(context.worker_env['WORKER_TOKEN_BUDGET'])==298384
+  and D.manage.engine_execution_configuration(engine)=={'enforce_eager':True},'original_eager_profile_or_budget_differs')
+ # Fault-restored current owned PIDs are independently captured by Context;
+ # historical rollout PIDs are deliberately not adopted as current identities.
+ return {'source_roll_sha256':sha(raw),'mode':'eager','worker_budget_tokens':298384,'runtime_fingerprint':ORIGINAL_FP}
+
+def qa_inputs(args,U):
+ raw=U.read(args.qa_fixture,4*1024**2);U.require(sha(raw)==QA_SHA,'exact_existing_qa_fixture_required');rows=[U.load(line) for line in raw.splitlines() if line.strip()]
+ manifest_raw=U.read(args.qa_manifest,4*1024**2);manifest=U.load(manifest_raw)
+ U.require(len(rows)==100 and len({r['custom_id'] for r in rows})==100 and manifest['workload_sha256']==QA_SHA and manifest['tasks']==100
+  and manifest['model']==U.MODEL and manifest['profile']=='answer' and set(manifest['examples'])=={r['custom_id'] for r in rows},'qa_manifest_population_differs')
+ U.require(all(r['body']['model']==U.MODEL and not any(k in r['body'] for k in ('min_tokens','ignore_eos','stream')) for r in rows),'natural_qa_shape_required')
+ return rows,manifest,sha(manifest_raw)
+
+def expected_rows(rows,rid,repeats,fixed):
+ result=[]
+ for repeat in range(repeats):
+  for row in rows:
+   value=copy.deepcopy(row);value['custom_id']=rid+'-repeat'+str(repeat)+'-'+row['custom_id']
+   if fixed:value['body']['min_tokens']=value['body'].get('max_tokens',value['body'].get('max_completion_tokens',256))
+   result.append(value)
+ return result
+
+def benchmark_proof(report,label,source_sha,rows,repeats,fixed,run,U):
+ rid=report['run_id'];U.require(re.fullmatch(r'bench-[0-9a-f]{12}',rid) is not None,'benchmark_run_id_invalid')
+ U.require(report.get('passed') is True and report.get('model')==U.MODEL and report.get('engine_label')==label and report.get('test_fixture_detected') is False
+  and all(report.get(k)==100 for k in ('requested_tasks','submitted_tasks','completed')) and all(report.get(k)==1 for k in ('batches','accepted_batches','terminal_batches'))
+  and report.get('failed')==report.get('cancelled')==0 and report.get('database_schema_version')==11,'benchmark_terminal_population_failed')
+ U.require(all(report.get(k) is True for k in ('accepted_exactly_once','output_custom_ids_unique','output_custom_ids_known','output_rows_match_completed','batch_counts_match_submission'))
+  and all(report.get(k)==[] for k in ('unfinished_batch_ids','submission_errors','output_validation_errors')),'benchmark_integrity_failed')
+ U.require(report['experiment']['source_sha256']==source_sha and report['experiment']['controlled_output_length'] is fixed and (not fixed or report.get('all_output_lengths_exact') is True),'benchmark_fixture_mode_differs')
+ submitted=run/(label+'-submitted');U.directory(submitted);paths=list(submitted.iterdir());U.require(len(paths)==1 and paths[0].name==rid+'-0.jsonl','exact_submission_file_required')
+ raw=U.read(paths[0],32*1024**2);expected=expected_rows(rows,rid,repeats,fixed);U.require([U.load(line) for line in raw.splitlines()]==expected,'submitted_rows_differ')
+ caps={r['custom_id']:r['body'].get('max_tokens',r['body'].get('max_completion_tokens',256)) for r in expected};tasks=report['tasks']
+ U.require(len(tasks)==100 and len({t['id'] for t in tasks})==100 and {t['custom_id'] for t in tasks}==set(caps)
+  and all(t['status']=='completed' and t['accepted_attempts']==1 and 0<t['completion_tokens']<=t['output_cap']==caps[t['custom_id']] and t['prompt_tokens']>0 for t in tasks),'task_usage_or_population_differs')
+ U.require(not fixed or all(t['completion_tokens']==t['output_cap'] for t in tasks),'fixed_output_length_differs')
+ U.require(sum(t['prompt_tokens'] for t in tasks)==report['observed_prompt_tokens'] and sum(t['completion_tokens'] for t in tasks)==report['observed_completion_tokens'],'accepted_token_totals_differ')
+ return rid
+
+class Job:
+ def __init__(self,args,loaded=None,context_factory=None):
+  self.args=args;self.U,self.C,self.A,self.D,self.Q=loaded or tools();self.run=ROOT/'.runtime/execution-cohorts'/args.operation
+  # Adapter uses ONLY readonly startup/health/SQL proof functions. Never instantiate
+  # Launcher, SinglePodProbe, DecodeGraphRoll or any service mutation method.
+  values=vars(args).copy();values.update(operation='worker-fault100-v1',fixture=args.mixed_fixture)
+  self.context=(context_factory or self.U.Context)(SimpleNamespace(**values));self.journal=None;self.armed=False
+ def close(self):self.context.close()
+ def bind(self):
+  U=self.U;context=self.context;_rows,_manifest,qa_sha=qa_inputs(self.args,U)
+  proof=source_roll_baseline(self.args,context,U,self.D) if self.args.source_roll_baseline else activation(self.args,context,U,self.D)
+  return {'runtime':context.static(),'processes':context.processes(),'execution_origin':proof,'qa_manifest_sha256':qa_sha,
+   'private_sources':{name:sha(U.read(ROOT/name,512*1024,private=False)) for name in PINS},'controller_sha256':sha(U.read(SELF,512*1024,private=False))}
+ def save(self):self.U.write(self.run/'journal.json',self.journal,exclusive=False)
+ def intent(self,stage):self.journal['pending_action']={'stage':stage,'at':self.U.stamp()};self.save()
+ def confirm(self,stage,**evidence):self.journal.setdefault('events',[]).append({'stage':stage,**evidence});self.journal.pop('pending_action',None);self.save()
+ def guard(self,binding):self.U.require(self.bind()==binding,'same_runtime_binding_changed')
+ def prepare(self):
+  U=self.U
+  with U.locked():
+   self.context.healthy();binding=self.bind();parent=self.run.parent
+   if not parent.exists():U.directory(parent,fresh=True);U.sync(parent.parent)
+   U.directory(parent);U.directory(self.run,fresh=True);U.sync(parent)
+   plan={'phase':'prepared','operation':self.args.operation,'arguments':{k:str(v) for k,v in vars(self.args).items() if k not in {'execute','prepared_sha256'}},'binding':binding,'no_warmup':True,'automatic_replay':False}
+   U.write(self.run/'plan.json',plan);self.journal={'phase':'prepared','prepared_sha256':sha(U.read(self.run/'plan.json')),'operation':self.args.operation,'automatic_replay':False}
+   U.write(self.run/'journal.json',self.journal);return {'phase':'prepared','prepared_sha256':self.journal['prepared_sha256'],'submitted_tasks':0}
+ def snapshot(self,label,side,binding):
+  self.guard(binding);stage=label+'-'+side;self.intent(stage)
+  body=self.C.collect(ROOT,self.args.manifest);self.C.write_snapshot(self.run/(stage+'.json'),body)
+  self.guard(binding);self.confirm(stage,sha256=sha(body));return body
+ def cohort(self,name,rows,repeats,fixed,fixture,source_sha,binding):
+  U=self.U;run=self.run/name;U.directory(run,fresh=True);label=self.args.operation+'-'+name
+  self.context.healthy();before=self.snapshot(name,'before',binding)
+  argv=[sys.executable,'-m','scripts.scheduler_benchmark','--env-file',str(self.args.benchmark_env),'--workload',str(fixture),'--report',str(run/'report.json'),'--label',label,'--repeats',str(repeats),'--batches','1','--hourly-cost','16.10','--url','http://127.0.0.1:8082','--engine-url',f"http://127.0.0.1:{self.context.engine['port']}"]+(['--fixed-output'] if fixed else [])
+  self.intent(name+'-spawn');self.journal['pending_action']['argv_sha256']=sha(U.encoded(argv));self.save();child=U.Child(argv,run/'child-log.json')
+  self.journal.setdefault('children',{})[name]={'identity':child.identity(),'argv_sha256':sha(U.encoded(argv))};self.save();self.confirm(name+'-spawn')
+  deadline=time.monotonic()+4200
+  while child.poll() is None:U.require(time.monotonic()<deadline,'benchmark_timeout_unknown');self.guard(binding);time.sleep(1)
+  outcome=child.finish();self.journal.setdefault('child_outcomes',{})[name]=outcome;self.save();U.require(outcome['returncode']==0,'benchmark_child_failed')
+  self.guard(binding);raw=U.read(run/'report.json');report=U.load(raw);rid=benchmark_proof(report,label,source_sha,rows,repeats,fixed,run,U)
+  self.context.bind_run(rid);U.require(self.context.scope(label),'durable_run_scope_missing');proof=self.context.final();self.context.healthy()
+  after=self.snapshot(name,'after',binding);delta=self.A.analyze(before,sha(before),after,sha(after));U.write(run/'stage-delta.json',delta)
+  self.confirm(name+'-complete',report_sha256=sha(raw),before_snapshot_sha256=sha(before),after_snapshot_sha256=sha(after),delta_sha256=sha(U.read(run/'stage-delta.json')),accepted_usage=proof)
+  return run,report
+ def execute(self,expected):
+  U=self.U
+  with U.locked():
+   U.directory(self.run);raw=U.read(self.run/'plan.json');U.require(sha(raw)==expected,'exact_prepared_sha_required');plan=U.load(raw)
+   U.require(plan['operation']==self.args.operation and plan['arguments']=={k:str(v) for k,v in vars(self.args).items() if k not in {'execute','prepared_sha256'}},'prepared_arguments_differ')
+   journal=U.load(U.read(self.run/'journal.json'));U.require(journal['phase']=='prepared' and journal['prepared_sha256']==expected and not journal.get('pending_action'),'existing_operation_no_replay')
+   self.context.healthy();self.guard(plan['binding']);self.journal=journal;self.armed=True
+   try:
+    self.intent('execute');U.write(self.run/'execution-marker.json',{'prepared_sha256':expected});self.journal['phase']='running';self.confirm('execute')
+    self.cohort('mixed',self.context.rows,5,True,self.args.mixed_fixture,U.FIXTURE_SHA,plan['binding'])
+    rows,manifest,_=qa_inputs(self.args,U);run,report=self.cohort('qa',rows,1,False,self.args.qa_fixture,QA_SHA,plan['binding'])
+    self.intent('qa-quality');outputs=run/(self.args.operation+'-qa-outputs');U.directory(outputs);paths=list(outputs.iterdir());rid=report['run_id']
+    U.require(len(paths)==1 and paths[0].name==rid+'-0-output.jsonl','exact_qa_output_file_required');output_raw=U.read(paths[0],16*1024**2)
+    records=[U.load(line) for line in output_raw.splitlines()];U.require(len(records)==100 and {r['custom_id'] for r in records}=={t['custom_id'] for t in report['tasks']},'qa_output_population_differs')
+    quality=self.Q.evaluate(manifest,outputs);U.require(quality['expected']==quality['observed_unique']==100 and quality['missing']==quality['unknown_outputs']==quality['duplicate_outputs']==0,'qa_evaluation_population_differs')
+    U.require(U.read(paths[0],16*1024**2)==output_raw,'qa_outputs_changed');U.write(run/'quality.json',quality);self.confirm('qa-quality',quality_sha256=sha(U.read(run/'quality.json')),output_file_sha256=sha(output_raw))
+    self.context.healthy();self.guard(plan['binding']);self.journal.update(phase='complete',finished_at=U.stamp(),execution_completed_tasks=200,quality_evaluated=True,manual_recovery_required=False)
+    self.save();return {'phase':'complete','journal_sha256':sha(U.read(self.run/'journal.json')),'quality_evaluated':True,'raw_outputs_exported':False}
+   except BaseException as error:
+    self.journal.update(phase='manual_recovery_required',manual_recovery_required=True,error_code=str(error) if type(error) is U.Refusal else type(error).__name__,automatic_replay=False)
+    try:self.save()
+    except Exception:pass
+    raise
+
+def main(argv=None):
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--operation',choices=OPS,required=True);parser.add_argument('--activation-report',type=Path);parser.add_argument('--activation-sha256')
+ parser.add_argument('--source-roll-baseline',action='store_true');parser.add_argument('--source-roll-report',type=Path);parser.add_argument('--source-roll-sha256')
+ for name,value in [('manifest',ROOT/'.runtime/services-primary.json'),('env-file',ROOT.parent/'api-a.env'),('supervisor-env',ROOT.parent/'supervisor.env'),('benchmark-env',ROOT/'.runtime/scheduler-v6/benchmark.env'),('mixed-fixture',ROOT/'.runtime/qwen235b-v1/workload-20.jsonl'),('qa-fixture',ROOT/'.runtime/qwen235b-public-answer100-v1/workload.jsonl'),('qa-manifest',ROOT/'.runtime/qwen235b-public-answer100-v1/manifest.json')]:parser.add_argument('--'+name,type=Path,default=value)
+ parser.add_argument('--profiler-receipt',type=Path);parser.add_argument('--profiler-receipt-sha256')
+ parser.add_argument('--execute',action='store_true');parser.add_argument('--prepared-sha256');args=parser.parse_args(argv);os.umask(0o077);job=None
+ try:
+  if ROOT!=Path('/root/batchforge-runtime/app') or sys.platform!='linux':raise ValueError('same_pod_app_only')
+  if args.source_roll_baseline:
+   if args.operation!='qwen235b-original-eager-cohorts-v1' or not args.source_roll_report or not args.source_roll_sha256 or args.activation_report or args.activation_sha256:raise ValueError('source_roll_baseline_arguments_required')
+  elif args.operation=='qwen235b-original-eager-cohorts-v1' or not args.activation_report or not args.activation_sha256 or args.source_roll_report or args.source_roll_sha256:raise ValueError('completed_activation_arguments_required')
+  if args.execute!=bool(args.prepared_sha256):raise ValueError('execute_requires_prepared_sha')
+  def interrupted(*_):raise KeyboardInterrupt()
+  if args.execute:
+   for signum in (signal.SIGTERM,signal.SIGINT,signal.SIGHUP):signal.signal(signum,interrupted)
+  job=Job(args);result=job.execute(args.prepared_sha256) if args.execute else job.prepare();print(json.dumps(result));return 0
+ except Exception as error:print(json.dumps({'phase':'refused_or_manual','error_type':type(error).__name__,'automatic_replay':False}));return 1
+ finally:
+  if job is not None:job.close()
+if __name__=='__main__':raise SystemExit(main())

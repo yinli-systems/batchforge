@@ -1,0 +1,274 @@
+"""Private synthetic HTTP transport/filesystem tests; no real network, SQL or GPU."""
+import argparse,asyncio,copy,json,os,runpy,tempfile,unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+import httpx
+ROOT=Path(__file__).resolve().parents[1]
+M=runpy.run_path(str(ROOT/'.runtime/run_qwen235b_policy_cohort.py'),run_name='policy160_test')
+G=M['Job'].__init__.__globals__
+U0=SimpleNamespace(**runpy.run_path(str(ROOT/'.runtime/run_qwen235b_fault_cohort.py'),run_name='readonly_policy_test'))
+E0=SimpleNamespace(**runpy.run_path(str(ROOT/'.runtime/qwen235b_policy_evidence.py'),run_name='policy_evidence_pure_contract'))
+OP='qwen235b-policy-fair160-v1'
+class Result:
+ def __init__(self,data):self.data=data
+ def fetchone(self):return self.data
+ def fetchall(self):return self.data
+class Conn:
+ def __init__(self):self.uploads={};self.links=[]
+ def execute(self,query,args=None):
+  if 'FROM files f JOIN blob_objects' in query:return Result(self.uploads.get(args[0]))
+  if 'SELECT id,input_file_id FROM batches' in query:return Result(self.links)
+  if 'clock_timestamp()' in query:return Result({'n':1792800000})
+  if 'count(*) AS n FROM batches' in query or 'count(*) AS n FROM files' in query:return Result({'n':0})
+  raise AssertionError('UNEXPECTED SYNTHETIC SQL')
+class Context:
+ def __init__(self,args):
+  assert args.operation=='worker-fault100-v1' # Readonly adapter only.
+  self.rows=[{'custom_id':'mix-0-'+str(n)+'-'+str(out),'method':'POST','url':'/v1/chat/completions','body':{'model':U0.MODEL,'max_tokens':out,'temperature':0,'seed':20261024,'messages':[{'role':'user','content':'SYNTHETIC PRIVATE'}]}} for n,out in [(2048,128),(128,32)]]
+  self.conn=Conn();self.bench_env={'DATABASE_URL':'SYNTHETIC_PRIVATE_DSN','BATCHFORGE_API_KEY':'SYNTHETIC_AUTH_SECRET'}
+  self.worker_env={'WORKER_ID':'synthetic-worker'};self.profile={'runtime_fingerprint':'sha256:'+'a'*64};self.closed=False
+ def static(self):return {'source_sha256':'SYNTHETIC_FIXED'}
+ def processes(self):return {'worker':{'pid':123,'start_ticks':'6','cwd':'SYNTHETIC'}}
+ def healthy(self,drained=True):pass
+ def close(self):self.closed=True
+
+def batch(i,op=OP):
+ return dict(id='batch_'+f'{i+1:032x}',input_file_id='file_'+f'{i+1:032x}',model=U0.MODEL,status='completed',output_file_id='file_'+f'{i+100:032x}',
+  request_counts={'total':20,'completed':20,'failed':0,'cancelled':0,'running':0,'pending':0},metadata={'benchmark_run':op,'engine_label':op,'policy_class':'L' if i<4 else 'S','batch_index':str(i)})
+class Flow(unittest.TestCase):
+ def setUp(self):
+  self.temp=tempfile.TemporaryDirectory(prefix='bf-policy160-',dir=ROOT/'.runtime');self.root=Path(self.temp.name).resolve();(self.root/'.runtime').mkdir(mode=0o700)
+  self.globals=patch.dict(G,ROOT=self.root,capacity=lambda *a:{'required_payload_bytes':31458280});self.globals.start()
+  self.args=argparse.Namespace(operation=OP,manifest=self.root/'.runtime/services.json',env_file=self.root/'api.env',supervisor_env=self.root/'watch.env',benchmark_env=self.root/'bench.env',fixture=self.root/'fixture.jsonl',execute=False,prepared_sha256=None)
+  self.U=SimpleNamespace(**vars(U0));self.calls=[];self.mode=None;self.now=0
+  async def sleep(amount):self.now+=max(0,amount);await asyncio.sleep(0)
+  self.sleep=sleep
+  self.E=SimpleNamespace(final_rows=self.final,validate_output=E0.validate_output)
+  self.client_factory=lambda **kwargs:httpx.AsyncClient(**kwargs,transport=httpx.MockTransport(self.transport))
+  evidence=self.root/'.runtime/qwen235b_policy_evidence.py';evidence.write_bytes(b'# SYNTHETIC\n');evidence.chmod(0o600)
+  self.binding={'runtime':{'source_sha256':'SYNTHETIC_FIXED'},'processes':{'worker':{'pid':123,'start_ticks':'6','cwd':'SYNTHETIC'}},'database':{'history':None,'auxiliary':[],'limits':{'max_response_bytes':65536},'outside':{'tasks':27903,'prompt_tokens':100}},'pair_controls':{'synthetic':'EXACT_NONPOLICY'},'reference':None,'operator_sha256':U0.sha((ROOT/'.runtime/run_qwen235b_policy_cohort.py').read_bytes()),'evidence_sha256':U0.sha(b'# SYNTHETIC\n')}
+  self.job=self.makejob()
+ def tearDown(self):self.globals.stop();self.temp.cleanup()
+ def makejob(self):
+  job=M['Job'](self.args,loaded=[self.U,self.E],context_factory=Context,client_factory=self.client_factory,clock=lambda:self.now,sleep=self.sleep)
+  job.binding_now=lambda:copy.deepcopy(self.binding)
+  def observer():job.samples=[{'overlap':True}];job.obs_ready.set()
+  job.start_observer=observer
+  return job
+ def final(self,*args):
+  self.assertEqual(args[1],OP);self.assertEqual(len(args[2]),160);self.assertEqual(args[4],'fair')
+  tasks=[{'id':'task'+str(n),'batch_id':batch(n//20)['id'],'custom_id':cid,'prompt_tokens':2048 if c=='L' else 128,'completion_tokens':128 if c=='L' else 32,'db_created_to_finish_seconds':2.} for n,(cid,c) in enumerate(args[2].items())]
+  batches=[{**batch(i),'batch_index':str(i),'created_at':'2026-10-24T00:00:00+00:00'} for i in range(8)]
+  attempts=[{'task_id':t['id'],'claim_transaction_started_at':'2026-10-24T00:00:01+00:00','observed_attempt_seconds':1.} for t in tasks]
+  return {'tasks':tasks,'worker_ids':['WRONG' if self.mode=='wrong_worker' else 'synthetic-worker'],'attempt_decisions':attempts,'batches':batches,'attribution':'inconclusive'}
+ async def transport(self,request):
+  self.calls.append((request.method,request.url.path))
+  self.assertEqual(request.headers['authorization'],'Bearer SYNTHETIC_AUTH_SECRET')
+  if request.method=='POST' and request.url.path=='/v1/files':
+   i=sum(p=='/v1/files' and m=='POST' for m,p in self.calls)-1
+   journal=U0.load((self.job.run/'journal.json').read_bytes());self.assertIn('upload:'+str(i),journal['pending_actions'])
+   if self.mode=='unknown_upload':raise httpx.ReadTimeout('SYNTHETIC_AUTH_SECRET')
+   fid='file_'+f'{i+1:032x}';item=self.job.items[i];self.job.context.conn.uploads[fid]={'bytes':item['bytes'],'admission_tasks':20,'sha256':'0'*64 if self.mode=='wrong_input_sha' else item['sha256'],'state':'ready','backend':'s3'}
+   return httpx.Response(200,json={'id':fid,'bytes':item['bytes'],'purpose':'batch'})
+  if request.method=='POST':
+   data=json.loads(request.content);i=int(data['metadata']['batch_index']);self.assertEqual(data['input_file_id'],'file_'+f'{i+1:032x}')
+   self.assertEqual(data['metadata']['benchmark_run'],OP);self.assertRegex(request.headers['idempotency-key'],r'^bf1\.[0-9]{10}\.[0-9a-f]{32}$')
+   journal=U0.load((self.job.run/'journal.json').read_bytes());self.assertIn('create:'+str(i),journal['pending_actions']);self.assertEqual(len(journal['uploads']),8)
+   if self.mode=='unknown_create':raise httpx.ReadTimeout('SYNTHETIC_PRIVATE_DSN')
+   value=batch(i);self.job.context.conn.links.append({'id':value['id'],'input_file_id':value['input_file_id']})
+   if self.mode=='wrong_ack':value['input_file_id']='file_'+'f'*32
+   return httpx.Response(200,json=value)
+  if request.url.path.startswith('/v1/batches/'):
+   return httpx.Response(200,json=batch(int(request.url.path.rsplit('_',1)[1],16)-1))
+  if request.url.path.endswith('/content'):
+   index=int(request.url.path.split('/')[3].split('_')[1],16)-100
+   records=[]
+   for n,r in enumerate(self.job.items[index]['rows']):
+    tid='task'+str(index*20+n);prompt,completion=(2048,128) if index<4 else (128,32)
+    row={'id':tid,'custom_id':r['custom_id'],'error':None,'response':{'status_code':200,'request_id':tid,'body':{'model':U0.MODEL,'usage':{'prompt_tokens':prompt,'completion_tokens':completion,'total_tokens':prompt+completion},'choices':[{'message':{'content':'SYNTHETIC_PRIVATE_OUTPUT'}}]}}}
+    if self.mode=='wrong_output_usage':row['response']['body']['usage']['prompt_tokens']=1
+    records.append(row)
+   return httpx.Response(200,content=b''.join(U0.encoded(r) for r in records))
+  raise AssertionError('UNEXPECTED FAKE HTTP PATH')
+ def prepare(self):self.plan=self.job.prepare();return self.plan['prepared_sha256']
+ def journal(self):return U0.load((self.job.run/'journal.json').read_bytes())
+ def test_full8_preuploads_then_exact8_fixed_creates_and160_private_outputs_once(self):
+  expected=self.prepare();self.assertFalse(self.calls);self.assertFalse((self.job.run/'execution-marker.json').exists())
+  result=self.job.execute(expected);self.assertEqual(result['phase'],'complete');self.assertTrue(result['integrity_passed'])
+  self.assertEqual(self.calls[:8],[('POST','/v1/files')]*8);self.assertEqual(sum(m=='POST' for m,p in self.calls),16)
+  report=U0.load((self.job.run/'report.json').read_bytes());self.assertEqual(report['strict_later_claim_visibility'],'inconclusive_no_same_claim_candidate_audit')
+  self.assertEqual(len(report['final']['tasks']),160);self.assertEqual(len(report['output_proofs']),8);self.assertFalse(report['arrival_protocol_valid']) # Deliberately coarse synthetic clock; never fabricated valid.
+  self.assertNotIn('SYNTHETIC_AUTH_SECRET',str(report));self.assertNotIn('SYNTHETIC_PRIVATE_OUTPUT',str(report));self.assertNotIn('SYNTHETIC_PRIVATE_DSN',str(report))
+  for i in range(8):self.assertEqual((self.job.run/f'output-{i}.jsonl').stat().st_mode&0o777,0o600)
+  before=len(self.calls)
+  with self.assertRaises(U0.Refusal):self.makejob().execute(expected)
+  self.assertEqual(len(self.calls),before)
+ def test_unknown_upload_keeps_intent_and_never_creates_or_replays(self):
+  expected=self.prepare();self.mode='unknown_upload'
+  with self.assertRaises(httpx.ReadTimeout):self.job.execute(expected)
+  j=self.journal();self.assertEqual(j['phase'],'manual_recovery_required');self.assertIn('upload:0',j['pending_actions']);self.assertEqual(self.calls,[('POST','/v1/files')]);self.assertNotIn('SECRET',str(j))
+  with self.assertRaises(U0.Refusal):self.makejob().execute(expected)
+  self.assertEqual(len(self.calls),1)
+ def test_unknown_create_stops_unsent_timers_no_resubmit(self):
+  expected=self.prepare();self.mode='unknown_create'
+  with self.assertRaises(U0.Refusal):self.job.execute(expected)
+  self.assertEqual(self.calls[:8],[('POST','/v1/files')]*8);self.assertEqual(self.calls[8:],[('POST','/v1/batches')]);j=self.journal();self.assertIn('create:0',j['pending_actions']);self.assertEqual(j['phase'],'manual_recovery_required')
+ def test_wrong_ack_and_worker_refuse(self):
+  expected=self.prepare();self.mode='wrong_ack'
+  with self.assertRaises(U0.Refusal):self.job.execute(expected)
+  self.assertEqual(self.calls[8:],[('POST','/v1/batches')]);self.assertIn('create:0',self.journal()['pending_actions'])
+ def test_wrong_actual_worker_refuses_before_output_collection(self):
+  expected=self.prepare();self.mode='wrong_worker'
+  with self.assertRaisesRegex(U0.Refusal,'unexpected_execution_worker'):self.job.execute(expected)
+  self.assertFalse(any(p.endswith('/content') for m,p in self.calls))
+ def test_source_env_or_pid_binding_drift_refuses_before_marker_or_http(self):
+  expected=self.prepare();self.binding['processes']['worker']['pid']+=1
+  with self.assertRaisesRegex(U0.Refusal,'drift'):self.job.execute(expected)
+  self.assertFalse(self.calls);self.assertFalse((self.job.run/'execution-marker.json').exists())
+ def test_private_input_drift_refuses_before_marker(self):
+  expected=self.prepare();p=self.job.run/'input-0.jsonl';p.write_bytes(p.read_bytes()+b' ')
+  with self.assertRaisesRegex(U0.Refusal,'input_drift'):self.job.execute(expected)
+  self.assertFalse(self.calls);self.assertFalse((self.job.run/'execution-marker.json').exists())
+ def test_intent_fsync_failure_prevents_upload(self):
+  expected=self.prepare();original=self.U.write
+  def fail(path,value,**kwargs):
+   if path.name=='journal.json' and 'upload:0' in value.get('pending_actions',{}):raise OSError('SYNTHETIC_AUTH_SECRET')
+   return original(path,value,**kwargs)
+  self.U.write=fail
+  with self.assertRaises(OSError):self.job.execute(expected)
+  self.assertFalse(self.calls);self.assertEqual(self.journal()['phase'],'manual_recovery_required')
+ def test_confirmation_fsync_failure_keeps_upload_intent_no_followon(self):
+  expected=self.prepare();original=self.U.write;failed=False
+  def fail(path,value,**kwargs):
+   nonlocal failed
+   if not failed and path.name=='journal.json' and any(v['action']=='upload:0' for v in value.get('events',[])):
+    failed=True;raise OSError('SYNTHETIC_AUTH_SECRET')
+   return original(path,value,**kwargs)
+  self.U.write=fail
+  with self.assertRaises(OSError):self.job.execute(expected)
+  self.assertEqual(len(self.calls),1);self.assertIn('upload:0',self.journal()['pending_actions']);self.assertNotIn('SECRET',str(self.journal()))
+ def test_bad_prepared_sha_refuses_and_no_marker(self):
+  self.prepare()
+  with self.assertRaisesRegex(U0.Refusal,'exact_prepared'):self.job.execute('0'*64)
+  self.assertFalse(self.calls);self.assertFalse((self.job.run/'execution-marker.json').exists())
+ def test_byte_bounded_http_and_no_redirect_or_proxy(self):
+  expected=self.prepare()
+  async def too_big(request):return httpx.Response(200,content=b'X'*65537)
+  self.job.client_factory=lambda **kwargs:httpx.AsyncClient(**kwargs,transport=httpx.MockTransport(too_big))
+  with self.assertRaisesRegex(U0.Refusal,'byte_ceiling'):self.job.execute(expected)
+  self.assertIn('upload:0',self.journal()['pending_actions'])
+
+ def test_wrong_uploaded_blob_sha_never_creates_or_uploads_second_file(self):
+  expected=self.prepare();self.mode='wrong_input_sha'
+  with self.assertRaisesRegex(U0.Refusal,'input_provenance'):self.job.execute(expected)
+  self.assertEqual(self.calls,[('POST','/v1/files')]);self.assertIn('upload:0',self.journal()['pending_actions'])
+ def test_output_validation_is_real_helper_and_wrong_usage_never_publishes_success(self):
+  expected=self.prepare();self.mode='wrong_output_usage'
+  with self.assertRaises(E0.Refusal):self.job.execute(expected)
+  self.assertFalse((self.job.run/'report.json').exists());self.assertEqual(self.journal()['phase'],'manual_recovery_required')
+ def test_timed_fast_guard_rechecks_actual_sources_before_create_without_roundtrip_delay(self):
+  expected=self.prepare();self.job.context.static=lambda:{'source_sha256':'SYNTHETIC_DRIFT'}
+  with self.assertRaises(U0.Refusal):self.job.execute(expected)
+  self.assertEqual(self.calls,[('POST','/v1/files')]*8);self.assertFalse(self.journal()['batches'])
+
+class Pure(unittest.TestCase):
+ def test_actual_offsets_and_unique_cloned_fixture_work(self):
+  c=Context(SimpleNamespace(operation='worker-fault100-v1'));items=M['workload'](U0,c.rows,OP)
+  self.assertEqual([i['offset'] for i in items],[0,.1,.2,.3,2,2.1,2.2,2.3]);self.assertEqual(len({r['custom_id'] for i in items for r in i['rows']}),160)
+  self.assertTrue(all(i['rows'][n]['body']['min_tokens']==i['rows'][n]['body']['max_tokens'] for i in items for n in range(20)))
+  self.assertTrue(all(i['rows'][0]['body']['messages']==c.rows[0 if i['class_label']=='L' else 1]['body']['messages'] for i in items))
+  self.assertTrue(all('min_tokens' not in r['body'] for r in c.rows))
+ def test_removed_cell_or_wrong_output_cap_refuses(self):
+  c=Context(SimpleNamespace(operation='worker-fault100-v1'))
+  with self.assertRaises(U0.Refusal):M['workload'](U0,c.rows[:1],OP)
+  c.rows[0]['body']['max_tokens']=32
+  with self.assertRaises(U0.Refusal):M['workload'](U0,c.rows,OP)
+ def test_wrong_host_main_cannot_initialize_or_send(self):self.assertEqual(M['main'](['--operation',OP]),1)
+
+if __name__=='__main__':unittest.main()
+
+class Capacity(unittest.TestCase):
+ def setUp(self):
+  self.items=[{'bytes':100,'rows':[{'body':{'SYNTHETIC':'payload'}} for _ in range(20)]} for i in range(8)]
+  resources={'input_files':16777216,'upload_reservations':8192,'idempotency':65536,'blob_generations':8192,'archive_runs':8192,'archive_chunks':8192,'input_read_leases':4096,'result_read_leases':4096}
+  self.state={'limits':{'max_retained_tasks':50000,'max_payload_bytes':335544320},'auxiliary':[{'resource':k,'max_rows':10000,'max_bytes':268435456 if k=='idempotency' else 0,'max_row_bytes':v} for k,v in resources.items()]}
+  self.usage={'retained_tasks':1000,'charged_payload_bytes':1000,'actual_tasks':1000,'actual_payload':1000};self.blob={'stored_bytes':0,'reserved_bytes':0,'held_tasks':0};self.archive={'stored_bytes':0,'reserved_bytes':0}
+  outer=self
+  class SQL:
+   def execute(self,q,args=None):
+    if 'jsonb_array_elements' in q:return Result({'n':1000})
+    if 'FROM tenant_retention_usage' in q:return Result(dict(outer.usage))
+    if 'FROM tenant_blob_usage' in q:return Result(dict(outer.blob))
+    if 'FROM tenant_result_usage' in q:return Result(dict(outer.archive))
+    if 'FROM tenant_auxiliary_usage' in q:return Result([{'resource':r['resource'],'rows':0,'bytes':0} for r in outer.state['auxiliary']])
+    raise AssertionError('unexpected preflight SQL')
+  self.context=SimpleNamespace(conn=SQL(),api_env={})
+ def test_exact_reservation_plus160_and_all8_auxiliary_resources(self):
+  r=M['capacity'](self.context,U0,self.items,self.state);self.assertEqual(r['required_payload_bytes'],1000+160*(65536+4*32768));self.assertEqual(r['input_bytes'],800)
+ def test_accounting_mismatch_refuses_before_headroom_claim(self):
+  self.usage['actual_payload']=999
+  with self.assertRaisesRegex(U0.Refusal,'counter_invariant'):M['capacity'](self.context,U0,self.items,self.state)
+ def test_each_finite_limit_refuses_without_relaxation(self):
+  for kind in ('task','payload','input','archive','queue','auxiliary'):
+   with self.subTest(kind=kind):
+    state=copy.deepcopy(self.state);self.blob.update(stored_bytes=0,held_tasks=0);self.archive['stored_bytes']=0
+    if kind=='task':state['limits']['max_retained_tasks']=1159
+    elif kind=='payload':state['limits']['max_payload_bytes']=1001
+    elif kind=='input':self.blob['stored_bytes']=268435000
+    elif kind=='archive':self.archive['stored_bytes']=1073741823
+    elif kind=='queue':self.blob['held_tasks']=99900
+    else:state['auxiliary'][0]['max_rows']=7
+    with self.assertRaises(U0.Refusal):M['capacity'](self.context,U0,self.items,state)
+
+class ActualBinding(unittest.TestCase):
+ setUp=Flow.setUp;tearDown=Flow.tearDown;makejob=Flow.makejob;final=Flow.final;transport=Flow.transport
+ # Inherits lifecycle cases too; these methods additionally exercise real private
+ # config parsing/normalization and original managed eager argv hash checks.
+ def setup_actual_binding(self):
+  from ops import manage
+  self.job.binding_now=M['Job'].binding_now.__get__(self.job,M['Job']);c=self.job.context
+  controls={'DATABASE_URL':c.bench_env['DATABASE_URL'],'MODEL_NAME':U0.MODEL,'SCHEDULER_POLICY':'fair','BLOB_STORAGE_BACKEND':'s3'}
+  controls.update({k:'1' for k in ('SQL_CLAIM_ENABLED','SQL_COMPLETION_ENABLED','SQL_RECOVERY_ENABLED','RETENTION_ADMISSION_ENABLED','RESULT_READERS_ENABLED','RESULT_ARCHIVE_ENABLED')})
+  self.config={};c.services=[]
+  for name in ('a','b'):
+   p=self.root/(name+'.env');self.config[p]=dict(controls);c.services.append({'role':'api','name':name,'env_file':str(p)})
+  self.enginepath=self.root/'engine.env';self.config[self.enginepath]={'MODEL_NAME':U0.MODEL,'ENGINE_ENFORCE_EAGER':'1','ENGINE_ENABLE_PREFIX_CACHING':'0','ENGINE_TENSOR_PARALLEL_SIZE':'4','ENGINE_MAX_NUM_SEQS':'64'}
+  c.engine={'role':'engine','name':'qwen235b','port':8300,'gpu':'0,1,2,3','python':'/SYNTHETIC/python','env_file':str(self.enginepath)}
+  c.worker_env.update(WORKER_TOKEN_BUDGET='298384');c.profile['runtime_fingerprint']=M['ORIGINAL_FP'];self.write_config()
+  c.static=lambda:{'source_sha256':{'known.py':'a'*64},'configuration_sha256':{str(p):U0.sha(p.read_bytes()) for p in self.config},'scheduling_profile':copy.deepcopy(c.profile),'migration_checksums':{'11':'a'*64}}
+  self.badargv=False
+  def processes():
+   argv=manage.command(SimpleNamespace(role='engine',port=8300,gpu='0,1,2,3',python='/SYNTHETIC/python'),U0.env_values(self.enginepath.read_bytes()))
+   return {'engine-qwen235b':{'pid':123,'start_ticks':'6','argv_sha256':'0'*64 if self.badargv else U0.sha(b'\0'.join(v.encode() for v in argv)+b'\0')},'worker-qwen235b':{'pid':124,'start_ticks':'7'}}
+  c.processes=processes
+  self.dbpatch=patch.dict(G,database_state=lambda *a:copy.deepcopy(self.binding['database']));self.dbpatch.start();self.addCleanup(self.dbpatch.stop)
+ def write_config(self):
+  import shlex
+  for p,values in self.config.items():p.write_text(''.join(k+'='+shlex.quote(v)+'\n' for k,v in values.items()));p.chmod(0o600)
+ def test_real_private_binding_rejects_graph_profile_or_actual_wrong_argv(self):
+  self.setup_actual_binding();r=self.job.binding_now();self.assertEqual(r['processes']['engine-qwen235b']['pid'],123)
+  self.badargv=True
+  with self.assertRaisesRegex(U0.Refusal,'actual_original_eager_argv'):self.job.binding_now()
+  self.badargv=False;self.job.context.profile['runtime_fingerprint']='sha256:'+'f'*64
+  with self.assertRaisesRegex(U0.Refusal,'original_eager'):self.job.binding_now()
+  self.job.context.profile['runtime_fingerprint']=M['ORIGINAL_FP'];self.config[self.enginepath].update(ENGINE_ENFORCE_EAGER='0',ENGINE_COMPILATION_CONFIG=json.dumps({'level':0,'cudagraph_mode':'FULL_DECODE_ONLY','cudagraph_capture_sizes':[1,64]}));self.write_config()
+  with self.assertRaisesRegex(U0.Refusal,'original_eager'):self.job.binding_now()
+ def test_cost_requires_completed_externally_bound_fair_with_only_policy_changed(self):
+  self.setup_actual_binding();fair=self.job.binding_now();p=self.root/'.runtime/policy-cohorts/qwen235b-policy-fair160-v1';p.mkdir(mode=0o700,parents=True)
+  report={'operation':OP,'policy':'fair','integrity_passed':True,'arrival_protocol_valid':True,'pair_controls':fair['pair_controls']};U0.write(p/'report.json',report)
+  digest=U0.sha((p/'report.json').read_bytes());U0.write(p/'journal.json',{'phase':'complete','pending_actions':{},'report_sha256':digest})
+  self.job.args.operation='qwen235b-policy-cost160-v1';self.job.args.baseline_sha256=digest
+  for path in self.config:
+   if path!=self.enginepath:self.config[path]['SCHEDULER_POLICY']='cost_aware'
+  self.write_config();cost=self.job.binding_now();self.assertEqual(cost['pair_controls'],fair['pair_controls']);self.assertEqual(cost['reference']['report_sha256'],digest)
+  self.config[self.root/'b.env']['UNCHANGED_AUTH_CONTROL']='CHANGED';self.write_config()
+  with self.assertRaisesRegex(U0.Refusal,'reference_controls'):self.job.binding_now()
+  del self.config[self.root/'b.env']['UNCHANGED_AUTH_CONTROL'];self.write_config();self.job.binding_now()
+  (self.root/'.runtime/qwen235b_policy_evidence.py').write_bytes(b'# SYNTHETIC_HELPER_CHANGED\n')
+  with self.assertRaisesRegex(U0.Refusal,'reference_controls'):self.job.binding_now()
+ def test_wrong_api_b_policy_and_admission_caps_refuse(self):
+  self.setup_actual_binding();self.config[self.root/'b.env']['SCHEDULER_POLICY']='cost_aware';self.write_config()
+  with self.assertRaisesRegex(U0.Refusal,'matching_selected_policy'):self.job.binding_now()
+  self.config[self.root/'b.env']['SCHEDULER_POLICY']='fair';self.config[self.root/'b.env']['MAX_ARCHIVED_BYTES_PER_TENANT']='1024';self.write_config()
+  with self.assertRaisesRegex(U0.Refusal,'replica_admission'):self.job.binding_now()

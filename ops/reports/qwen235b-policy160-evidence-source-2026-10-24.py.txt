@@ -1,0 +1,191 @@
+"""Read-only sampled v6 scheduling evidence; attribution is always inconclusive.
+
+No inference/HTTP/process operations. SQL never selects attempt tokens, request
+bodies, responses or errors. RC observations are statement snapshots, not proof
+of a later claim's visibility/locks or durable COMMIT timestamps.
+"""
+from __future__ import annotations
+from datetime import datetime,timezone
+import hashlib,json,math,re,time
+from backend.scheduling import validate_profile
+from scripts.benchmark import content_breakdown
+
+OPS={'qwen235b-policy-fair160-v1':'fair','qwen235b-policy-cost160-v1':'cost_aware'}
+SHAPES={'L':(2048,128),'S':(128,32)}
+DECISION_KEYS=('policy','profile_id','runtime_fingerprint','estimate_source','estimated_input_tokens','estimated_output_tokens',
+ 'prefill_tokens_per_second','decode_tokens_per_second','hourly_cost_usd','predicted_prefill_seconds','predicted_decode_seconds',
+ 'predicted_service_seconds','predicted_cost_usd','calibration_label','cost_source','runtime_compatibility_scope','aging_seconds','selected_at')
+class Refusal(ValueError):pass
+def require(ok,code):
+ if not ok:raise Refusal(code)
+def stamp():return datetime.now(timezone.utc).isoformat()
+def member(custom_id,operation):
+ match=re.fullmatch(re.escape(operation)+r'-([LS])([0-3])-([0-1][0-9])',custom_id or '')
+ return (match[1],int(match[2])+(4 if match[1]=='S' else 0),int(match[3])) if match else None
+def expected_population(expected,operation):
+ require(operation in OPS and isinstance(expected,dict),'exact_operation_and_expected_map_required')
+ canonical={f'{operation}-{kind}{batch}-{row:02d}':kind for kind in SHAPES for batch in range(4) for row in range(20)}
+ require(expected==canonical,'exact_160_custom_id_population_required')
+def numeric(value):return type(value) in (int,float) and math.isfinite(value)
+def equal_number(value,expected):return numeric(value) and math.isclose(value,expected,rel_tol=1e-9,abs_tol=1e-12)
+def statement(conn,sql,params):
+ require(conn.autocommit is True,'autocommit_connection_required')
+ before=stamp();clock=time.monotonic()
+ with conn.transaction():
+  conn.execute('SET TRANSACTION ISOLATION LEVEL READ COMMITTED READ ONLY')
+  require(conn.execute('SHOW transaction_read_only').fetchone()['transaction_read_only']=='on','readonly_transaction_required')
+  db_before=conn.execute('SELECT clock_timestamp() AS db_clock').fetchone()['db_clock']
+  row=conn.execute(sql,params).fetchone()
+  db_after=conn.execute('SELECT clock_timestamp() AS db_clock').fetchone()['db_clock']
+  observed=datetime.fromisoformat(row['evidence']['db_observed_at']);require(db_before<=observed<=db_after,'database_clock_bracket_invalid')
+ return row['evidence'],{'client_before_utc':before,'client_after_utc':stamp(),'client_bracket_seconds':time.monotonic()-clock,
+  'db_before_utc':db_before.isoformat(),'db_after_utc':db_after.isoformat(),
+  'transaction_mode':'READ COMMITTED READ ONLY; one data SELECT; no row locks'}
+
+OBSERVE_SQL="""
+WITH p AS MATERIALIZED(SELECT clock_timestamp() AS at,statement_timestamp() AS statement_at,
+ %s::text AS operation,%s::text[] AS batch_ids,%s::text AS worker_id,%s::text AS model,%s::text AS fp,
+ %s::float8 AS prefill,%s::float8 AS decode,%s::float8 AS hourly,%s::boolean AS cost_aware,%s::text AS pattern),
+ cohort AS MATERIALIZED(SELECT b.* FROM batches b,p WHERE b.metadata->>'benchmark_run'=p.operation
+ AND (p.batch_ids IS NULL OR b.id=ANY(p.batch_ids))),
+ candidates AS MATERIALIZED(
+ SELECT t.id,t.batch_id,CASE WHEN b.metadata->>'benchmark_run'=p.operation AND t.custom_id~p.pattern THEN t.custom_id END AS custom_id,
+ t.ready_at,t.created_at,b.expires_at,t.estimated_input_tokens,t.estimated_output_tokens,t.estimate_source,
+ CASE WHEN t.estimated_input_tokens>0 AND t.estimated_output_tokens>0 THEN
+ t.estimated_input_tokens/p.prefill+t.estimated_output_tokens/p.decode END AS service_seconds
+ FROM tasks t JOIN batches b ON b.id=t.batch_id CROSS JOIN p
+ WHERE t.tenant_id='default' AND t.model=p.model AND t.status='pending' AND t.ready_at<=p.at
+ AND b.status='in_progress' AND b.expires_at>p.at AND (b.runtime_fingerprint IS NULL OR b.runtime_fingerprint=p.fp)
+ AND (t.runtime_fingerprint IS NULL OR t.runtime_fingerprint=p.fp)
+ AND (NOT p.cost_aware OR (t.estimated_input_tokens>0 AND t.estimated_output_tokens>0))
+ ORDER BY t.ready_at,t.id LIMIT 64),
+ worker AS(SELECT w.id,w.model,w.concurrency,w.runtime_fingerprint,w.scheduler_profile_id,
+ w.prefill_tokens_per_second,w.decode_tokens_per_second,w.hourly_cost_usd,w.metadata->'scheduling_profile' AS profile,
+ w.last_seen_at,w.metadata->'ready_engine_count' AS ready_engine_count,
+ (SELECT count(*) FROM tasks t,p WHERE t.worker_id=w.id AND t.status='running' AND t.lease_expires_at>p.at) AS active_valid_leases,
+ (SELECT count(*) FROM tasks t WHERE t.worker_id=w.id AND t.status='running') AS active_rows FROM workers w,p WHERE w.id=p.worker_id),
+ peers AS(SELECT w.id,w.concurrency,w.prefill_tokens_per_second,w.decode_tokens_per_second,w.hourly_cost_usd,
+ (SELECT count(*) FROM tasks t,p WHERE t.worker_id=w.id AND t.status='running' AND t.lease_expires_at>p.at) AS active_valid_leases
+ FROM workers w,p WHERE w.id<>p.worker_id AND w.model=p.model AND w.scheduler_profile_id IS NOT NULL AND w.runtime_fingerprint=p.fp
+ AND w.last_seen_at>p.at-interval '60 seconds' AND w.metadata->'ready_engine_count' IS DISTINCT FROM '0'::jsonb)
+SELECT jsonb_build_object('db_observed_at',p.at,'db_statement_started_at',p.statement_at,'worker',(SELECT to_jsonb(w) FROM worker w),
+ 'fresh_compatible_peers',coalesce((SELECT jsonb_agg(to_jsonb(peer) ORDER BY peer.id) FROM peers peer),'[]'::jsonb),
+ 'candidates',coalesce((SELECT jsonb_agg(to_jsonb(c)||jsonb_build_object('cost_usd',c.service_seconds*p.hourly/3600,
+ 'aged',c.created_at<=p.at-interval '60 seconds','urgent',extract(epoch FROM c.expires_at-p.at)<=coalesce(c.service_seconds,0)*1.25+1)
+ ORDER BY c.ready_at,c.id) FROM candidates c),'[]'::jsonb),
+ 'counts',jsonb_build_object('selected_batches',(SELECT count(*) FROM cohort),'selected_tasks',(SELECT count(*) FROM tasks t JOIN cohort b ON t.batch_id=b.id),
+ 'operation_batches',(SELECT count(*) FROM batches b WHERE b.metadata->>'benchmark_run'=p.operation),
+ 'operation_tasks',(SELECT count(*) FROM tasks t JOIN batches b ON b.id=t.batch_id WHERE b.metadata->>'benchmark_run'=p.operation),
+ 'pending',(SELECT count(*) FROM tasks t JOIN cohort b ON b.id=t.batch_id WHERE t.status='pending'),
+ 'running',(SELECT count(*) FROM tasks t JOIN cohort b ON b.id=t.batch_id WHERE t.status='running'),
+ 'completed',(SELECT count(*) FROM tasks t JOIN cohort b ON b.id=t.batch_id WHERE t.status='completed'),
+ 'failed',(SELECT count(*) FROM tasks t JOIN cohort b ON b.id=t.batch_id WHERE t.status IN ('failed','cancelled')),
+ 'global_other_unfinished',(SELECT count(*) FROM tasks t JOIN batches b ON b.id=t.batch_id WHERE t.status IN ('pending','running') AND b.metadata->>'benchmark_run' IS DISTINCT FROM p.operation))) AS evidence FROM p
+"""
+
+def observe(conn,batch_ids_or_operation,worker_id,model,profile,operation):
+ profile=validate_profile(profile);require(operation in OPS,'unknown_operation')
+ batches=None if isinstance(batch_ids_or_operation,str) else list(batch_ids_or_operation)
+ require((batches is None and batch_ids_or_operation==operation) or (batches is not None and 1<=len(batches)<=8 and len(set(batches))==len(batches) and all(isinstance(x,str) and x for x in batches)),'exact_operation_or_batch_ids_required')
+ pattern='^'+re.escape(operation)+r'-[LS][0-3]-[0-1][0-9]$'
+ value,bracket=statement(conn,OBSERVE_SQL,(operation,batches,worker_id,model,profile['runtime_fingerprint'],profile['prefill_tokens_per_second'],profile['decode_tokens_per_second'],profile['hourly_cost_usd'],OPS[operation]=='cost_aware',pattern))
+ worker=value['worker'];require(worker and worker['model']==model and worker['profile']==profile and worker['runtime_fingerprint']==profile['runtime_fingerprint']
+  and worker['scheduler_profile_id']==profile['profile_id'] and all(equal_number(worker[k],profile[k]) for k in ('prefill_tokens_per_second','decode_tokens_per_second','hourly_cost_usd')),'sampled_worker_profile_differs')
+ for candidate in value['candidates']:
+  kind=member(candidate['custom_id'],operation);candidate['class']=kind[0] if kind else 'foreign'
+ groups={kind:[c['service_seconds'] for c in value['candidates'] if c['class']==kind and numeric(c['service_seconds'])] for kind in SHAPES}
+ fresh_seconds=(datetime.fromisoformat(value['db_observed_at'])-datetime.fromisoformat(worker['last_seen_at'])).total_seconds()
+ value['overlap']=bool(groups['L'] and groups['S'] and max(groups['S'])<min(groups['L']) and not value['fresh_compatible_peers']
+  and worker['concurrency']==64 and type(worker['ready_engine_count']) is int and worker['ready_engine_count']==1 and 0<=fresh_seconds<=60
+  and value['candidates'][0]['class']=='L'
+  and worker['active_valid_leases']<worker['concurrency'] and all(c['class']!='foreign' and not c['aged'] and not c['urgent'] for c in value['candidates']))
+ value.update(operation=operation,policy=OPS[operation],client_bracket=bracket,window_limit=64,aging_seconds=60,peer_freshness_seconds=60,
+  attribution='inconclusive',limitations=['Atomic RC sample only; no locks or later claim visibility proof','64 oldest tenant candidates, not global SJF or a selected-batch prediction','Already claimed work and worker FIFO KV admissions cannot be preempted','DB clocks precede COMMIT/HTTP acknowledgement; no durable-commit timestamp claim'])
+ return value
+
+FINAL_SQL="""
+WITH b AS MATERIALIZED(SELECT id,tenant_id,model,status,total_count,pending_count,running_count,completed_count,failed_count,cancelled_count,
+ prompt_tokens,completion_tokens,runtime_fingerprint,created_at,completed_at,metadata->>'engine_label' AS engine_label,
+ metadata->>'policy_class' AS policy_class,metadata->>'batch_index' AS batch_index FROM batches WHERE metadata->>'benchmark_run'=%s),
+ t AS MATERIALIZED(SELECT t.id,t.tenant_id,t.batch_id,t.custom_id,t.model,t.status,t.attempts,t.worker_id,t.runtime_fingerprint,
+ t.estimated_input_tokens,t.estimated_output_tokens,t.estimate_source,t.prompt_tokens,t.completion_tokens,t.created_at,t.finished_at,
+ extract(epoch FROM t.finished_at-b.created_at)::float8 AS db_created_to_finish_seconds
+ FROM tasks t JOIN b ON b.id=t.batch_id),
+ a AS MATERIALIZED(SELECT a.task_id,a.tenant_id,a.batch_id,a.worker_id,a.number,a.status,a.prompt_tokens,a.completion_tokens,
+ a.started_at AS claim_transaction_started_at,a.finished_at AS completion_update_at,
+ extract(epoch FROM a.finished_at-a.started_at)::float8 AS observed_attempt_seconds,
+ (SELECT jsonb_object_agg(k,a.scheduling_decision->k) FROM unnest(%s::text[]) AS k) AS scheduling_decision FROM attempts a JOIN b ON b.id=a.batch_id)
+SELECT jsonb_build_object('db_observed_at',clock_timestamp(),'batches',coalesce((SELECT jsonb_agg(to_jsonb(b) ORDER BY id) FROM b),'[]'::jsonb),
+ 'tasks',coalesce((SELECT jsonb_agg(to_jsonb(t) ORDER BY custom_id) FROM t),'[]'::jsonb),
+ 'attempt_decisions',coalesce((SELECT jsonb_agg(to_jsonb(a) ORDER BY task_id,number) FROM a),'[]'::jsonb),
+ 'global_other_unfinished',(SELECT count(*) FROM tasks x JOIN batches y ON y.id=x.batch_id WHERE x.status IN ('pending','running') AND y.metadata->>'benchmark_run' IS DISTINCT FROM %s)) AS evidence
+"""
+
+def final_rows(conn,operation,expected_custom_ids,model,policy,profile):
+ expected_population(expected_custom_ids,operation);require(policy==OPS[operation],'policy_operation_differs');profile=validate_profile(profile)
+ value,bracket=statement(conn,FINAL_SQL,(operation,list(DECISION_KEYS),operation));tasks=value['tasks'];batches=value['batches'];attempts=value['attempt_decisions']
+ require(len(tasks)==160 and len({r['id'] for r in tasks})==160 and {r['custom_id'] for r in tasks}==set(expected_custom_ids) and len(batches)==8 and len({b['id'] for b in batches})==8,'final_exact_population_differs')
+ require(value['global_other_unfinished']==0 and len(attempts)==160,'final_other_work_or_attempt_count_differs')
+ by_batch={b['id']:b for b in batches};by_task={t['id']:t for t in tasks};seen=set();fp=profile['runtime_fingerprint']
+ for task in tasks:
+  kind,index,_=member(task['custom_id'],operation);batch=by_batch[task['batch_id']]
+  require(task['tenant_id']=='default' and task['status']=='completed' and task['attempts']==1 and task['model']==model and task['runtime_fingerprint']==fp
+   and (task['prompt_tokens'],task['completion_tokens'])==SHAPES[kind] and task['finished_at'] is not None
+   and task['estimated_input_tokens']>0 and task['estimated_output_tokens']==SHAPES[kind][1]
+   and task['estimate_source'] in {'utf8_json_bytes_div4_and_output_cap_v1','postgres_jsonb_utf8_bytes_div4_and_output_cap_v1'}
+   and batch['batch_index']==str(index) and batch['policy_class']==kind,'final_task_shape_runtime_or_retry_differs')
+ for attempt in attempts:
+  task=by_task.get(attempt['task_id']);require(task and attempt['tenant_id']=='default' and attempt['task_id'] not in seen and attempt['number']==1 and attempt['status']=='completed'
+   and attempt['batch_id']==task['batch_id'] and attempt['worker_id']==task['worker_id'] and attempt['prompt_tokens']==task['prompt_tokens']
+   and attempt['completion_tokens']==task['completion_tokens'] and attempt['claim_transaction_started_at'] and attempt['completion_update_at']
+   and numeric(attempt['observed_attempt_seconds']) and attempt['observed_attempt_seconds']>=0,'one_total_and_accepted_attempt_required');seen.add(attempt['task_id'])
+  d=attempt['scheduling_decision'];prefill=task['estimated_input_tokens']/profile['prefill_tokens_per_second'];decode=task['estimated_output_tokens']/profile['decode_tokens_per_second']
+  require(isinstance(d['selected_at'],str) and datetime.fromisoformat(d['selected_at']).utcoffset() is not None,'decision_selection_timestamp_invalid')
+  require(d['policy']==policy and d['profile_id']==profile['profile_id'] and d['runtime_fingerprint']==fp and d['aging_seconds']==60
+   and d['estimate_source']==task['estimate_source'] and d['estimated_input_tokens']==task['estimated_input_tokens'] and d['estimated_output_tokens']==task['estimated_output_tokens']
+   and d['runtime_compatibility_scope']=='first_dispatch' and all(d[k]==profile[k] for k in ('calibration_label','cost_source'))
+   and all(equal_number(d[k],profile[k]) for k in ('prefill_tokens_per_second','decode_tokens_per_second','hourly_cost_usd'))
+   and all(equal_number(d[k],v) for k,v in [('predicted_prefill_seconds',prefill),('predicted_decode_seconds',decode),('predicted_service_seconds',prefill+decode),('predicted_cost_usd',(prefill+decode)*profile['hourly_cost_usd']/3600)]),'decision_profile_policy_or_prediction_differs')
+ for batch in batches:
+  members=[t for t in tasks if t['batch_id']==batch['id']]
+  require(batch['tenant_id']=='default' and batch['model']==model and batch['runtime_fingerprint']==fp and batch['engine_label']==operation
+   and batch['status']=='completed' and batch['total_count']==batch['completed_count']==len(members)==20
+   and batch['pending_count']==batch['running_count']==batch['failed_count']==batch['cancelled_count']==0
+   and batch['prompt_tokens']==sum(t['prompt_tokens'] for t in members) and batch['completion_tokens']==sum(t['completion_tokens'] for t in members),'batch_task_accepted_usage_differs')
+ worker_ids=sorted({t['worker_id'] for t in tasks});require(len(worker_ids)==1 and worker_ids[0],'exact_single_accepted_worker_required')
+ value.update(operation=operation,policy=policy,profile=profile,worker_ids=worker_ids,client_bracket=bracket,attribution='inconclusive',
+  completed=160,accepted_once=True,no_retries=True,usage_matches=True,prompt_tokens=sum(t['prompt_tokens'] for t in tasks),completion_tokens=sum(t['completion_tokens'] for t in tasks),
+  timestamp_semantics='claim transaction start / completion SQL update, not durable COMMIT or GPU start')
+ return value
+
+def strict_json(raw):
+ def unique(pairs):
+  result={}
+  for key,value in pairs:require(key not in result,'duplicate_output_json_key');result[key]=value
+  return result
+ def invalid(_):raise Refusal('nonfinite_output_json')
+ value=json.loads(raw.decode('utf-8'),object_pairs_hook=unique,parse_constant=invalid)
+ def finite(item):
+  if isinstance(item,float):require(math.isfinite(item),'nonfinite_output_json')
+  elif isinstance(item,dict):
+   for child in item.values():finite(child)
+  elif isinstance(item,list):
+   for child in item:finite(child)
+ finite(value);return value
+def validate_output(raw,expected_custom_ids_to_class,sql_rows,model):
+ require(type(raw) is bytes and 0<len(raw)<=16*1024**2 and raw.endswith(b'\n'),'bounded_complete_output_required')
+ expected=expected_custom_ids_to_class;require(isinstance(expected,dict) and len(expected)==20 and set(expected.values())<={'L','S'},'twenty_expected_ids_required')
+ members=[(op,member(key,op),kind) for key,kind in expected.items() for op in OPS if member(key,op)]
+ require(len(members)==20 and len({(op,m[0],m[1]) for op,m,_ in members})==1 and all(m[0]==kind for _,m,kind in members) and {m[2] for _,m,_ in members}==set(range(20)),'exact_single_batch_custom_ids_required')
+ rows=sql_rows['tasks'] if isinstance(sql_rows,dict) else sql_rows;lookup={r['custom_id']:r for r in rows};require(len(lookup)==len(rows) and set(expected)<=set(lookup),'sql_population_differs')
+ lines=raw.splitlines();require(len(lines)==20 and all(line.strip() for line in lines),'twenty_output_lines_required');seen=set();prompt=completion=0
+ for line in lines:
+  row=strict_json(line);custom=row.get('custom_id');require(custom in expected and custom not in seen and row.get('error') is None,'unknown_duplicate_or_error_output');seen.add(custom)
+  task=lookup[custom];reply=row.get('response');require(isinstance(reply,dict) and type(reply.get('status_code')) is int and reply['status_code']==200 and reply.get('request_id')==task['id'] and row.get('id')==task['id'],'output_task_or_status_differs')
+  body=reply.get('body');require(isinstance(body,dict) and body.get('model')==model and not body.get('batchforge_test_only') and body.get('error') is None,'real_model_output_required')
+  usage=body.get('usage',{});require(all(type(usage.get(k)) is int and usage[k]>0 for k in ('prompt_tokens','completion_tokens','total_tokens'))
+   and usage['total_tokens']==usage['prompt_tokens']+usage['completion_tokens'] and (usage['prompt_tokens'],usage['completion_tokens'])==(task['prompt_tokens'],task['completion_tokens'])==SHAPES[expected[custom]],'output_sql_usage_differs')
+  require(isinstance(body.get('choices'),list) and len(body['choices'])==1 and content_breakdown(body)['final_text_present']==1,'nonempty_final_text_required');prompt+=usage['prompt_tokens'];completion+=usage['completion_tokens']
+ require(seen==set(expected),'missing_output_ids')
+ return {'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw),'count':20,'prompt_tokens':prompt,'completion_tokens':completion,
+  'class_counts':{kind:sum(v==kind for v in expected.values()) for kind in SHAPES},'raw_text_exported':False,'usage_matches_sql':True}

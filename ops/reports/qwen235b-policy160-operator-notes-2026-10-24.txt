@@ -1,0 +1,87 @@
+LOCAL OPERATOR PREPARATION ONLY. None of these commands has been executed here.
+The earlier policy160 protocol/plan are the design record. The following are now
+actual runnable, reviewed private tools; they do not switch policy or services.
+
+Frozen sources (copy only after root approves, never during another timed cohort):
+.runtime/run_qwen235b_policy_cohort.py
+  a7da1c04c66b9db6d0e5aeaf9d9ac67b1ab9b185abbf800ad9324e536b4c3a23
+.runtime/test_run_qwen235b_policy_cohort.py
+  485b057315d9db2dadd2d5cfeea4260b66db4de32ae6564a45d123231f604cda
+.runtime/qwen235b_policy_evidence.py
+  023936c69afec87c390aa9515e4e26b416e2ce9a0ab7c75e58221ae4048444ed
+.runtime/test_qwen235b_policy_evidence.py
+  296c73328be7bea4d2e011dbbee776cded283ea93aeb924cfa2d5ba11d92c646
+Sender hardpins fault35b8b852… and evidence023936…. It reuses only Context's
+read-only checks and private I/O helpers; no fault/service method or subprocess.
+Root's separate policy-roll helper remains dc190d757a292069c4c777f93e476a367b039084a9392b53e20ab901294cb7b9.
+
+Local qualification completed: sender23 fake HTTP/FS/preflight/config tests;
+evidence11 tests in a NEW private Unix-only PG16.2 with all11 migrations and
+SELECT-only bf_runtime, stopped/removed. Main independently reviewed by sustained;
+evidence independently reviewed/tested by history_retirement. No production calls,
+SSH, serving source edits, GPU requests, or actual Linux role/PID tests by author.
+Root can run the two test files in a separately staged code-only Linux environment;
+do not confuse qualification with production inference or old693 source manifest.
+
+Preconditions: global drain, exact owned six services ready, original eager
+FP62fdcd18… and actual manage.command argv, fixed298384 KV/64claims/TP4/prefixOFF,
+52f84 original20-cell fixture, fresh source/activation proof separately held by root.
+Default history policy must remain disabled through collection. Existing finite
+retained/payload/input/archive/aux quotas are checked, never relaxed. Any remaining
+previous operation or unknown upload prevents reuse. No backfill/expiry/GC is done.
+
+Both160-task operations must fit one unchanged original-eager window. Worker,
+engine and gateway identities, complete profile/price/source/manifest/config must
+stay identical across the pair. Only API SCHEDULER_POLICY may differ; API/watchdog
+known roll PIDs may change. Do not put graph/eager/capacity/fault/reload between
+fair and cost. Do not run concurrently with a timed graph/QA/fault/other producer.
+
+At /root/batchforge-runtime/app use /root/batchforge-runtime/venv/bin/python -B.
+First root separately rolls both APIs to fair using dc190's prepare/once-apply
+protocol (or independently proves they are already fair; sender never changes it).
+
+  PY -B .runtime/run_qwen235b_policy_cohort.py --operation qwen235b-policy-fair160-v1
+Default prepare writes only private inputs/plan/journal; submits zero tasks. Inspect
+safe prepared output and take its exact prepared_sha256. Then once only:
+  PY -B .runtime/run_qwen235b_policy_cohort.py --operation qwen235b-policy-fair160-v1 --execute --prepared-sha256 EXACT_FAIR_PREPARED_SHA
+
+Require its journal phase complete, no pending actions, report integrity_passed;
+keep arrival_protocol_valid and sampled overlap flags honest. Obtain the exact
+SHA of .runtime/policy-cohorts/qwen235b-policy-fair160-v1/report.json.
+Root separately rolls only API policy to cost_aware with a NEW dc190 operation,
+then default prepare and once execute, using the same external fair report SHA:
+  PY -B .runtime/run_qwen235b_policy_cohort.py --operation qwen235b-policy-cost160-v1 --baseline-sha256 EXACT_FAIR_REPORT_SHA
+  PY -B .runtime/run_qwen235b_policy_cohort.py --operation qwen235b-policy-cost160-v1 --baseline-sha256 EXACT_FAIR_REPORT_SHA --execute --prepared-sha256 EXACT_COST_PREPARED_SHA
+Cost prepare reads only the FIXED completed fair directory, requires external
+report SHA + journal report link, and compares all normalized nonpolicy controls plus BOTH sender/evidence source SHAs.
+Changing controls, reference bytes or source/PID/config refuses without writes.
+No third operation, adaptive timing, extra workload or retry is permitted here.
+
+Each operation:8 preuploads then8 fixed creates at [0,.1,.2,.3,2,2.1,2.2,2.3]s,
+160tasks,174080 input/12800 output tokens. All POSTs have durable intents; any
+uncertain/error result stops unsent timers, preserves known/pending state, no
+re-POST/new key/automatic cleanup. Already-sent requests may complete. Unknown
+outcome, signal or fsync failure requires read-only manual reconciliation, never
+re-running --execute or deleting/renaming the operation directory to bypass it.
+Complete outputs must match actual SQL usage, exact input SHA/file links,160single
+accepted AND single total attempts, zero failed/cancelled/retry, policy/profile.
+
+Read-only observer is a separate bounded thread (<=120 samples/60s) so it does
+not issue inference or add Neon readiness trips in the0.1s send timer. Every POST
+still rehashes full source/config and actual owned process/env/argv and all inputs;
+full SQL schema/key/quotas/protected-other totals/readiness gates bracket phases.
+Counters and policy identity are verified, no owner connection is loaded.
+A sampled overlap proves only that RC statement's eligible task-state coexistence;
+it does not prove queue/batch/task lock availability or later claim visibility.
+Strict claim-level counterfactual attribution stays inconclusive. Late sends or
+L ACKs not before first S mark arrival invalid; no data is discarded to fix it.
+Client admission/terminal latency populations are4batches/class; SQL task/attempt
+populations are80/class. DB start/update times are not durable COMMIT timestamps.
+Costs are explicit16.10USD whole-Pod/hour scenarios, not invoices/lane costs/HA.
+
+Keep the ENTIRE operation directory private0700. input-*.jsonl/output-*.jsonl are
+0600 raw prompts/results and must NEVER be exported/committed. Plan/journal/report/
+observations contain intended safe metadata, but root must apply a separately
+reviewed exact metadata-export path before copying results into the repository.
+No screenshots, completed policy comparison, throughput/savings result, or daily
+capacity is asserted by this local preparation.

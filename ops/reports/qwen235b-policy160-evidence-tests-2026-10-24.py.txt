@@ -1,0 +1,154 @@
+"""New private Unix-only local PG16 plus synthetic output tests, no external DSN."""
+from __future__ import annotations
+from copy import deepcopy
+import hashlib,json,os
+from pathlib import Path
+import runpy,subprocess,tempfile,unittest
+import psycopg
+from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
+from backend.migrate import MIGRATIONS
+from backend.scheduling import predict
+
+ROOT=Path(__file__).resolve().parents[1];M=runpy.run_path(str(ROOT/'.runtime/qwen235b_policy_evidence.py'),run_name='pure_policy_evidence_test')
+OP='qwen235b-policy-cost160-v1';MODEL='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+PROFILE=dict(profile_id='synthetic-policy16',runtime_fingerprint='sha256:'+'1'*64,prefill_tokens_per_second=1000.,decode_tokens_per_second=10.,hourly_cost_usd=1.00625,calibration_label='SYNTHETIC',cost_source='SYNTHETIC')
+EXPECTED={f'{OP}-{kind}{batch}-{row:02d}':kind for kind in ('L','S') for batch in range(4) for row in range(20)}
+
+class LocalPostgresTests(unittest.TestCase):
+ @classmethod
+ def setUpClass(cls):
+  from pgserver._commands import POSTGRES_BIN_PATH
+  cls.temp=tempfile.TemporaryDirectory(prefix='bf-policy-evidence-private-pg-',dir='/private/tmp');cls.base=Path(cls.temp.name);cls.data=cls.base/'data';cls.socket=cls.base/'socket';cls.socket.mkdir(mode=0o700);cls.binary=Path(POSTGRES_BIN_PATH);cls.running=False
+  def command(args):
+   result=subprocess.run([str(a) for a in args],stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=30)
+   if result.returncode:raise RuntimeError('isolated_local_pg_command_failed')
+  cls.command=staticmethod(command)
+  try:
+   command([cls.binary/'initdb','-D',cls.data,'-U','batchforge','-A','trust','--no-locale','-E','UTF8'])
+   command([cls.binary/'pg_ctl','-D',cls.data,'-l',cls.base/'postgres.log','-o',f"-h '' -k {cls.socket} -p 55467",'-w','start']);cls.running=True
+   cls.admin=f'host={cls.socket} port=55467 user=batchforge dbname=postgres';cls.counter=0
+   with psycopg.connect(cls.admin,autocommit=True) as c:c.execute('CREATE ROLE bf_runtime LOGIN');c.execute('CREATE DATABASE policy_template')
+   with psycopg.connect(f'host={cls.socket} port=55467 user=batchforge dbname=policy_template',autocommit=True) as c:
+    for _,sql,_ in MIGRATIONS:c.execute(sql)
+    c.execute('GRANT SELECT ON tasks,batches,workers,attempts TO bf_runtime')
+  except BaseException:cls.tearDownClass();raise
+ @classmethod
+ def tearDownClass(cls):
+  if cls.running:cls.command([cls.binary/'pg_ctl','-D',cls.data,'-m','fast','-w','stop']);cls.running=False
+  cls.temp.cleanup()
+ def setUp(self):
+  type(self).counter+=1;self.database='policy_case_'+str(type(self).counter)
+  with psycopg.connect(self.admin,autocommit=True) as c:c.execute(psycopg.sql.SQL('CREATE DATABASE {} TEMPLATE policy_template').format(psycopg.sql.Identifier(self.database)))
+  self.owner_conn=psycopg.connect(f'host={self.socket} port=55467 user=batchforge dbname={self.database}',autocommit=True,row_factory=dict_row)
+  self.owner_conn.execute("INSERT INTO tenants(id,name) VALUES('default','SYNTHETIC'),('foreign','SYNTHETIC') ON CONFLICT DO NOTHING")
+  self.owner_conn.execute("INSERT INTO workers(id,name,model,concurrency,metadata,scheduler_profile_id,runtime_fingerprint,prefill_tokens_per_second,decode_tokens_per_second,hourly_cost_usd) VALUES('w','SYNTHETIC',%s,64,%s,%s,%s,%s,%s,%s)",(MODEL,Jsonb({'scheduling_profile':PROFILE,'ready_engine_count':1}),PROFILE['profile_id'],PROFILE['runtime_fingerprint'],1000,10,1.00625))
+  self.conn=psycopg.connect(f'host={self.socket} port=55467 user=bf_runtime dbname={self.database}',autocommit=True,row_factory=dict_row,options='-c default_transaction_read_only=on -c statement_timeout=5000')
+ def tearDown(self):
+  self.conn.close();self.owner_conn.close()
+  with psycopg.connect(self.admin,autocommit=True) as c:c.execute(psycopg.sql.SQL('DROP DATABASE {}').format(psycopg.sql.Identifier(self.database)))
+ def seed(self,complete=False,foreign_fingerprint=False):
+  c=self.owner_conn
+  with c.transaction():
+   for index in range(8):
+    kind='L' if index<4 else 'S';number=index%4;prompt,completion=M['SHAPES'][kind];estimate=2400 if kind=='L' else 160;bid='batch'+str(index)
+    c.execute('INSERT INTO files(id,tenant_id,filename,kind,content,bytes) VALUES(%s,\'default\',\'SYNTHETIC\',\'input\',%s,1)',('file'+str(index),b'x'))
+    c.execute("INSERT INTO batches(id,tenant_id,input_file_id,model,status,total_count,pending_count,completed_count,metadata,runtime_fingerprint,prompt_tokens,completion_tokens,created_at,completed_at) VALUES(%s,'default',%s,%s,%s,20,%s,%s,%s,%s,%s,%s,clock_timestamp()-interval '4 seconds',CASE WHEN %s THEN clock_timestamp()-interval '1 second' END)",
+     (bid,'file'+str(index),MODEL,'completed' if complete else 'in_progress',0 if complete else 20,20 if complete else 0,Jsonb({'benchmark_run':OP,'engine_label':OP,'policy_class':kind,'batch_index':str(index)}),PROFILE['runtime_fingerprint'],prompt*20 if complete else 0,completion*20 if complete else 0,complete))
+    for row in range(20):
+     tid=f'task{index:02d}{row:02d}';custom=f'{OP}-{kind}{number}-{row:02d}'
+     c.execute("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,attempts,max_attempts,worker_id,runtime_fingerprint,estimated_input_tokens,estimated_output_tokens,estimate_source,prompt_tokens,completion_tokens,created_at,finished_at,ready_at) VALUES(%s,'default',%s,%s,%s,%s,%s,%s,3,%s,%s,%s,%s,'utf8_json_bytes_div4_and_output_cap_v1',%s,%s,clock_timestamp()-interval '3 seconds',CASE WHEN %s THEN clock_timestamp()-interval '1 second' END,clock_timestamp()-%s*interval '1 second')",
+      (tid,bid,custom,MODEL,Jsonb({'private_body':'SYNTHETIC_NEVER_EXPORT'}),'completed' if complete else 'pending',1 if complete else 0,'w' if complete else None,'sha256:'+'f'*64 if foreign_fingerprint and index==row==0 else PROFILE['runtime_fingerprint'],estimate,completion,prompt if complete else 0,completion if complete else 0,complete,2 if kind=='L' else 1))
+     if complete:
+      work={'estimated_input_tokens':estimate,'estimated_output_tokens':completion};d={**PROFILE,'policy':'cost_aware','estimate_source':'utf8_json_bytes_div4_and_output_cap_v1',**work,**predict(work,PROFILE),'runtime_compatibility_scope':'first_dispatch','aging_seconds':60,'selected_at':'2026-10-24T00:00:00+00:00'}
+      c.execute("INSERT INTO attempts(token,task_id,batch_id,tenant_id,worker_id,number,status,prompt_tokens,completion_tokens,started_at,finished_at,scheduling_decision) VALUES(%s,%s,%s,'default','w',1,'completed',%s,%s,clock_timestamp()-interval '2 seconds',clock_timestamp()-interval '1 second',%s)",('SYNTHETIC_TOKEN_'+tid,tid,bid,prompt,completion,Jsonb(d)))
+ def observe(self,selector=OP):return M['observe'](self.conn,selector,'w',MODEL,PROFILE,OP)
+ def final(self):return M['final_rows'](self.conn,OP,EXPECTED,MODEL,'cost_aware',PROFILE)
+ def test_unacknowledged_operation_selector_sees_no_batches_then_all_and_only_oldest64(self):
+  empty=self.observe();self.assertEqual(empty['counts']['operation_batches'],0);self.assertEqual(empty['candidates'],[])
+  self.seed();value=self.observe();self.assertEqual(value['counts']['operation_batches'],8);self.assertEqual(value['counts']['operation_tasks'],160);self.assertEqual(value['counts']['pending'],160)
+  self.assertEqual(len(value['candidates']),64);self.assertEqual({r['class'] for r in value['candidates']},{'L'});self.assertEqual(value['attribution'],'inconclusive')
+  self.assertAlmostEqual(value['candidates'][0]['service_seconds'],15.2);self.assertAlmostEqual(value['candidates'][0]['cost_usd'],15.2*1.00625/3600)
+  self.assertEqual(self.conn.info.transaction_status,psycopg.pq.TransactionStatus.IDLE)
+  text=json.dumps(value);self.assertNotIn('SYNTHETIC_NEVER_EXPORT',text);self.assertNotIn('SYNTHETIC_TOKEN',text)
+ def test_batch_ids_selector_does_not_hide_operation_unacknowledged_count(self):
+  self.seed();value=self.observe(['batch0']);self.assertEqual(value['counts']['selected_batches'],1);self.assertEqual(value['counts']['selected_tasks'],20);self.assertEqual(value['counts']['operation_batches'],8)
+ def test_v6_fingerprint_future_ready_expiry_and_cost_estimate_eligibility(self):
+  self.seed(foreign_fingerprint=True);c=self.owner_conn
+  c.execute("UPDATE tasks SET ready_at=clock_timestamp()+interval '1 hour' WHERE id='task0001'")
+  c.execute("UPDATE tasks SET estimated_input_tokens=0 WHERE id='task0002'")
+  c.execute("UPDATE batches SET expires_at=clock_timestamp()-interval '1 second' WHERE id='batch1'")
+  ids={x['id'] for x in self.observe()['candidates']};self.assertFalse({'task0000','task0001','task0002'}&ids);self.assertFalse(any(i.startswith('task01') for i in ids))
+ def test_active_valid_leases_distinct_from_expired_running_and_peers(self):
+  self.seed();c=self.owner_conn;c.execute("UPDATE tasks SET status='running',worker_id='w',lease_expires_at=clock_timestamp()+interval '1 hour' WHERE id='task0000'");c.execute("UPDATE tasks SET status='running',worker_id='w',lease_expires_at=clock_timestamp()-interval '1 second' WHERE id='task0001'")
+  c.execute("INSERT INTO workers(id,name,model,concurrency,metadata,scheduler_profile_id,runtime_fingerprint,prefill_tokens_per_second,decode_tokens_per_second,hourly_cost_usd) SELECT 'peer','SYNTHETIC',model,64,metadata,scheduler_profile_id,runtime_fingerprint,prefill_tokens_per_second,decode_tokens_per_second,hourly_cost_usd FROM workers WHERE id='w'")
+  value=self.observe();self.assertEqual(value['worker']['active_valid_leases'],1);self.assertEqual(value['worker']['active_rows'],2);self.assertEqual([p['id'] for p in value['fresh_compatible_peers']],['peer'])
+ def test_foreign_candidate_does_not_export_arbitrary_custom_id(self):
+  self.seed();c=self.owner_conn;c.execute("UPDATE batches SET metadata='{}' WHERE id='batch0'");c.execute("UPDATE tasks SET custom_id='SYNTHETIC_SECRET_CUSTOM_ID',ready_at=clock_timestamp()-interval '1 hour' WHERE id='task0000'")
+  value=self.observe();self.assertEqual(value['candidates'][0]['class'],'foreign');self.assertIsNone(value['candidates'][0]['custom_id']);self.assertEqual(value['counts']['global_other_unfinished'],20);self.assertNotIn('SYNTHETIC_SECRET_CUSTOM_ID',json.dumps(value))
+ def test_exact_final160_eight_batches_no_retry_and_usage(self):
+  self.seed(True);value=self.final();self.assertEqual(value['completed'],160);self.assertEqual(value['worker_ids'],['w']);self.assertEqual(value['prompt_tokens'],174080);self.assertEqual(value['completion_tokens'],12800)
+  self.assertEqual(len(value['attempt_decisions']),160);self.assertNotIn('SYNTHETIC_TOKEN',json.dumps(value));self.assertNotIn('private_body',json.dumps(value));self.assertEqual(value['attribution'],'inconclusive')
+ def test_final_rejects_retry_duplicate_accepted_usage_or_profile_drift(self):
+  self.seed(True);c=self.owner_conn
+  for kind in ('retry','usage','profile','class','unknown'):
+   with self.subTest(kind=kind):
+    try:
+     if kind=='retry':c.execute("INSERT INTO attempts(token,task_id,batch_id,tenant_id,worker_id,number,status) VALUES('EXTRA','task0000','batch0','default','w',2,'expired')")
+     elif kind=='usage':c.execute("UPDATE attempts SET prompt_tokens=1 WHERE task_id='task0000'")
+     elif kind=='profile':c.execute("UPDATE attempts SET scheduling_decision=jsonb_set(scheduling_decision,'{hourly_cost_usd}','9') WHERE task_id='task0000'")
+     elif kind=='class':c.execute("UPDATE batches SET metadata=jsonb_set(metadata,'{batch_index}','7') WHERE id='batch0'")
+     elif kind=='unknown':c.execute("UPDATE tasks SET custom_id='unknown' WHERE id='task0000'")
+     with self.assertRaises(M['Refusal']):self.final()
+    finally:
+     if kind=='retry':
+      with c.transaction():c.execute("SELECT batchforge_retention_authorize_delete('default')");c.execute("DELETE FROM attempts WHERE token='EXTRA'")
+     elif kind=='usage':c.execute("UPDATE attempts SET prompt_tokens=2048 WHERE task_id='task0000'")
+     elif kind=='profile':c.execute("UPDATE attempts SET scheduling_decision=jsonb_set(scheduling_decision,'{hourly_cost_usd}','1.00625') WHERE task_id='task0000'")
+     elif kind=='class':c.execute("UPDATE batches SET metadata=jsonb_set(metadata,'{batch_index}','\"0\"') WHERE id='batch0'")
+     elif kind=='unknown':c.execute("UPDATE tasks SET custom_id=%s WHERE id='task0000'",(OP+'-L0-00',))
+ def test_overlap_requires_both_visible_classes_capacity_and_no_peer_or_aged_row(self):
+  self.seed();self.assertFalse(self.observe()['overlap']);c=self.owner_conn
+  c.execute("UPDATE tasks SET status='running',worker_id='w',lease_expires_at=clock_timestamp()+interval '1 hour' WHERE id IN(SELECT id FROM tasks ORDER BY ready_at,id LIMIT 64)")
+  self.assertFalse(self.observe()['overlap'])
+  c.execute("UPDATE tasks SET status='completed',finished_at=clock_timestamp() WHERE id='task0000'")
+  value=self.observe();self.assertEqual(value['worker']['active_valid_leases'],63);self.assertTrue(value['overlap']);self.assertEqual({x['class'] for x in value['candidates']},{'L','S'})
+  c.execute("UPDATE workers SET last_seen_at=clock_timestamp()-interval '61 seconds' WHERE id='w'");self.assertFalse(self.observe()['overlap'])
+  c.execute("UPDATE workers SET last_seen_at=clock_timestamp(),metadata=jsonb_set(metadata,'{ready_engine_count}','0') WHERE id='w'");self.assertFalse(self.observe()['overlap'])
+  c.execute("UPDATE workers SET metadata=jsonb_set(metadata,'{ready_engine_count}','1') WHERE id='w'")
+  c.execute("UPDATE tasks SET ready_at=clock_timestamp()-interval '1 hour' WHERE id='task0400'");self.assertFalse(self.observe()['overlap'])
+  c.execute("UPDATE tasks SET ready_at=clock_timestamp()-interval '1 second' WHERE id='task0400'");self.assertTrue(self.observe()['overlap'])
+  c.execute("UPDATE tasks SET created_at=clock_timestamp()-interval '61 seconds' WHERE id='task0304'")
+  self.assertFalse(self.observe()['overlap'])
+ def test_final_wrong_expected_or_policy_rejected_without_data_query(self):
+  wrong=dict(EXPECTED);wrong.pop(next(iter(wrong)))
+  with self.assertRaises(M['Refusal']):M['final_rows'](self.conn,OP,wrong,MODEL,'cost_aware',PROFILE)
+  with self.assertRaises(M['Refusal']):M['final_rows'](self.conn,OP,EXPECTED,MODEL,'fair',PROFILE)
+ def output_fixture(self):
+  self.seed(True);value=self.final();tasks=[t for t in value['tasks'] if t['batch_id']=='batch0'];expected={t['custom_id']:'L' for t in tasks};records=[]
+  for t in tasks:
+   body={'model':MODEL,'choices':[{'message':{'role':'assistant','content':'SYNTHETIC_PRIVATE_ANSWER'},'finish_reason':'length'}],'usage':{'prompt_tokens':t['prompt_tokens'],'completion_tokens':t['completion_tokens'],'total_tokens':t['prompt_tokens']+t['completion_tokens']}}
+   records.append({'id':t['id'],'custom_id':t['custom_id'],'error':None,'response':{'status_code':200,'request_id':t['id'],'body':body}})
+  return value,expected,records
+ def test_output20_sql_identity_usage_hash_metadata_only(self):
+  value,expected,records=self.output_fixture();raw=b''.join((json.dumps(r)+'\n').encode() for r in records);result=M['validate_output'](raw,expected,value,MODEL)
+  self.assertEqual(result['sha256'],hashlib.sha256(raw).hexdigest());self.assertEqual(result['count'],20);self.assertEqual(result['completion_tokens'],2560);self.assertNotIn('SYNTHETIC_PRIVATE',json.dumps(result))
+ def test_output_rejects_unknown_duplicate_fake_error_model_usage_or_shape(self):
+  value,expected,records=self.output_fixture()
+  for kind in ('unknown','duplicate','fake','error','model','usage','status','choices','nonfinite','duplicate_json'):
+   with self.subTest(kind=kind):
+    changed=deepcopy(records);r=changed[0]
+    if kind=='unknown':r['custom_id']='unknown'
+    elif kind=='duplicate':changed[1]=deepcopy(r)
+    elif kind=='fake':r['response']['body']['batchforge_test_only']=True
+    elif kind=='error':r['error']={'message':'SYNTHETIC_PRIVATE_ERROR'}
+    elif kind=='model':r['response']['body']['model']='wrong'
+    elif kind=='usage':r['response']['body']['usage']['prompt_tokens']=1
+    elif kind=='status':r['response']['status_code']=200.0
+    elif kind=='choices':r['response']['body']['choices'][0]['message']['content']=None
+    elif kind=='nonfinite':r['response']['body']['extra']=float('inf')
+    raw=b''.join((json.dumps(x)+'\n').encode() for x in changed)
+    if kind=='duplicate_json':raw=raw.replace(b'"model":',b'"model":"DUPLICATE", "model":',1)
+    with self.assertRaises((M['Refusal'],ValueError)):M['validate_output'](raw,expected,value,MODEL)
+
+if __name__=='__main__':unittest.main()

@@ -1,0 +1,99 @@
+Fault100 four-original metadata packet operator (LOCAL PREPARATION ONLY)
+
+No production action has been executed by the helper author. Root alone copies
+the reviewed helper, supplies trusted SHA anchors and runs it after all timed
+work completes. The helper has no HTTP, SSH, SQL, inference, subprocess, model
+activation, service-write, policy-write or raw-output-reading implementation.
+
+New files
+  .runtime/export_fault_metadata_packet.py
+  .runtime/test_export_fault_metadata_packet.py
+
+Schema/provenance scope
+  The embedded recursive path/type/string allowlist was authored from the exact
+  already reviewed worker-fault100-v1 originals (plan096ce264, cohortb1824788,
+  benchmark95d84fcb, probe3dc40eeb). Additional capacity/engine metadata fields
+  are enumerated from frozen base54b33493 / enginea1d62e89 probe producers.
+  Unknown nested keys fail closed. Known string fields permit only fixed code
+  explanations or strict SHA/ID/timestamp/path values. The only bare prompt key
+  permitted is benchmark.workload.prompt, and its value MUST be null. Aggregate
+  prompt-token counts and output-content lengths are metadata, not raw text.
+  No dynamic policy, dump, environment values, original input/output, command
+  arguments, attempt tokens or real credentials are copied or printed.
+  Original source-map hashes are on-disk binding evidence; they are not a new
+  observation of currently loaded services. Engine producer has no independent
+  executed_source_sha256 field, and the helper does not invent one.
+
+Originals, fixed by operation (capacity2-fault100-v1 or engine-fault100-v1):
+  plan      APP/.runtime/fault-cohorts/OP/plan.json
+  cohort    APP/.runtime/fault-cohorts/OP/journal.json
+  benchmark APP/.runtime/fault-cohorts/OP/benchmark-report.json
+  probe     APP/.runtime/OP-probe-report.json
+  Worker-fault100-v1 is also accepted only as the existing regression precedent.
+
+Safety and evidence gates
+  All four reads require canonical owned private regular0600 files, nlink1,
+  O_NOFOLLOW, <=8MiB each and stable inode/size/mtime/ctime before/after read.
+  Prepared plan SHA must be externally supplied from the trusted root channel.
+  Source35b/fixture52f84/FP62fd/schema11, one batch/100 fixed20x5 tasks, exact
+  input545280/output68000 tokens, unique accepted results, all164 attempt rows
+  including64 expired, exact64 captured+held+reaccepted, terminal SQL usage,
+  stale409 fencing, full process identities and report/journal SHA crosslinks
+  are checked. Capacity2 requires observed64->2->64 and accepted graceful drain;
+  engine scope requires same-Pod engine reload and exact four-GPU memory data.
+  These are controlled application failures with watchdog paused. They are not
+  hardware resets, cross-Pod HA, automatic watchdog timings or exactly-once GPU
+  execution. Whole-Pod cost is the existing $16.10/hour allocation scenario.
+
+Same-Pod preview (ROOT EXECUTES LATER ONLY)
+  cd /root/batchforge-runtime/app
+  OP=capacity2-fault100-v1
+  BF_PLAN_SHA='<exact prepared SHA already reported through trusted root channel>'
+  BF_PACKET="/root/batchforge-runtime/app/.runtime/fault-packets/$OP-v1"
+  # Parent must already be root-owned0700; preview does not create a packet.
+  /root/batchforge-runtime/venv/bin/python .runtime/export_fault_metadata_packet.py \
+    --export --operation "$OP" --plan-sha256 "$BF_PLAN_SHA" \
+    --destination "$BF_PACKET"
+  # Only after reviewing preview and exact frozen helper SHA, repeat adding:
+  #   --write
+  # A completed write creates metadata/{plan,cohort,benchmark,probe}.json with
+  # EXACT original bytes, transport-manifest.json, intent.json and receipt.json.
+  # Record stdout/manifest/receipt SHA through the trusted root channel.
+
+Transport/receive (ROOT TRANSFERS EXACT BYTES; helper never performs transport)
+  Transfer ONLY the four metadata/*.json and transport-manifest.json. Keep the
+  incoming four files in a new private0700 staging directory, all files0600;
+  keep the manifest outside that exact-four-file directory. Never transfer
+  inputs, outputs, env files, logs, checkpoints or backup archives alongside it.
+  Supply the original manifest SHA received through the trusted root channel.
+  Computing a fresh local hash alone is not an external trust anchor/signature.
+
+  cd '/Users/kevin/Documents/ChatGPT/app 3'
+  BF_LOCAL_ROOT="$(pwd -P)"
+  BF_LOCAL_STAGE="$BF_LOCAL_ROOT/.runtime/capacity2-fault100-v1-incoming"
+  BF_LOCAL_MANIFEST="$BF_LOCAL_ROOT/.runtime/capacity2-fault100-v1-transport.json"
+  BF_LOCAL_DEST="$BF_LOCAL_ROOT/.runtime/capacity2-fault100-v1-received"
+  BF_TRANSPORT_SHA='<original manifest SHA from trusted root channel>'
+  .venv/bin/python .runtime/export_fault_metadata_packet.py \
+    --receive --transport-manifest "$BF_LOCAL_MANIFEST" \
+    --transport-manifest-sha256 "$BF_TRANSPORT_SHA" \
+    --input-directory "$BF_LOCAL_STAGE" --destination "$BF_LOCAL_DEST"
+  # Default performs all checks without destination writes. --write claims a
+  # new exclusive0700 destination, fsyncs intent BEFORE copies, then writes four
+  # exact0600 metadata originals under metadata/, manifest and final receipt.
+  # Re-read validation checks exact bytes after copy. No overwrite/resume/adopt.
+
+Failure handling
+  After any interrupted/partial --write, preserve the entire directory and
+  intent. A missing completion receipt is not success. Do not automatically
+  repeat --write, delete the partial destination, adopt it or select a new job.
+  Root investigates locally; no business state is modified by this helper.
+  Diagnostics print only fixed reason codes or exception TYPES, never values.
+
+Results/analysis
+  Worker original four-file regression is real and byte-preserving. Capacity
+  and engine test populations are explicitly SYNTHETIC and prove parser/FS
+  behavior only. No real capacity2/engine results or comparison are generated
+  until root supplies their original bytes and trusted SHA anchors. A separate
+  fresh no-fault single-batch control is required for causal fault-overhead
+  comparisons; the old five-batch250s reference is not a matched control.
