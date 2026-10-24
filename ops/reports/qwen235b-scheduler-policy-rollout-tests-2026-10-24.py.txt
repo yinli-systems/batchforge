@@ -1,0 +1,179 @@
+"""Fake managed processes/private configs only; never service, SQL or GPU I/O."""
+from copy import deepcopy
+import json
+import os
+from pathlib import Path
+import runpy
+import tempfile
+import unittest
+from unittest.mock import patch
+
+ROOT=Path(__file__).resolve().parents[1]
+M=runpy.run_path(str(ROOT/'.runtime/roll_qwen235b_scheduler_policy.py'),run_name='pure_policy_roll')
+H=runpy.run_path(str(ROOT/'.runtime/deploy_postpair_sources.py'),run_name='pure_policy_dependencies')
+def private(p,raw):p.parent.mkdir(parents=True,mode=0o700,exist_ok=True);p.write_bytes(raw);p.chmod(0o600)
+class Fixture:
+    def __init__(self,parent,wrong_watchdog=False):
+        self.root=Path(parent).resolve()/'app';self.root.mkdir(mode=0o700);(self.root/'.runtime').mkdir(mode=0o700)
+        self.run=self.root/'.runtime/policy-test';self.run.mkdir(mode=0o700);self.manifest=self.root/'.runtime/services.json';private(self.manifest,b'{"services":[]}')
+        private(self.root/'.runtime/deploy_postpair_sources.py',(ROOT/'.runtime/deploy_postpair_sources.py').read_bytes())
+        self.services=[dict(role=r,name=n,port=p,env_file=str(self.root.parent/(r+'-'+n+'.env')),python='/private/python') for r,n,p in
+            [('api','a',8082),('api','b',8083),('gateway','edge',8080),('worker','qwen235b',9105),('engine','qwen235b',8300)]]
+        self.watch=dict(role='supervisor',name='primary',env_file=str(self.root.parent/'supervisor.env'),python='/private/python')
+        for s in [*self.services,self.watch]:
+            raw=("TOKEN='SYNTHETIC_NEVER_REPORT'\nSCHEDULER_POLICY=cost_aware\nMODEL_NAME="+H['MODEL']+'\n').encode()
+            if s['role']=='engine':raw+=b'ENGINE_TENSOR_PARALLEL_SIZE=4\n';s['gpu']='0,1,2,3'
+            if s['role']=='supervisor':raw+=('SUPERVISOR_MANIFEST='+str(self.manifest.with_name('wrong.json') if wrong_watchdog else self.manifest)+'\n').encode()
+            if s['role']=='worker':raw+=b'WORKER_MAX_INFLIGHT=64\nWORKER_ADAPTIVE_KV_ENABLED=true\nWORKER_TOKEN_BUDGET=298384\nSCHEDULER_PROFILE_JSON=\'{}\'\nINFERENCE_BASE_URLS=http://127.0.0.1:8300\n'
+            private(Path(s['env_file']),raw)
+        self.records={};self.env={};self.argv={};self.events=[];self.next=100;self.now=0;self.notready=set();self.failure=None
+        for i,s in enumerate([*self.services,self.watch]):
+            k=self.key(s);self.records[k]=dict(pid=i+10,start_ticks=str(i+50),cwd=str(self.root),command=['SYNTHETIC_NEVER_REPORT_COMMAND'])
+            self.env[k]={**H['values'](Path(s['env_file']).read_bytes()),'AMBIENT':'SYNTHETIC_NEVER_REPORT_AMBIENT'};self.argv[k]=('python-'+k).encode()
+        self.roll=M['Roll'](self.root,self.run,self.manifest,self.services,'fair',H,self,process_reader=self.read,
+            starter=self.start,api_stopper=self.api_stop,drained=lambda:None,idle=self.idle,sleep=self.sleep,clock=lambda:self.now)
+    @staticmethod
+    def key(s):return s['role']+'-'+s['name']
+    def record(self,s):return self.records.get(self.key(s))
+    def read(self,controller,s):
+        k=self.key(s);r=self.record(s);assert r is not None
+        return deepcopy(r),dict(self.env[k]),self.argv[k],{k:r[k] for k in ('pid','start_ticks','cwd')}|{'process_environ_sha256':H['sha'](H['encoded'](self.env[k])),'process_argv_sha256':H['sha'](self.argv[k])}
+    def responding(self,s,ready=False):return self.record(s) is not None and self.key(s) not in self.notready
+    def sleep(self,n):self.now+=n
+    def idle(self):
+        if self.failure=='idle':raise M['Refusal']('not_idle')
+    def _intent(self,stage):
+        saved=json.loads(self.roll.report_path.read_bytes());assert saved['pending_action']['stage']==stage
+    def graceful_stop(self,s,expected,grace,check):
+        key=self.key(s);stage='stop:'+key;self._intent(stage);assert self.record(s)==expected
+        self.notready.add(key);check()  # A normal stop makes only this target ready503.
+        self.records.pop(key);check()  # Kernel exit before PID file unlink is allowed for only this target.
+        self.notready.discard(key);self.events.append(stage)
+        if self.failure==stage:raise OSError('SYNTHETIC_UNKNOWN_STOP')
+    def api_stop(self,root,controller,s,expected,check):return self.graceful_stop(s,expected,30,check)
+    def start(self,root,s,env):
+        key=self.key(s);stage='start:'+key;self._intent(stage);assert self.record(s) is None
+        self.next+=1;self.records[key]=dict(pid=self.next,start_ticks=str(self.next*10),cwd=str(self.root),command=['SYNTHETIC_NEVER_REPORT_COMMAND'])
+        self.env[key]={**env,**H['values'](Path(s['env_file']).read_bytes())};self.events.append(stage)
+        if self.failure==stage:raise TimeoutError('SYNTHETIC_UNKNOWN_START')
+        if self.failure=='wrong_effective' and key=='api-a':self.env[key]['SCHEDULER_POLICY']='cost_aware'
+        if self.failure=='warming' and key=='api-a':self.notready.add(key)
+        return dict(status='started',pid=self.next)
+
+class PolicyTests(unittest.TestCase):
+    def test_success_only_policy_key_and_api_watchdog_pids_change(self):
+        with tempfile.TemporaryDirectory() as d:
+            f=Fixture(d);old=deepcopy(f.records);original=dict(f.roll.original);result=f.roll.apply()
+            self.assertEqual(result['phase'],'complete');self.assertTrue(result['watchdog_restored'])
+            self.assertEqual(f.events,['stop:supervisor-primary','stop:api-a','start:api-a','stop:api-b','start:api-b','start:supervisor-primary'])
+            for k in ('worker-qwen235b','engine-qwen235b','gateway-edge'):self.assertEqual(f.records[k],old[k])
+            for s in f.services:
+                raw=Path(s['env_file']).read_bytes()
+                self.assertEqual(raw,original[s['env_file']].replace(b'SCHEDULER_POLICY=cost_aware',b'SCHEDULER_POLICY=fair') if s['role']=='api' else original[s['env_file']])
+            self.assertNotIn('SYNTHETIC_NEVER_REPORT',json.dumps(result))
+            with self.assertRaises(ValueError):f.roll.apply()
+    def test_unknown_stop_and_start_never_follow_on_or_restore_watchdog(self):
+        for stage in ('stop:supervisor-primary','stop:api-a','start:api-a','stop:api-b','start:api-b','start:supervisor-primary'):
+            with self.subTest(stage=stage),tempfile.TemporaryDirectory() as d:
+                f=Fixture(d);f.failure=stage
+                with self.assertRaises((TimeoutError,OSError)):f.roll.apply()
+                self.assertEqual(f.roll.report['pending_action']['stage'],stage);self.assertEqual(f.roll.report['phase'],'manual_recovery_required')
+                self.assertEqual(f.events[-1],stage);self.assertFalse(f.roll.report['watchdog_restart_after_failure'])
+                before=list(f.events)
+                with self.assertRaises(ValueError):f.roll.apply()
+                self.assertEqual(f.events,before)
+    def test_unknown_confirmation_fsync_preserves_intent(self):
+        with tempfile.TemporaryDirectory() as d:
+            f=Fixture(d);save=f.roll.save
+            def failed(value):
+                if value['events'] and value['events'][-1]['stage']=='stop:api-a' and value['pending_action'] is None:raise OSError('SYNTHETIC_FSYNC')
+                save(value)
+            f.roll.save=failed
+            with self.assertRaises(OSError):f.roll.apply()
+            self.assertEqual(f.roll.report['pending_action']['stage'],'stop:api-a');self.assertNotIn('start:supervisor-primary',f.events)
+    def test_intent_fsync_failure_prevents_any_stop(self):
+        with tempfile.TemporaryDirectory() as d:
+            f=Fixture(d)
+            f.roll.save=lambda _:(_ for _ in ()).throw(OSError('SYNTHETIC_FSYNC'))
+            with self.assertRaises(OSError):f.roll.apply()
+            self.assertEqual(f.events,[])
+    def test_env_manifest_source_pid_or_effective_drift_refuses_before_mutation(self):
+        for case in ('env','manifest','source','pid','effective'):
+            with self.subTest(case=case),tempfile.TemporaryDirectory() as d:
+                f=Fixture(d)
+                if case=='env':private(Path(f.services[0]['env_file']),b'TOKEN=SYNTHETIC_CHANGED\n')
+                elif case=='manifest':private(f.manifest,b'{"changed":true}')
+                elif case=='source':private(f.root/'backend/new.py',b'# changed\n')
+                elif case=='pid':f.records['gateway-edge']['pid']=999
+                else:f.env['api-b']['SCHEDULER_POLICY']='wrong'
+                with self.assertRaises(ValueError):f.roll.apply()
+                self.assertEqual(f.events,[])
+    def test_wrong_effective_policy_or_warming_timeout_keeps_watchdog_stopped(self):
+        for failure in ('wrong_effective','warming'):
+            with self.subTest(failure=failure),tempfile.TemporaryDirectory() as d:
+                f=Fixture(d);f.failure=failure
+                with self.assertRaises(ValueError):f.roll.apply()
+                self.assertNotIn('start:supervisor-primary',f.events);self.assertNotIn('stop:api-b',f.events)
+    def test_idle_failure_before_stop_has_no_mutations(self):
+        with tempfile.TemporaryDirectory() as d:
+            f=Fixture(d);f.failure='idle'
+            with self.assertRaises(ValueError):f.roll.apply()
+            self.assertEqual(f.events,[])
+    def test_final_idle_or_global_drain_failure_does_not_restore_watchdog(self):
+        for case in ('final_idle','new_work'):
+            with self.subTest(case=case),tempfile.TemporaryDirectory() as d:
+                f=Fixture(d);count=[0]
+                def idle():
+                    count[0]+=1
+                    if count[0]>1:raise M['Refusal']('not_idle')
+                if case=='final_idle':f.roll.idle=idle
+                else:
+                    def drain():
+                        if 'stop:api-a' in f.events:raise M['Refusal']('new_work')
+                    f.roll.drained=drain
+                with self.assertRaises(ValueError):f.roll.apply()
+                self.assertNotIn('start:supervisor-primary',f.events)
+    def test_policy_atomic_replace_unknown_never_starts_api_or_watchdog(self):
+        with tempfile.TemporaryDirectory() as d:
+            f=Fixture(d);f.roll.h=dict(H);original=H['atomic_bytes']
+            def failed(path,raw):original(path,raw);raise OSError('SYNTHETIC_REPLACE_UNKNOWN')
+            f.roll.h['atomic_bytes']=failed
+            with self.assertRaises(OSError):f.roll.apply()
+            self.assertEqual(f.roll.report['pending_action']['stage'],'policy:api-a')
+            self.assertNotIn('start:api-a',f.events);self.assertNotIn('start:supervisor-primary',f.events)
+    def test_reviewed_helper_and_deployed_base_pins_gate_loading(self):
+        self.assertEqual(M['load_helpers'](ROOT)['MODEL'],H['MODEL'])
+        for name in ('HELPER_SHA','BASE_SHA'):
+            with self.subTest(pin=name),patch.dict(M['load_helpers'].__globals__,{name:'0'*64}):
+                with self.assertRaises(ValueError):M['load_helpers'](ROOT)
+    def test_watchdog_must_use_exact_bound_manifest(self):
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaisesRegex(ValueError,'watchdog_manifest_differs'):Fixture(d,wrong_watchdog=True)
+    def test_stop_callback_does_not_relax_other_readiness(self):
+        with tempfile.TemporaryDirectory() as d:
+            f=Fixture(d);original=f.graceful_stop
+            def stop(s,expected,grace,check):f.notready.add('worker-qwen235b');original(s,expected,grace,check)
+            f.graceful_stop=stop
+            with self.assertRaises(ValueError):f.roll.apply()
+            self.assertNotIn('start:supervisor-primary',f.events)
+    def test_native_api_stop_uses_exact_pidfd_lock_term_and_original_pidfile(self):
+        with tempfile.TemporaryDirectory() as d:
+            f=Fixture(d);s=f.services[0];expected=f.record(s);path=f.root/'.runtime/api-a.json';private(path,H['encoded'](expected));calls=[]
+            class Poll:
+                def register(self,*args):calls.append(('register',args))
+                def poll(self,*args):return [1]
+            with patch.object(os,'pidfd_open',create=True,return_value=987),patch.object(M['signal'],'pidfd_send_signal',create=True,side_effect=lambda fd,sig:calls.append(('signal',fd,sig))),patch.object(M['select'],'poll',return_value=Poll()),patch.object(os,'close',side_effect=lambda fd:None if fd==987 else close(fd)):
+                M['api_stop'](f.root,f,s,expected,lambda:None)
+            self.assertFalse(path.exists());self.assertIn(('signal',987,M['signal'].SIGTERM),calls)
+    def test_native_api_stop_refuses_foreign_pidfile_after_exit(self):
+        with tempfile.TemporaryDirectory() as d:
+            f=Fixture(d);s=f.services[0];expected=f.record(s);path=f.root/'.runtime/api-a.json';private(path,H['encoded']({**expected,'pid':999}))
+            class Poll:
+                def register(self,*_):pass
+                def poll(self,*_):return [1]
+            with patch.object(os,'pidfd_open',create=True,return_value=987),patch.object(M['signal'],'pidfd_send_signal',create=True),patch.object(M['select'],'poll',return_value=Poll()),patch.object(os,'close',side_effect=lambda fd:None if fd==987 else close(fd)):
+                with self.assertRaisesRegex(ValueError,'pidfile_changed'):M['api_stop'](f.root,f,s,expected,lambda:None)
+            self.assertTrue(path.exists())
+
+close=os.close
+if __name__=='__main__':unittest.main()

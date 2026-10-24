@@ -1,0 +1,212 @@
+"""Prepare/once-apply an API-only fair/cost_aware switch; unknown means manual.
+
+Private operator glue; no serving source copy, inference, quota/profile change,
+owner SQL, automatic rollback, action replay or unconditional watchdog restart.
+"""
+from __future__ import annotations
+import argparse
+from contextlib import ExitStack,contextmanager
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import select
+import signal
+import stat
+import sys
+import threading
+import time
+
+SELF=Path(__file__).resolve();ROOT=SELF.parents[1]
+APP=Path('/root/batchforge-runtime/app')
+HELPER_SHA='7910f4438d374e26fb3c9f6cca95f86b1324157f2b249b83551b7cc579f8d865'
+BASE_SHA='54b33493e0b4e1869b48bda24a59d86cc947576f2a9f8e1b1f570ed1e5f17d09'
+sys.dont_write_bytecode=True
+if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
+def require(value,code):
+    if not value:raise Refusal(code)
+class Refusal(ValueError):pass
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def load_helpers(root):
+    path=root/'.runtime/deploy_postpair_sources.py';raw=path.read_bytes()
+    require(not path.is_symlink() and sha(raw)==HELPER_SHA,'reviewed_postroll_helper_required')
+    require(sha((root/'ops/ha/single_pod_fault_probe.py').read_bytes())==BASE_SHA,'deployed54b_base_required')
+    out={'__name__':'policy_roll_reviewed_helpers','__file__':str(path)};exec(compile(raw,str(path),'exec'),out);return out
+@contextmanager
+def locked(path):
+    fd=os.open(path,os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW,0o600)
+    try:
+        info=os.fstat(fd);require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid()
+            and info.st_nlink==1 and not info.st_mode&0o022,'unsafe_role_lock')
+        fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB);yield
+    finally:os.close(fd)
+def api_stop(root,controller,service,expected,check):
+    from ops.ha.deploy_upload_protocol import private_file
+    require(service['role']=='api' and service['name'] in {'a','b'},'exact_api_stop_only')
+    path=root/'.runtime'/('api-'+service['name']+'.json');began=time.monotonic()
+    with locked(path.with_suffix('.lock')):
+        require(controller.record(service)==expected,'api_identity_changed_before_pidfd')
+        fd=os.pidfd_open(expected['pid'])
+        try:
+            require(controller.record(service)==expected,'api_identity_changed_after_pidfd')
+            signal.pidfd_send_signal(fd,signal.SIGTERM);poll=select.poll();poll.register(fd,select.POLLIN)
+            while not poll.poll(500):check();require(time.monotonic()-began<30,'api_graceful_stop_timeout')
+            require(json.loads(private_file(path))==expected,'api_original_pidfile_changed');path.unlink()
+            descriptor=os.open(path.parent,os.O_RDONLY|os.O_DIRECTORY)
+            try:os.fsync(descriptor)
+            finally:os.close(descriptor)
+        finally:os.close(fd)
+
+class Roll:
+    def __init__(self,root,run,manifest,services,target,h,controller,*,process_reader=None,starter=None,
+                 api_stopper=api_stop,drained=None,idle=None,sleep=time.sleep,clock=time.monotonic,stop=None):
+        self.root,self.run,self.manifest,self.services,self.target,self.h,self.controller=root,run,manifest,services,target,h,controller
+        require(target in {'fair','cost_aware'},'supported_policy_required')
+        require(len(services)==5 and {(s['role'],s['name']) for s in services}==
+            {('api','a'),('api','b'),('gateway','edge'),('worker','qwen235b'),('engine','qwen235b')},'exact_five_services_required')
+        self.apis=sorted((s for s in services if s['role']=='api'),key=lambda s:s['name']);self.api=self.apis[0]
+        require([(s['name'],s['port']) for s in self.apis]==[('a',8082),('b',8083)],'exact_api_pair_required')
+        self.worker=next(s for s in services if s['role']=='worker');self.engine=next(s for s in services if s['role']=='engine')
+        self.watchdog=dict(role='supervisor',name='primary',env_file=str(root.parent/'supervisor.env'),python=self.api['python'])
+        self.all=[*services,self.watchdog];self.env={s['env_file']:h['private_file'](Path(s['env_file'])) for s in self.all}
+        require(h['values'](self.env[self.watchdog['env_file']]).get('SUPERVISOR_MANIFEST')==str(manifest),'watchdog_manifest_differs')
+        self.original=dict(self.env);self.manifest_raw=h['private_file'](manifest);self.reader=process_reader or h['process_data']
+        from ops.ha.set_scheduler_policy import policy_bytes
+        self.patched={s['env_file']:policy_bytes(self.env[s['env_file']],target) for s in self.apis}
+        old=[h['values'](self.env[s['env_file']]).get('SCHEDULER_POLICY','legacy') for s in self.apis]
+        require(old[0]==old[1] and old[0] in {'fair','cost_aware'} and old[0]!=target,'matching_other_original_policy_required')
+        self.worker_values=h['values'](self.env[self.worker['env_file']]);self.profile_value=json.loads(self.worker_values['SCHEDULER_PROFILE_JSON'])
+        self.budget=int(self.worker_values['WORKER_TOKEN_BUDGET'])
+        engine=h['values'](self.env[self.engine['env_file']]);apis=[h['values'](self.env[s['env_file']]) for s in self.apis]
+        require(self.worker_values.get('MODEL_NAME')==h['MODEL'] and self.worker_values.get('WORKER_MAX_INFLIGHT')=='64'
+            and self.worker_values.get('WORKER_ADAPTIVE_KV_ENABLED','').lower() in {'true','1'},'adaptive235b64_required')
+        require(engine.get('MODEL_NAME')==h['MODEL'] and engine.get('ENGINE_TENSOR_PARALLEL_SIZE')=='4'
+            and self.engine.get('gpu')=='0,1,2,3' and self.worker_values.get('INFERENCE_BASE_URLS')==f"http://127.0.0.1:{self.engine['port']}"
+            and all(a.get('MODEL_NAME')==h['MODEL'] for a in apis)
+            and all(apis[0].get(k,'60')==apis[1].get(k,'60') for k in ('SCHEDULER_AGING_SECONDS','SCHEDULER_WORKER_FRESHNESS_SECONDS')),'exact_model_engine_or_policy_knobs_required')
+        self.records={};self.process_env={};self.argv={};bindings={}
+        for s in self.all:
+            key=self.key(s);record,env,argv,safe=self.reader(controller,s)
+            require(all(env.get(k)==v for k,v in h['values'](self.env[s['env_file']]).items()),'effective_config_differs')
+            self.records[key]=record;self.process_env[key]=env;self.argv[key]=argv;bindings[key]=safe
+        self.original_process_env={k:dict(v) for k,v in self.process_env.items()}
+        from ops.ha.single_pod_fault_probe import source_hashes
+        self.source_reader=lambda:dict(source_hashes(root),operator=sha(SELF.read_bytes()),helper=sha((root/'.runtime/deploy_postpair_sources.py').read_bytes()))
+        self.sources=self.source_reader();self.starter=starter or h['invoke_start'];self.api_stopper=api_stopper
+        self.drained=drained or (lambda:h['Deployment']._drained(self));self.idle=idle or self._idle
+        self.sleep,self.clock,self.stop=sleep,clock,stop or threading.Event();self.unknown=False
+        self.binding=dict(target=target,original_policy=old[0],manifest_sha256=sha(self.manifest_raw),sources=self.sources,
+            environment_sha256={p:sha(v) for p,v in self.original.items()},patched_sha256={p:sha(v) for p,v in self.patched.items()},processes=bindings)
+        self.report_path=run/'report.json'
+        if self.report_path.exists():
+            self.report=h['load'](h['private_file'](self.report_path,2*1024**2))
+            require(self.report['phase']=='prepared' and self.report['binding']==self.binding and not self.report['pending_action'],'existing_operation_no_replay')
+        else:
+            require(not any(run.iterdir()),'partial_operation_no_replay')
+            self.report=dict(phase='prepared',binding=self.binding,prepared_at=h['stamp'](),pending_action=None,events=[],automatic_replay=False)
+            for s in self.apis:
+                for suffix,raw in [('original',self.original[s['env_file']]),('staged',self.patched[s['env_file']])]:
+                    h['atomic_bytes'](run/(s['name']+'.env.'+suffix),raw)
+            self.save(self.report)
+    @staticmethod
+    def key(s):return s['role']+'-'+s['name']
+    def save(self,value):self.h['save'](self.report_path,value);self.report=value
+    def _idle(self):
+        self.drained();self.h['Deployment']._profile(self)
+        require(self.controller.engine_quiescence(self.engine).get('quiescent') is True,'engine_not_quiescent')
+    def guard(self,stopping=None,warm=None):
+        require(not self.unknown and not self.stop.is_set(),'unknown_or_interrupted_no_followon')
+        if stopping:
+            pending=self.report['pending_action'];require(stopping in {self.key(s) for s in [*self.apis,self.watchdog]}
+                and pending and pending['stage']=='stop:'+stopping and pending['pid']==self.records[stopping]['pid']
+                and pending['start_ticks']==self.records[stopping]['start_ticks'],'invalid_stopping_target')
+        require(warm is None or warm in {self.key(s) for s in self.apis},'invalid_warming_target')
+        require(self.h['private_file'](self.manifest)==self.manifest_raw and self.source_reader()==self.sources,'manifest_or_source_drift')
+        require(all(self.h['private_file'](Path(p))==raw for p,raw in self.env.items()),'configuration_drift')
+        for s in self.all:
+            key=self.key(s)
+            if key==stopping:continue  # role lock + pidfd + original PID-file checks own this one target
+            require(self.controller.record(s)==self.records[key],'foreign_process_identity')
+            if self.records[key] is None:continue
+            record,env,argv,_=self.reader(self.controller,s)
+            require(record==self.records[key] and env==self.process_env[key] and argv==self.argv[key],'effective_process_drift')
+            if s in self.services and key!=warm:require(self.controller.responding(s,ready=True),'service_not_ready')
+        for s in self.apis:
+            require(self.h['private_file'](self.run/(s['name']+'.env.original'))==self.original[s['env_file']]
+                and self.h['private_file'](self.run/(s['name']+'.env.staged'))==self.patched[s['env_file']],'private_snapshot_drift')
+        self.drained()
+    def action(self,stage,callback,**safe):
+        self.guard();require(self.report['pending_action'] is None,'pending_no_replay')
+        self.save({**self.report,'phase':'applying','pending_action':dict(stage=stage,at=self.h['stamp'](),**safe)})
+        try:
+            callback();self.save({**self.report,'pending_action':None,'events':[*self.report['events'],dict(stage=stage,confirmed_at=self.h['stamp'](),**safe)]})
+        except BaseException:
+            self.unknown=True;raise
+    def stop_service(self,s):
+        key=self.key(s);expected=self.records[key]
+        def stop():
+            check=lambda:self.guard(stopping=key)
+            if s==self.watchdog:self.controller.graceful_stop(s,expected,30,check)
+            else:self.api_stopper(self.root,self.controller,s,expected,check)
+            require(self.controller.record(s) is None,'stop_not_confirmed');self.records[key]=None
+        self.action('stop:'+key,stop,pid=expected['pid'],start_ticks=expected['start_ticks'])
+    def start_service(self,s):
+        key=self.key(s);require(self.records[key] is None and self.controller.record(s) is None,'start_requires_known_absence')
+        def start():
+            ack=self.starter(self.root,s,self.original_process_env[key]);record,env,argv,_=self.reader(self.controller,s)
+            wanted=dict(self.original_process_env[key])
+            if s in self.apis:wanted['SCHEDULER_POLICY']=self.target
+            require(ack.get('status')=='started' and ack.get('pid')==record['pid'] and env==wanted and argv==self.argv[key],'unknown_start_ack_or_effective_policy')
+            self.records[key]=record;self.process_env[key]=wanted
+        self.action('start:'+key,start)
+    def apply(self):
+        require(self.report['phase']=='prepared' and not self.report['pending_action'],'existing_operation_no_replay')
+        try:
+            self.guard();self.idle();self.stop_service(self.watchdog)
+            for s in self.apis:
+                self.stop_service(s)
+                def patch(s=s):
+                    self.h['atomic_bytes'](Path(s['env_file']),self.patched[s['env_file']]);self.env[s['env_file']]=self.patched[s['env_file']]
+                    require(self.h['private_file'](Path(s['env_file']))==self.env[s['env_file']],'policy_write_unconfirmed')
+                self.action('policy:'+self.key(s),patch);self.start_service(s);deadline=self.clock()+45
+                while True:
+                    self.guard(warm=self.key(s))
+                    if self.controller.responding(s,ready=True):break
+                    require(self.clock()<deadline,'api_readiness_timeout');self.sleep(.5)
+            self.guard();self.idle();self.start_service(self.watchdog);self.guard();self.idle()
+            self.save({**self.report,'phase':'complete','finished_at':self.h['stamp'](),'passed':True,'watchdog_restored':True})
+        except BaseException as error:
+            try:self.save({**self.report,'phase':'manual_recovery_required','passed':False,'error_type':type(error).__name__,
+                'automatic_rollback_or_replay':False,'watchdog_restart_after_failure':False})
+            except BaseException:pass
+            raise
+        return self.report
+
+def main(argv=None):
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--policy',choices=['fair','cost_aware'],required=True)
+    p.add_argument('--operation',required=True);p.add_argument('--manifest',type=Path,default=ROOT/'.runtime/services-primary.json')
+    p.add_argument('--apply',action='store_true');p.add_argument('--prepared-sha256');a=p.parse_args(argv);os.umask(0o077)
+    try:
+        require(ROOT==APP and sys.platform=='linux' and hasattr(os,'pidfd_open') and hasattr(signal,'pidfd_send_signal'),'same_pod_linux_pidfd_required')
+        require(bool(a.prepared_sha256)==a.apply,'apply_requires_exact_prepared_sha')
+        require(re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]{0,63}',a.operation) is not None,'unique_operation_required')
+        h=load_helpers(ROOT)
+        from ops.ha.single_pod_fault_probe import WorkerController
+        manifest,services,_=h['load_manifest'](a.manifest,root=ROOT);run=ROOT/'.runtime'/('scheduler-policy-'+a.operation)
+        with ExitStack() as locks:
+            for name in ('scheduler-policy.lock','qwen235b-maintenance.lock','single-pod-worker-fault.lock','postpair-source-rollout.lock'):
+                locks.enter_context(locked(ROOT/'.runtime'/name))
+            if not run.exists():require(not a.apply,'apply_requires_prepared');h['directory'](run,fresh=True);h['fsync_directory'](run.parent)
+            else:h['directory'](run)
+            if a.apply:require(sha(h['private_file'](run/'report.json',2*1024**2))==a.prepared_sha256,'exact_prepared_sha_required')
+            stop=threading.Event()
+            for sig in (signal.SIGINT,signal.SIGTERM):signal.signal(sig,lambda *_:stop.set())
+            roll=Roll(ROOT,run,manifest,services,a.policy,h,WorkerController(root=ROOT),stop=stop)
+            roll.guard();roll.idle()
+            if a.apply:roll.apply()
+            print(json.dumps(dict(phase=roll.report['phase'],report_sha256=sha(h['private_file'](run/'report.json',2*1024**2)),applied=a.apply)));return 0
+    except BaseException as error:
+        print(json.dumps(dict(refused_or_manual=True,error_code=str(error) if type(error) is Refusal else type(error).__name__,automatic_replay=False)));return 1
+if __name__=='__main__':raise SystemExit(main())

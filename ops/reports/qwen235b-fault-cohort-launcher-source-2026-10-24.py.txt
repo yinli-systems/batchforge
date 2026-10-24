@@ -1,0 +1,338 @@
+"""Prepare, then once-launch one fresh 100-task single-Pod fault cohort.
+
+Root must first complete the separately reviewed exact source rollout. This
+glue neither changes serving configuration nor restores/kills/adopts children.
+Unknown outcomes require manual review; rerun never submits a replacement.
+Raw fixture/output/config bytes stay private. Child pipes are hashed, not logged.
+"""
+from __future__ import annotations
+import argparse
+from contextlib import contextmanager
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shlex
+import signal
+import stat
+import subprocess
+import sys
+import threading
+import time
+
+SELF=Path(__file__).resolve();ROOT=SELF.parent.parent
+MODEL='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+FIXTURE_SHA='52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f'
+OPERATIONS={'worker-fault100-v1':0,'capacity2-fault100-v1':2,'engine-fault100-v1':None}
+PINS={
+ 'ops/ha/single_pod_fault_probe.py':'54b33493e0b4e1869b48bda24a59d86cc947576f2a9f8e1b1f570ed1e5f17d09',
+ 'ops/ha/single_pod_engine_fault_probe.py':'a1d62e89cd0daa302fd9d5c62016708859cf7bd7e60daa09327ee106f174d990',
+ 'ops/ha/engine_outage_probe.py':'04bf500ca72e9c359ed1e2fc359897d6fc397c8ab605ca2283b61976d080f764',
+ 'ops/ha/controlplane_outage_probe.py':'33cd50ccf2962a74f555e836056d16186b5d739cd9598879b7b15006e4670413',
+ 'ops/manage.py':'159fc37c6f9a64e36e5e0f20bc97a8adf08d6ce93934f988339bab534879d0a0',
+ 'ops/supervise.py':'3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0',
+ 'ops/engine_members.py':'e4d0b2f2c130dce6fa16a4925d3557ca16475793a5b4f156f62a3d8f2df471ff',
+ 'ops/host_memory.py':'e4887b81fd3c95e7f94bd118d0917775d5e8839c7c59e07b7dd8d98552150902',
+ 'scripts/observe_runtime.py':'8860074f6e0689956bd34ceb836443f92e83ad51496251ecec707c343e08cff3',
+ 'scripts/scheduler_benchmark.py':'56f4cba0cf78627c0d5478a085c796ee7d26f454f2f481d99017d4dc3d4ddbce',
+ 'scripts/benchmark.py':'1d9d64f933c59f457187dfe50d42ae46be7591a60490c3d86cf930a498e22066',
+ 'worker/runtime.py':'56be1af6502a617540cdabf8c65e0662a833909dd2b8746df0910f3fd96eb04d',
+ 'worker/metrics.py':'f9119336068200ffc8fa994924b93d15a824493c8502d86e237678ebfb0a5196',
+ 'worker/config.py':'e6f70e8ab7ef47059a74a09a4f105e6de8c57bcca2b990d7fd7e6a53bc9d24e4',
+ 'worker/kv_admission.py':'e26dff615204edde0ffdeba44271dc84ced4b6d26477f90b6df874fd6a270d6e'}
+sys.dont_write_bytecode=True
+
+class Refusal(ValueError):pass
+def require(ok,code):
+ if not ok:raise Refusal(code)
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def stamp():return datetime.now(timezone.utc).isoformat()
+def encoded(value):return (json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode()
+def load(raw):
+ def unique(pairs):
+  result={}
+  for key,value in pairs:require(key not in result,'duplicate_json_key');result[key]=value
+  return result
+ def invalid(_):raise Refusal('nonfinite_json')
+ return json.loads(raw.decode('utf-8'),object_pairs_hook=unique,parse_constant=invalid)
+def read(path,maximum=16*1024**2,private=True,allow_empty=False):
+ require(path.is_absolute() and path.resolve()==path,'canonical_file_required')
+ fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+ try:
+  a=os.fstat(fd);require(stat.S_ISREG(a.st_mode) and a.st_uid==os.geteuid() and a.st_nlink==1
+   and not a.st_mode&(0o077 if private else 0o022) and (0<=a.st_size if allow_empty else 0<a.st_size) and a.st_size<=maximum,'owned_bounded_file_required')
+  with os.fdopen(fd,'rb',closefd=False) as handle:raw=handle.read(maximum+1)
+  b=os.fstat(fd);require(len(raw)==a.st_size and all(getattr(a,k)==getattr(b,k) for k in ('st_dev','st_ino','st_size','st_mtime_ns','st_ctime_ns')),'file_changed')
+  return raw
+ finally:os.close(fd)
+def directory(path,fresh=False):
+ require(path.is_absolute() and path.resolve()==path and path.is_relative_to(ROOT/'.runtime'),'private_runtime_directory_required')
+ if fresh:path.mkdir(mode=0o700)
+ info=path.lstat();require(stat.S_ISDIR(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o077,'private_runtime_directory_required')
+def sync(path):
+ fd=os.open(path,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+ try:os.fsync(fd)
+ finally:os.close(fd)
+def write(path,value,exclusive=True):
+ directory(path.parent);target=path if exclusive else path.with_name(path.name+'.'+os.urandom(8).hex()+'.tmp')
+ fd=os.open(target,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+ try:
+  with os.fdopen(fd,'wb') as handle:handle.write(encoded(value));handle.flush();os.fsync(handle.fileno())
+  if not exclusive:os.replace(target,path)
+  sync(path.parent)
+ finally:
+  if not exclusive:target.unlink(missing_ok=True)
+@contextmanager
+def locked():
+ path=ROOT/'.runtime/fault-cohort-launcher.lock';fd=os.open(path,os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW|os.O_NONBLOCK,0o600)
+ try:
+  info=os.fstat(fd);require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid() and stat.S_IMODE(info.st_mode)==0o600 and info.st_nlink==1,'unsafe_launcher_lock')
+  fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB);yield
+ finally:os.close(fd)
+def source_map():
+ for name,digest in PINS.items():require(sha(read(ROOT/name,512*1024,private=False))==digest,'reviewed_release_source_differs')
+ paths={p for folder in ('backend','worker','ops','scripts') for p in (ROOT/folder).rglob('*') if p.is_file() and p.suffix in {'.py','.sql'}}
+ paths.add(SELF)
+ return {str(p.relative_to(ROOT)):sha(read(p,512*1024,private=False,allow_empty=True)) for p in sorted(paths)}
+def fixture_rows(path):
+ raw=read(path,32*1024**2);require(sha(raw)==FIXTURE_SHA,'exact_fixture_required')
+ rows=[load(line) for line in raw.splitlines() if line.strip()]
+ require(len(rows)==20 and len({r['custom_id'] for r in rows})==20 and all(r['body']['model']==MODEL for r in rows),'twenty_unique_model_cells_required')
+ return rows
+def env_values(raw):
+ result={}
+ for line in raw.decode('utf-8').splitlines():
+  text=line.strip().removeprefix('export ').strip()
+  if not text or text.startswith('#'):continue
+  key,separator,value=text.partition('=')
+  require(separator and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*',key) and key not in result,'invalid_private_environment_assignment')
+  result[key]=' '.join(shlex.split(value,comments=True))
+ return result
+def expected_rows(rows,rid):
+ result=[]
+ for repeat in range(5):
+  for row in rows:
+   body=dict(row['body']);body['min_tokens']=body.get('max_tokens',body.get('max_completion_tokens',256))
+   result.append({**row,'body':body,'custom_id':rid+'-repeat'+str(repeat)+'-'+row['custom_id']})
+ return result
+def derive_submission(path,rows):
+ if not path.exists():return None
+ directory(path);files=list(path.iterdir());require(len(files)<=1,'submitted_directory_not_exact_one_file')
+ if not files:return None
+ match=re.fullmatch(r'(bench-[0-9a-f]{12})-0\.jsonl',files[0].name);require(match is not None,'submitted_filename_not_exact_new_run')
+ raw=read(files[0],32*1024**2,allow_empty=True)
+ if not raw.endswith(b'\n') or len(raw.splitlines())<100:return None
+ actual=[load(line) for line in raw.splitlines()];rid=match.group(1)
+ require(actual==expected_rows(rows,rid),'submitted_fixture_or_custom_ids_differ')
+ return rid,sha(raw)
+def commands(args,run,port,rid=None):
+ if rid is None:return [sys.executable,'-m','scripts.scheduler_benchmark','--env-file',str(args.benchmark_env),'--workload',str(args.fixture),
+  '--report',str(run/'benchmark-report.json'),'--label',args.operation,'--repeats','5','--batches','1','--fixed-output',
+  '--hourly-cost','16.10','--url','http://127.0.0.1:8082','--engine-url',f'http://127.0.0.1:{port}']
+ probe='single_pod_engine_fault_probe.py' if OPERATIONS[args.operation] is None else 'single_pod_fault_probe.py'
+ result=[sys.executable,str(ROOT/'ops/ha'/probe),'--manifest',str(args.manifest),'--env-file',str(args.env_file),
+  '--supervisor-env',str(args.supervisor_env),'--worker-name','qwen235b','--engine-name','qwen235b','--model',MODEL,
+  '--run-id',rid,'--expected-tasks','100','--minimum-running','8','--wait-for-submission','300','--expiry-timeout','240',
+  '--terminal-timeout','1800','--engine-quiescence-timeout','600','--report',str(ROOT/'.runtime'/(args.operation+'-probe-report.json'))]
+ return result+(['--engine-ready-timeout','900'] if OPERATIONS[args.operation] is None else ['--drain-seconds','600','--reduced-capacity',str(OPERATIONS[args.operation])])
+def new_probe_report(operation):
+ path=ROOT/'.runtime'/(operation+'-probe-report.json')
+ require(not path.exists() and not path.is_symlink(),'existing_probe_report_no_replay')
+ return path
+
+class Context:
+ def __init__(self,args):
+  require(ROOT==Path('/root/batchforge-runtime/app') and sys.platform=='linux','same_pod_app_only')
+  self.args=args;source_map();sys.path.insert(0,str(ROOT))
+  from ops.supervise import load_manifest
+  from ops.ha.single_pod_fault_probe import WorkerController
+  from ops.ha.single_pod_engine_fault_probe import EngineFaultProgress
+  from backend.migrate import MIGRATIONS,SCHEMA_VERSION
+  self.values=env_values;self.progress_class=EngineFaultProgress;self.controller=WorkerController(root=ROOT)
+  self.manifest,self.services,_=load_manifest(args.manifest,root=ROOT)
+  require(sorted((s['name'],s['port']) for s in self.services if s['role']=='api')==[('a',8082),('b',8083)]
+   and [(s['name'],s['port']) for s in self.services if s['role']=='gateway']==[('edge',8080)],'exact_api_gateway_required')
+  workers=[s for s in self.services if s['role']=='worker'];engines=[s for s in self.services if s['role']=='engine']
+  require(len(workers)==len(engines)==1 and workers[0]['name']==engines[0]['name']=='qwen235b','exact_owned_pair_required')
+  self.worker,self.engine=workers[0],engines[0];self.supervisor={'role':'supervisor','name':'primary','env_file':str(args.supervisor_env),'python':self.worker['python']}
+  self.all=[*self.services,self.supervisor];self.api=next(s for s in self.services if s['role']=='api' and s['name']=='a')
+  require(Path(self.api['env_file'])==args.env_file,'manifest_api_a_configuration_required')
+  self.api_env=self.values(read(args.env_file));self.bench_env=self.values(read(args.benchmark_env));self.worker_env=self.values(read(Path(self.worker['env_file'])))
+  engine=self.values(read(Path(self.engine['env_file'])));watch=self.values(read(args.supervisor_env))
+  require(self.bench_env['DATABASE_URL']==self.api_env['DATABASE_URL'] and watch.get('SUPERVISOR_MANIFEST')==str(self.manifest),'runtime_configuration_not_bound')
+  require(self.api_env.get('SQL_RECOVERY_ENABLED','').lower() in {'true','1'} and self.worker_env.get('MODEL_NAME')==engine.get('MODEL_NAME')==MODEL
+   and self.engine.get('gpu')=='0,1,2,3' and engine.get('ENGINE_TENSOR_PARALLEL_SIZE')=='4'
+   and self.worker_env.get('WORKER_MAX_INFLIGHT')=='64' and self.worker_env.get('WORKER_ADAPTIVE_KV_ENABLED','').lower() in {'true','1'}
+   and self.worker_env.get('INFERENCE_BASE_URLS')==f"http://127.0.0.1:{self.engine['port']}",'released_adaptive64_tp4_required')
+  require(OPERATIONS[args.operation]!=2 or float(self.worker_env.get('WORKER_SHUTDOWN_SECONDS','0'))>=600,'capacity2_shutdown_bound_required')
+  self.profile=json.loads(self.worker_env['SCHEDULER_PROFILE_JSON']);self.rows=fixture_rows(args.fixture)
+  self.progress=self.progress_class(self.bench_env['DATABASE_URL'],'unused-preflight',MODEL,self.worker_env['WORKER_ID']);self.conn=self.progress.connection
+  require(self.conn.execute('SELECT current_user AS role').fetchone()['role']=='bf_runtime','runtime_database_role_required')
+  tenant=self.conn.execute('SELECT tenant_id FROM api_keys WHERE key_hash=%s AND NOT revoked',(sha(self.bench_env['BATCHFORGE_API_KEY'].encode()),)).fetchone()
+  require(tenant and tenant['tenant_id']=='default','default_tenant_benchmark_key_required')
+  expected=[(v,h) for v,_s,h in MIGRATIONS]
+  ledger=self.conn.execute('SELECT version,checksum FROM batchforge_schema_migrations ORDER BY version').fetchall()
+  require(SCHEMA_VERSION==11 and [(r['version'],r['checksum']) for r in ledger]==expected,'exact_schema11_ledger_required')
+  self.ledger={str(v):h for v,h in expected}
+ def close(self):self.progress.close()
+ def static(self):return {'source_sha256':source_map(),'configuration_sha256':{str(p):sha(read(p)) for p in {self.manifest,self.args.benchmark_env,*[Path(s['env_file']) for s in self.all]}},
+  'migration_checksums':self.ledger,'runtime_fingerprint':self.profile['runtime_fingerprint'],'scheduling_profile':self.profile,
+  'fixture_sha256':FIXTURE_SHA,'interpreter':str(Path(sys.executable).resolve())}
+ def processes(self):
+  result={}
+  for service in self.all:
+   record=self.controller.record(service);require(record is not None,'owned_service_missing')
+   proc=Path('/proc')/str(record['pid']);environment=(proc/'environ').read_bytes();actual={k.decode():v.decode() for part in environment.split(b'\0') if b'=' in part for k,v in [part.split(b'=',1)]}
+   require(all(actual.get(k)==v for k,v in self.values(read(Path(service['env_file']))).items()),'actual_service_environment_differs')
+   require(self.controller.record(service)==record,'service_identity_changed')
+   result[service['role']+'-'+service['name']]={**{k:record[k] for k in ('pid','start_ticks','cwd')},'environment_sha256':sha(environment),'argv_sha256':sha((proc/'cmdline').read_bytes())}
+  return result
+ def healthy(self,drained=True):
+  require(all(self.controller.responding(s,ready=True) for s in self.services if s['role'] in {'api','gateway','worker','engine'}),'required_service_not_ready')
+  row=self.conn.execute("SELECT runtime_fingerprint,metadata->'scheduling_profile' AS profile,concurrency,metadata->'kv_admission'->>'budget' AS budget FROM workers WHERE id=%s AND model=%s AND last_seen_at>clock_timestamp()-interval '120 seconds'",(self.worker_env['WORKER_ID'],MODEL)).fetchone()
+  require(row and row['runtime_fingerprint']==self.profile['runtime_fingerprint'] and row['profile']==self.profile and row['concurrency']==64 and row['budget']==self.worker_env['WORKER_TOKEN_BUDGET'],'worker_registration_profile_differs')
+  require(self.progress.other_fresh_workers(self.worker_env['WORKER_ID'])==0,'another_fresh_model_worker')
+  if drained:
+   require(self.conn.execute("SELECT count(*) AS n FROM tasks WHERE status IN ('pending','running')").fetchone()['n']==0,'global_drain_required')
+   require(self.controller.engine_quiescence(self.engine)['quiescent'] is True,'idle_engine_required')
+ def bind_run(self,rid):self.progress.run_id=rid
+ def scope(self,operation):
+  total=self.progress.submission_counts()['total'];require(total<=100,'run_has_extra_tasks')
+  if total<100:return False
+  self.progress.scope(100)
+  row=self.conn.execute("SELECT count(*) AS n FROM batches WHERE metadata->>'benchmark_run'=%s AND metadata->>'engine_label'=%s",(self.progress.run_id,operation)).fetchone()
+  require(row['n']==1 and self.progress.other_unfinished_work()==0,'run_label_or_other_work_scope_differs');return True
+ def final(self):return self.progress.final_proof(100)
+
+class Child:
+ def __init__(self,argv,log,spawn=subprocess.Popen):
+  self.log=log;write(log,{'phase':'reserved','at':stamp(),'pipe_policy':'SHA256 and byte counts only; no plaintext'})
+  self.process=spawn(argv,cwd=ROOT,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True,
+   env={**os.environ,'PYTHONDONTWRITEBYTECODE':'1'})
+  self.pipes={};self.threads=[]
+  def consume(name,pipe):
+   digest=hashlib.sha256();size=0
+   try:
+    for chunk in iter(lambda:pipe.read(8192),b''):digest.update(chunk);size+=len(chunk)
+    self.pipes[name]={'sha256':digest.hexdigest(),'bytes':size}
+   except Exception:self.pipes[name]={'capture_error':'pipe_read_failed'}
+   finally:pipe.close()
+  for name in ('stdout','stderr'):
+   thread=threading.Thread(target=consume,args=(name,getattr(self.process,name)),daemon=True);thread.start();self.threads.append(thread)
+ def poll(self):return self.process.poll()
+ def identity(self):
+  from ops.manage import process_identity
+  result=process_identity(self.process.pid);require(result and result['cwd']==str(ROOT),'owned_child_start_identity_unknown');return result
+ def finish(self):
+  require(self.poll() is not None,'child_not_terminal')
+  for thread in self.threads:thread.join(2)
+  require(all(not t.is_alive() for t in self.threads) and all('sha256' in value for value in self.pipes.values()),'child_pipe_outcome_unknown')
+  result={'phase':'terminal','returncode':self.poll(),'pipes':self.pipes};write(self.log,result,exclusive=False);return result
+
+def validate_results(bench,probe,rid,operation,rows):
+ require(bench.get('passed') is True and bench.get('run_id')==rid and bench.get('engine_label')==operation and bench.get('model')==MODEL
+  and all(bench.get(k)==100 for k in ('requested_tasks','submitted_tasks','completed')) and all(bench.get(k)==1 for k in ('batches','accepted_batches','terminal_batches'))
+  and bench.get('failed')==bench.get('cancelled')==0 and bench.get('test_fixture_detected') is False,'benchmark_terminal_proof_failed')
+ require(all(bench.get(k) is True for k in ('accepted_exactly_once','all_output_lengths_exact','output_custom_ids_unique','output_custom_ids_known','output_rows_match_completed','batch_counts_match_submission'))
+  and all(bench.get(k)==[] for k in ('unfinished_batch_ids','submission_errors','output_validation_errors')),'benchmark_integrity_proof_failed')
+ require(bench.get('experiment',{}).get('source_sha256')==FIXTURE_SHA and bench['experiment'].get('controlled_output_length') is True and bench.get('database_schema_version')==11,'benchmark_fixture_or_schema_differs')
+ caps={r['custom_id']:r['body']['min_tokens'] for r in expected_rows(rows,rid)};tasks=bench.get('tasks',[])
+ require(len(tasks)==100 and {t['custom_id'] for t in tasks}==set(caps) and len({t['id'] for t in tasks})==100
+  and all(t['status']=='completed' and t['accepted_attempts']==1 and t['completion_tokens']==t['output_cap']==caps[t['custom_id']] and t['prompt_tokens']>0 for t in tasks),'benchmark_task_population_or_fixed_caps_differs')
+ require(sum(t['prompt_tokens'] for t in tasks)==bench['observed_prompt_tokens'] and sum(t['completion_tokens'] for t in tasks)==bench['observed_completion_tokens'],'benchmark_usage_totals_differ')
+ require(probe.get('status')=='passed' and probe.get('phase')=='complete' and probe.get('run_id')==rid
+  and probe.get('manual_recovery_required') is not True and not probe.get('final_restore_failed') and probe.get('watchdog_restored') is True
+  and probe.get('accepted_state_unchanged') is True and probe.get('stale_attempt_http_status')=={'heartbeat':409,'complete':409},'probe_restore_or_fence_proof_failed')
+ if OPERATIONS[operation]==2:require(probe.get('capacity_reduction_proven') is True and probe.get('reduced_positive_samples',0)>=3 and probe.get('capacity_reexpansion_proven') is True,'capacity2_observation_proof_failed')
+ return {'completed':100,'accepted_once':True,'usage_matches':True,'fixed_output_lengths':True,'stale_heartbeat_and_complete':409}
+
+class Launcher:
+ def __init__(self,args,context_factory=Context,child_factory=Child):
+  self.args=args;self.run=ROOT/'.runtime/fault-cohorts'/args.operation;self.context_factory=context_factory;self.child_factory=child_factory;self.journal=None;self.armed=False
+ def save(self):write(self.run/'journal.json',self.journal,exclusive=False)
+ def intent(self,stage):self.journal['pending_action']={'stage':stage,'at':stamp()};self.save()
+ def confirm(self,stage,**metadata):self.journal.setdefault('events',[]).append({'stage':stage,'at':stamp(),**metadata});self.journal.pop('pending_action',None);self.save()
+ def prepare(self):
+  with locked():
+   context=self.context_factory(self.args)
+   try:
+    context.healthy();new_probe_report(self.args.operation);binding=context.static();processes=context.processes();parent=self.run.parent
+    if not parent.exists():directory(parent,fresh=True);sync(parent.parent)
+    directory(parent);directory(self.run,fresh=True);sync(parent)
+    plan={'version':1,'operation':self.args.operation,'phase':'prepared','binding':binding,'processes':processes,
+     'arguments':{k:str(v) for k,v in vars(self.args).items() if k not in {'execute','prepared_sha256'}},'automatic_replay':False}
+    write(self.run/'plan.json',plan);self.journal={'phase':'prepared','operation':self.args.operation,'prepared_sha256':sha(read(self.run/'plan.json')),'automatic_replay':False,'created_at':stamp()}
+    write(self.run/'journal.json',self.journal);return {'phase':'prepared','prepared_sha256':self.journal['prepared_sha256'],'workload_submitted':False}
+   finally:context.close()
+ def spawn(self,argv,stage):
+  self.intent(stage);self.journal['pending_action']['argv_sha256']=sha(encoded(argv));self.save()
+  child=self.child_factory(argv,self.run/(stage+'-log.json'))
+  self.journal.setdefault('children',{})[stage]={'identity':child.identity(),'argv_sha256':sha(encoded(argv)),'startup_observed_at':stamp()};self.save();self.confirm(stage)
+  return child
+ def wait(self,child,timeout,context,binding,stage):
+  deadline=time.monotonic()+timeout
+  while child.poll() is None:
+   require(time.monotonic()<deadline,'child_deadline_unknown_no_automatic_stop');require(context.static()==binding,'source_or_configuration_changed');time.sleep(.5)
+  result=child.finish();self.journal.setdefault('child_outcomes',{})[stage]=result;self.save()
+  require(result['returncode']==0,'child_failed_no_automatic_replay');return result
+ def execute(self,expected):
+  with locked():
+   directory(self.run);raw=read(self.run/'plan.json');require(sha(raw)==expected,'exact_prepared_sha_required');plan=load(raw)
+   require(plan['operation']==self.args.operation and plan['arguments']=={k:str(v) for k,v in vars(self.args).items() if k not in {'execute','prepared_sha256'}},'prepared_arguments_differ')
+   journal=load(read(self.run/'journal.json'));require(journal.get('phase')=='prepared' and not journal.get('pending_action') and journal['prepared_sha256']==expected,'existing_operation_no_replay')
+   context=self.context_factory(self.args)
+   try:
+    context.healthy();new_probe_report(self.args.operation);require(context.static()==plan['binding'] and context.processes()==plan['processes'],'prepared_runtime_binding_differs')
+    self.journal=journal;self.armed=True;self.intent('execute');write(self.run/'execution-marker.json',{'intent_at':stamp(),'prepared_sha256':expected});self.journal['phase']='running';self.confirm('execute')
+    bench=self.spawn(commands(self.args,self.run,context.engine['port']),'benchmark_spawn')
+    deadline=time.monotonic()+300;submission=None
+    while submission is None:
+     require(bench.poll() is None and time.monotonic()<deadline,'benchmark_submission_unknown');require(context.static()==plan['binding'],'source_or_configuration_changed')
+     try:submission=derive_submission(self.run/(self.args.operation+'-submitted'),context.rows)
+     except Refusal as error:
+      if str(error)!='file_changed':raise
+     if submission is None:time.sleep(.1)
+    rid,submitted_sha=submission;self.journal.update(run_id=rid,submitted_sha256=submitted_sha);self.save();context.bind_run(rid)
+    deadline=time.monotonic()+300
+    while not context.scope(self.args.operation):
+     require(bench.poll() is None and time.monotonic()<deadline,'durable_submission_scope_unknown');time.sleep(.1)
+    argv=commands(self.args,self.run,context.engine['port'],rid);report=Path(argv[argv.index('--report')+1])
+    require(not report.exists() and not report.is_symlink(),'existing_probe_report_no_replay')
+    dry=self.spawn(argv,'probe_dry_run');self.wait(dry,30,context,plan['binding'],'probe_dry_run');self.confirm('probe_dry_run_finished')
+    require(context.processes()==plan['processes'],'process_binding_changed_before_probe')
+    probe=self.spawn([*argv,'--execute'],'probe_execute');self.wait(probe,3600,context,plan['binding'],'probe_execute');self.confirm('probe_execute_finished')
+    self.wait(bench,4200,context,plan['binding'],'benchmark_spawn');self.confirm('benchmark_finished')
+    braw=read(self.run/'benchmark-report.json');praw=read(report);proof=validate_results(load(braw),load(praw),rid,self.args.operation,context.rows)
+    probe_journal=ROOT/'.runtime'/('singlepod-'+('engine' if OPERATIONS[self.args.operation] is None else 'worker')+'-fault-'+rid+'.journal.json')
+    jraw=read(probe_journal);require(load(jraw)==load(praw),'probe_original_report_and_journal_differ')
+    context.healthy();require(context.static()==plan['binding'],'final_source_configuration_differs');after=context.processes()
+    changed={'worker-qwen235b','supervisor-primary'}|({'engine-qwen235b'} if OPERATIONS[self.args.operation] is None else set())
+    require(all(after[k]==v for k,v in plan['processes'].items() if k not in changed),'protected_service_identity_changed')
+    proof['database_final_acceptance']=context.final();self.journal.update(phase='complete',finished_at=stamp(),final_proof=proof,
+     benchmark_report_sha256=sha(braw),probe_report_sha256=sha(praw),probe_journal_sha256=sha(jraw),probe_report=str(report),final_processes=after,manual_recovery_required=False)
+    self.save();return {'phase':'complete','operation':self.args.operation,'run_id':rid,'benchmark_report_sha256':sha(braw),'probe_report_sha256':sha(praw)}
+   except BaseException as error:
+    if self.armed:
+     self.journal.update(phase='manual_recovery_required',manual_recovery_required=True,error_code=str(error) if type(error) is Refusal else type(error).__name__,automatic_replay=False)
+     try:self.save()
+     except Exception:pass
+    raise
+   finally:context.close()
+
+def main(argv=None):
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--operation',required=True,choices=OPERATIONS)
+ for name,default in [('manifest',ROOT/'.runtime/services-primary.json'),('env-file',ROOT.parent/'api-a.env'),('supervisor-env',ROOT.parent/'supervisor.env'),
+  ('benchmark-env',ROOT/'.runtime/scheduler-v6/benchmark.env'),('fixture',ROOT/'.runtime/qwen235b-v1/workload-20.jsonl')]:parser.add_argument('--'+name,type=Path,default=default)
+ parser.add_argument('--execute',action='store_true');parser.add_argument('--prepared-sha256');args=parser.parse_args(argv);os.umask(0o077)
+ try:
+  require(ROOT==Path('/root/batchforge-runtime/app') and sys.platform=='linux','same_pod_app_only')
+  def interrupted(*_):raise Refusal('operator_interrupted_no_automatic_restore')
+  if args.execute:
+   for signum in (signal.SIGTERM,signal.SIGINT,signal.SIGHUP):signal.signal(signum,interrupted)
+  require(args.execute==bool(args.prepared_sha256),'execute_requires_exact_prepared_sha');job=Launcher(args)
+  result=job.execute(args.prepared_sha256) if args.execute else job.prepare();print(json.dumps(result));return 0
+ except Exception as error:print(json.dumps({'phase':'refused_or_manual','reason_code':str(error) if type(error) is Refusal else type(error).__name__,'automatic_replay':False}));return 1
+if __name__=='__main__':raise SystemExit(main())

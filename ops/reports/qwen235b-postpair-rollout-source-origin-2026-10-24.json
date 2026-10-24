@@ -1,0 +1,98 @@
+{
+  "checked_target_source_sha256": {
+    "frontend/app.js": "df15836d589c80165166215b89954fc93897a28f82de7d22420cc2afa34b5ad8",
+    "ops/ha/decode_graph_qwen235b.py": "f6479ca7bf69f47619fad5c4fa1bd724929d284725d91fb2568e50d7e9d588a2",
+    "ops/ha/single_pod_engine_fault_probe.py": "a1d62e89cd0daa302fd9d5c62016708859cf7bd7e60daa09327ee106f174d990",
+    "ops/ha/single_pod_fault_probe.py": "54b33493e0b4e1869b48bda24a59d86cc947576f2a9f8e1b1f570ed1e5f17d09",
+    "ops/manage.py": "159fc37c6f9a64e36e5e0f20bc97a8adf08d6ce93934f988339bab534879d0a0",
+    "worker/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "worker/__main__.py": "70017c658180a9195340611de8089f6cbacb1775d0a907f9b0fa00e62ce8a062",
+    "worker/config.py": "e6f70e8ab7ef47059a74a09a4f105e6de8c57bcca2b990d7fd7e6a53bc9d24e4",
+    "worker/kv_admission.py": "e26dff615204edde0ffdeba44271dc84ced4b6d26477f90b6df874fd6a270d6e",
+    "worker/metrics.py": "f9119336068200ffc8fa994924b93d15a824493c8502d86e237678ebfb0a5196",
+    "worker/runtime.py": "56be1af6502a617540cdabf8c65e0662a833909dd2b8746df0910f3fd96eb04d"
+  },
+  "independent_metadata_crosschecks": {
+    "all_eleven_source_copy_events_match_reviewed_targets": true,
+    "backup_metadata_sha256": "abab96c7d759566122df7b23021e33ff60bcad17a90f6012f2eceb98341b2b37",
+    "linux_report_sha256": "560c7c5010b65a14c65b6917fc08119e794f618b94b37626a88545e6ad5f1431",
+    "local_eleven_reviewed_source_bytes_match": true,
+    "protected_api_engine_gateway_restart_attempted": false,
+    "raw_process_environment_or_argv_exported": false,
+    "restore_report_sha256": "7273622fd11c7e8d90097660a673bdcdf0c6d817fc479083fbaa2c94710cfbed",
+    "rollout_finished_at": "2026-10-24T09:44:51.466907+00:00",
+    "rollout_phase": "complete",
+    "stage_metrics_families_observed": 0,
+    "worker_configuration_sha256": "a8421b2a11db94bfcb2c2ae4a6a3a1a95c704721478452934240b3a4fcbe91cb",
+    "worker_identity_matches_initial_stage_snapshot": true
+  },
+  "inventory_version": 1,
+  "limitations": [
+    "Local artifact/hash crosschecking, not independent live process or GPU observation.",
+    "Deploying graph/fault helpers does not execute or qualify those experiments.",
+    "Source metadata proves content hashes; later file owner/mode hardening was reported separately by root and is not independently attested by these two receipts."
+  ],
+  "metadata_files": [
+    {
+      "bytes": 43802,
+      "local_transport_relative_path": ".runtime/postpair-rollout-result-v1/rollout-report.json",
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-postpair-source-rollout-report-2026-10-24.json",
+      "sha256": "53f33be3a068a7424cf9a497987e025c76da8c594f6cbc9c328e62c10b9ce444"
+    },
+    {
+      "bytes": 638,
+      "local_transport_relative_path": ".runtime/postpair-rollout-result-v1/initial-stage-snapshot.json",
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-postpair-initial-stage-snapshot-2026-10-24.json",
+      "sha256": "15c0836aae0567d0f29557ddb59532665b58eeaee46afdf140d480b25ded2372"
+    }
+  ],
+  "operator_reported_status": {
+    "capacity2_fault": "NOT_EXECUTED",
+    "engine_fault": "NOT_EXECUTED",
+    "scheduler_policy_rollout": "NOT_EXECUTED",
+    "worker_fault": "RUNNING; leases recovered, waiting for all100 results"
+  },
+  "prepared_at": "2026-10-24T09:54:59.573453+00:00",
+  "scope": "Two exact source-rollout/stage metadata reports and four reviewed private operator source/test bytecopies only; no configuration/RAM environment contents, prompt/output or SQL dump.",
+  "source_references": [
+    {
+      "bytes": 26956,
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/run_qwen235b_fault_cohort.py",
+      "review_copy": "ops/reports/qwen235b-fault-cohort-launcher-source-2026-10-24.py.txt",
+      "sha256": "35b8b852d4093ebcaf7fa4342d4fc3d13badc3c53bea89303f401d3a2495c655",
+      "status": "worker-fault100 RUNNING as reported by root; no terminal result yet"
+    },
+    {
+      "bytes": 15354,
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/test_run_qwen235b_fault_cohort.py",
+      "review_copy": "ops/reports/qwen235b-fault-cohort-launcher-tests-2026-10-24.py.txt",
+      "sha256": "502fe1fba45ceaa99e0b2f791b315fd4b97212b7b8103041e298ede8dc178d79",
+      "status": "21 local tests passed; not a production fault proof"
+    },
+    {
+      "bytes": 15505,
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/roll_qwen235b_scheduler_policy.py",
+      "review_copy": "ops/reports/qwen235b-scheduler-policy-rollout-source-2026-10-24.py.txt",
+      "sha256": "dc190d757a292069c4c777f93e476a367b039084a9392b53e20ab901294cb7b9",
+      "status": "NOT_EXECUTED"
+    },
+    {
+      "bytes": 13265,
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/test_roll_qwen235b_scheduler_policy.py",
+      "review_copy": "ops/reports/qwen235b-scheduler-policy-rollout-tests-2026-10-24.py.txt",
+      "sha256": "ce4614dd790d11e323366bb524906559c596182a2e329f761d459204689cceaf",
+      "status": "14 local tests passed; not a production policy rollout"
+    }
+  ],
+  "stage_collector": {
+    "interpretation": "Empty metrics list is an initial snapshot, not measured stage latency or a valid histogram delta.",
+    "reviewed_source_sha256": "e81a27b00112076bf444d2ba85dc8c96bc5b28c402e489169d9ebd7831edaaec",
+    "source_identification_basis": "Root reports using the reviewed collector; snapshot itself binds four worker sources/configuration/PID, not a collector source field."
+  }
+}

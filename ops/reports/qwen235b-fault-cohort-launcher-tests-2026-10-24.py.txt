@@ -1,0 +1,201 @@
+"""Local synthetic launch/control fixtures; no HTTP, SQL, GPU, SSH or services."""
+from copy import deepcopy
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import runpy
+import sys
+import tempfile
+import time
+import unittest
+from unittest import mock
+
+ROOT=Path(__file__).resolve().parents[1]
+M=runpy.run_path(str(ROOT/'.runtime/run_qwen235b_fault_cohort.py'),run_name='local_fault_cohort_test')
+G=M['Launcher'].__init__.__globals__
+RID='bench-0123456789ab'
+
+def rows():return [{'custom_id':'cell'+str(i),'method':'POST','url':'/v1/chat/completions','body':{'model':M['MODEL'],'messages':[{'role':'user','content':'SYNTHETIC'}],'max_tokens':[32,128,512,2048][i%4]}} for i in range(20)]
+def benchmark(operation,source):
+ tasks=[dict(id='task'+str(i),custom_id=row['custom_id'],status='completed',accepted_attempts=1,prompt_tokens=128,completion_tokens=row['body']['min_tokens'],output_cap=row['body']['min_tokens']) for i,row in enumerate(M['expected_rows'](source,RID))]
+ return dict(passed=True,run_id=RID,engine_label=operation,model=M['MODEL'],requested_tasks=100,submitted_tasks=100,completed=100,batches=1,accepted_batches=1,terminal_batches=1,failed=0,cancelled=0,test_fixture_detected=False,
+  accepted_exactly_once=True,all_output_lengths_exact=True,output_custom_ids_unique=True,output_custom_ids_known=True,output_rows_match_completed=True,batch_counts_match_submission=True,
+  unfinished_batch_ids=[],submission_errors=[],output_validation_errors=[],experiment=dict(source_sha256=M['FIXTURE_SHA'],controlled_output_length=True),database_schema_version=11,
+  tasks=tasks,observed_prompt_tokens=sum(t['prompt_tokens'] for t in tasks),observed_completion_tokens=sum(t['completion_tokens'] for t in tasks))
+def probe():return dict(status='passed',phase='complete',run_id=RID,watchdog_restored=True,manual_recovery_required=False,accepted_state_unchanged=True,stale_attempt_http_status={'heartbeat':409,'complete':409},capacity_reduction_proven=True,reduced_positive_samples=3,capacity_reexpansion_proven=True)
+
+class Context:
+ def __init__(self,args):self.args=args;self.engine={'port':8399};self.rows=rows();self.bound=False
+ def healthy(self):pass
+ def static(self):return {'source':'SYNTHETIC_FROZEN','interpreter':sys.executable}
+ def processes(self):return {name:dict(pid=i+100,start_ticks='1234',cwd=str(G['ROOT'])) for i,name in enumerate(('api-a','api-b','gateway-edge','worker-qwen235b','engine-qwen235b','supervisor-primary'))}
+ def bind_run(self,rid):assert rid==RID;self.bound=True
+ def scope(self,operation):assert self.bound and operation==self.args.operation;return True
+ def final(self):return dict(tasks=100,all_completed=True,accepted_once=True,durable_usage_matches=True,simulated_results=False)
+ def close(self):pass
+
+class LaunchTests(unittest.TestCase):
+ def setUp(self):
+  self.tmp=tempfile.TemporaryDirectory(prefix='bf-fault-cohort-synthetic-');self.root=Path(self.tmp.name).resolve();(self.root/'.runtime').mkdir(mode=0o700)
+  self.oldroot=G['ROOT'];G['ROOT']=self.root
+  self.args=argparse.Namespace(operation='worker-fault100-v1',manifest=self.root/'.runtime/services.json',env_file=self.root/'api.env',supervisor_env=self.root/'watch.env',benchmark_env=self.root/'bench.env',fixture=self.root/'fixture.jsonl',execute=False,prepared_sha256=None)
+  self.calls=[];self.mode=None;self.bench_done=False
+ def tearDown(self):G['ROOT']=self.oldroot;self.tmp.cleanup()
+ def job(self):return M['Launcher'](self.args,context_factory=Context,child_factory=self.child)
+ def prepare(self):return self.job().prepare()['prepared_sha256']
+ def child(self,argv,log):
+  stage=log.name.removesuffix('-log.json');self.calls.append((stage,list(argv)));journal=M['load']((log.parent/'journal.json').read_bytes())
+  self.assertEqual(journal['pending_action']['stage'],stage);self.assertEqual(journal['pending_action']['argv_sha256'],M['sha'](M['encoded'](argv)))
+  self.assertFalse(log.exists());M['write'](log,{'phase':'reserved'})
+  if self.mode=='spawn_unknown':raise OSError('SYNTHETIC_PRIVATE_ERROR_NEVER_LOG')
+  if stage=='benchmark_spawn':
+   submitted=log.parent/(self.args.operation+'-submitted');submitted.mkdir(mode=0o700)
+   data=M['expected_rows'](rows(),RID)
+   if self.mode=='wrong_submission':data[0]['custom_id']='wrong'
+   path=submitted/(RID+'-0.jsonl');path.write_bytes(b''.join(M['encoded'](r) for r in data));path.chmod(0o600)
+   if self.mode=='extra_submission':
+    other=submitted/'bench-deadbeef1234-0.jsonl';other.write_bytes(path.read_bytes());other.chmod(0o600)
+  if stage=='probe_execute':
+   self.bench_done=True;document=probe()
+   if self.mode=='probe_failed':document['status']='failed'
+   if self.mode=='fence_failed':document['stale_attempt_http_status']['complete']=200
+   p=Path(argv[argv.index('--report')+1]);M['write'](p,document)
+   journal=self.root/'.runtime'/('singlepod-'+('engine' if M['OPERATIONS'][self.args.operation] is None else 'worker')+'-fault-'+RID+'.journal.json');M['write'](journal,document)
+   report=benchmark(self.args.operation,rows())
+   if self.mode=='wrong_usage':report['observed_completion_tokens']+=1
+   M['write'](log.parent/'benchmark-report.json',report)
+  owner=self
+  class Fake:
+   def identity(self):return dict(pid=23456,start_ticks='111',cwd=str(owner.root))
+   def poll(self):return None if stage=='benchmark_spawn' and not owner.bench_done else 0
+   def finish(self):
+    result={'phase':'terminal','returncode':1 if owner.mode=='dry_failed' and stage=='probe_dry_run' else 0,'pipes':{}}
+    M['write'](log,result,exclusive=False);return result
+  return Fake()
+ def test_prepare_only_private_metadata_no_children_or_submitted_files(self):
+  checksum=self.prepare();run=self.job().run;self.assertEqual(M['sha']((run/'plan.json').read_bytes()),checksum);self.assertFalse(self.calls)
+  self.assertEqual(run.stat().st_mode&0o777,0o700);self.assertTrue(all(p.stat().st_mode&0o777==0o600 for p in run.iterdir()))
+ def test_all_three_operations_exact_fixture_one_batch_and_same_probe_argv(self):
+  for operation in M['OPERATIONS']:
+   with self.subTest(operation=operation):
+    case=LaunchTests();case.setUp()
+    try:
+     case.args.operation=operation;expected=case.prepare();result=case.job().execute(expected)
+     self.assertEqual(result['phase'],'complete');self.assertEqual([s for s,_ in case.calls],['benchmark_spawn','probe_dry_run','probe_execute'])
+     bench=case.calls[0][1];self.assertEqual(bench[bench.index('--batches')+1],'1');self.assertEqual(bench[bench.index('--repeats')+1],'5');self.assertIn('--fixed-output',bench)
+     self.assertEqual(bench[bench.index('--engine-url')+1],'http://127.0.0.1:8399');self.assertEqual(case.calls[1][1],case.calls[2][1][:-1]);self.assertEqual(case.calls[2][1][-1],'--execute')
+     report=Path(case.calls[1][1][case.calls[1][1].index('--report')+1]);self.assertEqual(report.parent,case.root/'.runtime')
+     journal=M['load']((case.job().run/'journal.json').read_bytes());self.assertFalse(journal.get('pending_action'));self.assertEqual(journal['phase'],'complete');self.assertIn('probe_journal_sha256',journal)
+    finally:case.tearDown()
+ def test_existing_direct_probe_report_refuses_before_benchmark_or_new_run(self):
+  path=self.root/'.runtime'/(self.args.operation+'-probe-report.json');M['write'](path,probe())
+  with self.assertRaisesRegex(M['Refusal'],'existing_probe_report'):self.prepare()
+  self.assertFalse(self.calls);self.assertFalse(self.job().run.exists())
+ def test_existing_probe_report_after_prepare_refuses_without_arming(self):
+  expected=self.prepare();before=(self.job().run/'journal.json').read_bytes();M['write'](self.root/'.runtime'/(self.args.operation+'-probe-report.json'),probe())
+  with self.assertRaisesRegex(M['Refusal'],'existing_probe_report'):self.job().execute(expected)
+  self.assertFalse(self.calls);self.assertEqual(before,(self.job().run/'journal.json').read_bytes())
+ def test_no_repeat_prepare_or_execute_and_no_journal_overwrite(self):
+  expected=self.prepare()
+  with self.assertRaises(FileExistsError):self.prepare()
+  self.job().execute(expected);before=(self.job().run/'journal.json').read_bytes();calls=list(self.calls)
+  with self.assertRaisesRegex(M['Refusal'],'existing_operation'):self.job().execute(expected)
+  self.assertEqual(calls,self.calls);self.assertEqual(before,(self.job().run/'journal.json').read_bytes())
+ def test_unknown_spawn_keeps_fsynced_pending_intent_no_secret_or_adoption(self):
+  expected=self.prepare();self.mode='spawn_unknown'
+  with self.assertRaises(OSError):self.job().execute(expected)
+  journal=M['load']((self.job().run/'journal.json').read_bytes());self.assertEqual(journal['phase'],'manual_recovery_required');self.assertEqual(journal['pending_action']['stage'],'benchmark_spawn');self.assertNotIn('children',journal)
+  self.assertNotIn('SYNTHETIC_PRIVATE_ERROR',json.dumps(journal));self.assertEqual(journal['error_code'],'OSError');calls=list(self.calls)
+  with self.assertRaises(M['Refusal']):self.job().execute(expected)
+  self.assertEqual(calls,self.calls)
+ def test_wrong_or_extra_submitted_file_never_runs_probe(self):
+  for mode in ('wrong_submission','extra_submission'):
+   with self.subTest(mode=mode):
+    case=LaunchTests();case.setUp()
+    try:
+     expected=case.prepare();case.mode=mode
+     with self.assertRaises(M['Refusal']):case.job().execute(expected)
+     self.assertEqual([s for s,_ in case.calls],['benchmark_spawn']);self.assertEqual(M['load']((case.job().run/'journal.json').read_bytes())['phase'],'manual_recovery_required')
+    finally:case.tearDown()
+ def test_failed_dryrun_does_not_execute_probe_or_adopt_running_benchmark(self):
+  expected=self.prepare();self.mode='dry_failed'
+  with self.assertRaisesRegex(M['Refusal'],'child_failed'):self.job().execute(expected)
+  self.assertEqual([s for s,_ in self.calls],['benchmark_spawn','probe_dry_run']);self.assertFalse(self.bench_done)
+  journal=M['load']((self.job().run/'journal.json').read_bytes());self.assertEqual(journal['child_outcomes']['probe_dry_run']['returncode'],1)
+ def test_failed_terminal_usage_or_fence_is_not_reported_complete(self):
+  for mode in ('probe_failed','fence_failed','wrong_usage'):
+   with self.subTest(mode=mode):
+    case=LaunchTests();case.setUp()
+    try:
+     expected=case.prepare();case.mode=mode
+     with self.assertRaises(M['Refusal']):case.job().execute(expected)
+     self.assertEqual(M['load']((case.job().run/'journal.json').read_bytes())['phase'],'manual_recovery_required')
+    finally:case.tearDown()
+ def test_wrong_plan_sha_does_not_spawn_or_change_journal(self):
+  self.prepare();before=(self.job().run/'journal.json').read_bytes()
+  with self.assertRaisesRegex(M['Refusal'],'exact_prepared_sha'):self.job().execute('0'*64)
+  self.assertFalse(self.calls);self.assertEqual(before,(self.job().run/'journal.json').read_bytes())
+ def test_source_or_pid_drift_after_prepare_refuses_before_spawning(self):
+  expected=self.prepare();before=(self.job().run/'journal.json').read_bytes()
+  for field in ('source','process'):
+   class Changed(Context):
+    def static(this):return {'source':'DRIFT'} if field=='source' else super().static()
+    def processes(this):
+     value=super().processes()
+     if field=='process':value['api-a']['pid']+=1
+     return value
+   with self.assertRaisesRegex(M['Refusal'],'prepared_runtime_binding'):M['Launcher'](self.args,context_factory=Changed,child_factory=self.child).execute(expected)
+  self.assertFalse(self.calls);self.assertEqual(before,(self.job().run/'journal.json').read_bytes())
+ def test_no_global_drain_does_not_create_cohort_or_spawn(self):
+  class Busy(Context):
+   def healthy(this):raise M['Refusal']('global_drain_required')
+  with self.assertRaisesRegex(M['Refusal'],'global_drain'):M['Launcher'](self.args,context_factory=Busy,child_factory=self.child).prepare()
+  self.assertFalse(self.job().run.exists());self.assertFalse(self.calls)
+ def test_global_lock_prevents_different_operations(self):
+  self.prepare();self.args.operation='engine-fault100-v1'
+  with M['locked']():
+   with self.assertRaises(BlockingIOError):self.job().prepare()
+  self.assertFalse(self.calls);self.assertFalse(self.job().run.exists())
+ def test_partial_local_submission_waits_but_wrong_full_population_refuses(self):
+  path=self.root/'.runtime/submitted';path.mkdir(mode=0o700);file=path/(RID+'-0.jsonl');file.write_bytes(b'');file.chmod(0o600)
+  self.assertIsNone(M['derive_submission'](path,rows()))
+  file.write_bytes(b'{"partial":')
+  self.assertIsNone(M['derive_submission'](path,rows()))
+  file.write_bytes(b''.join(M['encoded'](r) for r in M['expected_rows'](rows(),RID)))
+  self.assertEqual(M['derive_submission'](path,rows())[0],RID)
+ def test_capacity2_requires_both_reduction_and_reexpansion(self):
+  b=benchmark('capacity2-fault100-v1',rows());p=probe();p['capacity_reexpansion_proven']=False
+  with self.assertRaisesRegex(M['Refusal'],'capacity2'):M['validate_results'](b,p,RID,'capacity2-fault100-v1',rows())
+ def test_private_child_pipes_hash_only_and_log_reserved_before_spawn(self):
+  log=self.root/'.runtime/pipe-log.json';original=M['subprocess'].Popen
+  def spawn(*a,**kw):
+   self.assertEqual(M['load'](log.read_bytes())['phase'],'reserved');self.assertEqual(log.stat().st_mode&0o777,0o600);return original(*a,**kw)
+  child=M['Child']([sys.executable,'-c','import sys;print("SYNTHETIC_SECRET_STDOUT");sys.stderr.write("SYNTHETIC_SECRET_STDERR")'],log,spawn=spawn)
+  deadline=time.monotonic()+5
+  while child.poll() is None:self.assertLess(time.monotonic(),deadline);time.sleep(.01)
+  value=child.finish();self.assertEqual(value['returncode'],0);self.assertEqual(value['pipes']['stderr']['sha256'],hashlib.sha256(b'SYNTHETIC_SECRET_STDERR').hexdigest());self.assertNotIn(b'SYNTHETIC_SECRET',log.read_bytes())
+ def test_fixture_population_rejects_duplicate_custom_ids_and_wrong_caps(self):
+  b=benchmark(self.args.operation,rows());p=probe()
+  for variation in ('duplicate','cap','usage'):
+   changed=deepcopy(b)
+   if variation=='duplicate':changed['tasks'][1]['custom_id']=changed['tasks'][0]['custom_id']
+   elif variation=='cap':changed['tasks'][0]['completion_tokens']+=1
+   else:changed['observed_prompt_tokens']+=1
+   with self.assertRaises(M['Refusal']):M['validate_results'](changed,p,RID,self.args.operation,rows())
+
+class ReleaseTests(unittest.TestCase):
+ def test_real_source_inventory_accepts_empty_init_but_private_metadata_does_not(self):
+  inventory=M['source_map']();empty=ROOT/'worker/__init__.py'
+  self.assertEqual(empty.read_bytes(),b'');self.assertEqual(inventory['worker/__init__.py'],hashlib.sha256(b'').hexdigest())
+  with self.assertRaisesRegex(M['Refusal'],'owned_bounded_file'):M['read'](empty,private=False)
+ def test_all_reviewed_source_pins_match_current_local_files(self):
+  for name,digest in M['PINS'].items():self.assertEqual(hashlib.sha256((ROOT/name).read_bytes()).hexdigest(),digest,name)
+ def test_cli_default_never_executes_without_same_pod_context(self):
+  self.assertEqual(M['main'](['--operation','worker-fault100-v1']),1)
+ def test_environment_parser_accepts_comments_and_refuses_duplicates_without_evaluation(self):
+  self.assertEqual(M['env_values'](b'# comment=a\nexport A="$(not_executed)"\n'),{'A':'$(not_executed)'})
+  with self.assertRaisesRegex(M['Refusal'],'invalid_private_environment_assignment'):M['env_values'](b'A=1\nA=2\n')
+
+if __name__=='__main__':unittest.main()
