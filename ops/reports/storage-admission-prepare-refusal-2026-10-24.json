@@ -1,0 +1,23 @@
+{
+  "phase": "prepare_refused_before_snapshot",
+  "recorded_at": "2026-10-24T03:35:48.532205+00:00",
+  "controller_sha256": "91bfdd92d96a5f60aa6ede763883589c65f0f92a8f3653efd88497c985714456",
+  "operation": "storage-admission-v10-5448ee8-v1",
+  "error_type": "ValueError",
+  "guard": "private_sources",
+  "actual_directory": {
+    "path": "/root/batchforge-runtime/app/ops",
+    "uid": 0,
+    "mode": "0o775",
+    "regular_directory": true
+  },
+  "required_directory_mode_policy": "owned real directory without group/world write",
+  "operation_directory_empty": true,
+  "backend_source_modified": false,
+  "service_operations": false,
+  "database_modified": false,
+  "artifact_helper_staged": true,
+  "owned_api_locks_narrowed_to_0600_same_inode": true,
+  "additional_directory_permission_change_executed": false,
+  "migration_apply_executed": false
+}

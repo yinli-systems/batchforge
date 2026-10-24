@@ -1,0 +1,69 @@
+{
+  "proof-spec.json": {
+    "fresh_backup": {
+      "path": "/root/batchforge-runtime/app/.runtime/storage-release-v10-5448ee8-v1/fresh-backup.json",
+      "sha256": "4aaf8cc6b26133c61a59c0a80258c1ccf15938a8bda7c0abf36547333cc409ae"
+    },
+    "historical_restore": {
+      "path": "/root/batchforge-runtime/app/.runtime/storage-release-v10-5448ee8-v1/historical-restore.json",
+      "sha256": "bf152b0268f56fb94a3af078d9baec23e01d57cf30a0e04bda9975d0f7a366aa"
+    },
+    "production": {
+      "path": "/root/batchforge-runtime/app/.runtime/storage-release-v10-5448ee8-v1/production20.json",
+      "sha256": "9d9a698179e6ce28dced742929c2374139d6af22faed358bea1476b5afd11a6f"
+    }
+  },
+  "prepare-stage.json": {
+    "prepared_assets_at": "2026-10-24T03:32:51.185198+00:00",
+    "identities": {
+      "api-a": {
+        "pid": 169861,
+        "start_ticks": "33062349",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "api-b": {
+        "pid": 169870,
+        "start_ticks": "33062526",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "gateway-edge": {
+        "pid": 162130,
+        "start_ticks": "32805671",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "engine-qwen235b": {
+        "pid": 188251,
+        "start_ticks": "33599375",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "worker-qwen235b": {
+        "pid": 190897,
+        "start_ticks": "33605683",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "supervisor-primary": {
+        "pid": 190984,
+        "start_ticks": "33605842",
+        "cwd": "/root/batchforge-runtime/app"
+      }
+    },
+    "role_locks": [
+      {
+        "path": "/root/batchforge-runtime/app/.runtime/api-a.lock",
+        "mode_before": "0o644",
+        "mode_after": "0o600",
+        "inode_preserved": true
+      },
+      {
+        "path": "/root/batchforge-runtime/app/.runtime/api-b.lock",
+        "mode_before": "0o644",
+        "mode_after": "0o600",
+        "inode_preserved": true
+      }
+    ],
+    "proof_spec_sha256": "9d893340e5166a25b8df673bf8ec839642f38e8df859ba25500893f1b0863357",
+    "helper_sha256": "91bfdd92d96a5f60aa6ede763883589c65f0f92a8f3653efd88497c985714456",
+    "backend_source_changed": false,
+    "service_operations": false
+  }
+}

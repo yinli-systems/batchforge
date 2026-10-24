@@ -1,0 +1,132 @@
+"""One released preflight+schema8 backup. No live source/service mutation."""
+import base64
+from datetime import datetime,timezone
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import sys
+
+ROOT=Path('/root/batchforge-runtime/app')
+RUN=ROOT/'.runtime/storage-release-v10-5448ee8-v1'
+sys.path.insert(0,str(ROOT));os.environ['CUDA_VISIBLE_DEVICES']='';os.umask(0o077)
+from ops.manage import process_identity
+from ops.supervise import private_read,private_write
+from ops.ha.finalize_api_policy import values
+import psycopg
+from psycopg.rows import dict_row
+
+
+def stamp():return datetime.now(timezone.utc).isoformat()
+
+
+def main():
+    source=RUN/'deploy_storage_admission-frozen.py'
+    if hashlib.sha256(private_read(source,512*1024)).hexdigest()!='91bfdd92d96a5f60aa6ede763883589c65f0f92a8f3653efd88497c985714456':raise RuntimeError('Frozen controller hash differs')
+    spec=importlib.util.spec_from_file_location('released_storage_backup_helpers',source)
+    helper=importlib.util.module_from_spec(spec);spec.loader.exec_module(helper)
+    api=[values(private_read(ROOT.parent/f'api-{name}.env')) for name in ('a','b')]
+    if any(int(env.get('MAX_ATTEMPTS','3'))!=3 for env in api):raise RuntimeError('Future task attempt budget differs')
+    dsn=helper.bound_owner_dsn(private_read(ROOT.parent/'neon-owner.env'),[env['DATABASE_URL'] for env in api])
+    bundle=helper.archive_sources(RUN/'backend.tar.gz','f344c1420f69826d9a3c8e45ef41aa4e70c3e9ebc20e9f9b4116c739a20e00ee')
+    migrations=helper.known_migrations(ROOT,bundle)
+    public=(ROOT/'.runtime/qwen235b-v1/workload-20.jsonl').read_bytes()
+    if hashlib.sha256(public).hexdigest()!='52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f':raise RuntimeError('Public fixture differs')
+    bodies=[]
+    def no_floats(value):
+        if isinstance(value,float):raise RuntimeError('Fixture needs PostgreSQL numeric canonicalization')
+        if isinstance(value,dict):
+            for child in value.values():no_floats(child)
+        if isinstance(value,list):
+            for child in value:no_floats(child)
+    for line in public.splitlines():
+        body=json.loads(line)['body'];no_floats(body)
+        body['min_tokens']=body.get('max_tokens',body.get('max_completion_tokens'))
+        bodies.append(body)
+    new_body=sum(len(json.dumps(b,ensure_ascii=False,sort_keys=True).encode()) for b in bodies)*5
+    if len(bodies)!=20 or new_body!=2575465:raise RuntimeError('Exact fixed100 body qualification differs')
+    started=stamp()
+    with psycopg.connect(api[0]['DATABASE_URL'],row_factory=dict_row,connect_timeout=10,
+            options='-c default_transaction_read_only=on -c statement_timeout=30000 -c lock_timeout=1000') as conn:
+        conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
+        ledger=conn.execute('SELECT version,checksum FROM batchforge_schema_migrations ORDER BY version').fetchall()
+        if [(r['version'],r['checksum']) for r in ledger]!=[(n,helper.digest(raw)) for n,raw in migrations if n<=8]:raise RuntimeError('Expected exact schema8 prefix')
+        if conn.execute('SELECT current_user AS name').fetchone()['name']!='bf_runtime':raise RuntimeError('Preview must use runtime role')
+        active=conn.execute("SELECT count(*) AS n FROM tasks WHERE status IN ('pending','running')").fetchone()['n']
+        estimated=conn.execute(private_read(RUN/'bootstrap-estimate.sql').decode()).fetchall()
+        default=next(r for r in estimated if r['tenant_id']=='default')
+        aux=conn.execute("""SELECT 'input_files' AS resource,
+          (SELECT count(*) FROM files WHERE tenant_id='default' AND kind='input')+
+          (SELECT count(*) FROM blob_upload_reservations WHERE tenant_id='default') AS rows,0::bigint AS bytes
+          UNION ALL SELECT 'upload_reservations',count(*),0 FROM blob_upload_reservations WHERE tenant_id='default'
+          UNION ALL SELECT 'idempotency',count(*),coalesce(sum(greatest(65536,coalesce(octet_length(response::text),0))),0) FROM idempotency WHERE tenant_id='default'
+          UNION ALL SELECT 'blob_generations',count(*),0 FROM blob_objects WHERE tenant_id='default'
+          UNION ALL SELECT 'archive_runs',count(*),0 FROM result_archive_runs WHERE tenant_id='default'
+          UNION ALL SELECT 'archive_chunks',count(*),0 FROM result_archive_chunks WHERE tenant_id='default'
+          UNION ALL SELECT 'input_read_leases',count(*),0 FROM blob_read_leases WHERE tenant_id='default'
+          UNION ALL SELECT 'result_read_leases',count(*),0 FROM result_read_leases WHERE tenant_id='default'""").fetchall()
+        checks={
+          'duplicate_terminal_file_kinds':"SELECT count(*) AS n FROM (SELECT tenant_id,batch_id,kind FROM files WHERE kind IN ('output','error') GROUP BY tenant_id,batch_id,kind HAVING count(*)>1)q",
+          'files_missing_matching_batch':"SELECT count(*) AS n FROM files f LEFT JOIN batches b ON b.tenant_id=f.tenant_id AND b.id=f.batch_id WHERE f.batch_id IS NOT NULL AND b.id IS NULL",
+          'terminal_files_without_batch':"SELECT count(*) AS n FROM files WHERE kind<>'input' AND batch_id IS NULL",
+          'duplicate_archive_file_kinds':"SELECT count(*) AS n FROM (SELECT archive_id,kind FROM result_archive_files GROUP BY archive_id,kind HAVING count(*)>1)q",
+          'archive_file_wrong_batch_identity':"SELECT count(*) AS n FROM result_archive_files a LEFT JOIN result_archive_runs r ON r.id=a.archive_id AND r.tenant_id=a.tenant_id LEFT JOIN files f ON f.id=a.file_id AND f.tenant_id=a.tenant_id WHERE r.id IS NULL OR f.id IS NULL OR f.batch_id IS DISTINCT FROM r.batch_id OR f.kind IS DISTINCT FROM a.kind",
+          'archive_chunk_ordinal_outside_result_count':"SELECT count(*) AS n FROM result_archive_chunks c LEFT JOIN result_archive_files f ON f.tenant_id=c.tenant_id AND f.archive_id=c.archive_id AND f.file_id=c.file_id WHERE f.file_id IS NULL OR c.ordinal<0 OR c.ordinal>=f.expected_count"}
+        constraints={name:conn.execute(query).fetchone()['n'] for name,query in checks.items()}
+        physical=conn.execute('SELECT pg_database_size(current_database()) AS n').fetchone()['n']
+        blob=conn.execute("SELECT stored_bytes,reserved_bytes,held_tasks FROM tenant_blob_usage WHERE tenant_id='default'").fetchone()
+        invalid_attempts=conn.execute('SELECT count(*) AS n FROM tasks WHERE max_attempts NOT BETWEEN 1 AND 20 OR attempts NOT BETWEEN 0 AND max_attempts').fetchone()['n']
+        tls=bool(conn.pgconn.ssl_in_use)
+    required_new=117964800+new_body
+    remaining=335544320-int(default['bootstrap_payload_charge_bytes'])-required_new
+    add={'input_files':5,'upload_reservations':4,'idempotency':5,'blob_generations':5,
+        'archive_runs':5,'archive_chunks':100,'input_read_leases':4,'result_read_leases':4}
+    ceilings=helper.AUX_ROWS
+    aux_after={r['resource']:{'current_rows':r['rows'],'next100_conservative_rows':add[r['resource']],
+        'proposed_max_rows':ceilings[r['resource']],'rows_remaining_after_cohort':ceilings[r['resource']]-r['rows']-add[r['resource']],
+        'current_reserved_bytes':int(r['bytes'])} for r in aux}
+    idem=next(r for r in aux if r['resource']=='idempotency')
+    idem_remaining=134217728-int(idem['bytes'])-5*65536
+    # Exact future uploaded JSONL includes run/custom-ID prefixes; one extra MiB
+    # is a conservative allowance over these2.58MB public bodies+row envelopes.
+    input_limit=min(int(env.get('MAX_STORED_INPUT_BYTES_PER_TENANT',str(256*1024**2))) for env in api)
+    input_allowance=new_body+1024**2
+    input_remaining=input_limit-(blob['stored_bytes']+blob['reserved_bytes'] if blob else 0)-input_allowance
+    passed=(active==0 and remaining>=0 and default['retained_tasks']+100<=50000 and not any(constraints.values())
+        and invalid_attempts==0 and all(v['rows_remaining_after_cohort']>=0 for v in aux_after.values())
+        and idem_remaining>=0 and input_remaining>=0 and tls)
+    def integerize(row):return {k:int(v) if k!='tenant_id' else v for k,v in row.items()}
+    preview={'passed':passed,'started_at':started,'finished_at':stamp(),'schema_version':8,'global_active_tasks':active,
+        'bootstrap_by_tenant':[integerize(r) for r in estimated],'default_payload_limit_bytes':335544320,
+        'fixed100_body_bytes':new_body,'fixed100_response_error_reservations_bytes':117964800,
+        'fixed100_total_new_charge_bytes':required_new,'default_remaining_after_fixed100_bytes':remaining,
+        'default_retained_count_limit':50000,'default_retained_count_remaining_after_fixed100':50000-default['retained_tasks']-100,
+        'v10_legacy_structural_checks':constraints,'v9_invalid_attempt_budgets':invalid_attempts,
+        'auxiliary_next100_headroom':aux_after,'idempotency_bytes_remaining_after_next5keys':idem_remaining,
+        'existing_blob_usage':{k:int(v) for k,v in blob.items()} if blob else None,
+        'input_limit_bytes':input_limit,'next100_input_bytes_conservative_allowance':input_allowance,
+        'input_bytes_remaining_after_allowance':input_remaining,'physical_database_size_bytes':physical,
+        'tls_in_use':tls,'query_role':'bf_runtime','database_modified':False,
+        'limits_changed':False,'historical_payloads_purged':False,
+        'limitations':['Capacity preview uses one repeatable-read schema8 snapshot, not a physical database/WAL bound',
+            'Next100 means this exact public20 fixture repeated5 with fixed min_tokens and3attempts',
+            'CPU-only backup may overlap engine-only restoration; not a performance measurement']}
+    private_write(RUN/'capacity-preview.json',preview)
+    if not passed:raise RuntimeError('Storage policy or legacy constraint preflight refused')
+    from devtools.backup_postgres import select_bin_dir,preflight,create_backup
+    environment=dict(os.environ);bins=select_bin_dir(ROOT.parent/'postgres-client-17/bin',environment)
+    metadata=preflight(dsn,bins,environment)
+    snapshot,report=create_backup(dsn,bins,ROOT/'.runtime/backups',environment,metadata,RUN/'fresh-backup-raw.json')
+    private_write(RUN/'backup-job-result.json',{'passed':True,'completed_at':stamp(),'snapshot_path':str(snapshot),
+        'snapshot_sha256':report['snapshot_sha256'],'snapshot_bytes':report['snapshot_bytes'],
+        'report':str(RUN/'fresh-backup-raw.json'),'capacity_report':str(RUN/'capacity-preview.json'),
+        'snapshot_created':True,'database_modified':False,'live_source_modified':False,
+        'service_or_gpu_operations':False,'operator_pid_identity':process_identity(os.getpid())})
+
+
+try:main()
+except BaseException as error:
+    private_write(RUN/'backup-job-result.json',{'passed':False,'completed_at':stamp(),'failure_type':type(error).__name__,
+        'database_modified':False,'live_source_modified':False,'service_or_gpu_operations':False})
+    raise SystemExit(1) from None

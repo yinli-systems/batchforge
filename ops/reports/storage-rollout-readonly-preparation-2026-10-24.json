@@ -1,0 +1,216 @@
+{
+  "observed_at": "2026-10-24T03:22:27.124491+00:00",
+  "scope": "read-only files plus RAM-only import/compile; no DB/HTTP/GPU calls",
+  "cuda_visible_devices_empty": true,
+  "python_dont_write_bytecode": true,
+  "helper_import_succeeded": true,
+  "helper_sha256": "91bfdd92d96a5f60aa6ede763883589c65f0f92a8f3653efd88497c985714456",
+  "remote_sources": {
+    "ops/manage.py": {
+      "exists": true,
+      "sha256": "c2d9f7fbe09638f03576bc62b9749b8edf33b441a1a7021b27068de3575a2cfd",
+      "bytes": 12311,
+      "local_current_sha256": "c2d9f7fbe09638f03576bc62b9749b8edf33b441a1a7021b27068de3575a2cfd",
+      "exact_local_source_match": true
+    },
+    "ops/supervise.py": {
+      "exists": true,
+      "sha256": "3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0",
+      "bytes": 22743,
+      "local_current_sha256": "3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0",
+      "exact_local_source_match": true
+    },
+    "ops/engine_members.py": {
+      "exists": true,
+      "sha256": "e4d0b2f2c130dce6fa16a4925d3557ca16475793a5b4f156f62a3d8f2df471ff",
+      "bytes": 6193,
+      "local_current_sha256": "e4d0b2f2c130dce6fa16a4925d3557ca16475793a5b4f156f62a3d8f2df471ff",
+      "exact_local_source_match": true
+    },
+    "ops/host_memory.py": {
+      "exists": true,
+      "sha256": "e4887b81fd3c95e7f94bd118d0917775d5e8839c7c59e07b7dd8d98552150902",
+      "bytes": 2068,
+      "local_current_sha256": "e4887b81fd3c95e7f94bd118d0917775d5e8839c7c59e07b7dd8d98552150902",
+      "exact_local_source_match": true
+    },
+    "ops/llama_backend.py": {
+      "exists": true,
+      "sha256": "d27fce11beb565b287d19bce61aa9c3edbf5cb802fd3630fa4788e7aeb31adb4",
+      "bytes": 4656,
+      "local_current_sha256": "d27fce11beb565b287d19bce61aa9c3edbf5cb802fd3630fa4788e7aeb31adb4",
+      "exact_local_source_match": true
+    },
+    "ops/ha/set_scheduler_policy.py": {
+      "exists": true,
+      "sha256": "ad0ebfe614e71bc1169c5793f3124e5b9bf8414409d8048c9ad879f354962498",
+      "bytes": 11958,
+      "local_current_sha256": "ad0ebfe614e71bc1169c5793f3124e5b9bf8414409d8048c9ad879f354962498",
+      "exact_local_source_match": true
+    },
+    "ops/ha/deploy_adaptive_worker_source.py": {
+      "exists": true,
+      "sha256": "3df73d9424577ea0f920069942d57317a7d3ec186911c768837563a8f8f0afa4",
+      "bytes": 18191,
+      "local_current_sha256": "3df73d9424577ea0f920069942d57317a7d3ec186911c768837563a8f8f0afa4",
+      "exact_local_source_match": true
+    },
+    "ops/ha/adaptive_qwen235b.py": {
+      "exists": true,
+      "sha256": "9e9ab563ff1a5f8b880540b8901f24e539d744b112be14e1716b4833d1927a5b",
+      "bytes": 28455,
+      "local_current_sha256": "9e9ab563ff1a5f8b880540b8901f24e539d744b112be14e1716b4833d1927a5b",
+      "exact_local_source_match": true
+    },
+    "ops/ha/finalize_api_policy.py": {
+      "exists": true,
+      "sha256": "c9e9dd1f6ff1d154b847037a576862a9e7007b92389162134b72bf6a0559c895",
+      "bytes": 18578,
+      "local_current_sha256": "65e0c38fa60f87c57697f6dc9127980be5b73c69f4bbc29b72f490187363028c",
+      "exact_local_source_match": false
+    },
+    "ops/ha/retune_full_gpu.py": {
+      "exists": true,
+      "sha256": "2d0bf2355ece39b4eca4107d2e8286cd9610b67b235de7d7f01f061ce3273b28",
+      "bytes": 11026,
+      "local_current_sha256": "2d0bf2355ece39b4eca4107d2e8286cd9610b67b235de7d7f01f061ce3273b28",
+      "exact_local_source_match": true
+    },
+    "ops/ha/switch_qwen235b.py": {
+      "exists": true,
+      "sha256": "045b562b984d1531490f9bc9b2a2e9d21cb035ac65d6dae1587b68423908715b",
+      "bytes": 24719,
+      "local_current_sha256": "045b562b984d1531490f9bc9b2a2e9d21cb035ac65d6dae1587b68423908715b",
+      "exact_local_source_match": true
+    },
+    "scripts/engine_matrix.py": {
+      "exists": true,
+      "sha256": "14e9ca117b9f9cf902bb793afa286f8a9cadc3fd8386567aef18b2243a480f09",
+      "bytes": 15610,
+      "local_current_sha256": "14e9ca117b9f9cf902bb793afa286f8a9cadc3fd8386567aef18b2243a480f09",
+      "exact_local_source_match": true
+    },
+    "worker/kv_admission.py": {
+      "exists": true,
+      "sha256": "e26dff615204edde0ffdeba44271dc84ced4b6d26477f90b6df874fd6a270d6e",
+      "bytes": 6280,
+      "local_current_sha256": "e26dff615204edde0ffdeba44271dc84ced4b6d26477f90b6df874fd6a270d6e",
+      "exact_local_source_match": true
+    },
+    "backend/scheduling.py": {
+      "exists": true,
+      "sha256": "d867b94dc4ee9d468742f38957b966b9a3caa203035cde741c1bf77b511b337c",
+      "bytes": 4731,
+      "local_current_sha256": "d867b94dc4ee9d468742f38957b966b9a3caa203035cde741c1bf77b511b337c",
+      "exact_local_source_match": true
+    },
+    "backend/migrate.py": {
+      "exists": true,
+      "sha256": "67842f03b6eea4dab8d48b94b7c22b75a64f334223602cbae09b3ff6a1a00a3c",
+      "bytes": 5484,
+      "local_current_sha256": "8641cbc23f18a2c381f49edbbbe2a850e0e136da1ea834cbee965d48840e6bab",
+      "exact_local_source_match": false
+    },
+    "devtools/backup_postgres.py": {
+      "exists": true,
+      "sha256": "20f952ff0fb992d4ff01c7ce3a30f3fd8b8b1320bf038f17931a99139568f878",
+      "bytes": 9489,
+      "local_current_sha256": "20f952ff0fb992d4ff01c7ce3a30f3fd8b8b1320bf038f17931a99139568f878",
+      "exact_local_source_match": true
+    }
+  },
+  "signatures": {
+    "atomic_source": "(path, payload, mode, mtime_ns)",
+    "source_state": "(path)",
+    "PolicyRoll.__init__": "(self, *, root, services, watchdog, manifest_path, report_path, policy, manager=None, identity=None, assert_drained=None, verify_policy=None)",
+    "Manager.__init__": "(self, root=PosixPath('/root/batchforge-runtime/app'), timeout=10)",
+    "private_read": "(path: 'Path', limit=65536)"
+  },
+  "remote_schema_registry_last_version": 8,
+  "public_workload": {
+    "path": "/root/batchforge-runtime/app/.runtime/qwen235b-v1/workload-20.jsonl",
+    "sha256": "52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f",
+    "source_rows": 20,
+    "noninteger_numbers": 0,
+    "serialization": "UTF-8 Python JSON default comma/colon spaces; same byte length as PostgreSQL jsonb::text for this strings/integers/bools/null subset; key order does not affect length",
+    "fixed_output_body_bytes_20": 515093,
+    "fixed_output_body_bytes_100_repeats5": 2575465,
+    "natural_body_bytes_100_repeats5": 2573565,
+    "fixed_output_min_body_bytes": 633,
+    "fixed_output_max_body_bytes": 77723,
+    "minimum_new_100_reservation_bytes": 120540265
+  },
+  "api_nonsecret_configuration": [
+    {
+      "name": "a",
+      "max_attempts": 3,
+      "lock_regular": true,
+      "lock_uid": 0,
+      "lock_mode": "0o644"
+    },
+    {
+      "name": "b",
+      "max_attempts": 3,
+      "lock_regular": true,
+      "lock_uid": 0,
+      "lock_mode": "0o644"
+    }
+  ],
+  "existing_pg17_client_wrappers": {
+    "pg_dump": {
+      "exists": true,
+      "executable": true,
+      "mode": "0o700"
+    },
+    "pg_restore": {
+      "exists": true,
+      "executable": true,
+      "mode": "0o700"
+    }
+  },
+  "historical_capacity_arithmetic": {
+    "baseline_observed_by_parent_approximately_0253_utc": {
+      "database_physical_bytes": 292364288,
+      "retained_tasks": 26603,
+      "body_bytes": 157675875,
+      "response_bytes": 42172253,
+      "error_bytes_not_in_this_historical_sample": true
+    },
+    "proposed_default_payload_budget_bytes": 335544320,
+    "fixed100_response_error_reservation_bytes": 117964800,
+    "fixed100_body_bytes": 2575465,
+    "fixed100_total_new_charge_bytes": 120540265,
+    "remaining_from_historical_body_response_before_existing_errors_and_later_workloads": 15155927,
+    "remaining_mib": 14.453818321228027,
+    "qualification": "This is arithmetic using an earlier parent-observed body/response sample, not a fresh database query or available current quota; existing error bytes and all later cohorts must be subtracted. Migration commit and final controlled submission require a fresh drained estimate."
+  },
+  "release_bundle": {
+    "commit": "5448ee8aabe2d55b8575894c6a39f0dd6d340221",
+    "archive_path": "/Users/kevin/Documents/ChatGPT/app 3/.runtime/storage-rollout-prep/storage-backend-5448ee8-v1.tar.gz",
+    "archive_sha256": "f344c1420f69826d9a3c8e45ef41aa4e70c3e9ebc20e9f9b4116c739a20e00ee",
+    "archive_bytes": 39519,
+    "members": {
+      "backend/app.py": "bccab8acbab54fc5024aa1cb11868af22f1fce0b9223b80c869591dbac20b875",
+      "backend/auxiliary_admission.py": "204714b606d810d62d45df2c1e82a3805542e6a4914d0805d25523b5696b33e1",
+      "backend/blob_storage.py": "bd0dfab6deda84d70dfd0eaa58e5142a3411bc22fbd571d52c8329f7ea7736cb",
+      "backend/config.py": "40f7e080750f32531de79e72eb29b6361fc54f69828177036b24a1d447a4ba61",
+      "backend/migrate.py": "8641cbc23f18a2c381f49edbbbe2a850e0e136da1ea834cbee965d48840e6bab",
+      "backend/migrations/0009_retention_admission.sql": "663e8f86c2f6da66d70ec538794317662c10eb3a10977a94cd4ca9b2424731d3",
+      "backend/migrations/0010_auxiliary_metadata_admission.sql": "d31d74f77ea90d8050f689e6437984149a3ca8a6ac49b70275ce870d8f6a397b",
+      "backend/result_archival.py": "ed5a2cf011e72bd1311f1ef69d88cde20a591adb1623a3090c2564c1309231b7",
+      "backend/retention.py": "d3d824319e1d2f11fd5bc56a6fd48ee38a6dd3fef96c68f40e5a0827e2b2057e",
+      "backend/store.py": "ae3131750f7adade90f66db73c218a14a5ba86a78d562f803384804494cf6ac4",
+      "ops/ha/runtime_grants.sql": "8e7dbe667d64678670dcaa5e9f985e1c6ef48b77a96455085ae68042301c6b59"
+    },
+    "controller_path": "/Users/kevin/Documents/ChatGPT/app 3/.runtime/storage-rollout-prep/deploy_storage_admission-5448ee8.py",
+    "controller_sha256": "91bfdd92d96a5f60aa6ede763883589c65f0f92a8f3653efd88497c985714456",
+    "archive_exact_whitelist_verified": true,
+    "remote_copied": false
+  },
+  "operational_preflight": {
+    "api_role_locks_need_owner_only_mode_before_apply": true,
+    "permitted_after_root_go": "chmod0600 exact owned existing api-a.lock/api-b.lock without replacing inode; no such change made during this audit",
+    "old_remote_import_tree_compatible_with_new_controller_in_ram": true,
+    "scope_limit": "Import/compile and signatures only; no real preparation, live service roll, migration or backup has executed."
+  }
+}

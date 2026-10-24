@@ -5,9 +5,13 @@ an OpenAI-shaped batch API, and an operations console backed by live data.
 
 The current experiment uses **one Pod with four dedicated H100 80GB GPUs**.
 The official FP8 Qwen3-235B-A22B-Instruct-2507 checkpoint (235B total, 22B active
-parameters) is running with TP4 across all four GPUs. Its initial eight-slot
-direct calibration completed the 20-cell real-token matrix; platform tuning is
-recorded separately. The preceding GPT-OSS-120B (116.83B total) 64-slot
+parameters) is running with TP4 across all four GPUs. Token-budget admission
+reduced its fixed 100-task mixed-length run from **809.62 to 244.28 seconds**
+(0.409 tasks/s), with P95/P99 completion of **220.53/240.95 seconds**.
+All 100 tasks completed once with 545,280 input and 68,000 generated tokens.
+An equal-work NCCL experiment was 4.90% slower; the measured faster custom
+collective was restored. These are single finite runs, not daily capacity or
+proof that one collective always wins. The preceding GPT-OSS-120B (116.83B total) 64-slot
 isolated 400-task mixed-length run completed every task in 143.27 seconds
 (2.79 tasks/s), with exactly 2,181,120 input and 272,000 generated tokens.
 This is a finite burst, not daily capacity. See the
@@ -56,6 +60,8 @@ throughput measurement. [View all five screenshots](docs/screenshots/README.md).
   aging, deadline overrides and numerical-runtime compatibility fencing.
 - Reserve input artifact quotas before I/O, checksum private objects and archive
   terminal outputs with reader leases and resumable bounded payload purge.
+- Enforce retained-task, payload and auxiliary-metadata budgets in PostgreSQL;
+  reject over-budget submissions atomically without deleting accepted history.
 - Gate restarts on per-rank GPU memory and CPU-expert cgroup headroom; clean up
   previously observed engine descendants using verified Linux process identities.
 - Validate explicitly requested JSON objects before accepting results, with
@@ -140,7 +146,8 @@ requests only. Reusing an idempotency key with a different request returns 409.
 
 Use `GET /v1/models` for the configured catalog. Set `MODEL_NAMES_JSON` to add
 model IDs alongside `MODEL_NAME`; a batch must contain exactly one model.
-The deployed 120B model ID is `openai/gpt-oss-120b`. Reasoning tokens consume its
+The current model ID is `Qwen/Qwen3-235B-A22B-Instruct-2507-FP8`.
+The earlier 120B model ID is `openai/gpt-oss-120b`. Reasoning tokens consume its
 output budget, so a very small cap can produce no final answer. Token throughput,
 durable completion and useful final output are reported separately.
 Requests may explicitly set `reasoning_effort` to `low`, `medium` or `high`;

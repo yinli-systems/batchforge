@@ -111,7 +111,9 @@ The official `Qwen/Qwen3-235B-A22B-Instruct-2507-FP8` checkpoint is pinned to
 against their official LFS hashes before activation. It has 235B total and 22B
 active parameters, so its compute demand should not be inferred from total
 parameter count alone. It uses the same four physical H100 GPUs, TP4, FP8
-weights/dynamic activations and BF16 compute/KV.
+weights and dynamically quantized activations, with BF16 runtime dtype and KV
+cache. Runtime dtype does not identify every kernel's arithmetic or accumulation
+precision.
 
 The guarded switch preserved API/gateway identities, measured fresh memory
 headroom, and withheld its worker until direct calibration passed. Startup
@@ -178,6 +180,7 @@ blocks. Fresh startup measured 314,096 KV tokens; the 95% guard selected a
 | Static8 | 809.616 | 0.123515 | 71.077 | 650.589 | 767.970 | 36,207.82 |
 | Static16 | 466.369 | 0.214423 | 52.915 | 454.555 | 456.580 | 20,857.04 |
 | Adaptive64, custom collective | 244.281 | 0.409364 | 54.408 | 220.535 | 240.953 | 10,924.80 |
+| Adaptive64, NCCL experiment | 256.251 | 0.390243 | 55.736 | 233.262 | 252.007 | 11,460.11 |
 
 The process-lifetime reservation peak was 298,240 tokens, within the budget;
 239 worker samples reported no pause or observation error. Claimed work peaked
@@ -188,6 +191,16 @@ and mean engine TTFT rose from 0.942 to 4.243 seconds. More batching favors
 batch makespan and tail completion here, not every interactive latency metric.
 The copied static16 scheduling rates and slot-hour price were not recalibrated
 or divided by 64; allocated costs use measured whole-Pod elapsed time.
+
+The NCCL counterfactual preserved that budget, fixture, projected profile rates,
+memory fraction and batching limits. Its 100 tasks also completed once with the
+exact token totals. Makespan increased 4.90%, P95 5.77% and P99 4.59%; queue
+median improved 7.99%. This single serial pair does not prove a universal
+collective ranking. The original custom configuration was actually restored
+and reverified, including its registry fingerprint and fresh KV capacity.
+All GPU pairs report NV18 links; link status is not measured bandwidth.
+See [the collective experiment](collective-comparison.md) for source, topology,
+negative result and restoration evidence.
 
 A separate natural-output public SQuAD answer cohort completed 20/20 in
 7.956454 seconds, using 21,783 input and 267 output tokens with no truncation.
@@ -256,9 +269,15 @@ controller failures are preserved; neither caused duplicate workload submission.
 Secret-bearing environments, raw model outputs and database snapshots remain
 outside Git. Core result archival was pushed as `f1d45b7`.
 
-Local checks, including real isolated PostgreSQL and all HA helper tests, passed
-563 tests with 5 platform skips in 26.25 seconds on the current candidate.
-Python compilation also passed. The Linux
-fault-probe tests separately passed all 12 tests. GitHub-hosted checks for the
-earlier implementation did not start because of the account's payment/spending
-limit; a local pass must not be represented as a hosted CI pass.
+Checkpoint `5448ee8aabe2d55b8575894c6a39f0dd6d340221` passed 683 local tests
+with five platform skips. Its exact committed snapshot was separately validated
+on the Pod against a new unprivileged, Unix-only PostgreSQL 17.11 cluster:
+**688 passed, zero skipped**, 140 Python files compiled, no production
+credentials inherited and no production database accessed. The temporary
+cluster was stopped and removed, with no remaining scoped test process.
+The [Linux report](../ops/reports/single-pod-linux-pg17-validation-2026-10-24.json)
+binds the commit, source manifest, binary and test-log hashes.
+GitHub-hosted checks for that commit did not start any test step because of the
+account's payment/spending limit. Its
+[separate status report](../ops/reports/single-pod-hosted-ci-status-2026-10-24.json)
+preserves this distinction; independent validation is not a hosted CI pass.

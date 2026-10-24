@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "off_pod_snapshot_path": "/Users/kevin/Documents/ChatGPT/app 3/.runtime/storage-rollout-prep/off-pod/batchforge-20261024T033040Z-7e58f14a.dump",
+  "snapshot_bytes": 127281162,
+  "snapshot_sha256": "201aa1319a7a2aaee2ac949f82a1b98fdbff7f3b9947164e1a16db50cb1b5917",
+  "snapshot_mode": "0o600",
+  "attested_report_path": "/Users/kevin/Documents/ChatGPT/app 3/.runtime/storage-rollout-prep/off-pod/fresh-backup.json",
+  "attested_report_sha256": "4aaf8cc6b26133c61a59c0a80258c1ccf15938a8bda7c0abf36547333cc409ae",
+  "capacity_report_path": "/Users/kevin/Documents/ChatGPT/app 3/.runtime/storage-rollout-prep/off-pod/capacity-preview.json"
+}
