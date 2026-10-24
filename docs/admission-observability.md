@@ -71,9 +71,15 @@ database. Without that CI setting the seven database cases explicitly skip.
 records 17/17 passing cases on a private Unix-only PostgreSQL 16.2 using the exact
 source bytes later committed in `8f23c44e5145891b935ea389caa1001854ad36da`.
 That record is local correctness evidence. The older 693d658 Linux/PG17 report
-does not cover this feature. A new committed code-only snapshot of 8f23c44 must
-pass the Linux/PG17 checks before API rollout; no such pass or production
-deployment is claimed by the local provenance record.
+does not cover this feature. The subsequent
+[isolated Linux/PostgreSQL 17.11 qualification](../ops/reports/qwen235b-admission-metrics-linux-pg17-8f23c44-2026-10-24.json)
+passed all 1,206 tests with zero skips in 82.24 seconds on the exact 8f23c44
+code-only snapshot. All 189 source files and import origins remained bound to
+the snapshot; the Unix-only temporary cluster ran as `nobody`, stopped and was
+removed with no remaining scoped processes. No production credentials or
+production database were used. This CPU correctness result contains no GPU
+performance measurement or JavaScript execution. The instrumentation has not
+yet been deployed to the serving APIs.
 
 After deployment, compare independent API replicas and separate successful,
 failed and cancelled paths under a controlled workload. Preserve the original

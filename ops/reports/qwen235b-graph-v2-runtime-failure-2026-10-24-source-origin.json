@@ -1,0 +1,98 @@
+{
+  "experiment_reclassified_as_success": false,
+  "files": {
+    "docs/benchmarks/qwen235b-graph-v2-runtime-failure-2026-10-24.md": {
+      "bytes": 5250,
+      "sha256": "39f050a246737093ab5a38493b2daf9760d198793e1a0f80c307676bcbe45b63"
+    },
+    "ops/reports/qwen235b-graph-v2-runtime-failure-2026-10-24-activation.json": {
+      "bytes": 37226,
+      "sha256": "9191c6353b8dc9c52722c1010d80f4da12fa42d0d527c74761b60de563f2bb27"
+    },
+    "ops/reports/qwen235b-graph-v2-runtime-failure-2026-10-24-cancel.json": {
+      "bytes": 836,
+      "sha256": "594d78c250fb2a50a9d1592f9a738a399a7632169d7983cb8dea74e092641c5b"
+    },
+    "ops/reports/qwen235b-graph-v2-runtime-failure-2026-10-24-failed-cohort.json": {
+      "bytes": 606,
+      "sha256": "41e0a78de35420784814ebda73573769880ffb4ae8acea6738d00049c1fbd2e3"
+    },
+    "ops/reports/qwen235b-graph-v2-runtime-failure-2026-10-24-failure-projection.json": {
+      "bytes": 7641,
+      "sha256": "d53ec855118b60f22a6bc0eb2d4f22b8104a49c17ad616cbb177586b317e0a89"
+    },
+    "ops/reports/qwen235b-graph-v2-runtime-failure-2026-10-24-postcancel.json": {
+      "bytes": 3470,
+      "sha256": "d4868a5f5e318d3ba7851725de2e79e989edd1be4a6b83a57adab2463e90cded"
+    },
+    "ops/reports/qwen235b-graph-v2-runtime-failure-2026-10-24-recovery.json": {
+      "bytes": 33344,
+      "sha256": "a6af85068a4f4b65c92986901709130301b8f8e0b2344e2a5a42aee2e749b934"
+    },
+    "ops/reports/qwen235b-graph-v2-runtime-failure-2026-10-24-root-anchors.json": {
+      "bytes": 1468,
+      "sha256": "e0ec8bf881967e5dbf6535afdcd63ead6b1195f302721baa3a6b338d5a2815c3"
+    },
+    "ops/reports/qwen235b-graph-v2-runtime-failure-2026-10-24-summary.json": {
+      "bytes": 2977,
+      "sha256": "474d07afe35d29e31844117968c2d189ef86a2209d3b19c163509319783fc97a"
+    },
+    "ops/reports/qwen235b-graph-v2-runtime-failure-2026-10-24-validator-source.py.txt": {
+      "bytes": 25084,
+      "sha256": "4280099d54d878326f8f0707fb6059f4667a20479bea0ad9b8f5e7d4e518c9ff"
+    },
+    "ops/reports/qwen235b-graph-v2-runtime-failure-2026-10-24-watchdog-containment.json": {
+      "bytes": 347,
+      "sha256": "3b3c321e57e79c31fc57bcbfc17039dff4253b1d5a3e55450495bcaa57052778"
+    }
+  },
+  "original_artifacts": {
+    "activation.json": {
+      "bytes": 37226,
+      "pod_path": "/root/batchforge-runtime/app/.runtime/q235-graphB-safe-v2/report.json",
+      "sha256": "9191c6353b8dc9c52722c1010d80f4da12fa42d0d527c74761b60de563f2bb27"
+    },
+    "cancel.json": {
+      "bytes": 836,
+      "pod_path": "/root/batchforge-runtime/app/.runtime/q235-graphB-v2-single-batch-cancel-v1/report.json",
+      "sha256": "594d78c250fb2a50a9d1592f9a738a399a7632169d7983cb8dea74e092641c5b"
+    },
+    "failed-cohort.json": {
+      "bytes": 606,
+      "pod_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-graph-b-cohorts-v2/journal.json",
+      "sha256": "41e0a78de35420784814ebda73573769880ffb4ae8acea6738d00049c1fbd2e3"
+    },
+    "failure-projection.json": {
+      "bytes": 7641,
+      "pod_path": "/root/batchforge-runtime/app/.runtime/q235-graphB-v2-runtime-failure-projection-v1.json",
+      "sha256": "d53ec855118b60f22a6bc0eb2d4f22b8104a49c17ad616cbb177586b317e0a89"
+    },
+    "postcancel.json": {
+      "bytes": 3470,
+      "pod_path": "/root/batchforge-runtime/app/.runtime/q235-graphB-v2-postcancel-evidence-v1.json",
+      "sha256": "d4868a5f5e318d3ba7851725de2e79e989edd1be4a6b83a57adab2463e90cded"
+    },
+    "recovery.json": {
+      "bytes": 33344,
+      "pod_path": "/root/batchforge-runtime/app/.runtime/q235-graphB-v2-runtime-recovery-v1/report.json",
+      "sha256": "a6af85068a4f4b65c92986901709130301b8f8e0b2344e2a5a42aee2e749b934"
+    },
+    "watchdog-containment.json": {
+      "bytes": 347,
+      "pod_path": "/root/batchforge-runtime/app/.runtime/q235-graphB-v2-watchdog-containment-v1/report.json",
+      "sha256": "3b3c321e57e79c31fc57bcbfc17039dff4253b1d5a3e55450495bcaa57052778"
+    }
+  },
+  "production_actions_during_packaging": false,
+  "pure_schema_source_sha256": "ad180a7cc4f686843c9c88e5b9bd89e90305e34eedb6d30421c1f13ad8d71178",
+  "raw_log_env_input_output_trace_or_dump_included": false,
+  "root_anchors_sha256": "e0ec8bf881967e5dbf6535afdcd63ead6b1195f302721baa3a6b338d5a2815c3",
+  "schema_dependency_sha256": {
+    ".runtime/analyze_worker_stage_deltas.py": "0a0385d0c154d9efb232b49ad2769cc549f261cbf9d78b9a36f3c595ccf01d5a",
+    ".runtime/export_fault_metadata_packet.py": "09c6e41a79b83250cf91b63cb449e324750eaa395ebcffef8503e628ed301aa4",
+    ".runtime/export_policy160_metadata.py": "6063ce8d731af9f7fbed5ae51a4a89c0e18a8b2f1e4943a4c1418c9b7cb426d7"
+  },
+  "scope": "Seven exact original failure/containment/recovery metadata plus separate root transport anchors and derived local summary/document",
+  "validator_source_sha256": "4280099d54d878326f8f0707fb6059f4667a20479bea0ad9b8f5e7d4e518c9ff",
+  "version": 1
+}

@@ -1,0 +1,1 @@
+{"action": "stop_exact_supervisor_only", "automatic_replay": false, "confirmed_at": "2026-10-24T11:20:39.169277+00:00", "engine_worker_or_task_mutation": false, "phase": "complete", "seconds": 0.01862694602459669, "stopped_identity": {"cwd": "/root/batchforge-runtime/app", "pid": 244867, "start_ticks": "36401098"}, "watchdog_known_absent": true}

@@ -1,0 +1,70 @@
+{
+  "accepted_attempts": 22,
+  "accepted_completion_tokens": 1088,
+  "accepted_prompt_tokens": 127488,
+  "cancelled_tasks": 78,
+  "classification_counts": {
+    "core_died": 1,
+    "cuda_illegal_memory_access": 11,
+    "cuda_oom": 0,
+    "device_side_assertion_hint": 7,
+    "nccl_failure": 0
+  },
+  "completed_tasks": 22,
+  "experiment_status": "failed_mixed_then_cancelled",
+  "limitations": [
+    "The graph mixed workload failed;22 completed and78 cancelled are not a successful100/200-task graph benchmark.",
+    "Startup capture/configuration is not successful inference, model quality or runtime replay evidence.",
+    "CUDA error reporting is asynchronous; projected frames do not identify the originating kernel or root cause.",
+    "Classification counts are text occurrences, not independent failures or failed GPU counts.",
+    "One observed supervised replacement is not a demonstrated restart storm, automatic HA or safe adoption proof.",
+    "Recovery uses an explicitly bound replacement generation; no automatic adoption, replay or success reclassification.",
+    "Accepted task/usage metadata is preserved by recovery; exactly-once durable acceptance does not imply exactly-once GPU execution.",
+    "The full private failure window, raw logs, prompts/answers, env/effective snapshots and traces are excluded.",
+    "No graph performance/cost comparison, daily capacity or successful runtime replay claim."
+  ],
+  "mixed_tasks": 100,
+  "observed_original_engine": {
+    "pid": 243840,
+    "start_ticks": "36394639"
+  },
+  "observed_supervised_replacement": {
+    "pid": 245221,
+    "start_ticks": "36414736"
+  },
+  "private_failure_window": {
+    "end_offset": 3001250,
+    "offset": 2841596,
+    "private_failure_window_bytes": 159654,
+    "private_failure_window_sha256": "2d7c89e01267899537c014c5f1dc2c78248260b021ca7f9a1fbb68ef5569f986"
+  },
+  "protected_accepted_metadata_sha256": "71b15e0af3499fdfa92c3a00d46214c1084d16360ee4ae07ac3aaebe0cadbfbf",
+  "qa_started_by_cohort": false,
+  "raw_text_exported": false,
+  "recovery_completed_at": "2026-10-24T11:31:47.576562+00:00",
+  "recovery_started_at": "2026-10-24T11:30:32.639488+00:00",
+  "recovery_status": "original_eager_restored",
+  "restored_budget_tokens": 298384,
+  "restored_engine_identity": {
+    "cwd": "/root/batchforge-runtime/app",
+    "pid": 249333,
+    "start_ticks": "36488000"
+  },
+  "restored_runtime_fingerprint": "sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3",
+  "restored_watchdog_identity": {
+    "cwd": "/root/batchforge-runtime/app",
+    "pid": 250356,
+    "start_ticks": "36494365"
+  },
+  "restored_worker_identity": {
+    "cwd": "/root/batchforge-runtime/app",
+    "pid": 250353,
+    "start_ticks": "36494104"
+  },
+  "root_kernel_identified": false,
+  "root_operator_reported_replay_not_run": true,
+  "runtime_replay_evidence_in_packet": false,
+  "startup_capture_completion_lines": 4,
+  "successful_200_task_graph_benchmark": false,
+  "version": 1
+}
