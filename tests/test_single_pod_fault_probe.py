@@ -65,7 +65,7 @@ class Controller:
         return self.records.get(self.key(row))
 
     def responding(self, row, ready=False):
-        if ready and row['role']=='worker' and self.adaptive_startup_requires_idle:
+        if ready and row['role']=='worker' and self.adaptive_startup_requires_idle and self.restarts:
             return self.record(row) is not None and self.clock()>=self.engine_idle_at
         return self.record(row) is not None
 
@@ -83,6 +83,7 @@ class Controller:
             if self.stop_error and row["role"] == "worker":
                 self.stop_error = False
                 raise RuntimeError("only-owned worker is still exiting")
+            return {'status': 'stopped'}
         elif self.record(row) is None:
             self.next_pid += 1
             self.records[name] = {"pid": self.next_pid, "start_ticks": str(self.next_pid * 10), "cwd": "/owned-app"}
@@ -93,7 +94,8 @@ class Controller:
                 if self.partial_start_error and self.capacity == 2:
                     self.partial_start_error = False
                     raise RuntimeError("start acknowledgement lost after identity record was written")
-        return {"status": action}
+            return {'status': 'started', 'pid': self.record(row)['pid']}
+        return {'status': 'already_running', 'pid': self.record(row)['pid']}
 
     def crash_exact(self, row, expected):
         assert self.record(row) == expected
@@ -106,7 +108,8 @@ class Controller:
     def graceful_stop(self, row, expected, grace, check):
         assert self.record(row) == expected
         check()
-        self.drained = True
+        if row['role'] == 'worker':
+            self.drained = True
         self.invoke(row, "stop")
         return .25
 
@@ -186,14 +189,17 @@ class Progress:
         return {"id": tid, "status": "completed", "accepted_count": 1, "prompt_tokens": 128, "completion_tokens": 64}
 
 
-def setup(tmp_path, adaptive=False, **extra):
+def setup(tmp_path, adaptive=False, worker_shutdown_seconds=None, **extra):
     root = tmp_path.resolve()
+    (root / '.runtime').mkdir(mode=0o700)
     manifest = root / "services.json"
     manifest.write_text('{"services":[]}')
     worker_env, watch_env = root / "worker.env", root / "watch.env"
     worker_env.write_text("WORKER_ID=owned-worker\nENGINE_MAX_MODEL_LEN=18440\nWORKER_MAX_INFLIGHT=64\nWORKER_TOKEN_BUDGET=1180160\nBATCHFORGE_WORKER_TOKEN='private-worker-token'\n")
     if adaptive:
         worker_env.write_text(worker_env.read_text().replace("WORKER_TOKEN_BUDGET=1180160", "WORKER_TOKEN_BUDGET=298384")+"WORKER_ADAPTIVE_KV_ENABLED=true\n")
+    if worker_shutdown_seconds is not None:
+        worker_env.write_text(worker_env.read_text() + 'WORKER_SHUTDOWN_SECONDS=' + str(worker_shutdown_seconds) + '\n')
     watch_env.write_text("SUPERVISOR_MANIFEST=" + str(manifest) + "\n")
     for path in (manifest, worker_env, watch_env):
         path.chmod(0o600)
@@ -203,6 +209,7 @@ def setup(tmp_path, adaptive=False, **extra):
                                          ("worker", "inference", 9105)]]
     supervisor = {"role": "supervisor", "name": "primary", "env_file": str(watch_env), "python": sys.executable}
     controller, clock = Controller(services, supervisor), Clock()
+    controller.root = root
     controller.clock = clock
     controller.adaptive_startup_requires_idle = adaptive
     progress = Progress(clock, controller)
@@ -263,12 +270,15 @@ def test_expiry_timeout_still_restores_worker_and_watchdog(tmp_path):
     assert controller.capacity == 64
 
 
-def test_partial_reduced_start_ack_failure_restores_original_worker(tmp_path):
+def test_partial_reduced_start_ack_failure_is_manual_without_watchdog_restore(tmp_path):
     probe, _, controller = setup(tmp_path)
     controller.partial_start_error = True
     result = probe.run()
-    assert result["status"] == "failed" and not result.get("final_restore_failed")
-    assert controller.record(probe.worker) and controller.record(probe.supervisor) and controller.capacity == 64
+    assert result['status'] == 'failed' and result['final_restore_failed']
+    assert result['manual_recovery_required'] and result['pending_action']['stage'] == 'worker_start'
+    assert controller.record(probe.worker) and controller.capacity == 2
+    assert not controller.record(probe.supervisor)
+    assert controller.restarts == 1
 
 
 def test_reduced_capacity_overrun_fails_and_restores_without_engine_restart(tmp_path):
@@ -296,12 +306,13 @@ def test_optional_capacity_stage_can_be_disabled_and_restore_is_still_idempotent
     assert controller.capacity == 64 and controller.record(probe.supervisor)
 
 
-def test_partial_stop_error_retries_only_known_reduced_worker(tmp_path):
+def test_partial_stop_error_is_not_replayed_or_followed_by_watchdog_restore(tmp_path):
     probe, _, controller = setup(tmp_path)
     controller.stop_error = True
     result = probe.run()
-    assert result["status"] == "failed" and controller.capacity == 64
-    assert not result.get("final_restore_failed")
+    assert result['status'] == 'failed' and result['manual_recovery_required']
+    assert result['pending_action']['stage'] == 'reduced_worker_drain'
+    assert controller.restarts == 1 and not controller.record(probe.supervisor)
 
 
 def test_exhausted_cohort_restores_but_does_not_claim_capacity_reexpansion(tmp_path):
@@ -428,11 +439,12 @@ def test_adaptive_quiescence_timeout_reports_failed_probe_and_honest_restore_sta
     assert result['error']=='adaptive_engine_not_quiescent_before_worker_restart'
     gate=result['engine_quiescence_gates'][0]
     assert gate['status']=='failed' and gate['wait_seconds']>=10
-    # The reduced configuration never starts. Finally may start the original
-    # worker, whose own admission fence still requires an idle engine.
+    # Recovery itself waits for quiescence; a timeout never starts the worker
+    # or watchdog merely because a worker-internal fence might later help.
     assert not result.get('restarted_worker_pid')
     assert result.get('final_restore_failed',False)==(eventual_idle==1000)
-    assert controller.capacity==64 and controller.record(probe.supervisor)
+    assert controller.capacity == 64
+    assert bool(controller.record(probe.supervisor)) == (eventual_idle == 20)
     assert not any(name.startswith(('api-','engine-','gateway-')) for name,_ in controller.events)
 
 
@@ -473,3 +485,160 @@ def test_private_engine_quiescence_rejects_oversized_or_undecodable_metrics(payl
         def open(self,url,timeout):return Response(payload)
     controller=WorkerController();controller.http=Opener()
     assert controller.engine_quiescence({'role':'engine','port':8300})=={'quiescent':False,'error':error}
+
+
+def test_durable_intent_precedes_watchdog_stop_and_exact_kill(tmp_path):
+    probe, _, controller = setup(tmp_path, capacity=0)
+    original_invoke, original_crash = controller.invoke, controller.crash_exact
+    observed = []
+    def invoke(row, action):
+        if row['role'] == 'supervisor' and action == 'stop':
+            saved = json.loads(probe.journal.read_bytes())
+            assert saved['pending_action']['stage'] == 'watchdog_stop'
+            assert saved['manual_recovery_required'] and saved['automatic_replay'] is False
+            observed.append('watchdog')
+        return original_invoke(row, action)
+    def crash(row, expected):
+        saved = json.loads(probe.journal.read_bytes())
+        assert saved['pending_action']['stage'] == 'worker_sigkill'
+        assert saved['pending_action']['expected_identity']['pid'] == expected['pid']
+        assert saved['source_sha256'] == probe._source_binding
+        assert saved['manifest_sha256'] and saved['configuration_sha256']
+        observed.append('kill')
+        original_crash(row, expected)
+    controller.invoke, controller.crash_exact = invoke, crash
+    result = probe.run()
+    assert result['status'] == 'passed' and observed == ['watchdog', 'kill']
+    saved = json.loads(probe.journal.read_bytes())
+    assert saved['phase'] == 'complete' and saved['pending_action'] is None
+    assert saved['watchdog_restored'] and not saved['manual_recovery_required']
+    assert not probe.journal.stat().st_mode & 0o077
+    assert 'NEVER-PERSIST' not in probe.journal.read_text() and 'private-worker-token' not in probe.journal.read_text()
+
+
+def test_same_probe_cannot_execute_twice_or_overwrite_journal(tmp_path):
+    probe, _, controller = setup(tmp_path, capacity=0)
+    assert probe.run()['status'] == 'passed'
+    original = probe.journal.read_bytes(); events = list(controller.events)
+    with pytest.raises(ProbeFailure, match='existing_operation_no_automatic_replay'):
+        probe.run()
+    assert probe.journal.read_bytes() == original and controller.events == events
+
+
+def test_existing_journal_is_never_adopted_by_another_execution(tmp_path):
+    probe, _, controller = setup(tmp_path, capacity=0)
+    probe.journal.write_text('{"phase":"worker_sigkill_intent","private":"preserve"}')
+    probe.journal.chmod(0o600); original = probe.journal.read_bytes()
+    with pytest.raises(FileExistsError):
+        probe.run()
+    assert probe.journal.read_bytes() == original and not controller.events
+
+
+@pytest.mark.parametrize('operation', ['watchdog_stop', 'worker_sigkill', 'worker_start', 'watchdog_start'])
+def test_unknown_mutation_is_never_replayed_or_accepted_as_restored(tmp_path, operation):
+    probe, _, controller = setup(tmp_path, capacity=0)
+    original_invoke, original_crash = controller.invoke, controller.crash_exact
+    def invoke(row, action):
+        value = original_invoke(row, action)
+        matched = (operation == 'watchdog_stop' and row['role'] == 'supervisor' and action == 'stop'
+                   or operation == 'worker_start' and row['role'] == 'worker' and action == 'start'
+                   or operation == 'watchdog_start' and row['role'] == 'supervisor' and action == 'start')
+        if matched:
+            raise OSError('NEVER-PERSIST-untrusted-driver-output')
+        return value
+    def crash(row, expected):
+        original_crash(row, expected)
+        if operation == 'worker_sigkill':
+            raise OSError('NEVER-PERSIST-unknown-kill-ack')
+    controller.invoke, controller.crash_exact = invoke, crash
+    result = probe.run()
+    assert result['status'] == 'failed' and result['manual_recovery_required'] and not result['watchdog_restored']
+    assert result['pending_action']['stage'] == operation and result['pending_action']['outcome'] == 'unknown'
+    expected_event = {'watchdog_stop': ('supervisor-primary', 'stop'), 'worker_sigkill': ('worker-inference', 'SIGKILL'),
+                      'worker_start': ('worker-inference', 'start'), 'watchdog_start': ('supervisor-primary', 'start')}[operation]
+    assert controller.events.count(expected_event) == 1
+    if operation != 'watchdog_start':
+        assert ('supervisor-primary', 'start') not in controller.events
+    assert 'NEVER-PERSIST' not in json.dumps(result)
+
+
+@pytest.mark.parametrize('phase', ['worker_sigkill_intent', 'worker_sigkill_confirmed'])
+def test_journal_failure_blocks_following_mutation_and_watchdog(tmp_path, phase):
+    probe, _, controller = setup(tmp_path, capacity=0)
+    original = probe.save
+    def save(value=None):
+        if value == phase:
+            raise OSError('synthetic journal fsync failure')
+        original(value)
+    probe.save = save
+    result = probe.run()
+    assert result['status'] == 'failed' and result['manual_recovery_required']
+    assert ('supervisor-primary', 'start') not in controller.events
+    assert ('worker-inference', 'start') not in controller.events
+    assert (('worker-inference', 'SIGKILL') in controller.events) == (phase == 'worker_sigkill_confirmed')
+    assert result['pending_action']['stage'] == 'worker_sigkill'
+
+
+@pytest.mark.parametrize('changed', ['source', 'env', 'foreign_worker'])
+def test_changed_binding_or_foreign_worker_prevents_automatic_recovery(tmp_path, changed):
+    probe, _, controller = setup(tmp_path, capacity=0)
+    original = controller.crash_exact
+    source = tmp_path / 'ops' / 'managed_source.py'; source.parent.mkdir(); source.write_text('# original\n')
+    probe._source_binding = __import__('ops.ha.single_pod_fault_probe', fromlist=['source_hashes']).source_hashes(tmp_path)
+    probe.report['source_sha256'] = probe._source_binding
+    def crash(row, expected):
+        original(row, expected)
+        if changed == 'source': source.write_text('# changed\n')
+        elif changed == 'env': Path(probe.worker['env_file']).write_text('NEVER-PERSIST=changed-secret\n')
+        else: controller.records[controller.key(probe.worker)] = {'pid': 9876, 'start_ticks': '999', 'cwd': '/foreign'}
+    controller.crash_exact = crash
+    result = probe.run()
+    assert result['status'] == 'failed' and result['manual_recovery_required']
+    assert ('supervisor-primary', 'start') not in controller.events and ('worker-inference', 'start') not in controller.events
+    assert 'NEVER-PERSIST' not in json.dumps(result)
+
+
+def test_failed_worker_readiness_does_not_restore_watchdog(tmp_path):
+    probe, _, controller = setup(tmp_path, capacity=0)
+    original = controller.responding
+    controller.responding = lambda row, ready=False: False if row['role'] == 'worker' and controller.restarts else original(row, ready)
+    result = probe.run()
+    assert result['status'] == 'failed' and result['manual_recovery_required'] and result['final_restore_failed']
+    assert controller.restarts == 1 and not controller.record(probe.supervisor)
+
+
+def test_recovery_quiescence_is_uninterruptible_but_bounded(tmp_path):
+    probe, _, controller = setup(tmp_path, adaptive=True, capacity=0, engine_quiescence_timeout=10)
+    controller.engine_idle_at = 4
+    original = controller.crash_exact
+    def crash(row, expected):
+        original(row, expected); probe.stop.set()
+    controller.crash_exact = crash
+    result = probe.run()
+    assert result['status'] == 'failed' and result['error'] == 'interrupted'
+    assert not result['manual_recovery_required'] and result['watchdog_restored']
+    assert min(controller.worker_start_times) >= 4
+
+
+def test_capacity600_drain_requires_worker_internal_shutdown_budget(tmp_path):
+    with pytest.raises(ProbeFailure, match='worker_shutdown_drain_shorter_than_probe_bound'):
+        setup(tmp_path, drain_seconds=600)
+    assert not list((tmp_path / '.runtime').glob('*.journal.json'))
+
+
+def test_capacity600_path_keeps_watchdog_paused_until_fence_and_real_restore(tmp_path):
+    probe, _, controller = setup(tmp_path, drain_seconds=600, worker_shutdown_seconds=600)
+    original = controller.graceful_stop; seen = []
+    def drain(row, expected, grace, check):
+        if row['role'] == 'worker':
+            assert grace == 600 and not controller.record(probe.supervisor)
+            saved = json.loads(probe.journal.read_bytes())
+            assert saved['pending_action']['stage'] == 'reduced_worker_drain'
+            seen.append(grace)
+        return original(row, expected, grace, check)
+    controller.graceful_stop = drain
+    result = probe.run()
+    assert result['status'] == 'passed' and seen == [600]
+    assert result['reduced_positive_samples'] == 3 and result['capacity_reexpansion_proven']
+    assert result['restored_server_capacity'] == 64 and result['watchdog_restored']
+    assert controller.events.index(('task-0', 'heartbeat409+complete409')) < controller.events.index(('supervisor-primary', 'start'))

@@ -2,7 +2,9 @@
 
 Keeps every engine/API alive. Old attempt tokens stay in RAM. Optional reduced
 capacity uses a new private worker env, never changes the released config, and
-is restored in finally. Start the bounded real benchmark separately and supply
+is restored only through known identity/readiness/quiescence gates. Unknown
+actions remain journaled for manual recovery with no automatic replay. Start
+the bounded real benchmark separately and supply
 its explicit run ID; no 'latest batch' selection or synthetic accepted results.
 """
 from __future__ import annotations
@@ -11,12 +13,14 @@ import argparse
 import fcntl
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
 import shlex
 import signal
 import select
+import stat
 import sys
 import threading
 import time
@@ -31,6 +35,40 @@ from ops.ha.controlplane_outage_probe import ProbeFailure, require, timestamp
 from ops.ha.engine_outage_probe import EngineController, EngineProgress, selected_pair
 from ops.supervise import ConfigError, load_manifest, private_read, private_write
 from worker.kv_admission import engine_quiescent
+
+
+def source_hashes(root):
+    return {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for directory in ('backend', 'worker', 'ops', 'scripts')
+            for path in sorted((root / directory).rglob('*'))
+            if path.is_file() and path.suffix in {'.py', '.sql'}}
+
+
+def safe_identity(record):
+    if record is None:
+        return None
+    return {key: record[key] for key in ('pid', 'start_ticks', 'cwd')}
+
+
+def durable_write(path, value):
+    private_write(path, value)
+    descriptor = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def reserve_journal(path, run_id):
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(descriptor, 'w') as handle:
+        json.dump({'phase': 'reserved', 'run_id': run_id, 'automatic_replay': False}, handle)
+        handle.write('\n'); handle.flush(); os.fsync(handle.fileno())
+    descriptor = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
 
 
 class WorkerController(EngineController):
@@ -57,7 +95,8 @@ class WorkerController(EngineController):
     def graceful_stop(self, service, expected, grace, check):
         # Share manage.py's exact service lock. A PID cannot be replaced by a
         # concurrent managed start between validation and the TERM operation.
-        name = "worker-" + service["name"]
+        require(service.get('role') in {'worker', 'supervisor'}, 'unsupported_exact_graceful_stop_role')
+        name = service['role'] + '-' + service['name']
         pidfile = self.root / ".runtime" / (name + ".json")
         began = time.monotonic()
         with (self.root / ".runtime" / (name + ".lock")).open("w") as lock:
@@ -192,7 +231,7 @@ class SinglePodProbe:
     def __init__(self, *, services, worker, engine, api, supervisor, manifest, original,
                  progress, controller, token, expected, minimum_running=8, capacity=2,
                  expiry_timeout=240, terminal_timeout=1800, drain_seconds=180, engine_quiescence_timeout=600, stop=None, clock=time.monotonic,
-                 sleep=time.sleep):
+                 sleep=time.sleep, journal=None, journal_reserved=False):
         self.services, self.worker, self.engine, self.api, self.supervisor = services, worker, engine, api, supervisor
         self.manifest, self.original, self.progress, self.controller = manifest, original, progress, controller
         self.token, self.expected, self.minimum, self.capacity = token, expected, minimum_running, capacity
@@ -201,17 +240,33 @@ class SinglePodProbe:
         self.stop, self.clock, self.sleep = stop or threading.Event(), clock, sleep
         self.protected = [row for row in services if row != worker]
         self.worker_bytes = private_read(Path(worker["env_file"]))
+        shutdown = float(worker_env_values(self.worker_bytes).get('WORKER_SHUTDOWN_SECONDS', '240'))
+        require(math.isfinite(shutdown) and (not capacity or shutdown >= drain_seconds),
+                'worker_shutdown_drain_shorter_than_probe_bound')
         self.adaptive_kv=worker_adaptive_enabled(self.worker_bytes)
         self.engine_quiescence_timeout=engine_quiescence_timeout
         if self.adaptive_kv:
             require(type(engine_quiescence_timeout) is int and 10<=engine_quiescence_timeout<=900, "invalid_engine_quiescence_timeout")
         self.watch_hash = hashlib.sha256(private_read(Path(supervisor["env_file"]))).hexdigest()
         self.reduced, self.reduced_record, self.restored_record = None, None, None
+        self.root = getattr(controller, 'root', manifest.parent)
+        self.journal = journal or self.root / '.runtime' / ('singlepod-worker-fault-' + progress.run_id + '.journal.json')
+        self._journal_reserved, self._execution_started = journal_reserved, False
+        self._uncertain_action = False
+        self._source_binding = source_hashes(self.root)
+        self._configuration_binding = {row['env_file']: hashlib.sha256(private_read(Path(row['env_file']))).hexdigest()
+                                       for row in [*services, supervisor]}
+        self._expected_supervisor = self._initial_worker = None
         self.report = {"schema_version": 1, "status": "running", "started_at": timestamp(),
             "run_id": progress.run_id, "model": progress.model, "expected_tasks": expected,
             "scope": "One exact application worker SIGKILL; inference engine/API/database remain alive",
             "samples": [], "http_poll_errors": {}, "restore_attempts": [],
             "adaptive_engine_startup_requires_quiescence": self.adaptive_kv, "engine_quiescence_gates": [],
+            "automatic_replay": False, "manual_recovery_required": False, "watchdog_restored": False,
+            "maintenance_mode": False, "pending_action": None,
+            "source_sha256": self._source_binding, "configuration_sha256": self._configuration_binding,
+            "manifest_sha256": hashlib.sha256(original).hexdigest(),
+            "worker_shutdown_seconds": shutdown, "drain_bound_seconds": drain_seconds,
             "measurement_bounds": ["Real workload is submitted by the separately identified existing benchmark",
                 "No GPU reset, engine stop, whole-Pod failure or database failover",
                 "Expired tokens stay only in RAM; final report contains task IDs and accepted usage only",
@@ -219,6 +274,94 @@ class SinglePodProbe:
                 "Inference may execute more than once; accepted results and usage must remain unique",
                 "Recovered pending leases do not prove the still-live engine has released orphaned inference/KV",
                 "Capacity2 uses a temporary worker-only config; original engine/KV settings stay unchanged"]}
+
+    def save(self, phase=None):
+        if phase:
+            self.report['phase'] = phase
+        durable_write(self.journal, self.report)
+
+    def _prepare_journal(self):
+        require(not self._execution_started, 'existing_operation_no_automatic_replay')
+        self._execution_started = True
+        if not self._journal_reserved:
+            reserve_journal(self.journal, self.progress.run_id)
+        initial = json.loads(private_read(self.journal))
+        require(initial.get('phase') == 'reserved' and initial.get('run_id') == self.progress.run_id,
+                'existing_operation_no_automatic_replay')
+        self._journal_reserved = True
+        self.save('arming')
+
+    def _binding_guard(self):
+        require(private_read(self.manifest) == self.original, 'active_manifest_changed')
+        require(source_hashes(self.root) == self._source_binding, 'protected_source_changed')
+        require(all(hashlib.sha256(private_read(Path(path))).hexdigest() == value
+                    for path, value in self._configuration_binding.items()), 'protected_configuration_changed')
+        if self.reduced:
+            temporary = Path(self.reduced['env_file'])
+            if temporary.exists():
+                require(hashlib.sha256(private_read(temporary)).hexdigest() == self.report['reduced_worker_env_sha256'],
+                        'temporary_worker_configuration_changed')
+            else:
+                require(self.report.get('temporary_worker_configuration_removed') is True,
+                        'temporary_worker_configuration_missing')
+
+    def _intent(self, stage, service, expected=None):
+        require(not self._uncertain_action and self.report.get('pending_action') is None,
+                'unresolved_action_requires_manual_recovery')
+        self._binding_guard()
+        self.report.update(manual_recovery_required=True, pending_action={
+            'stage': stage, 'service': service['role'] + '-' + service['name'],
+            'expected_identity': safe_identity(expected), 'intent_at': timestamp()})
+        self.save(stage + '_intent')
+
+    def _confirmed(self, stage, identity=None):
+        self.report.setdefault('action_receipts', []).append({'stage': stage, 'at': timestamp(),
+            'identity': safe_identity(identity)})
+        self.report['pending_action'] = None
+        try:
+            self.save(stage + '_confirmed')
+        except BaseException:
+            self._uncertain_action = True
+            self.report.update(manual_recovery_required=True, pending_action={
+                'stage': stage, 'outcome': 'confirmation_not_durable'})
+            raise
+
+    def _unknown(self):
+        self._uncertain_action = True
+        self.report.update(manual_recovery_required=True, maintenance_mode=True)
+        if self.report.get('pending_action'):
+            self.report['pending_action']['outcome'] = 'unknown'
+        self.save('action_outcome_unknown')
+
+    def _managed_stop(self, service, expected, stage):
+        require(self.controller.record(service) == expected, 'stop_target_identity_changed')
+        self._intent(stage, service, expected)
+        try:
+            # Use the existing service lock and pidfd primitive so a concurrent
+            # managed replacement cannot be stopped between journal and signal.
+            self.controller.graceful_stop(service, expected, 30, self.preserve)
+            require(self.controller.record(service) is None,
+                    'stop_acknowledgement_or_identity_ambiguous')
+        except BaseException:
+            self._unknown(); raise
+        self._confirmed(stage)
+
+    def _start_worker(self, service):
+        require(self.controller.record(service) is None, 'worker_must_be_stopped_before_start')
+        self._intent('worker_start', service)
+        try:
+            value = self.controller.invoke(service, 'start')
+            current = self.controller.record(service)
+            require(current is not None and value.get('status') == 'started' and value.get('pid') == current['pid'],
+                    'start_acknowledgement_or_identity_ambiguous')
+        except BaseException:
+            self._unknown(); raise
+        if service is self.reduced:
+            self.reduced_record = current
+        else:
+            self.restored_record = current
+        self._confirmed('worker_start', current)
+        return current
 
     def wait(self, predicate, timeout, reason, *, interruptible=True):
         deadline = self.clock() + timeout
@@ -234,6 +377,7 @@ class SinglePodProbe:
         return value
 
     def preserve(self):
+        self._binding_guard()
         for row in self.protected:
             name = row["role"] + "-" + row["name"]
             require(self.controller.record(row) == self.before[name], "unreleased_process_identity_changed")
@@ -242,15 +386,15 @@ class SinglePodProbe:
                 errors[name] = errors.get(name, 0) + 1
                 raise ProbeFailure("unreleased_service_not_ready")
 
-    def await_engine_quiescence(self, phase="before_worker_restart"):
-        if not self.adaptive_kv:return
+    def await_engine_quiescence(self, phase="before_worker_restart", *, interruptible=True, force=False):
+        if not self.adaptive_kv and not force:return
         began=self.clock()
         gate={'phase':phase,'started_at':timestamp(),'timeout_seconds':self.engine_quiescence_timeout,
               'status':'waiting','observations':[],'errors':{},'busy_observations':0}
         self.report['engine_quiescence_gates'].append(gate)
         passed=False
         def idle():
-            require(not self.stop.is_set(), 'interrupted')
+            require(not interruptible or not self.stop.is_set(), 'interrupted')
             self.preserve()
             value=self.controller.engine_quiescence(self.engine)
             gate['observations'].append({'at':timestamp(),**value})
@@ -260,67 +404,99 @@ class SinglePodProbe:
                 gate['busy_observations']+=1
             return value['quiescent']
         try:
-            self.wait(idle,self.engine_quiescence_timeout,'adaptive_engine_not_quiescent_before_worker_restart')
+            self.wait(idle,self.engine_quiescence_timeout,'adaptive_engine_not_quiescent_before_worker_restart',
+                      interruptible=interruptible)
             passed=True
         finally:
             gate.update(status='passed' if passed else 'failed',finished_at=timestamp(),wait_seconds=self.clock()-began)
+            self.save()
 
-    def restore(self):
+    def restore(self, *, start_watchdog=True):
         errors = []
         try:
-            require(private_read(Path(self.worker["env_file"])) == self.worker_bytes, "original_worker_configuration_changed")
+            require(not self._uncertain_action and self.report.get('pending_action') is None,
+                    'unresolved_action_requires_manual_recovery')
+            self.preserve()
             current = self.controller.record(self.worker)
-            if current and self.reduced_record and current == self.reduced_record:
-                deadline = self.clock() + 30
-                while self.controller.record(self.worker) is not None:
-                    require(self.clock() < deadline, "reduced_worker_stop_did_not_converge")
-                    require(self.controller.record(self.worker) == self.reduced_record, "replacement_worker_identity_changed_during_stop")
-                    try:
-                        self.controller.invoke(self.reduced, "stop")
-                    except Exception:
-                        require(self.clock() < deadline, "reduced_worker_stop_did_not_converge")
-                    self.sleep(.5)
-            elif current:
-                require(current in (self.before["worker-" + self.worker["name"]], self.restored_record), "unexpected_replacement_worker_identity")
-            try:
-                self.controller.invoke(self.worker, "start")
-            finally:
-                self.restored_record = self.controller.record(self.worker)
-            self.wait(lambda: self.controller.responding(self.worker, ready=True), 120, "original_worker_not_ready", interruptible=False)
-            self.report["restored_worker_pid"] = self.controller.record(self.worker)["pid"]
-            if self.report.get("original_configured_slots"):
-                original = self.report["original_configured_slots"]
+            if current is not None and current == self.reduced_record:
+                self._intent('reduced_worker_drain', self.reduced, current)
+                try:
+                    self.controller.graceful_stop(self.reduced, current, self.drain_seconds, self.preserve)
+                    require(self.controller.record(self.worker) is None, 'reduced_worker_drain_not_confirmed')
+                except BaseException:
+                    self._unknown(); raise
+                self._confirmed('reduced_worker_drain')
+                current = None
+            if current is not None:
+                require(current in (self._initial_worker, self.restored_record), 'unexpected_replacement_worker_identity')
+            else:
+                self.await_engine_quiescence('recovery_before_original_worker', interruptible=False, force=True)
+                current = self._start_worker(self.worker)
+            self.wait(lambda: self.controller.record(self.worker) == current and
+                      self.controller.responding(self.worker, ready=True),
+                      120, 'original_worker_not_ready', interruptible=False)
+            self.preserve()
+            self.report['restored_worker_pid'] = current['pid']
+            if self.report.get('original_configured_slots'):
+                original = self.report['original_configured_slots']
                 self.wait(lambda: self.progress.capacity(self.progress.secondary_worker_id) == original,
-                          30, "original_worker_capacity_not_restored", interruptible=False)
-                self.report["restored_server_capacity"] = original
-        except Exception:
-            errors.append("worker_restore_failed")
-        try:
-            require(private_read(self.manifest) == self.original, "active_manifest_changed")
-            require(hashlib.sha256(private_read(Path(self.supervisor["env_file"]))).hexdigest() == self.watch_hash,
-                    "watchdog_configuration_changed")
-            self.controller.invoke(self.supervisor, "start")
-            require(self.controller.record(self.supervisor) is not None, "watchdog_not_running")
-        except Exception:
-            errors.append("watchdog_restore_failed")
-        if not errors and self.reduced:
-            try:
-                temporary = Path(self.reduced["env_file"])
+                          30, 'original_worker_capacity_not_restored', interruptible=False)
+                self.report['restored_server_capacity'] = original
+            if start_watchdog:
+                self.await_engine_quiescence('before_watchdog_restore', interruptible=False, force=True)
+                self.preserve()
+                require(self.controller.record(self.worker) == current and self.controller.responding(self.worker, ready=True),
+                        'restored_worker_identity_or_readiness_changed')
+                watch = self.controller.record(self.supervisor)
+                require(watch is None or watch == self._expected_supervisor, 'unexpected_watchdog_identity')
+                if watch is None:
+                    self._intent('watchdog_start', self.supervisor)
+                    try:
+                        value = self.controller.invoke(self.supervisor, 'start')
+                        watch = self.controller.record(self.supervisor)
+                        require(watch is not None and value.get('status') == 'started' and value.get('pid') == watch['pid'],
+                                'watchdog_start_acknowledgement_or_identity_ambiguous')
+                    except BaseException:
+                        self._unknown(); raise
+                    self._expected_supervisor = watch
+                    self._confirmed('watchdog_start', watch)
+                self.report.update(watchdog_restored=True, maintenance_mode=False)
+            else:
+                require(self.controller.record(self.supervisor) is None, 'watchdog_restarted_during_capacity_study')
+                self.report.update(watchdog_restored=False, maintenance_mode=True)
+            if self.reduced:
+                temporary = Path(self.reduced['env_file'])
                 if temporary.exists():
-                    require(hashlib.sha256(private_read(temporary)).hexdigest() == self.report["reduced_worker_env_sha256"],
-                            "temporary_worker_configuration_changed")
+                    require(hashlib.sha256(private_read(temporary)).hexdigest() == self.report['reduced_worker_env_sha256'],
+                            'temporary_worker_configuration_changed')
                     temporary.unlink()
-                self.report["temporary_worker_configuration_removed"] = True
-            except Exception:
-                self.report["temporary_worker_configuration_cleanup_failed"] = True
-        self.report["restore_attempts"].append({"at": timestamp(), "errors": errors})
-        require(not errors, "restore_incomplete")
+                self.report['temporary_worker_configuration_removed'] = True
+            self.preserve()
+            require(self.controller.record(self.worker) == current and self.controller.responding(self.worker, ready=True),
+                    'restored_worker_identity_or_readiness_changed')
+            require(self.controller.record(self.supervisor) == (self._expected_supervisor if start_watchdog else None),
+                    'watchdog_identity_changed_after_restore')
+        except Exception as error:
+            errors.append(str(error) if isinstance(error, ProbeFailure) else 'worker_restore_failed')
+        self.report['restore_attempts'].append({'at': timestamp(), 'errors': errors})
+        self.report['manual_recovery_required'] = bool(errors)
+        if errors:
+            self.report.update(maintenance_mode=True, watchdog_restored=False,
+                manual_recovery_scope='Inspect exact owned worker/engine/API identities, readiness, source/env binding and quiescence before restoring watchdog; never replay fault')
+        self.save('restore_failed' if errors else 'pair_and_watchdog_restored' if start_watchdog else 'worker_restored_watchdog_paused')
+        require(not errors, 'restore_incomplete')
 
     def run(self):
+        self._prepare_journal()
         maintenance, restored = False, False
         try:
             self.before = {r["role"] + "-" + r["name"]: self.controller.record(r) for r in self.services}
-            require(all(self.before.values()) and self.controller.record(self.supervisor), "owned_service_missing")
+            self._expected_supervisor = self.controller.record(self.supervisor)
+            self._initial_worker = self.before['worker-' + self.worker['name']]
+            require(all(self.before.values()) and self._expected_supervisor, "owned_service_missing")
+            require(self.controller.responding(self.worker, ready=True), 'initial_worker_not_ready')
+            self.report['owned_identities_before'] = {key: safe_identity(value) for key, value in self.before.items()}
+            self.report['owned_supervisor_before'] = safe_identity(self._expected_supervisor)
             self.preserve()
             self.progress.scope(self.expected)
             require(self.progress.other_unfinished_work() == 0, "another_cohort_has_unfinished_work_on_released_model")
@@ -329,10 +505,17 @@ class SinglePodProbe:
             captured = self.progress.capture(self.progress.secondary_worker_id)
             require(before["running"] >= self.minimum and len(captured) >= self.minimum, "insufficient_actual_running_leases")
             require(private_read(self.manifest) == self.original, "active_manifest_changed")
+            require(not self.stop.is_set(), 'interrupted_before_fault')
+            self.report.update(manual_recovery_required=True, maintenance_mode=True)
+            self.save('fault_intent_durable')
             maintenance = True
-            self.controller.invoke(self.supervisor, "stop")
-            require(self.controller.record(self.supervisor) is None, "watchdog_did_not_stop")
-            self.controller.crash_exact(self.worker, self.before["worker-" + self.worker["name"]])
+            self._managed_stop(self.supervisor, self._expected_supervisor, 'watchdog_stop')
+            self._intent('worker_sigkill', self.worker, self._initial_worker)
+            try:
+                self.controller.crash_exact(self.worker, self._initial_worker)
+            except BaseException:
+                self._unknown(); raise
+            self._confirmed('worker_sigkill')
             self.wait(lambda: self.controller.record(self.worker) is None and not self.controller.responding(self.worker),
                       15, "worker_still_responds_after_sigkill")
             held = self.progress.held_after_loss(captured)
@@ -370,14 +553,8 @@ class SinglePodProbe:
                 selected = self.reduced
                 self.report.update(original_configured_slots=original_slots, reduced_configured_slots=self.capacity,
                                    reduced_worker_env_sha256=hashlib.sha256(data).hexdigest())
-            self.await_engine_quiescence("after_lease_recovery_before_worker_restart")
-            try:
-                self.controller.invoke(selected, "start")
-            finally:
-                if self.reduced:
-                    self.reduced_record = self.controller.staged_record(selected, self.progress.run_id)
-                else:
-                    self.restored_record = self.controller.record(selected)
+            self.await_engine_quiescence("after_lease_recovery_before_worker_restart", force=True)
+            self._start_worker(selected)
             self.wait(lambda: self.controller.responding(selected, ready=True), 120, "restarted_worker_not_ready")
             if self.capacity:
                 require(self.progress.capacity(self.progress.secondary_worker_id) == self.capacity, "reduced_server_capacity_not_registered")
@@ -405,15 +582,20 @@ class SinglePodProbe:
                                    capacity_drain_started_at=timestamp())
                 draining = self.progress.capture(self.progress.secondary_worker_id)
                 require(len(draining) <= self.capacity, "draining_attempts_exceeded_reduced_capacity")
-                drain_elapsed = self.controller.graceful_stop(selected, self.reduced_record, self.drain_seconds, self.preserve)
+                self._intent('reduced_worker_drain', selected, self.reduced_record)
+                try:
+                    drain_elapsed = self.controller.graceful_stop(selected, self.reduced_record, self.drain_seconds, self.preserve)
+                    require(self.controller.record(selected) is None, 'reduced_worker_drain_not_confirmed')
+                except BaseException:
+                    self._unknown(); raise
+                self._confirmed('reduced_worker_drain')
                 self.wait(lambda: self.progress.accepted_token_count(draining) == len(draining),
                           15, "capacity_drain_did_not_accept_its_inflight_attempts")
                 self.report.update(capacity_drain_finished_at=timestamp(), drained_valid_attempts=len(draining),
                                    graceful_drain_attempts_accepted=True, capacity_drain_seconds=drain_elapsed)
                 after_drain = self.sample("after_capacity_drain")
                 self.report["pending_before_capacity_restore"] = after_drain["pending"]
-                self.restore()
-                restored = True
+                self.restore(start_watchdog=False)
                 self.report["capacity_restored_under_load_at"] = timestamp()
                 self.report["capacity_reexpansion_proven"] = False
                 if after_drain["pending"] == 0:
@@ -454,10 +636,13 @@ class SinglePodProbe:
                     self.restore()
                 except Exception:
                     self.report["final_restore_failed"] = True
+                    self.report['manual_recovery_required'] = True
+            self.save('complete' if self.report['status'] == 'passed' else 'manual_recovery_required'
+                      if self.report.get('manual_recovery_required') else 'failed_restored')
         return self.report
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--env-file", type=Path, required=True, help="Manifest API-a runtime env, never owner credentials")
@@ -477,7 +662,8 @@ def main():
     parser.add_argument("--engine-quiescence-timeout", type=int, default=600)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    reserved = False
     try:
         require(Path("/proc/self/stat").exists(), "linux_required")
         require(bool(re.fullmatch(r"bench-[A-Za-z0-9_-]{1,64}", args.run_id)), "invalid_exact_run_id")
@@ -496,6 +682,8 @@ def main():
             private_read(path)
         require(args.report.parent == ROOT / ".runtime" and args.report.resolve() == args.report
                 and args.report.suffix == ".json" and not args.report.exists(), "report_must_be_new_private_runtime_json")
+        journal = ROOT / '.runtime' / ('singlepod-worker-fault-' + args.run_id + '.journal.json')
+        require(not journal.exists(), 'existing_operation_no_automatic_replay')
         env, watch = manage.load_env(args.env_file), manage.load_env(args.supervisor_env)
         worker_env, engine_env = manage.load_env(Path(worker["env_file"])), manage.load_env(Path(engine["env_file"]))
         require(watch.get("SUPERVISOR_MANIFEST") == str(manifest), "supervisor_manifest_mismatch")
@@ -513,16 +701,25 @@ def main():
             print(json.dumps({"status": "dry_run", "run_id": args.run_id, "tasks": args.expected_tasks,
                 "only_hard_fault": "worker-" + worker["name"], "engine_kept_alive": "engine-" + engine["name"],
                 "watchdog_paused": True, "temporary_worker_capacity": args.reduced_capacity,
-                "configuration_sha256": fingerprint, "requires_execute": True}))
+                "configuration_sha256": fingerprint, "journal": str(journal),
+                "source_sha256": source_hashes(ROOT), "requires_execute": True}))
             return 0
         stop = threading.Event()
         for signum in (signal.SIGTERM, signal.SIGINT):
             signal.signal(signum, lambda *_: stop.set())
-        with (ROOT / ".runtime/single-pod-worker-fault.lock").open("w") as lock:
-            os.chmod(lock.name, 0o600)
+        descriptor = os.open(ROOT / '.runtime/single-pod-worker-fault.lock',
+                             os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(descriptor, 'r+') as lock:
+            info = os.fstat(lock.fileno())
+            require(stat.S_ISREG(info.st_mode) and info.st_uid == os.geteuid() and not info.st_mode & 0o077,
+                    'unsafe_fault_operation_lock')
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            reserve_journal(journal, args.run_id)
+            reserved = True
             progress = WorkerProgress(env["DATABASE_URL"], args.run_id, args.model, wid)
             try:
+                require(progress.connection.execute('SELECT current_user AS role').fetchone()['role'] == 'bf_runtime',
+                        'runtime_database_role_required')
                 deadline = time.monotonic() + args.wait_for_submission
                 while True:
                     counts = progress.submission_counts()
@@ -535,18 +732,32 @@ def main():
                     manifest=manifest, original=original, progress=progress, controller=WorkerController(),
                     token=env["BATCHFORGE_WORKER_TOKEN"], expected=args.expected_tasks, minimum_running=args.minimum_running,
                     capacity=args.reduced_capacity, expiry_timeout=args.expiry_timeout, terminal_timeout=args.terminal_timeout,
-                    drain_seconds=args.drain_seconds, engine_quiescence_timeout=args.engine_quiescence_timeout, stop=stop).run()
+                    drain_seconds=args.drain_seconds, engine_quiescence_timeout=args.engine_quiescence_timeout, stop=stop,
+                    journal=journal, journal_reserved=True).run()
                 report["executed_source_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
                 report["dependency_sha256"] = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in
                     ("ops/ha/engine_outage_probe.py", "ops/ha/controlplane_outage_probe.py", "ops/manage.py", "ops/supervise.py")}
-                private_write(args.report, report)
+                durable_write(journal, report)
+                reserve_journal(args.report, args.run_id)
+                durable_write(args.report, report)
                 print(json.dumps({"status": report["status"], "report": str(args.report), "error": report.get("error"),
                     "final_restore_failed": report.get("final_restore_failed", False)}))
                 return 0 if report["status"] == "passed" else 1
             finally:
                 progress.close()
     except Exception as error:
-        print(json.dumps({"status": "refused", "error": str(error) if isinstance(error, (ProbeFailure, ConfigError)) else type(error).__name__}))
+        failure = {"status": "refused", "error": str(error) if isinstance(error, (ProbeFailure, ConfigError)) else type(error).__name__}
+        if reserved:
+            try:
+                saved = json.loads(private_read(journal))
+                saved.update(controller_error=failure, automatic_replay=False)
+                durable_write(journal, saved)
+                if not args.report.exists():
+                    reserve_journal(args.report, args.run_id)
+                    durable_write(args.report, saved)
+            except Exception:
+                failure['private_failure_report_write_failed'] = True
+        print(json.dumps(failure))
         return 1
 
 
