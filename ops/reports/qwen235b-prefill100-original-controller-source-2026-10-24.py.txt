@@ -1,0 +1,55 @@
+"""Two actual fixed100 prefill/decode cohorts; private raw outputs stay on Pod."""
+from pathlib import Path
+from datetime import datetime,timezone
+import os,sys,json,hashlib,subprocess
+ROOT=Path('/root/batchforge-runtime/app');RUN=ROOT/'.runtime/qwen235b-regime100-v1'
+sys.path.insert(0,str(ROOT));os.umask(0o077)
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def main():
+ import psycopg
+ from ops.supervise import private_read,private_write,load_manifest
+ from ops.ha.finalize_api_policy import values
+ from ops.ha.set_scheduler_policy import owned_identity
+ journal=RUN/'journal.json'
+ if journal.exists():raise RuntimeError('existing_job_no_resubmit')
+ manifest,services,_=load_manifest(ROOT/'.runtime/services-primary.json');watch=dict(role='supervisor',name='primary',env_file=str(ROOT.parent/'supervisor.env'))
+ services=[*services,watch];ids={s['role']+'-'+s['name']:owned_identity(ROOT,s) for s in services};configs={str(p):sha(p) for p in [manifest,*[Path(s['env_file']) for s in services]]}
+ sources={str(p.relative_to(ROOT)):sha(p) for d in ['backend','worker'] for p in (ROOT/d).rglob('*') if p.is_file() and p.suffix in ('.py','.sql')}
+ for name in ['scripts/benchmark.py','scripts/public_workload.py','scripts/scheduler_benchmark.py','ops/manage.py','ops/supervise.py']:sources[name]=sha(ROOT/name)
+ env=values(private_read(ROOT/'.runtime/scheduler-v6/benchmark.env'))
+ with psycopg.connect(env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=10000') as c:
+  if c.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]:raise RuntimeError('global_drain_required')
+ source=ROOT/'.runtime/qwen235b-v1/workload-20.jsonl'
+ if sha(source)!='52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f':raise RuntimeError('frozen_fixture_drift')
+ rows=[json.loads(line) for line in source.read_text().splitlines()]
+ cohorts={}
+ for kind in ('prefill','decode'):
+  chosen=[]
+  for row in rows:
+   prompt,cap=map(int,row['custom_id'].rsplit('-',2)[1:])
+   if (kind=='prefill' and prompt>=8192 and cap<=128) or (kind=='decode' and prompt<=512 and cap>=512):chosen.append(row)
+  if len(chosen)!=4:raise RuntimeError('four_cell_cohort_required')
+  path=RUN/(kind+'-workload.jsonl')
+  with path.open('xb') as f:f.write(('\n'.join(json.dumps(row,ensure_ascii=False) for row in chosen)+'\n').encode())
+  path.chmod(0o600);cohorts[kind]=path
+ metadata=dict(source_sha256=sha(source),tasks_per_regime=100,controlled_output=True,quality_evaluated=False,cohorts={k:sha(v) for k,v in cohorts.items()})
+ doc=dict(job_id='qwen235b-regime100-v1',phase='running',started_at=datetime.now(timezone.utc).isoformat(),workload_metadata=metadata,services_before=ids,configuration_sha256=configs,source_sha256=sources,source_controller_sha256=sha(Path(__file__)),performance_ab_comparison=False,private_api_a_entry=True)
+ private_write(journal,doc)
+ reports={}
+ for kind,fixture in cohorts.items():
+  label='qwen235b-'+kind+'100-v1'
+  argv=[sys.executable,'-m','scripts.scheduler_benchmark','--env-file',str(ROOT/'.runtime/scheduler-v6/benchmark.env'),'--workload',str(fixture),'--report',str(RUN/(kind+'-report.json')),'--label',label,'--repeats','25','--batches','1','--url','http://127.0.0.1:8082','--hourly-cost','16.10','--fixed-output']
+  doc.update(phase='running_'+kind);private_write(journal,doc)
+  with (RUN/(kind+'-runner.log')).open('xb') as out:p=subprocess.Popen(argv,cwd=ROOT,stdin=subprocess.DEVNULL,stdout=out,stderr=subprocess.STDOUT)
+  doc['runner_pid']=p.pid;private_write(journal,doc);code=p.wait()
+  if {s['role']+'-'+s['name']:owned_identity(ROOT,s) for s in services}!=ids or any(sha(Path(p))!=v for p,v in configs.items()) or any(sha(ROOT/p)!=v for p,v in sources.items()):raise RuntimeError('protected_runtime_changed')
+  report=json.loads(private_read(RUN/(kind+'-report.json'),16*1024**2))
+  expected=(1228800,8000) if kind=='prefill' else (32000,128000)
+  if code or not report['passed'] or not report['accepted_exactly_once'] or not report['all_output_lengths_exact'] or (report['prompt_tokens'],report['completion_tokens'])!=expected:raise RuntimeError('fixed_regime_workload_verification_failed')
+  reports[kind]={'report_sha256':sha(RUN/(kind+'-report.json')),'completed':report['completed'],'prompt_tokens':report['prompt_tokens'],'completion_tokens':report['completion_tokens'],'elapsed_seconds':report['elapsed_seconds']}
+  doc['reports']=reports;private_write(journal,doc)
+ doc.update(phase='complete',finished_at=datetime.now(timezone.utc).isoformat(),services_and_sources_unchanged=True)
+ private_write(journal,doc);print(json.dumps({'phase':doc['phase'],'reports':reports}),flush=True)
+if __name__=='__main__':
+ try:main()
+ except BaseException as e:print(json.dumps({'error_type':type(e).__name__}),flush=True);raise SystemExit(1) from None

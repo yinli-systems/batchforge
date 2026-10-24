@@ -1,0 +1,48 @@
+"""Preserve original interrupted controller; validate completed prefill then run decode once."""
+from pathlib import Path
+from datetime import datetime,timezone
+import os,sys,json,hashlib,subprocess
+ROOT=Path('/root/batchforge-runtime/app');OLD=ROOT/'.runtime/qwen235b-regime100-v1';RUN=ROOT/'.runtime/qwen235b-decode100-v2'
+sys.path.insert(0,str(ROOT));os.umask(0o077)
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def main():
+ import psycopg
+ from ops.supervise import private_read,private_write,load_manifest
+ from ops.ha.finalize_api_policy import values
+ from ops.ha.set_scheduler_policy import owned_identity
+ if (RUN/'journal.json').exists():raise RuntimeError('existing_job_no_resubmit')
+ previous=json.loads(private_read(OLD/'journal.json',256*1024))
+ manifest,services,_=load_manifest(ROOT/'.runtime/services-primary.json')
+ services=[*services,dict(role='supervisor',name='primary',env_file=str(ROOT.parent/'supervisor.env'))]
+ def guard():
+  if {s['role']+'-'+s['name']:owned_identity(ROOT,s) for s in services}!=previous['services_before']:raise RuntimeError('protected_identity_changed')
+  if any(sha(Path(p))!=v for p,v in previous['configuration_sha256'].items()):raise RuntimeError('protected_env_changed')
+  if any(sha(ROOT/p)!=v for p,v in previous['source_sha256'].items()):raise RuntimeError('protected_source_changed')
+ def verify(report,expected):
+  if not report['passed'] or report['database_schema_version']!=10 or not report['accepted_exactly_once'] or not report['all_output_lengths_exact']:raise RuntimeError('regime_not_passed')
+  if (report['observed_prompt_tokens'],report['observed_completion_tokens'])!=expected:raise RuntimeError('token_totals_mismatch')
+  if report['completed']!=100 or report['failed'] or report['cancelled'] or report['unfinished_batch_ids'] or report['test_fixture_detected']:raise RuntimeError('incomplete_real_regime')
+  if len(report['tasks'])!=100 or any(t['status']!='completed' or t['attempts']!=1 or t['accepted_attempts']!=1 or t['completion_tokens']!=t['output_cap'] for t in report['tasks']):raise RuntimeError('task_proof_mismatch')
+  if sum(t['prompt_tokens'] for t in report['tasks'])!=expected[0] or sum(t['completion_tokens'] for t in report['tasks'])!=expected[1]:raise RuntimeError('task_usage_mismatch')
+  return {k:report[k] for k in ['run_id','completed','elapsed_seconds','completed_tasks_per_second','observed_prompt_tokens','observed_completion_tokens','observed_prompt_tokens_per_second','observed_completion_tokens_per_second','task_completion_seconds','cost','gpu_observation']}
+ guard()
+ if (OLD/'decode-report.json').exists() or (OLD/'decode-runner.log').exists():raise RuntimeError('prior_decode_may_have_started')
+ prefill=verify(json.loads(private_read(OLD/'prefill-report.json',16*1024**2)),(1228800,8000))
+ env=values(private_read(ROOT/'.runtime/scheduler-v6/benchmark.env'))
+ with psycopg.connect(env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=10000') as c:
+  if c.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]:raise RuntimeError('global_drain_required')
+ fixture=OLD/'decode-workload.jsonl'
+ if sha(fixture)!=previous['workload_metadata']['cohorts']['decode']:raise RuntimeError('decode_fixture_drift')
+ doc=dict(job_id='qwen235b-decode100-v2',phase='running_decode',started_at=datetime.now(timezone.utc).isoformat(),source_controller_sha256=sha(Path(__file__)),original_journal_sha256=sha(OLD/'journal.json'),prefill_report_sha256=sha(OLD/'prefill-report.json'),prefill=prefill,previous_controller_interruption='KeyError in post-run report field names; original journal and result preserved',performance_ab_comparison=False,protected_runtime_reference=str(OLD/'journal.json'))
+ private_write(RUN/'journal.json',doc)
+ argv=[sys.executable,'-m','scripts.scheduler_benchmark','--env-file',str(ROOT/'.runtime/scheduler-v6/benchmark.env'),'--workload',str(fixture),'--report',str(RUN/'report.json'),'--label','qwen235b-decode100-v2','--repeats','25','--batches','1','--url','http://127.0.0.1:8082','--hourly-cost','16.10','--fixed-output']
+ with (RUN/'runner.log').open('xb') as out:p=subprocess.Popen(argv,cwd=ROOT,stdin=subprocess.DEVNULL,stdout=out,stderr=subprocess.STDOUT)
+ doc['runner_pid']=p.pid;private_write(RUN/'journal.json',doc);rc=p.wait();guard()
+ if rc:raise RuntimeError('decode_runner_failed')
+ result=verify(json.loads(private_read(RUN/'report.json',16*1024**2)),(32000,128000))
+ doc.update(phase='complete',passed=True,finished_at=datetime.now(timezone.utc).isoformat(),decode=result,decode_report_sha256=sha(RUN/'report.json'),services_and_sources_unchanged=True)
+ private_write(RUN/'journal.json',doc)
+ print(json.dumps({'phase':doc['phase'],'decode':result}),flush=True)
+if __name__=='__main__':
+ try:main()
+ except BaseException as e:print(json.dumps({'error_type':type(e).__name__}),flush=True);raise SystemExit(1) from None
