@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Batch text jobs</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%231a1a18'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="app.css?v=5">
+</head>
+<body>
+  <a class="skip-link" href="#compose">Skip to form</a>
+
+  <main class="page">
+    <header class="masthead">
+      <h1>Batch text jobs</h1>
+      <p class="sub">Run one AI task over many lines of text, then download the results.</p>
+    </header>
+
+    <section id="compose" class="compose" aria-labelledby="compose-title">
+      <h2 id="compose-title" class="sr-only">New job</h2>
+
+      <fieldset class="tasks">
+        <legend>Task</legend>
+        <div id="template-options" class="segments">
+          <span class="muted">Loading…</span>
+        </div>
+        <p id="template-help" class="hint"></p>
+      </fieldset>
+
+      <div class="field">
+        <label for="text">Items</label>
+        <textarea id="text" rows="8" spellcheck="false"
+          placeholder="Paste one item per line"
+          aria-describedby="text-hint"></textarea>
+        <div class="field-foot">
+          <p id="text-hint" class="hint">
+            <span id="text-count" aria-live="polite">0 items</span>
+            <span class="sep" aria-hidden="true">·</span>
+            <span>up to 500, blank lines ignored</span>
+          </p>
+          <div class="actions">
+            <button type="button" class="link" id="load-example">Load example</button>
+            <button type="button" class="primary" id="submit" disabled>Run job</button>
+          </div>
+        </div>
+        <p id="text-problem" class="problem" hidden></p>
+      </div>
+
+      <p id="form-error" class="notice error" role="alert" hidden></p>
+    </section>
+
+    <section class="job" id="job" aria-labelledby="job-title" hidden>
+      <div class="job-head">
+        <div>
+          <h2 id="job-title">Job</h2>
+          <p class="meta" id="job-meta"></p>
+        </div>
+        <p class="status" id="job-status" aria-live="polite">
+          <span class="dot" aria-hidden="true"></span><span id="job-status-text">Queued</span>
+        </p>
+      </div>
+
+      <div class="progress" role="progressbar" aria-labelledby="progress-label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p class="progress-label" id="progress-label"></p>
+
+      <p id="job-notice" class="notice" role="status" hidden></p>
+
+      <p id="waiting" class="waiting">
+        Results appear here when the job finishes. You can leave this page and come back with the job link.
+      </p>
+
+      <div id="results" hidden>
+        <div class="toolbar">
+          <div class="filters" role="group" aria-label="Filter results" id="filters"></div>
+          <div class="toolbar-actions">
+            <button type="button" class="link" id="copy-link">Copy link</button>
+            <a class="button" id="download" aria-disabled="true" tabindex="-1">Download CSV</a>
+          </div>
+        </div>
+
+        <table class="results">
+          <caption class="sr-only">Result for each submitted item</caption>
+          <thead>
+            <tr><th scope="col">Input</th><th scope="col">Result</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <p id="rows-empty" class="hint empty" hidden></p>
+      </div>
+    </section>
+
+    <section class="recent" id="recent-card" aria-labelledby="recent-title" hidden>
+      <div class="recent-head">
+        <h2 id="recent-title">Recent</h2>
+        <button type="button" class="link" id="clear-recent">Clear</button>
+      </div>
+      <ul id="recent" class="recent-list"></ul>
+    </section>
+
+    <footer class="footer">
+      <p>This browser remembers the IDs of your recent jobs. A job link works while the service keeps its results.</p>
+    </footer>
+  </main>
+
+  <script src="app.js?v=6"></script>
+</body>
+</html>
