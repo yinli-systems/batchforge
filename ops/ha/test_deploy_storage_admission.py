@@ -296,7 +296,13 @@ def database():
             conn.execute(sql.SQL('DROP DATABASE {} WITH(FORCE)').format(sql.Identifier(name)))
 
 
-def actual_migrations():return [(n,statement.encode()) for n,statement,_ in MIGRATIONS]
+def actual_migrations():return [(n,statement.encode()) for n,statement,_ in MIGRATIONS if n<=10]
+
+
+def test_historical_rollout_refuses_a_future_registry_before_database_access():
+    future = actual_migrations() + [(11, b'future migration must not run')]
+    with pytest.raises(ValueError, match='exact schema1-to10 prefix'):
+        deploy.migrate_atomic(None, future, b'', lambda _: None)
 
 
 def test_real_migrations_policy_grants_and_ledger_publish_in_one_transaction(database):

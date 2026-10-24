@@ -249,6 +249,10 @@ def ledger_invariants(conn):
 
 def migrate_atomic(conn,migrations,grants,before_commit):
     """The caller's private owner connection is closed on any pre-commit error."""
+    # This historical rollout owns exactly v8 -> v10. A caller importing a
+    # newer registry must not accidentally execute subsequent migrations.
+    if [version for version, _ in migrations] != list(range(1, 11)):
+        raise ValueError('Storage rollout requires the exact schema1-to10 prefix')
     try:
         conn.execute('BEGIN')
         conn.execute('SET LOCAL lock_timeout=\'10s\'')

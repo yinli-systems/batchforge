@@ -13,7 +13,7 @@ import tempfile
 
 CHECK_PATHS = ["tests", "worker/tests", "ops/pod2", "ops/gateway",
                "ops/test_supervise.py", "ops/test_engine_members.py",
-               "ops/test_host_memory.py", "ops/test_llama_backend.py", "ops/ha",
+               "ops/test_host_memory.py", "ops/test_llama_backend.py", "ops/test_engine_execution.py", "ops/ha",
                "scripts/test_public_workload.py", "scripts/test_observe_runtime.py",
                "scripts/test_trace_intervals.py",
                "devtools/test_backup_postgres.py"]

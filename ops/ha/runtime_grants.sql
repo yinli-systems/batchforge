@@ -21,5 +21,17 @@ GRANT SELECT,UPDATE ON tenant_retention_usage TO bf_runtime;
 -- v10 private SECURITY DEFINER triggers maintain auxiliary counters. The API
 -- has no direct counter/policy mutation or internal-function EXECUTE privilege.
 GRANT SELECT ON tenant_auxiliary_limits,tenant_auxiliary_usage TO bf_runtime;
+-- v11: preserved live+retired metering and read-only policy. The runtime may
+-- validate replay horizons but cannot retire rows, change policy, advance the
+-- replay floor or mutate the compacted metering ledger.
+DO $history_grants$
+BEGIN
+ IF EXISTS(SELECT 1 FROM batchforge_schema_migrations WHERE version=11) THEN
+  GRANT SELECT ON tenant_history_retirement_policy,retired_attempt_hourly,batchforge_attempt_hourly TO bf_runtime;
+  GRANT EXECUTE ON FUNCTION batchforge_idempotency_epoch(text),
+   batchforge_idempotency_check(text,text,text),batchforge_idempotency_admit(text,text,text) TO bf_runtime;
+ END IF;
+END
+$history_grants$;
 -- Do not grant ALTER/CREATE, tenant/key administration, task/result DELETE or replication.
 -- Existing deployment-wide PUBLIC grants must also be reviewed separately.

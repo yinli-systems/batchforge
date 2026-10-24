@@ -10,6 +10,12 @@ import psycopg
 
 def retention_error(exc):
     code = exc.sqlstate
+    if code == 'BH410':
+        return 410, 'Idempotency replay window expired; this key cannot create new work', 'idempotency_expired'
+    if code == 'BH400':
+        return 400, 'Invalid timestamped idempotency key', 'invalid_idempotency_key'
+    if code == 'BH411':
+        return 410, 'Task history has expired; archived results remain available', 'history_retired'
     if code == 'BQ429':
         if (exc.diag.message_primary or '').startswith('Auxiliary metadata quota reached:'):
             return (429, 'Storage metadata retention limit reached; an operator must retire history',

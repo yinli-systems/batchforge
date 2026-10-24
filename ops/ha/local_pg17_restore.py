@@ -89,6 +89,16 @@ def verify_database(connection, expected_migrations):
     ledger = connection.execute('SELECT version,checksum FROM batchforge_schema_migrations ORDER BY version').fetchall()
     if ledger != [(v, digest) for v, _, digest in expected_migrations]:
         raise RuntimeError('schema_migration_ledger_differs')
+    history_version = ledger[-1][0] >= 11
+    expected_totals = (
+        "coalesce(a.total,0)+b.history_retired_tasks,coalesce(a.pending,0),coalesce(a.running,0),"
+        "coalesce(a.completed,0)+b.history_retired_completed,coalesce(a.failed,0)+b.history_retired_failed,"
+        "coalesce(a.cancelled,0)+b.history_retired_cancelled,coalesce(a.prompt,0)+b.history_retired_prompt_tokens,"
+        "coalesce(a.completion,0)+b.history_retired_completion_tokens"
+        if history_version else
+        "coalesce(a.total,0),coalesce(a.pending,0),coalesce(a.running,0),coalesce(a.completed,0),"
+        "coalesce(a.failed,0),coalesce(a.cancelled,0),coalesce(a.prompt,0),coalesce(a.completion,0)"
+    )
     counts = connection.execute("""WITH actual AS (
       SELECT batch_id,count(*) AS total,
        count(*) FILTER(WHERE status='pending') AS pending,
@@ -100,7 +110,7 @@ def verify_database(connection, expected_migrations):
       FROM tasks GROUP BY batch_id)
       SELECT count(*) FROM batches b LEFT JOIN actual a ON a.batch_id=b.id
       WHERE (b.total_count,b.pending_count,b.running_count,b.completed_count,b.failed_count,b.cancelled_count,b.prompt_tokens,b.completion_tokens)
-       IS DISTINCT FROM (coalesce(a.total,0),coalesce(a.pending,0),coalesce(a.running,0),coalesce(a.completed,0),coalesce(a.failed,0),coalesce(a.cancelled,0),coalesce(a.prompt,0),coalesce(a.completion,0))""").fetchone()[0]
+       IS DISTINCT FROM (""" + expected_totals + ")").fetchone()[0]
     accepted = connection.execute("""WITH a AS (
        SELECT task_id,count(*) AS n,sum(prompt_tokens) AS p,sum(completion_tokens) AS c
        FROM attempts WHERE status='completed' GROUP BY task_id)
@@ -110,7 +120,22 @@ def verify_database(connection, expected_migrations):
     queues = connection.execute("""SELECT count(*) FROM tenant_queues q WHERE q.pending_count <>
       (SELECT count(*) FROM tasks t WHERE t.tenant_id=q.tenant_id AND t.model=q.model AND t.status='pending')""").fetchone()[0]
     invalid = connection.execute("SELECT count(*) FROM pg_constraint WHERE connamespace='public'::regnamespace AND NOT convalidated").fetchone()[0]
-    if counts or accepted or queues or invalid:
+    history_mismatches = 0
+    if history_version:
+        history_mismatches = connection.execute("""WITH batch_usage AS (
+          SELECT tenant_id,sum(history_retired_completed) AS n,
+            sum(history_retired_prompt_tokens) AS p,sum(history_retired_completion_tokens) AS c
+          FROM batches GROUP BY tenant_id), rollup AS (
+          SELECT tenant_id,sum(attempts) AS n,sum(prompt_tokens) AS p,sum(completion_tokens) AS c
+          FROM retired_attempt_hourly WHERE status='completed' GROUP BY tenant_id)
+          SELECT count(*) FROM batch_usage b FULL JOIN rollup r USING(tenant_id)
+          WHERE (coalesce(b.n,0),coalesce(b.p,0),coalesce(b.c,0)) IS DISTINCT FROM
+            (coalesce(r.n,0),coalesce(r.p,0),coalesce(r.c,0))""").fetchone()[0]
+        history_mismatches += connection.execute("""SELECT count(*) FROM batches WHERE
+          history_retired_tasks<>history_retired_completed+history_retired_failed+history_retired_cancelled
+          OR (history_retired_tasks>0 AND history_retirement_started_at IS NULL)
+          OR (history_retired_at IS NOT NULL AND history_retired_tasks<>total_count)""").fetchone()[0]
+    if counts or accepted or queues or invalid or history_mismatches:
         raise RuntimeError('restored_invariant_mismatch')
     functions = connection.execute("""SELECT p.proname,p.prosecdef,p.proconfig,
       oidvectortypes(p.proargtypes),p.proowner=(SELECT relowner FROM pg_class WHERE oid='public.tasks'::regclass)
@@ -135,10 +160,11 @@ def verify_database(connection, expected_migrations):
                 encoded = row.encode('utf-8')
                 digest.update(len(encoded).to_bytes(8, 'big'));digest.update(encoded);count += 1
         digests[table] = {'rows': count, 'sha256': digest.hexdigest()}
-    totals = connection.execute('SELECT coalesce(sum(prompt_tokens),0),coalesce(sum(completion_tokens),0) FROM tasks').fetchone()
+    totals = connection.execute('SELECT coalesce(sum(prompt_tokens),0),coalesce(sum(completion_tokens),0) FROM batches').fetchone()
     return {'schema_version':ledger[-1][0], 'migration_checksums':dict(ledger),
         'batch_count_state_usage_mismatches':counts,'accepted_attempt_count_usage_mismatches':accepted,
         'tenant_queue_pending_mismatches':queues,'unvalidated_constraints':invalid,
+        'history_rollup_mismatches':history_mismatches,
         'security_invoker_functions':[r[0] for r in functions if not r[1]],
         'private_source_auxiliary_definer_functions':[r[0] for r in functions if r[1]],
         **admission, 'tables':digests,

@@ -34,7 +34,7 @@ def unix(value):
 
 
 def batch_view(row):
-    return {
+    result = {
         "id": row["id"], "object": "batch", "endpoint": row["endpoint"], "model": row["model"],
         "input_file_id": row["input_file_id"], "completion_window": row["completion_window"],
         "status": row["status"], "metadata": row["metadata"],
@@ -43,6 +43,14 @@ def batch_view(row):
         "request_counts": {key: row[f"{key}_count"] for key in ("total", "completed", "failed", "cancelled", "running", "pending")},
         "usage": {"prompt_tokens": row["prompt_tokens"], "completion_tokens": row["completion_tokens"]},
     }
+    if row.get('history_retirement_started_at') is not None:
+        result['history_retention'] = {
+            'state': 'retired' if row.get('history_retired_at') is not None else 'retiring',
+            'retired_requests': row['history_retired_tasks'],
+            'started_at': unix(row['history_retirement_started_at']),
+            'retired_at': unix(row.get('history_retired_at')),
+        }
+    return result
 
 
 def worker_view(row):
@@ -116,6 +124,8 @@ class Store:
         # New-key accounting and conflict/replay resolution use the same tenant
         # umbrella as task/file admission, including during the v8-compatible roll.
         await conn.execute('SELECT id FROM tenants WHERE id=%s FOR NO KEY UPDATE', (tenant,))
+        if self.schema_version >= 11:
+            await conn.execute('SELECT public.batchforge_idempotency_admit(%s,%s,%s)', (tenant, scope, key))
         await conn.execute("INSERT INTO idempotency(tenant_id,scope,key,body_hash) VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING", (tenant, scope, key, digest))
         row = await one(conn, "SELECT * FROM idempotency WHERE tenant_id=%s AND scope=%s AND key=%s FOR UPDATE", (tenant, scope, key))
         if row["body_hash"] != digest:
@@ -133,6 +143,8 @@ class Store:
         if not 1 <= len(key) <= 128:
             raise APIError(400, 'Idempotency-Key must contain 1 to 128 characters')
         async with self.pool.connection() as conn:
+            if self.schema_version >= 11:
+                await conn.execute('SELECT public.batchforge_idempotency_check(%s,%s,%s)', (tenant, scope, key))
             row = await one(conn, 'SELECT body_hash,response FROM idempotency WHERE tenant_id=%s AND scope=%s AND key=%s', (tenant, scope, key))
         if row and row['body_hash'] != body_hash(body):
             raise APIError(409, 'Idempotency key was used with a different request', 'idempotency_conflict')
@@ -277,6 +289,8 @@ class Store:
                 source = await one(conn, "SELECT * FROM batches WHERE id=%s AND tenant_id=%s", (bid, tenant))
                 if not source:
                     raise APIError(404, 'Batch not found', 'not_found')
+                if source.get('history_retirement_started_at') is not None:
+                    raise APIError(410, 'Task history has expired; archived results remain available', 'history_retired')
                 if source['status'] == 'in_progress':
                     raise APIError(409, 'Wait until source batch is terminal before retrying', 'batch_not_terminal')
                 if source['model'] not in self.settings.served_models():
@@ -294,6 +308,16 @@ class Store:
                     if previous is not None:
                         result = previous
                     else:
+                        # Owner retirement uses this same tenant umbrella. The
+                        # source was read before external upload; recheck after
+                        # taking the lock so a concurrent retirement cannot
+                        # produce a partial retry from a stale task snapshot.
+                        await conn.execute('SELECT id FROM tenants WHERE id=%s FOR NO KEY UPDATE', (tenant,))
+                        current = await one(conn, 'SELECT * FROM batches WHERE id=%s AND tenant_id=%s', (bid, tenant))
+                        if current is None:
+                            raise APIError(404, 'Batch not found', 'not_found')
+                        if current.get('history_retirement_started_at') is not None:
+                            raise APIError(410, 'Task history has expired; archived results remain available', 'history_retired')
                         await self.blobs.admit_batch(conn, tenant, file['id'], len(rows))
                         result = await self.create_rows(conn, tenant, file['id'], rows, {'retry_of': bid}, runtime_source=source)
                         await self.remember(conn, tenant, scope, key, result)
@@ -310,12 +334,15 @@ class Store:
                         # hide a committed idempotent response or original error.
                         logging.getLogger('batchforge').warning('Staged input cleanup unavailable: %s', type(exc).__name__)
         async with self.pool.connection() as conn, conn.transaction():
+            await conn.execute('SELECT id FROM tenants WHERE id=%s FOR NO KEY UPDATE', (tenant,))
             previous = await self.idempotency(conn, tenant, scope, key, {})
             if previous is not None:
                 return previous
             source = await one(conn, "SELECT * FROM batches WHERE id=%s AND tenant_id=%s", (bid, tenant))
             if not source:
                 raise APIError(404, "Batch not found", "not_found")
+            if source.get('history_retirement_started_at') is not None:
+                raise APIError(410, 'Task history has expired; archived results remain available', 'history_retired')
             if source["status"] == "in_progress":
                 raise APIError(409, "Wait until source batch is terminal before retrying", "batch_not_terminal")
             if source["model"] not in self.settings.served_models():
@@ -560,7 +587,12 @@ class Store:
     async def overview(self, tenant):
         async with self.pool.connection() as conn:
             stats = await one(conn, "SELECT count(*) AS total_batches,COALESCE(sum(total_count),0) AS total_tasks,COALESCE(sum(completed_count),0) AS completed_tasks,COALESCE(sum(failed_count),0) AS failed_tasks,COALESCE(sum(cancelled_count),0) AS cancelled_tasks,COALESCE(sum(pending_count),0) AS queued_tasks,COALESCE(sum(running_count),0) AS running_tasks,COALESCE(sum(prompt_tokens),0) AS prompt_tokens,COALESCE(sum(completion_tokens),0) AS completion_tokens FROM batches WHERE tenant_id=%s", (tenant,))
-            buckets = await (await conn.execute("SELECT date_trunc('hour',finished_at) AS timestamp,count(*) FILTER(WHERE status='completed') AS completed,count(*) FILTER(WHERE status='failed') AS failed,COALESCE(sum(prompt_tokens+completion_tokens) FILTER(WHERE status='completed'),0) AS tokens FROM attempts WHERE tenant_id=%s AND finished_at>=now()-interval '24 hours' GROUP BY 1 ORDER BY 1", (tenant,))).fetchall()
+            if self.schema_version >= 11:
+                # Both live and compacted history use complete UTC hour
+                # buckets, including the current hour and preceding 23 hours.
+                buckets = await (await conn.execute("SELECT timestamp,completed,failed,tokens FROM batchforge_attempt_hourly WHERE tenant_id=%s AND timestamp>=date_trunc('hour',now(),'UTC')-interval '23 hours' ORDER BY timestamp", (tenant,))).fetchall()
+            else:
+                buckets = await (await conn.execute("SELECT date_trunc('hour',finished_at) AS timestamp,count(*) FILTER(WHERE status='completed') AS completed,count(*) FILTER(WHERE status='failed') AS failed,COALESCE(sum(prompt_tokens+completion_tokens) FILTER(WHERE status='completed'),0) AS tokens FROM attempts WHERE tenant_id=%s AND finished_at>=now()-interval '24 hours' GROUP BY 1 ORDER BY 1", (tenant,))).fetchall()
             workers = await (await conn.execute("SELECT id,name,model,concurrency,metadata,last_seen_at,CASE WHEN last_seen_at>clock_timestamp()-(%s*interval '1 second') THEN 'online' ELSE 'offline' END AS status FROM workers ORDER BY last_seen_at DESC LIMIT 100", (self.settings.lease_seconds * 2,))).fetchall()
             batches = await (await conn.execute("SELECT * FROM batches WHERE tenant_id=%s ORDER BY created_at DESC,id DESC LIMIT 10", (tenant,))).fetchall()
         return {"stats": {key: int(value) for key, value in stats.items()}, "throughput": [{**row, "timestamp": row["timestamp"].isoformat(), "tokens": int(row["tokens"])} for row in buckets], "workers": [worker_view(row) for row in workers], "recent_batches": [batch_view(row) for row in batches]}
