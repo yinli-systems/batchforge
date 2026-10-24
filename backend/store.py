@@ -16,6 +16,7 @@ from psycopg.types.json import Jsonb
 from .validation import body_hash, validate_rows, validate_usage
 from .scheduling import estimate_work, profile_from_metadata
 from .blob_storage import BlobCatalog, LocalBlobStore, S3BlobStore, BlobExpired
+from .result_archival import ResultArchiver
 
 
 class APIError(Exception):
@@ -70,6 +71,7 @@ class Store:
         self.pool, self.settings = pool, settings
         self.schema_version = schema_version or settings.minimum_schema_version()
         self.blobs = None
+        self.results = None
         if settings.blob_storage_backend != 'inline':
             if settings.blob_storage_backend == 'local':
                 adapter = LocalBlobStore(settings.blob_storage_root)
@@ -83,6 +85,10 @@ class Store:
                 max_queued_tasks_per_tenant=settings.max_queued_tasks_per_tenant,
                 upload_reservation_seconds=settings.upload_reservation_seconds,
                 input_retention_seconds=settings.input_retention_seconds)
+            if settings.result_readers_enabled:
+                self.results = ResultArchiver(pool, adapter,
+                    max_archived_bytes_per_tenant=settings.max_archived_bytes_per_tenant,
+                    purge_rows=settings.result_archive_purge_rows)
 
     async def tenant(self, key: str):
         digest = hashlib.sha256(key.encode()).hexdigest()
@@ -334,6 +340,11 @@ class Store:
             data = bytes(file["content"])
             for offset in range(0, len(data), 65536):
                 yield data[offset:offset + 65536]
+            return
+        if self.results:
+            async with self.results.open_file(tenant, file['id']) as chunks:
+                async for chunk in chunks:
+                    yield chunk
             return
         # Keyset pages avoid tying a DB connection to a slow HTTP consumer.
         last = ""

@@ -285,6 +285,8 @@ class Worker:
                     raise ValueError("invalid usage")
             if usage["prompt_tokens"] + usage["completion_tokens"] > self.config.max_model_len:
                 raise ValueError("engine context cap does not match worker")
+            if not body.get('min_tokens',0) <= usage['completion_tokens'] <= body['max_tokens']:
+                raise ValueError('engine did not respect requested output token bounds')
         except (KeyError, TypeError, ValueError) as exc:
             raise InferenceError("invalid_engine_response", "Engine did not return valid choices and token usage", False) from exc
         engine.failures = 0

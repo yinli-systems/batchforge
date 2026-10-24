@@ -1,8 +1,11 @@
 """Real HTTP state machine with scheduling, SQL recovery and external artifacts."""
 import json
+import hashlib
 import os
 from pathlib import Path
 import uuid
+import time
+from datetime import datetime,timedelta,timezone
 
 import psycopg
 from psycopg import sql
@@ -38,6 +41,7 @@ def client(tmp_path):
         app = create_app(Settings(database_url=database, batchforge_worker_token=TOKEN,
             model_name='test-model', scheduler_policy='cost_aware', sql_completion_enabled=True,
             sql_recovery_enabled=True, blob_storage_backend='local', blob_storage_root=str(tmp_path/'blobs'),
+            result_readers_enabled=True,
             max_queued_tasks_per_tenant=3, max_stored_input_bytes_per_tenant=4096))
         with TestClient(app) as http:
             http.database = database
@@ -91,10 +95,16 @@ def test_upload_admission_claim_completion_and_idempotent_download(client):
     assert batch['status']=='completed' and batch['request_counts']['completed']==3
     output = client.get(f"/v1/files/{batch['output_file_id']}/content",headers=PUBLIC)
     assert len(output.text.splitlines())==3
+    before_digest=hashlib.sha256(output.content).hexdigest()
+    archived=client.portal.call(client.app.state.store.results.archive_batch,'default',bid)
+    assert archived['purged'] and archived['rows_purged']==3
+    output=client.get(f"/v1/files/{batch['output_file_id']}/content",headers=PUBLIC)
+    assert hashlib.sha256(output.content).hexdigest()==before_digest
     with psycopg.connect(client.database) as conn:
         assert conn.execute("SELECT count(*) FROM attempts WHERE scheduling_decision->>'policy'='cost_aware'").fetchone()[0]==3
         assert conn.execute('SELECT min(estimated_output_tokens) FROM tasks').fetchone()[0]==32
         assert conn.execute('SELECT held_tasks FROM tenant_blob_usage').fetchone()[0]==0
+        assert conn.execute("SELECT bool_and(response IS NULL AND body='{}'::jsonb) FROM tasks").fetchone()[0]
     assert upload(client).status_code==200
 
 
@@ -135,3 +145,41 @@ def test_corrupt_external_input_fails_before_download_headers(client):
     assert response.json()['error']['code']=='storage_unavailable'
     with psycopg.connect(client.database) as conn:
         assert conn.execute('SELECT count(*) FROM blob_read_leases').fetchone()[0]==0
+
+
+def test_archive_policy_requires_leased_external_readers():
+    with pytest.raises(ValueError,match='leased readers'):
+        Settings(result_archive_enabled=True)
+    with pytest.raises(ValueError,match='external artifact'):
+        Settings(result_readers_enabled=True)
+
+
+def test_background_archive_policy_respects_cutoff_and_preserves_download(client,monkeypatch):
+    import backend.app as app_module
+    uniform=app_module.random.uniform
+    monkeypatch.setattr(app_module.random,'uniform',lambda lo,hi:.05 if (lo,hi)==(25,35) else uniform(lo,hi))
+    settings=client.app.state.settings.model_copy(update={'result_archive_enabled':True,
+        'result_archive_min_age_seconds':0,'result_archive_after':datetime.now(timezone.utc)+timedelta(hours=1)})
+    with TestClient(create_app(settings)) as policy_client:
+        fid=upload(client).json()['id']
+        bid=client.post('/v1/batches',headers=PUBLIC,json={'input_file_id':fid}).json()['id']
+        register(client);task=claim(client)[0]
+        response=client.post(f"/internal/tasks/{task['id']}/complete",headers=WORKER,json=dict(
+            worker_id='worker',attempt_token=task['attempt_token'],response={'choices':[{'message':{'content':'ok'}}],
+            'usage':{'prompt_tokens':8,'completion_tokens':2}}))
+        assert response.status_code==200,response.text
+        batch=client.get(f'/v1/batches/{bid}',headers=PUBLIC).json()
+        before=client.get(f"/v1/files/{batch['output_file_id']}/content",headers=PUBLIC).content
+        time.sleep(.2)
+        with psycopg.connect(client.database) as conn:
+            assert conn.execute('SELECT count(*) FROM result_archive_runs').fetchone()[0]==0
+        settings.result_archive_after=datetime.now(timezone.utc)-timedelta(hours=1)
+        deadline=time.monotonic()+10
+        while True:
+            with psycopg.connect(client.database) as conn:
+                ready=conn.execute('SELECT count(*) FROM result_archive_runs WHERE purged_at IS NOT NULL').fetchone()[0]
+            if ready:break
+            assert time.monotonic()<deadline,'Background archival did not publish and purge'
+            time.sleep(.05)
+        after=policy_client.get(f"/v1/files/{batch['output_file_id']}/content",headers=PUBLIC)
+        assert after.status_code==200 and after.content==before

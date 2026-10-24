@@ -1,0 +1,33 @@
+# Terminal result archival
+
+Migration 8 creates an opt-in archive catalog. It does not move existing results or clear task payloads. Enable the archive reader on **every API replica before allowing any archive/purge policy**; an old binary streaming SQL pages without a read lease cannot be protected from concurrent payload purge. Keep publication disabled throughout a mixed-reader rollout. Obtain and verify a database/object backup before enabling a policy for existing data.
+
+`ResultArchiver(pool, adapter, max_archived_bytes_per_tenant=..., chunk_bytes=4*1024*1024, lease_seconds=300, page_rows=32, purge_rows=1000)` uses the same verified local/S3 adapters as input storage. Local disk still does not survive Pod or disk loss. S3 mode needs the independently durable configured service and private credentials. No new provider or paid resource is provisioned here.
+
+## Publication and recovery
+
+`await archive_batch(tenant, batch_id)` processes one terminal batch. It renders output/error JSONL in task-ID order, preserving the prior download representation, and writes bounded byte chunks (default 4 MiB). A JSONL record or UTF-8 character may span object boundaries; concatenating chunks in manifest order reconstructs the exact file. Individual legacy database values still determine the maximum row-deserialization memory requirement; the byte chunk size is not a bound on one pre-existing JSONB value.
+
+Each chunk receives a unique generation key, a checksum and a committed catalog row. Its full byte count is reserved against the tenant's archive allowance **before** external I/O. The adapter writes the object and reads it back with complete length/SHA-256 verification. Only after every expected output/error row is accounted for does one transaction publish all immutable file/chunk manifests and transfer reserved bytes to stored bytes. File metadata records the actual JSONL byte length. Reservation or publication failure leaves the original SQL results intact and known orphan keys eligible for bounded collection. An expired writer cannot publish or resurrect its lease. A retry after an uncertain manifest commit reuses the existing published generation.
+
+`collect_orphans(limit=100, grace_seconds=300)` releases expired writer reservations and deletes only known abandoned-generation objects. Active archive-reader leases pin retired objects. Ready archives do not expire automatically. Retired chunk/run metadata remains as a fence and repeated deletes can remove a late SDK write to its retired key; a subsequent generation uses different keys. Metadata compaction is not implemented.
+
+Before any purge, the archiver validates the manifest and verifies all object payloads again outside a database transaction. A DB-reader lease makes purge return without changing payloads. First-purge progress records that immutable generation's verification; subsequent keyset pages do not re-download the entire archive. Every actual download still verifies its chunks.
+
+## Leased downloads and bounded purge
+
+Use `async with open_file(tenant, file_id) as chunks` for **all** output/error downloads, whether the file is archived yet or not. One short transaction pins DB mode or the committed archive generation. Renewal holds no database connection while the HTTP client consumes bytes. Each DB page validates its still-live lease under the batch lock, so a reader whose lease expired cannot silently skip rows after a purge. An established DB reader can finish its complete SQL stream across archive publication; later readers use the complete immutable archive.
+
+`archive_batch` attempts one purge page and returns `archive_id`, `state`, `bytes`, `files`, `purged`, and cumulative `rows_purged`. `purge_batch(tenant, batch_id)` also advances at most one keyset page (default 1,000 tasks; configurable up to 10,000). `purged_at` is recorded only after no completed task payload remains. Repeated policy calls resume progress after a crash. Archive downloads remain complete during partial purge.
+
+Purge replaces only **completed** task `response` with NULL and `body` with `{}`. It preserves task identity/status, usage, runtime fingerprint, scheduling estimates, all attempts, and failed/cancelled bodies/errors. Failed-task retry therefore remains available. This clears large completed payloads logically; PostgreSQL may reuse freed space after vacuum, but the database's allocated size is not guaranteed to shrink immediately. This policy does not delete history, compact indexes, or archive attempts and failed-task input bodies.
+
+Manifest tampering is detected before the stream is exposed. Every chunk is verified before its bytes are yielded; a corrupt later object terminates the response rather than silently omitting data or falling back to already-purged SQL rows. A complete file digest is checked at stream end. After any purge starts, a missing/corrupt archive is an availability error and needs object-store recovery. `discard_unpurged(tenant, batch_id)` can explicitly retire and rebuild a corrupt generation only while original SQL completed payloads are still intact; partial or complete purge makes this repair unsafe and it is rejected.
+
+## Capacity and privileges
+
+The output archive allowance is separate from the input quota. It bounds admitted logical archived bytes plus reservations per tenant, not total physical database/bucket usage. Quota exhaustion refuses archival and retains SQL data; it does not itself reject future model jobs or prevent database growth while archival is blocked. Retention/expiry of ready outputs, tenant provisioning, global physical quotas, operator alerting and paid-provider capacity remain separate policies. Temporary spools, in-flight writes and orphan grace periods can require additional physical space.
+
+The runtime requires SELECT/INSERT/UPDATE on `tenant_result_usage`, `result_archive_runs`, `result_archive_files`, and `result_archive_chunks`, plus DELETE on ephemeral `result_read_leases`. Existing scoped batch/file/task reads and updates and the tenant row-lock privilege remain necessary. It needs no task/file DELETE, schema ownership, DDL, database creation or API-key insertion. Migration ownership stays separate.
+
+`tests/test_result_archival.py` uses isolated real PostgreSQL and verified local object adapters to exercise atomic publication, exact downloads, task/usage preservation, active/expired readers, bounded partial purge, corruption, quota contention, writer crashes and scoped runtime privileges. The shared S3 adapter has separate checksum/spooling tests; a live provider and backup/restore check remains a deployment requirement.

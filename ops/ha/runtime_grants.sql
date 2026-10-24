@@ -12,5 +12,7 @@ GRANT SELECT,INSERT,UPDATE ON workers,files,batches,tasks,attempts,idempotency,t
 -- v5 catalog lifecycle deletes only ephemeral reservation/read-lease rows.
 GRANT SELECT,INSERT,UPDATE ON tenant_blob_usage,blob_objects TO bf_runtime;
 GRANT SELECT,INSERT,UPDATE,DELETE ON blob_upload_reservations,blob_read_leases TO bf_runtime;
+GRANT SELECT,INSERT,UPDATE ON tenant_result_usage,result_archive_runs,result_archive_files,result_archive_chunks TO bf_runtime;
+GRANT SELECT,INSERT,UPDATE,DELETE ON result_read_leases TO bf_runtime;
 -- Do not grant ALTER/CREATE, tenant/key administration, task/result DELETE or replication.
 -- Existing deployment-wide PUBLIC grants must also be reviewed separately.

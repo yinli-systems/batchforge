@@ -312,6 +312,30 @@ def test_context_budget_is_a_hard_capacity_bound():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('generated,minimum,accepted',[(8,8,True),(7,8,False),(17,0,False)])
+async def test_engine_output_bounds_are_forwarded_and_checked(generated,minimum,accepted):
+    reports=[]
+    def engine(request):
+        assert json.loads(request.content)['min_tokens']==minimum
+        value=response();value['usage']['completion_tokens']=generated
+        return httpx.Response(200,json=value)
+    def control(request):
+        reports.append((request.url.path,json.loads(request.content)))
+        return httpx.Response(200,json={'ok':True})
+    worker=make_worker(settings(),control_transport=httpx.MockTransport(control),inference_transport=httpx.MockTransport(engine))
+    value=task();value['body']['min_tokens']=minimum
+    try:
+        await worker.execute(value)
+        assert len(reports)==1
+        if accepted:assert reports[0][0].endswith('/complete')
+        else:
+            assert reports[0][0].endswith('/fail')
+            assert reports[0][1]['error']['code']=='invalid_engine_response'
+            assert reports[0][1]['retryable'] is False
+    finally:await worker.close()
+
+
+@pytest.mark.asyncio
 async def test_failed_generation_endpoint_is_cooled_down_and_healthy_engine_takes_next_task():
     destinations = []
 

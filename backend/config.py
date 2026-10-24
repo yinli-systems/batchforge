@@ -1,4 +1,5 @@
 from functools import lru_cache
+from datetime import datetime
 import json
 from typing import Literal
 
@@ -47,12 +48,22 @@ class Settings(BaseSettings):
     upload_reservation_seconds: int = Field(default=300, ge=30, le=3600)
     input_retention_seconds: int = Field(default=86400, ge=60, le=2592000)
     blob_gc_enabled: bool = False
+    result_readers_enabled: bool = False
+    result_archive_enabled: bool = False
+    max_archived_bytes_per_tenant: int = Field(default=1024 * 1024 * 1024, ge=1024)
+    result_archive_min_age_seconds: int = Field(default=3600, ge=0, le=2592000)
+    result_archive_after: datetime | None = None
+    result_archive_purge_rows: int = Field(default=1000, ge=1, le=10000)
     frontend_dir: str = "frontend"
 
     @model_validator(mode="after")
     def valid_pool(self):
         if self.db_pool_min > self.db_pool_max:
             raise ValueError("db_pool_min must not exceed db_pool_max")
+        if self.result_readers_enabled and self.blob_storage_backend == 'inline':
+            raise ValueError('Leased result readers require an external artifact backend')
+        if self.result_archive_enabled and not self.result_readers_enabled:
+            raise ValueError('Enable leased readers on every replica before result archival')
         self.served_models()
         return self
 
@@ -71,6 +82,8 @@ class Settings(BaseSettings):
         return tuple(dict.fromkeys(names))
 
     def minimum_schema_version(self) -> int:
+        if self.result_readers_enabled:
+            return 8
         if self.scheduler_policy != 'legacy':
             return 7
         if self.blob_storage_backend != 'inline':

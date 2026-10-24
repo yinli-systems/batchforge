@@ -22,7 +22,7 @@ from .config import Settings, get_settings
 from .migrate import verify_schema
 from .store import APIError, Store, one
 from .validation import InvalidInput, strict_json
-from .blob_storage import BlobStorageError, BlobQuotaExceeded, BlobNotFound, BlobExpired
+from .blob_storage import BlobStorageError, BlobQuotaExceeded, BlobNotFound, BlobExpired, BlobBusy
 
 logger = logging.getLogger("batchforge")
 HTTP_REQUESTS = Counter("batchforge_http_requests_total", "HTTP requests", ["method", "route", "status"])
@@ -30,6 +30,7 @@ HTTP_DURATION = Histogram("batchforge_http_request_duration_seconds", "HTTP requ
 RECOVERED_LEASES = Counter("batchforge_recovered_leases_total", "Expired leases recovered by this API process")
 RECOVERY_ERRORS = Counter("batchforge_recovery_errors_total", "Recovery sweep errors")
 STORAGE_ERRORS = Counter('batchforge_storage_maintenance_errors_total', 'Storage retention/GC sweep errors')
+RESULT_ARCHIVE_ERRORS = Counter('batchforge_result_archive_errors_total','Result archive policy errors')
 
 
 class StrictModel(BaseModel):
@@ -108,6 +109,48 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 logger.warning('Storage maintenance unavailable: %s', type(exc).__name__)
             await asyncio.sleep(random.uniform(25, 35))
 
+    async def archive_loop(store):
+        # A rotating keyset stops a pinned reader/quota refusal from monopolizing
+        # the bounded policy sweep. Object publication itself is lease-fenced.
+        after = None
+        while True:
+            try:
+                async with store.pool.connection() as conn:
+                    rows = await (await conn.execute("""SELECT b.id,b.tenant_id,b.created_at FROM batches b
+                        WHERE b.status<>'in_progress' AND b.pending_count=0 AND b.running_count=0
+                        AND (b.output_file_id IS NOT NULL OR b.error_file_id IS NOT NULL)
+                        AND COALESCE(b.completed_at,b.failed_at,b.cancelled_at,b.created_at)
+                            <=clock_timestamp()-(%s*interval '1 second')
+                        AND (%s::timestamptz IS NULL OR b.created_at>=%s::timestamptz)
+                        AND (%s::timestamptz IS NULL OR (b.created_at,b.id)>(%s::timestamptz,%s::text))
+                        AND NOT EXISTS(SELECT 1 FROM result_archive_runs r WHERE r.batch_id=b.id
+                            AND r.tenant_id=b.tenant_id AND (r.purged_at IS NOT NULL
+                            OR (r.state='building' AND r.lease_expires_at>clock_timestamp())))
+                        AND NOT EXISTS(SELECT 1 FROM result_archive_runs r WHERE r.batch_id=b.id
+                            AND r.tenant_id=b.tenant_id AND r.state IN ('deleting','deleted')
+                            AND r.created_at>clock_timestamp()-interval '5 minutes')
+                        ORDER BY b.created_at,b.id LIMIT 4""",
+                        (settings.result_archive_min_age_seconds,settings.result_archive_after,settings.result_archive_after,after[0] if after else None,
+                         after[0] if after else None,after[1] if after else None))).fetchall()
+                if not rows:
+                    after=None
+                for row in rows:
+                    after=(row['created_at'],row['id'])
+                    try:
+                        await store.results.archive_batch(row['tenant_id'],row['id'])
+                    except BlobBusy:
+                        pass
+                    except Exception as exc:
+                        RESULT_ARCHIVE_ERRORS.inc()
+                        logger.warning('Result archival unavailable: %s',type(exc).__name__)
+                await store.results.collect_orphans(limit=100,grace_seconds=300)
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                RESULT_ARCHIVE_ERRORS.inc()
+                logger.warning('Result archive policy unavailable: %s',type(exc).__name__)
+            await asyncio.sleep(random.uniform(25,35))
+
     @asynccontextmanager
     async def lifespan(app):
         worker_tokens = settings.worker_tokens()
@@ -123,6 +166,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             reaper = asyncio.create_task(recovery_loop(app.state.store), name="lease-recovery")
             collector = (asyncio.create_task(storage_loop(app.state.store), name='storage-maintenance')
                          if settings.blob_gc_enabled and app.state.store.blobs else None)
+            archiver = (asyncio.create_task(archive_loop(app.state.store),name='result-archival')
+                        if settings.result_archive_enabled and app.state.store.results else None)
             try:
                 yield
             finally:
@@ -133,6 +178,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     collector.cancel()
                     with contextlib.suppress(asyncio.CancelledError):
                         await collector
+                if archiver:
+                    archiver.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await archiver
         finally:
             await pool.close()
 
