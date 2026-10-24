@@ -1,0 +1,373 @@
+{
+  "artifacts": {
+    "qwen235b-v11-response-policy-two-30m-2026-10-24.allocation-context.md": {
+      "bytes": 1318,
+      "sha256": "1dc8efc0eb9c037931db5112279cf065554d0ce90a44ad629d5b2e9a0764c168"
+    },
+    "qwen235b-v11-response-policy-two-30m-2026-10-24.png": {
+      "bytes": 345499,
+      "sha256": "7eb39167e62888c548fb206ba663ce9774f215f8f5948e3af8a73fd053c98709"
+    },
+    "qwen235b-v11-response-policy-two-30m-2026-10-24.svg": {
+      "bytes": 44634,
+      "sha256": "9165f9866c6846202e4b3b41a39c9044ee74e548886a4165a9c74c1ab8530f05"
+    }
+  },
+  "baseline": {
+    "accepted_batches": 30,
+    "accepted_fraction_of_offered": 0.8333333333333334,
+    "accepted_tasks": 600,
+    "by_class": {
+      "balanced": {
+        "completion_seconds": {
+          "max": 183.505175,
+          "mean": 177.570232,
+          "p50": 178.130019,
+          "p95": 181.626432,
+          "p99": 183.179415,
+          "samples": 30
+        },
+        "completion_tokens": 61440,
+        "prompt_tokens": 491520,
+        "tasks": 30,
+        "whole_cohort_completion_tokens_per_second": 31.376520749994324,
+        "whole_cohort_prompt_tokens_per_second": 251.0121659999546
+      },
+      "decode_heavy": {
+        "completion_seconds": {
+          "max": 182.608755,
+          "mean": 89.680695,
+          "p50": 49.099269,
+          "p95": 180.877635,
+          "p99": 182.384367,
+          "samples": 300
+        },
+        "completion_tokens": 300480,
+        "prompt_tokens": 430080,
+        "tasks": 300,
+        "whole_cohort_completion_tokens_per_second": 153.450796792941,
+        "whole_cohort_prompt_tokens_per_second": 219.63564524996028
+      },
+      "prefill_heavy": {
+        "completion_seconds": {
+          "max": 53.536358,
+          "mean": 20.076604,
+          "p50": 15.535291,
+          "p95": 50.281507,
+          "p99": 52.692098,
+          "samples": 270
+        },
+        "completion_tokens": 46080,
+        "prompt_tokens": 2350080,
+        "tasks": 270,
+        "whole_cohort_completion_tokens_per_second": 23.532390562495745,
+        "whole_cohort_prompt_tokens_per_second": 1200.151918687283
+      }
+    },
+    "completed_tasks": 600,
+    "completed_tasks_per_whole_wall_second": 0.3064113354491633,
+    "completion_tokens": 408000,
+    "completion_tokens_per_whole_wall_second": 208.35970810543105,
+    "configured_arrival_rate_tasks_per_second": 0.4,
+    "cost": {
+      "allocation_usd": 8.757291336496671,
+      "allocation_usd_per_completed_task": 0.014595485560827785,
+      "allocation_usd_per_million_completed_tasks": 14595.485560827785,
+      "assumed_whole_pod_usd_per_hour": 16.1
+    },
+    "elapsed_seconds_including_disconnect_and_validation": 1958.1521000862122,
+    "gpu_utilization_percent": {
+      "0": {
+        "max": 100.0,
+        "mean": 85.39267,
+        "p50": 94.0,
+        "p95": 100.0,
+        "p99": 100.0,
+        "samples": 191
+      },
+      "1": {
+        "max": 100.0,
+        "mean": 70.596859,
+        "p50": 76.0,
+        "p95": 99.0,
+        "p99": 100.0,
+        "samples": 191
+      },
+      "2": {
+        "max": 100.0,
+        "mean": 74.73822,
+        "p50": 83.0,
+        "p95": 99.5,
+        "p99": 100.0,
+        "samples": 191
+      },
+      "3": {
+        "max": 100.0,
+        "mean": 81.471204,
+        "p50": 88.0,
+        "p95": 99.5,
+        "p99": 100.0,
+        "samples": 191
+      }
+    },
+    "http_rejections": {
+      "create_429": 283,
+      "uncertain_create_responses": 0,
+      "upload_429": 0,
+      "upload_not_forwarded": 0
+    },
+    "job_id": "qwen235b-soak30m-v11-response1m-v1",
+    "latencies": {
+      "scheduled_arrival_to_durable_admission_seconds": {
+        "max": 440.456649,
+        "mean": 160.625535,
+        "p50": 183.69773,
+        "p95": 362.364691,
+        "p99": 423.96395,
+        "samples": 30
+      },
+      "scheduled_arrival_to_finished_seconds": {
+        "max": 607.653002,
+        "mean": 223.378866,
+        "p50": 218.141759,
+        "p95": 457.13268,
+        "p99": 564.628059,
+        "samples": 600
+      },
+      "task_completion_seconds": {
+        "max": 183.505175,
+        "mean": 62.753331,
+        "p50": 32.655128,
+        "p95": 180.190754,
+        "p99": 181.904867,
+        "samples": 600
+      },
+      "task_first_queue_seconds": {
+        "max": 2.118385,
+        "mean": 1.145637,
+        "p50": 1.139825,
+        "p95": 2.045654,
+        "p99": 2.118385,
+        "samples": 600
+      }
+    },
+    "observation_errors": 0,
+    "observation_samples": 191,
+    "offered_tasks_within_admission_window": 720,
+    "original_report_passed": false,
+    "partial_plan": true,
+    "planned_tasks": 720,
+    "prompt_tokens": 3271680,
+    "prompt_tokens_per_whole_wall_second": 1670.7997299371978,
+    "sampling_coverage": {
+      "continuous_sampling_segment_span_seconds": 1949.681028842926,
+      "maximum_sample_or_boundary_gap_seconds": 11.132174015045166,
+      "observed_wall_span_seconds": 1949.681028842926,
+      "wall_seconds_outside_sampling_segments": 8.471071243286133
+    }
+  },
+  "business_state_modified": false,
+  "candidate": {
+    "accepted_batches": 36,
+    "accepted_fraction_of_offered": 1.0,
+    "accepted_tasks": 720,
+    "by_class": {
+      "balanced": {
+        "completion_seconds": {
+          "max": 184.472231,
+          "mean": 179.506832,
+          "p50": 179.650607,
+          "p95": 183.954266,
+          "p99": 184.330384,
+          "samples": 36
+        },
+        "completion_tokens": 73728,
+        "prompt_tokens": 589824,
+        "tasks": 36,
+        "whole_cohort_completion_tokens_per_second": 38.383529801929114,
+        "whole_cohort_prompt_tokens_per_second": 307.0682384154329
+      },
+      "decode_heavy": {
+        "completion_seconds": {
+          "max": 185.249,
+          "mean": 89.928141,
+          "p50": 47.380347,
+          "p95": 181.980443,
+          "p99": 184.443937,
+          "samples": 360
+        },
+        "completion_tokens": 360576,
+        "prompt_tokens": 516096,
+        "tasks": 360,
+        "whole_cohort_completion_tokens_per_second": 187.71945043755957,
+        "whole_cohort_prompt_tokens_per_second": 268.6847086135038
+      },
+      "prefill_heavy": {
+        "completion_seconds": {
+          "max": 51.300998,
+          "mean": 19.59791,
+          "p50": 15.462677,
+          "p95": 47.766766,
+          "p99": 48.225838,
+          "samples": 324
+        },
+        "completion_tokens": 55296,
+        "prompt_tokens": 2820096,
+        "tasks": 324,
+        "whole_cohort_completion_tokens_per_second": 28.787647351446836,
+        "whole_cohort_prompt_tokens_per_second": 1468.1700149237886
+      }
+    },
+    "completed_tasks": 720,
+    "completed_tasks_per_whole_wall_second": 0.374839158221964,
+    "completion_tokens": 489600,
+    "completion_tokens_per_whole_wall_second": 254.89062759093554,
+    "configured_arrival_rate_tasks_per_second": 0.4,
+    "cost": {
+      "allocation_usd": 8.590351166281437,
+      "allocation_usd_per_completed_task": 0.011931043286501995,
+      "allocation_usd_per_million_completed_tasks": 11931.043286501994,
+      "assumed_whole_pod_usd_per_hour": 16.1
+    },
+    "elapsed_seconds_including_disconnect_and_validation": 1920.8238632678986,
+    "gpu_utilization_percent": {
+      "0": {
+        "max": 100.0,
+        "mean": 90.867021,
+        "p50": 96.0,
+        "p95": 100.0,
+        "p99": 100.0,
+        "samples": 188
+      },
+      "1": {
+        "max": 100.0,
+        "mean": 69.654255,
+        "p50": 73.5,
+        "p95": 100.0,
+        "p99": 100.0,
+        "samples": 188
+      },
+      "2": {
+        "max": 100.0,
+        "mean": 88.351064,
+        "p50": 95.0,
+        "p95": 100.0,
+        "p99": 100.0,
+        "samples": 188
+      },
+      "3": {
+        "max": 100.0,
+        "mean": 70.521277,
+        "p50": 74.5,
+        "p95": 99.0,
+        "p99": 100.0,
+        "samples": 188
+      }
+    },
+    "http_rejections": {
+      "create_429": 0,
+      "uncertain_create_responses": 0,
+      "upload_429": 0,
+      "upload_not_forwarded": 0
+    },
+    "job_id": "qwen235b-soak30m-v11-response64k-v1",
+    "latencies": {
+      "scheduled_arrival_to_durable_admission_seconds": {
+        "max": 2.808952,
+        "mean": 1.7454,
+        "p50": 1.689718,
+        "p95": 2.6415,
+        "p99": 2.774994,
+        "samples": 36
+      },
+      "scheduled_arrival_to_finished_seconds": {
+        "max": 187.034203,
+        "mean": 64.503872,
+        "p50": 33.573292,
+        "p95": 183.499703,
+        "p99": 186.060244,
+        "samples": 720
+      },
+      "task_completion_seconds": {
+        "max": 185.249,
+        "mean": 62.758472,
+        "p50": 31.893025,
+        "p95": 181.502825,
+        "p99": 184.205842,
+        "samples": 720
+      },
+      "task_first_queue_seconds": {
+        "max": 2.179068,
+        "mean": 1.107657,
+        "p50": 1.101087,
+        "p95": 2.151409,
+        "p99": 2.179068,
+        "samples": 720
+      }
+    },
+    "observation_errors": 0,
+    "observation_samples": 188,
+    "offered_tasks_within_admission_window": 720,
+    "original_report_passed": true,
+    "partial_plan": false,
+    "planned_tasks": 720,
+    "prompt_tokens": 3926016,
+    "prompt_tokens_per_whole_wall_second": 2043.9229619527255,
+    "sampling_coverage": {
+      "continuous_sampling_segment_span_seconds": 1920.4005048274994,
+      "maximum_sample_or_boundary_gap_seconds": 10.622500896453857,
+      "observed_wall_span_seconds": 1920.4005048274994,
+      "wall_seconds_outside_sampling_segments": 0.4233584403991699
+    }
+  },
+  "chart_version": 1,
+  "comparison_scope": "offered-load admission and completion comparison; accepted populations can differ",
+  "comparison_source_sha256": "90df1ebbb26a40d7288fb230ec9ddc484e3ece2414c691b6d993936bd17862c3",
+  "exporter_receipts_sha256": {
+    "baseline": "9c17cb11da44702a7b7dd3d763083321b44d93ce1757065e215253912e0a7a8b",
+    "candidate": "c91c9728f128c213565dcb0d12ffa506ca88f03445b109e69082e19263b6fedf"
+  },
+  "fixture_sha256": "52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f",
+  "interpretation_bounds": [
+    "Two serial experiments: N=1 run per configuration; no confidence intervals",
+    "End-to-end admission comparison, not matched-task tail or GPU kernel speedup evidence",
+    "Full-plan passed=false is preserved even when every accepted task completed",
+    "Whole-wall rates and assumed allocation cost include admission, drain, validation and disconnects",
+    "NVML sample means are unweighted device activity; missing periods are not zero-filled",
+    "No invoice, daily capacity, fleet scaling, high-availability or future-model guarantee",
+    "Response-policy attribution requires the separate operator policy/audit evidence"
+  ],
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "original_pair_journal_sha256": "9cb0438bd21a46823e09d45fae857796e799bdf327f755a80d34d868ad47ce24",
+  "pair_allocation_context": {
+    "additional_pair_allocation_usd": 1.1620192110806384,
+    "additional_pair_wall_seconds": 259.83038260188187,
+    "additional_wall_scope": "controller/collection/audit/inter-round and final cleanup/comparison plus process overhead; no individual stage attribution",
+    "assumed_pair_allocation_usd": 18.509661713858748,
+    "assumed_whole_pod_usd_per_hour": 16.1,
+    "invoice_or_marginal_cost_measured": false,
+    "pair_cost_is_not_plotted_in_per_runner_cost_panel": true,
+    "pair_scope_exclusions": "preparation, later metadata export/transport, local rendering and later idle time",
+    "pair_wall_seconds": 4138.806345955993,
+    "sum_runner_allocation_usd": 17.347642502778108,
+    "sum_runner_wall_seconds": 3878.9759633541107
+  },
+  "plot_source_sha256": "3a71d665e9d9d3c3569911530da748e7be141c0b6fdbc03378a9bb91cdbad1ff",
+  "raw_responses_included": false,
+  "receiver_source_sha256": "5534f19cb83c5408af41cd6497d3c6307039ca6748cb93f8c6c3512d6da592d6",
+  "runtime_fingerprint": "sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3",
+  "source_inputs_sha256": {
+    "baseline_report": "b42a071a180c8ca6312067fb213ab35e58e45eec0b4c8d78807d136f6329d598",
+    "baseline_runtime_proof": "e7cc433909817bb64f1478ee9a3903eb606f51c440b5bbb6ce0da7c6f87071b0",
+    "candidate_report": "8f8d443df470c807b9d8cbfd966e0603c2f85037c7bef24380b4542be78c9a52",
+    "candidate_runtime_proof": "970bae9070ce8cc259b2e36581b418f6c668a746812a34fc21e8697aad8aac97",
+    "comparison": "9f61a5fdb247d46875de3f62b080c90f25fa58bc1f6e1a68c9eb2cc836b99a7a"
+  },
+  "svg_postprocessing": {
+    "frozen_renderer_outputs_modified": true,
+    "method": "SVG splitlines line.rstrip and final LF; PNG unchanged",
+    "normalized_published_svg_sha256": "9165f9866c6846202e4b3b41a39c9044ee74e548886a4165a9c74c1ab8530f05",
+    "numeric_dataset_or_plot_layout_modified": false,
+    "original_frozen_renderer_svg_sha256": "091478996777b62710e9f42c30eb34f96a6a2c65c372a7982155f434e364df25"
+  }
+}

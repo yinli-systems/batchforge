@@ -1,0 +1,202 @@
+"""Preview, then once-launch two independent post-pair functional checks.
+
+No staging, deployment, inference, SSH or service/environment-file mutation.
+Intent/ACK/logs live outside both child run directories. An existing intent,
+partial directory or unknown start is never replayed. Status is read-only.
+"""
+from __future__ import annotations
+import argparse
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import stat
+import subprocess
+import sys
+
+SELF=Path(__file__).resolve();ROOT=SELF.parents[1]
+APP=Path('/root/batchforge-runtime/app')
+COMMIT='693d658aa944d3a8ebee596ce9b5c9f9d75fdce5'
+TREE='ad6f46a0f4bec39a8562a0ae80846a60640f6818baceaa322fcbf2a52b6ee019'
+MANIFEST_SHA='ded60e7c557b4949d917d6e3dacf769f13e0f07740d305881649991c34f0773b'
+VALIDATOR_SHA='7c334946871af825e0f11224d878aa13281dbc416fa723784064b54f7ed24fdc'
+BACKUP_SHA='ce1299466dcdc262ce142dfd6bfc84426622c40a95fce16ed79c095c9f930c82'
+LINUX='linux-pg17-validation-693d658-v1';BACKUP='schema11-pre-fault-20261024-v1'
+JOBS=(LINUX,BACKUP)
+sys.dont_write_bytecode=True
+if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
+
+class Refusal(ValueError):pass
+def require(value,code):
+    if not value:raise Refusal(code)
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def stamp():return datetime.now(timezone.utc).isoformat()
+def encoded(value):return (json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode()
+def load(raw):
+    def unique(pairs):
+        out={}
+        for k,v in pairs:require(k not in out,'duplicate_json_key');out[k]=v
+        return out
+    def invalid(_):raise Refusal('nonfinite_json')
+    return json.loads(raw.decode('utf-8'),object_pairs_hook=unique,parse_constant=invalid)
+def read(path,limit=2*1024**2,empty=False):
+    require(path.is_absolute() and path.resolve()==path,'canonical_private_path_required')
+    fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    try:
+        before=os.fstat(fd);require(stat.S_ISREG(before.st_mode) and before.st_uid==os.geteuid()
+            and before.st_nlink==1 and not before.st_mode&0o077 and (empty or before.st_size>0)
+            and before.st_size<=limit,'private_bounded_file_required')
+        with os.fdopen(fd,'rb',closefd=False) as stream:raw=stream.read(limit+1)
+        after=os.fstat(fd);require(len(raw)==before.st_size and all(getattr(before,k)==getattr(after,k)
+            for k in ('st_dev','st_ino','st_size','st_mtime_ns','st_ctime_ns')),'private_file_changed')
+        return raw
+    finally:os.close(fd)
+def sync(path):
+    fd=os.open(path,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+    try:os.fsync(fd)
+    finally:os.close(fd)
+def directory(path,new=False):
+    require(path.is_absolute() and path.resolve()==path,'canonical_directory_required')
+    if new:path.mkdir(mode=0o700);sync(path.parent)
+    info=path.lstat();require(stat.S_ISDIR(info.st_mode) and info.st_uid==os.geteuid()
+        and not info.st_mode&0o077,'private_directory_required')
+def write(path,value):
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'wb') as stream:stream.write(encoded(value));stream.flush();os.fsync(stream.fileno())
+    sync(path.parent)
+def definitions(path,digest):
+    raw=read(path,256*1024);require(sha(raw)==digest,'approved_helper_sha_differs')
+    out={'__name__':'postpair_checked_definitions','__file__':str(path)}
+    exec(compile(raw,str(path),'exec'),out);return out
+def paths(root):
+    base=root.parent;python=base/'venv/bin/python';source=root/'.runtime/linux-pg17-source-693d658'
+    return python,source,base/'postgres-server-17/rootfs',base/'postgres-client-17/rootfs'
+def commands(root):
+    python,source,server,client=paths(root)
+    return {LINUX:[str(python),'-B',str(source/'ops/ha/linux_pg17_validation.py'),'run','--source',str(source),
+        '--server-root',str(server),'--client-root',str(client),'--python',str(python),
+        '--report',str(root/'.runtime'/LINUX/'report.json'),'--execute'],
+        BACKUP:[str(python),'-B',str(root/'.runtime/schema11-pre-fault-backup-controller-v1.py'),'--operation',BACKUP]}
+def child_environment(root):
+    # No inherited DATABASE_URL, PG*, AWS*, API keys, PYTHONPATH, preload or
+    # Python-startup hooks. Backup obtains credentials from its reviewed files.
+    return {'PATH':str(root.parent/'venv/bin')+':/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+        'HOME':'/root','LANG':'C','LC_ALL':'C','TMPDIR':'/tmp','CUDA_VISIBLE_DEVICES':'',
+        'PYTHONDONTWRITEBYTECODE':'1','AWS_EC2_METADATA_DISABLED':'true','NO_PROXY':'127.0.0.1,localhost'}
+def preflight(root):
+    python,source,server,client=paths(root)
+    require(python.is_file() and os.access(python,os.X_OK),'existing_venv_python_required')
+    for path in (server,client):require(path.is_dir() and path.resolve()==path,'existing_extracted_pg17_roots_required')
+    manifest_raw=read(source/'.validation-manifest.json');require(sha(manifest_raw)==MANIFEST_SHA,'exact693_manifest_required')
+    validator=definitions(source/'ops/ha/linux_pg17_validation.py',VALIDATOR_SHA)
+    manifest=validator['verify_snapshot'](source)
+    require(manifest.get('commit')==COMMIT and manifest.get('source_tree_sha256')==TREE
+        and manifest.get('contains_application_configuration') is False,'exact693_snapshot_required')
+    backup=definitions(root/'.runtime/schema11-pre-fault-backup-controller-v1.py',BACKUP_SHA)
+    historical,_=backup['historical_proof']()  # Pure completed metadata; never main/exporter CLI.
+    pair=root/'.runtime/sustained-matched/qwen235b-v11-matched-v1/controller-journal.json'
+    pair_doc=load(read(pair));require(pair_doc.get('phase')=='complete' and not pair_doc.get('pending_action'),'matched_pair_not_complete')
+    ended=datetime.fromisoformat(pair_doc['finished_at'].replace('Z','+00:00'))
+    require(ended.utcoffset() is not None and ended<=datetime.now(timezone.utc),'completed_pair_clock_invalid')
+    return {'source_commit':COMMIT,'source_tree_sha256':TREE,'source_manifest_sha256':sha(manifest_raw),
+        'validator_sha256':VALIDATOR_SHA,'backup_sha256':BACKUP_SHA,'launcher_sha256':sha(SELF.read_bytes()),
+        'pair_journal_sha256':sha(read(pair)),
+        'transport_manifest_sha256':historical['metadata_export_transport_manifest_sha256'],
+        'historical_metadata_sha256':historical['historical_proof_file_sha256'],'commands':commands(root)}
+def identity(pid):
+    try:
+        path=Path('/proc')/str(pid);raw=(path/'stat').read_text();fields=raw[raw.rfind(')')+2:].split()
+        if fields[0]=='Z':return None
+        return dict(pid=pid,start_ticks=fields[19],cwd=str((path/'cwd').resolve(strict=True)))
+    except (FileNotFoundError,ProcessLookupError,PermissionError):return None
+def launch_root(root):return root/'.runtime/postpair-validation-launches-v1'
+def report_path(root,job):return root/'.runtime'/job/('report.json' if job==LINUX else 'journal.json')
+def safe_identity(value,root):
+    require(isinstance(value,dict) and set(value)=={'pid','start_ticks','cwd'}
+        and type(value['pid']) is int and value['pid']>1 and isinstance(value['start_ticks'],str)
+        and re.fullmatch('[0-9]+',value['start_ticks']) and value['cwd']==str(root),'invalid_child_identity')
+    return value
+def unchanged(root,proof):
+    # The validator's own tests can create __pycache__ below the snapshot.
+    # Recheck exact original bytes, not a new full inventory after it starts.
+    _,source,_,_=paths(root);manifest_raw=read(source/'.validation-manifest.json')
+    require(sha(manifest_raw)==proof['source_manifest_sha256']==MANIFEST_SHA,'snapshot_manifest_drift')
+    manifest=load(manifest_raw)
+    require(all(sha(read(source/name,1024**2,empty=True))==digest for name,digest in manifest['files'].items()),'snapshot_source_drift')
+    require(sha(read(root/'.runtime/schema11-pre-fault-backup-controller-v1.py',256*1024))==proof['backup_sha256']==BACKUP_SHA
+        and sha(SELF.read_bytes())==proof['launcher_sha256'],'launcher_or_backup_source_drift')
+    require(all(sha(read(Path(path),16*1024**2))==digest for path,digest in proof['historical_metadata_sha256'].items()),'completed_metadata_drift')
+def compact_status(root):
+    result=[]
+    for job in JOBS:
+        folder=launch_root(root)/job;entry=dict(job=job,state='not_started')
+        intent=folder/'intent.json';ack=folder/'launch.json';report=report_path(root,job)
+        if folder.exists() or folder.is_symlink():
+            directory(folder);entry['state']='claimed_or_unknown_no_replay'
+            if intent.exists():entry['intent_sha256']=sha(read(intent))
+            if ack.exists():
+                value=load(read(ack));record=safe_identity(value['identity'],root);observed=identity(record['pid'])
+                require(value.get('job')==job,'wrong_launch_job')
+                entry['state']='running' if observed==record else 'not_running_no_replay'
+                entry['identity']=record
+        if report.exists():
+            raw=read(report,8*1024**2);value=load(raw)
+            phase=value.get('phase');require(phase in {'prepared','running','backing_up','restoring','complete','failed','failed_or_uncertain'},'unexpected_report_phase')
+            entry.update(report_phase=phase,passed=value.get('passed') is True,report_sha256=sha(raw))
+            if value.get('phase') in {'complete','failed','failed_or_uncertain'}:entry['state']='completed' if value.get('passed') is True else 'failed_no_replay'
+        result.append(entry)
+    return dict(observed_at=stamp(),jobs=result,read_only=True)
+def launch(root,selected,expected,*,checker=preflight,popen=subprocess.Popen,reader=identity,guard=unchanged):
+    require(0<len(selected)<=2 and len(set(selected))==len(selected) and set(selected)<=set(JOBS),'exact_selected_jobs_required')
+    proof=checker(root);require(sha(encoded(proof))==expected,'exact_preview_binding_sha_required')
+    directory(root/'.runtime');base=launch_root(root)
+    if not base.exists():directory(base,new=True)
+    directory(base)
+    fd=os.open(base/'operator.lock',os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW,0o600)
+    try:
+        info=os.fstat(fd);require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid()
+            and info.st_nlink==1 and not info.st_mode&0o077,'private_operator_lock_required')
+        fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        require(checker(root)==proof,'prelaunch_evidence_drift')
+        for job in selected:
+            require(job in JOBS and not (base/job).exists() and not (base/job).is_symlink(),'existing_launch_claim_no_replay')
+            require(not (root/'.runtime'/job).exists() and not (root/'.runtime'/job).is_symlink(),'existing_child_run_no_replay')
+        started=[]
+        for job in selected:
+            guard(root,proof)
+            folder=base/job;directory(folder,new=True)
+            write(folder/'intent.json',dict(job=job,at=stamp(),binding_sha256=expected,command=proof['commands'][job],automatic_replay=False))
+            logfd=os.open(folder/'launch.log',os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+            try:
+                os.fsync(logfd);sync(folder)
+                process=popen(proof['commands'][job],cwd=str(root),env=child_environment(root),stdin=subprocess.DEVNULL,
+                    stdout=logfd,stderr=subprocess.STDOUT,start_new_session=True,close_fds=True)
+                record=reader(process.pid)
+                require(record is not None,'child_identity_unconfirmed_no_replay');safe_identity(record,root)
+                require(record['pid']==process.pid,'child_identity_unconfirmed_no_replay')
+                write(folder/'launch.json',dict(job=job,identity=record,launched_at=stamp(),binding_sha256=expected,automatic_replay=False))
+                started.append(dict(job=job,identity=record))
+            finally:os.close(logfd)
+        return dict(launched=started,automatic_replay=False)
+    finally:os.close(fd)
+def main(argv=None):
+    p=argparse.ArgumentParser(description=__doc__);m=p.add_mutually_exclusive_group()
+    m.add_argument('--launch',action='store_true');m.add_argument('--status',action='store_true')
+    p.add_argument('--job',choices=('both','linux','backup'),default='both');p.add_argument('--binding-sha256')
+    args=p.parse_args(argv);os.umask(0o077)
+    try:
+        require(ROOT==APP and sys.platform=='linux' and os.geteuid()==0,'same_pod_linux_root_only')
+        if args.status:value=compact_status(ROOT)
+        elif args.launch:
+            selected=JOBS if args.job=='both' else (LINUX if args.job=='linux' else BACKUP,)
+            value=launch(ROOT,selected,args.binding_sha256)
+        else:
+            proof=preflight(ROOT);value=dict(preview=True,binding_sha256=sha(encoded(proof)),
+                source_commit=COMMIT,source_tree_sha256=TREE,commands=proof['commands'],status=compact_status(ROOT))
+        print(json.dumps(value,sort_keys=True));return 0
+    except Exception as error:
+        print(json.dumps(dict(refused=True,reason_code=str(error) if type(error) is Refusal else type(error).__name__,automatic_replay=False)));return 1
+if __name__=='__main__':raise SystemExit(main())

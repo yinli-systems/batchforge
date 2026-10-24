@@ -1,0 +1,27 @@
+{
+  "active_worker_count_observed": 1,
+  "captured_before_postpair_worker_source_roll": true,
+  "configured_concurrency_observed": 64,
+  "gpu_utilization_or_benchmark_proof": false,
+  "historical_registered_workers_include_offline_records": true,
+  "model_observed": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "raw_api_credentials_or_prompts_included": false,
+  "screenshots": [
+    {
+      "bytes": 63437,
+      "capture_file_mtime_utc": "2026-10-24T09:42:29.312195+00:00",
+      "original_screenshot_bytes_preserved": true,
+      "path": "docs/screenshots/qwen235b-live-overview-2026-10-24.png",
+      "sha256": "fc32b5741b9dd20691c6e9f70455ebc12e4dca936254b9261bc61d49746fb947"
+    },
+    {
+      "bytes": 62073,
+      "capture_file_mtime_utc": "2026-10-24T09:43:55.551436+00:00",
+      "original_screenshot_bytes_preserved": true,
+      "path": "docs/screenshots/qwen235b-live-workers-2026-10-24.png",
+      "sha256": "ecb1a6c03fcac68e5ea5c5ce47d949d2b62a8a33edcfd74f967b5c613227dfeb"
+    }
+  ],
+  "status": "actual_authenticated_private_workspace_capture",
+  "version": 1
+}

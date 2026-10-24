@@ -1,0 +1,94 @@
+{
+  "backup_and_restore": {
+    "external_objects_or_provider_DR_verified": false,
+    "ledger_mismatches": 0,
+    "off_pod_authorization": "NOT_AUTHORIZED",
+    "off_pod_copy_verified": false,
+    "raw_dump_copied": false,
+    "restore_report_sha256": "7273622fd11c7e8d90097660a673bdcdf0c6d817fc479083fbaa2c94710cfbed",
+    "roles_or_acl_restored": false,
+    "same_pod": true,
+    "schema_version": 11,
+    "snapshot_bytes": 128439422,
+    "snapshot_sha256": "e24edc2c3a9461486e3c38ae1743c3929afff61fbdb2d41cf33057666539f8e7"
+  },
+  "deployment_status": "This evidence proves validation/backup/restore completion only; postpair source rollout had been launched by root and was awaiting its final receipt at the time this pack was requested.",
+  "inventory_version": 1,
+  "launcher_validation": {
+    "independent_elapsed_seconds": 0.08,
+    "local_fake_tests_passed": 11,
+    "private_launcher_in_linux_snapshot": false,
+    "private_launcher_linux_test_suite_qualification": false
+  },
+  "linux_validation": {
+    "commit": "693d658aa944d3a8ebee596ce9b5c9f9d75fdce5",
+    "elapsed_seconds": 78.3180623310036,
+    "node_console_executed": false,
+    "passed": 1189,
+    "postgres_version": "17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+    "production_database_accessed": false,
+    "runner_sha256": "7c334946871af825e0f11224d878aa13281dbc416fa723784064b54f7ed24fdc",
+    "skipped": 0,
+    "source_manifest_sha256": "ded60e7c557b4949d917d6e3dacf769f13e0f07740d305881649991c34f0773b",
+    "source_tree_sha256": "ad6f46a0f4bec39a8562a0ae80846a60640f6818baceaa322fcbf2a52b6ee019",
+    "temporary_cluster_removed": true,
+    "temporary_cluster_stopped": true,
+    "unix_socket_only": true
+  },
+  "metadata_bindings_independently_checked": true,
+  "metadata_file_count": 4,
+  "original_metadata_files": [
+    {
+      "bytes": 1957,
+      "local_transport_relative_path": ".runtime/postpair-functional-evidence-20261024-v1/linux-report.json",
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/linux-pg17-validation-693d658-v1/report.json",
+      "review_copy": "ops/reports/qwen235b-postpair-linux-report-2026-10-24.json",
+      "sha256": "560c7c5010b65a14c65b6917fc08119e794f618b94b37626a88545e6ad5f1431"
+    },
+    {
+      "bytes": 26002,
+      "local_transport_relative_path": ".runtime/postpair-functional-evidence-20261024-v1/backup-controller.json",
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/schema11-pre-fault-20261024-v1/journal.json",
+      "review_copy": "ops/reports/qwen235b-postpair-backup-controller-2026-10-24.json",
+      "sha256": "7b6115d352eaa6d44ad8eb2d99d8f512cefb6cfc53cffa4d74b8294bc30bfc27"
+    },
+    {
+      "bytes": 1098,
+      "local_transport_relative_path": ".runtime/postpair-functional-evidence-20261024-v1/backup-metadata.json",
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/schema11-pre-fault-20261024-v1/fresh-backup-raw.json",
+      "review_copy": "ops/reports/qwen235b-postpair-backup-metadata-2026-10-24.json",
+      "sha256": "abab96c7d759566122df7b23021e33ff60bcad17a90f6012f2eceb98341b2b37"
+    },
+    {
+      "bytes": 7687,
+      "local_transport_relative_path": ".runtime/postpair-functional-evidence-20261024-v1/restore-report.json",
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/schema11-pre-fault-20261024-v1/restore.json",
+      "review_copy": "ops/reports/qwen235b-postpair-restore-report-2026-10-24.json",
+      "sha256": "7273622fd11c7e8d90097660a673bdcdf0c6d817fc479083fbaa2c94710cfbed"
+    }
+  ],
+  "prepared_at": "2026-10-24T09:45:41.236723+00:00",
+  "scope": "Four exact functional-check metadata reports plus reviewed launcher source/tests only; no SQL dump, configuration, credential or raw input/output content copied.",
+  "source_references": [
+    {
+      "bytes": 13186,
+      "kind": "operator_source",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/launch_postpair_validation.py",
+      "review_copy": "ops/reports/qwen235b-postpair-validation-launcher-source-2026-10-24.py.txt",
+      "sha256": "018af4ac37040478b3868b39a90cf790adec3986146fa0c403534b75940e6ecb"
+    },
+    {
+      "bytes": 8483,
+      "kind": "fake_local_tests",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/test_launch_postpair_validation.py",
+      "review_copy": "ops/reports/qwen235b-postpair-validation-launcher-tests-2026-10-24.py.txt",
+      "sha256": "e2bb1207fffc2cb507712adc876ef439a0c0f74106a19447e4b2b5b5c2d388af"
+    }
+  ]
+}

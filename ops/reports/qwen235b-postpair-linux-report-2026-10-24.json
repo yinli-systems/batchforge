@@ -1,0 +1,43 @@
+{
+  "commit": "693d658aa944d3a8ebee596ce9b5c9f9d75fdce5",
+  "compiled_python_files": 169,
+  "elapsed_seconds": 78.3180623310036,
+  "finished_at": "2026-10-24T09:42:00.067807+00:00",
+  "import_origins_verified_inside_snapshot": true,
+  "limitations": [
+    "Committed snapshot manifest is supplied by the operator and verified file-by-file; no production configuration is copied.",
+    "CPU correctness validation is separate from GPU performance measurements.",
+    "No GPU inference, cloud CI runner, dependency installation, system service or paid resource is started."
+  ],
+  "node_console_executed": false,
+  "passed": true,
+  "phase": "complete",
+  "postgres_binary_sha256": "a8de97eb871cee1fdb84cad48ec4e2c481ac826c3801d9e8bb35adec971f7e43",
+  "prepared_at": "2026-10-24T09:40:41.749251+00:00",
+  "private_logs_directory": "/root/batchforge-runtime/app/.runtime/linux-pg17-validation-693d658-v1/report.private-logs",
+  "production_credentials_inherited": false,
+  "production_database_accessed": false,
+  "pytest": {
+    "": 2378,
+    "collected": 1189,
+    "exit_status": 0,
+    "passed": 1189,
+    "skips": [],
+    "warnings": 1
+  },
+  "python": "/root/batchforge-runtime/venv/bin/python",
+  "remaining_scoped_test_processes": [],
+  "runner_sha256": "7c334946871af825e0f11224d878aa13281dbc416fa723784064b54f7ed24fdc",
+  "server_os_uid": 65534,
+  "server_version": "17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+  "source_database_url_supplied": false,
+  "source_file_count": 187,
+  "source_files_unchanged_after_tests": true,
+  "source_manifest_sha256": "ded60e7c557b4949d917d6e3dacf769f13e0f07740d305881649991c34f0773b",
+  "source_tree_sha256": "ad6f46a0f4bec39a8562a0ae80846a60640f6818baceaa322fcbf2a52b6ee019",
+  "started_at": "2026-10-24T09:40:43.013644+00:00",
+  "temporary_cluster_removed": true,
+  "temporary_cluster_stopped": true,
+  "test_log_sha256": "133cfc1ed658afc0c2b4e2dd1ca630959eb91120b623c046edd81344d678cc41",
+  "unix_socket_only": true
+}

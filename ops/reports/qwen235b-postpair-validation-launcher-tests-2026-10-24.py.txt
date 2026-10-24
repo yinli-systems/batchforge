@@ -1,0 +1,111 @@
+"""Fake Popen/private local files only; never starts validation, backup or SSH."""
+import copy
+from pathlib import Path
+import os
+import runpy
+import tempfile
+from types import SimpleNamespace
+import unittest
+from unittest.mock import patch
+
+ROOT=Path(__file__).resolve().parents[1]
+M=runpy.run_path(str(ROOT/'.runtime/launch_postpair_validation.py'),run_name='fake_postpair_launcher_tests')
+
+def private(path,raw):
+    path.parent.mkdir(mode=0o700,parents=True,exist_ok=True);path.write_bytes(raw);path.chmod(0o600)
+class LauncherTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory(prefix='bf-launcher-fake-');self.root=Path(self.tmp.name).resolve()
+        (self.root/'.runtime').mkdir(mode=0o700)
+        self.proof={'commands':M['commands'](self.root),'SYNTHETIC_fixture':True}
+        self.digest=M['sha'](M['encoded'](self.proof));self.calls=[];self.records={}
+    def tearDown(self):self.tmp.cleanup()
+    def popen(self,argv,**kwargs):
+        job=M['LINUX'] if 'run' in argv else M['BACKUP'];folder=M['launch_root'](self.root)/job
+        self.assertTrue((folder/'intent.json').exists());self.assertFalse((self.root/'.runtime'/M['BACKUP']).exists())
+        self.assertTrue(kwargs['start_new_session']);self.assertEqual(kwargs['stdin'],M['subprocess'].DEVNULL)
+        self.assertEqual(kwargs['stderr'],M['subprocess'].STDOUT);self.assertEqual(kwargs['cwd'],str(self.root))
+        self.assertEqual(os.fstat(kwargs['stdout']).st_mode&0o777,0o600)
+        self.assertNotIn('DATABASE_URL',kwargs['env']);self.assertNotIn('BATCHFORGE_API_KEY',kwargs['env'])
+        self.calls.append((job,argv));pid=100+len(self.calls)
+        self.records[pid]=dict(pid=pid,start_ticks=str(pid*10),cwd=str(self.root));return SimpleNamespace(pid=pid)
+    def launch(self,**kwargs):
+        return M['launch'](self.root,M['JOBS'],self.digest,checker=lambda _:copy.deepcopy(self.proof),
+            popen=self.popen,reader=lambda p:self.records[p],guard=lambda *_:None,**kwargs)
+    def test_two_independent_exact_jobs_intent_then_ack_without_precreating_child_runs(self):
+        value=self.launch();self.assertEqual(len(value['launched']),2)
+        self.assertEqual([c[0] for c in self.calls],list(M['JOBS']))
+        for job in M['JOBS']:
+            folder=M['launch_root'](self.root)/job
+            self.assertEqual(folder.stat().st_mode&0o777,0o700)
+            for name in ('intent.json','launch.json','launch.log'):self.assertEqual((folder/name).stat().st_mode&0o777,0o600)
+        self.assertFalse((self.root/'.runtime'/M['LINUX']).exists());self.assertFalse((self.root/'.runtime'/M['BACKUP']).exists())
+        with self.assertRaisesRegex(ValueError,'no_replay'):self.launch()
+        self.assertEqual(len(self.calls),2)
+    def test_existing_either_child_directory_refuses_both_before_first_spawn(self):
+        for job in M['JOBS']:
+            (self.root/'.runtime'/job).mkdir(mode=0o700)
+            with self.assertRaisesRegex(ValueError,'existing_child_run'):self.launch()
+            (self.root/'.runtime'/job).rmdir()
+        self.assertEqual(self.calls,[])
+    def test_existing_partial_launch_directory_never_replayed(self):
+        folder=M['launch_root'](self.root);folder.mkdir(mode=0o700);(folder/M['LINUX']).mkdir(mode=0o700)
+        with self.assertRaisesRegex(ValueError,'existing_launch_claim'):self.launch()
+        self.assertEqual(self.calls,[])
+    def test_unknown_popen_result_keeps_intent_and_never_starts_second_job(self):
+        real=self.popen
+        def unknown(*a,**k):real(*a,**k);raise TimeoutError('SYNTHETIC_PRIVATE_ERROR')
+        with self.assertRaises(TimeoutError):M['launch'](self.root,M['JOBS'],self.digest,checker=lambda _:self.proof,
+            popen=unknown,reader=lambda p:self.records[p],guard=lambda *_:None)
+        folder=M['launch_root'](self.root)/M['LINUX'];self.assertTrue((folder/'intent.json').exists());self.assertFalse((folder/'launch.json').exists())
+        with self.assertRaises(ValueError):self.launch()
+        self.assertEqual(len(self.calls),1)
+    def test_unconfirmed_child_identity_or_confirmation_fsync_failure_never_replayed(self):
+        with patch.dict(M['launch'].__globals__,write=lambda p,v:(_ for _ in ()).throw(OSError('SYNTHETIC_FSYNC')) if p.name=='launch.json' else M['write'](p,v)):
+            with self.assertRaises(OSError):self.launch()
+        self.assertEqual(len(self.calls),1)
+        self.assertTrue((M['launch_root'](self.root)/M['LINUX']/'intent.json').exists())
+        with self.assertRaises(ValueError):self.launch()
+    def test_missing_pid_after_start_is_unknown_without_followon(self):
+        with self.assertRaisesRegex(ValueError,'identity_unconfirmed'):M['launch'](self.root,M['JOBS'],self.digest,
+            checker=lambda _:self.proof,popen=self.popen,reader=lambda _:None,guard=lambda *_:None)
+        self.assertEqual(len(self.calls),1)
+    def test_preview_hash_mismatch_never_claims_or_launches(self):
+        with self.assertRaisesRegex(ValueError,'preview_binding'):M['launch'](self.root,M['JOBS'],'0'*64,
+            checker=lambda _:self.proof,popen=self.popen,reader=lambda p:self.records[p],guard=lambda *_:None)
+        self.assertFalse(M['launch_root'](self.root).exists());self.assertEqual(self.calls,[])
+    def test_readonly_compact_status_tracks_only_same_jobs_and_pid_identity(self):
+        before=list(self.root.rglob('*'));status=M['compact_status'](self.root)
+        self.assertEqual([x['state'] for x in status['jobs']],['not_started','not_started']);self.assertEqual(list(self.root.rglob('*')),before)
+        self.launch()
+        with patch.dict(M['compact_status'].__globals__,identity=lambda p:self.records.get(p)):
+            status=M['compact_status'](self.root);self.assertTrue(all(x['state']=='running' for x in status['jobs']))
+            self.records[101]['start_ticks']='99999';status=M['compact_status'](self.root)
+            self.assertEqual(status['jobs'][0]['state'],'not_running_no_replay')
+        private(M['report_path'](self.root,M['BACKUP']),M['encoded']({'phase':'complete','passed':True}))
+        with patch.dict(M['compact_status'].__globals__,identity=lambda _:None):
+            self.assertEqual(M['compact_status'](self.root)['jobs'][1]['state'],'completed')
+    def test_environment_is_allowlisted_not_inherited_and_commands_use_exact_paths(self):
+        with patch.dict(os.environ,DATABASE_URL='SYNTHETIC_SECRET',AWS_SECRET_ACCESS_KEY='SYNTHETIC_SECRET',PGOPTIONS='unsafe',PYTHONPATH='foreign'):
+            env=M['child_environment'](self.root)
+        self.assertFalse(any(k in env for k in ('DATABASE_URL','AWS_SECRET_ACCESS_KEY','PGOPTIONS','PYTHONPATH')))
+        self.assertEqual(env['CUDA_VISIBLE_DEVICES'],'');cmd=M['commands'](self.root)
+        self.assertIn('linux-pg17-source-693d658/ops/ha/linux_pg17_validation.py',cmd[M['LINUX']][2])
+        self.assertIn('--execute',cmd[M['LINUX']]);self.assertEqual(cmd[M['BACKUP']][-1],M['BACKUP'])
+    def test_exact_source_guard_allows_expected_cache_but_rejects_metadata_and_payload_drift(self):
+        source=M['paths'](self.root)[1];private(source/'worker/empty.py',b'')
+        manifest=M['encoded']({'files':{'worker/empty.py':M['sha'](b'')}});private(source/'.validation-manifest.json',manifest)
+        backup=self.root/'.runtime/schema11-pre-fault-backup-controller-v1.py';private(backup,b'# SYNTHETIC ONLY\n')
+        metadata=self.root/'.runtime/SYNTHETIC-metadata.json';private(metadata,b'{}\n')
+        proof=dict(source_manifest_sha256=M['sha'](manifest),backup_sha256=M['sha'](backup.read_bytes()),launcher_sha256=M['sha'](M['SELF'].read_bytes()),historical_metadata_sha256={str(metadata):M['sha'](metadata.read_bytes())})
+        with patch.dict(M['unchanged'].__globals__,MANIFEST_SHA=proof['source_manifest_sha256'],BACKUP_SHA=proof['backup_sha256']):
+            private(source/'worker/__pycache__/empty.cpython-312.pyc',b'SYNTHETIC EXPECTED CACHE')
+            M['unchanged'](self.root,proof)
+            private(metadata,b'{"changed":true}\n')
+            with self.assertRaisesRegex(ValueError,'metadata_drift'):M['unchanged'](self.root,proof)
+    def test_invalid_selection_or_world_readable_output_refuses(self):
+        with self.assertRaises(ValueError):M['launch'](self.root,('foreign',),self.digest,checker=lambda _:self.proof)
+        (self.root/'.runtime').chmod(0o755)
+        with self.assertRaisesRegex(ValueError,'private_directory'):self.launch()
+
+if __name__=='__main__':unittest.main()
