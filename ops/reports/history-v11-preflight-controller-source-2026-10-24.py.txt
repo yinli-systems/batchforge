@@ -1,0 +1,73 @@
+"""Same-Pod pre-v11 snapshot and isolated PG17 restore; no data export."""
+from pathlib import Path
+from datetime import datetime, timezone
+import hashlib, json, os, subprocess, sys
+
+ROOT = Path('/root/batchforge-runtime/app')
+RUN = ROOT / '.runtime/history-v11-preflight-20261024-v1'
+sys.path.insert(0, str(ROOT)); os.umask(0o077); os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+def sha(raw): return hashlib.sha256(raw).hexdigest()
+def stamp(): return datetime.now(timezone.utc).isoformat()
+
+def main():
+    import psycopg
+    from backend.migrate import MIGRATIONS
+    from devtools.backup_postgres import select_bin_dir, preflight, create_backup
+    from ops.supervise import load_manifest, private_read, private_write
+    from ops.ha.set_scheduler_policy import owned_identity
+    from ops.ha.deploy_storage_admission import bound_owner_dsn, ledger_invariants
+    from ops.ha.finalize_api_policy import values
+    if (RUN/'journal.json').exists(): raise RuntimeError('existing_job_no_resubmit')
+    manifest, services, _ = load_manifest(ROOT/'.runtime/services-primary.json')
+    watchdog = dict(role='supervisor', name='primary', env_file=str(ROOT.parent/'supervisor.env'))
+    services = [*services, watchdog]
+    identities = {s['role']+'-'+s['name']: owned_identity(ROOT,s) for s in services}
+    files = {str(p): sha(private_read(p)) for p in [manifest,*[Path(s['env_file']) for s in services]]}
+    expected = [(v,checksum) for v,_,checksum in MIGRATIONS]
+    if expected[-1][0] != 10: raise RuntimeError('requires_actual_registry10')
+    def guard():
+        if {s['role']+'-'+s['name']: owned_identity(ROOT,s) for s in services} != identities:
+            raise RuntimeError('service_identity_drift')
+        if any(sha(private_read(Path(p))) != checksum for p,checksum in files.items()):
+            raise RuntimeError('protected_configuration_drift')
+    apis = [values(private_read(Path(s['env_file'])))['DATABASE_URL'] for s in services if s['role']=='api']
+    owner = bound_owner_dsn(private_read(ROOT.parent/'neon-owner.env'), apis)
+    with psycopg.connect(owner,connect_timeout=10,options='-c default_transaction_read_only=on -c statement_timeout=10000') as c:
+        ledger = c.execute('SELECT version,checksum FROM batchforge_schema_migrations ORDER BY version').fetchall()
+        active = c.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]
+        if ledger != expected or active: raise RuntimeError('exact_schema10_drained_required')
+        invariants = ledger_invariants(c)
+    doc = dict(job_id='history-v11-schema10-backup-20261024-v1',phase='backing_up',started_at=stamp(),
+        source_sha256=sha(Path(__file__).read_bytes()),owned_identities=identities,protected_file_sha256=files,
+        schema_version=10,migration_checksums=dict(ledger),invariants_before=invariants,
+        off_pod_copy_verified=False,off_pod_permission_status='pending_explicit_user_authorization',
+        limitations=['Same-Pod SQL backup and restore; no export, provider DR, object backup or role/ACL recovery.'])
+    private_write(RUN/'journal.json',doc)
+    try:
+        bins = select_bin_dir(ROOT.parent/'postgres-client-17/bin',dict(os.environ))
+        metadata = preflight(owner,bins,dict(os.environ))
+        snapshot, backup = create_backup(owner,bins,ROOT/'.runtime/backups',dict(os.environ),metadata,RUN/'fresh-backup-raw.json')
+        guard(); doc.update(phase='restoring',snapshot_sha256=backup['snapshot_sha256'],snapshot_bytes=backup['snapshot_bytes'])
+        private_write(RUN/'journal.json',doc)
+        argv = [sys.executable,'-m','ops.ha.local_pg17_restore','--backup-report',str(RUN/'fresh-backup-raw.json'),
+            '--server-root',str(ROOT.parent/'postgres-server-17/rootfs'),'--client-root',str(ROOT.parent/'postgres-client-17/rootfs'),
+            '--report',str(RUN/'restore.json')]
+        with (RUN/'restore.log').open('xb') as out:
+            result = subprocess.run(argv,cwd=ROOT,stdin=subprocess.DEVNULL,stdout=out,stderr=subprocess.STDOUT,timeout=600)
+        report = json.loads(private_read(RUN/'restore.json',2*1024**2))
+        guard()
+        if result.returncode or not report.get('passed') or report.get('schema_version') != 10 or not report.get('temporary_cluster_removed'):
+            raise RuntimeError('same_pod_restore_failed')
+        doc.update(phase='complete',passed=True,finished_at=stamp(),restore_report_sha256=sha(private_read(RUN/'restore.json',2*1024**2)),
+            services_and_configuration_unchanged=True)
+    except BaseException as e:
+        doc.update(phase='failed_or_uncertain',passed=False,error_type=type(e).__name__,finished_at=stamp())
+        private_write(RUN/'journal.json',doc); raise
+    private_write(RUN/'journal.json',doc)
+    print(json.dumps({k:doc[k] for k in ('phase','passed','snapshot_bytes','snapshot_sha256','restore_report_sha256','off_pod_copy_verified')}),flush=True)
+
+if __name__ == '__main__':
+    try: main()
+    except BaseException as e:
+        print(json.dumps({'failed':True,'error_type':type(e).__name__}),flush=True);raise SystemExit(1) from None

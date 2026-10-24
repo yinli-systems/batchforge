@@ -1,0 +1,176 @@
+{
+  "schema_version": 10,
+  "started_at": "2026-10-24T07:08:08.493031+00:00",
+  "passed": true,
+  "snapshot_path": "/root/batchforge-runtime/app/.runtime/backups/batchforge-20261024T070743Z-dfe6c42b.dump",
+  "snapshot_sha256": "978c382de40acea93a39fb1250249813046c841ee02a237ad1441482707d2535",
+  "snapshot_bytes": 127967839,
+  "source_sha256": "51ac28fa374b2917f8a67913631ba082185dd6bc712e7913780f556300e15116",
+  "destination": "new private unprivileged local PostgreSQL17 cluster",
+  "live_database_modified": false,
+  "roles_or_acl_restored": false,
+  "limitations": [
+    "--no-owner/--no-acl; cluster roles, service credentials and bf_runtime permissions are not restored.",
+    "All-table digests describe the restored archive, not equality against a subsequently changing live database.",
+    "Functional restore may overlap a real worker-fault drill; timings are not an isolated performance comparison.",
+    "External blob objects and provider disaster recovery are outside this database snapshot proof.",
+    "Private auxiliary definer signatures/owner/search_path are checked; --no-acl does not restore their production EXECUTE restrictions."
+  ],
+  "server_version": "17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+  "server_os_uid": 65534,
+  "unix_socket_only": true,
+  "pure_restore_seconds": 9.646437813993543,
+  "migration_checksums": {
+    "1": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219",
+    "2": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b",
+    "3": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003",
+    "4": "5c401e019eaec4491b281169522febe94878cb2c465242820d88d761eeb83fb0",
+    "5": "424e4e0426f6bb456c503fd731e3d1e717f3a8485c28256f38d6608dbbdf9339",
+    "6": "a44389417577344ef85745e5e299b35a764b40483983197993eeafe6904e90e3",
+    "7": "6225f00575675d8834f16c0462728d563985a7d73753344cde366e150eac79d0",
+    "8": "5ffedba95c7147bdf973052fea000bf268a852e9136f5b2e9e66740040f3727d",
+    "9": "663e8f86c2f6da66d70ec538794317662c10eb3a10977a94cd4ca9b2424731d3",
+    "10": "d31d74f77ea90d8050f689e6437984149a3ca8a6ac49b70275ce870d8f6a397b"
+  },
+  "batch_count_state_usage_mismatches": 0,
+  "accepted_attempt_count_usage_mismatches": 0,
+  "tenant_queue_pending_mismatches": 0,
+  "unvalidated_constraints": 0,
+  "security_invoker_functions": [
+    "batchforge_auxiliary_admin_guard",
+    "batchforge_claim",
+    "batchforge_claim_scheduled",
+    "batchforge_clear_changed_worker_profile",
+    "batchforge_complete",
+    "batchforge_estimate_task_insert",
+    "batchforge_fail",
+    "batchforge_finish_batch_v4",
+    "batchforge_guard_task_runtime",
+    "batchforge_heartbeat",
+    "batchforge_json_bytes",
+    "batchforge_recover",
+    "batchforge_retention_attempt_guard",
+    "batchforge_retention_authorize_delete",
+    "batchforge_retention_delete_guard",
+    "batchforge_retention_lock",
+    "batchforge_retention_owner",
+    "batchforge_retention_policy_guard",
+    "batchforge_retention_task_charge",
+    "batchforge_retention_task_insert",
+    "batchforge_retention_task_update",
+    "batchforge_retention_tenant",
+    "batchforge_retention_usage_guard"
+  ],
+  "private_source_auxiliary_definer_functions": [
+    "batchforge_archive_metadata_identity",
+    "batchforge_auxiliary_account",
+    "batchforge_auxiliary_adjust",
+    "batchforge_auxiliary_guard",
+    "batchforge_auxiliary_lock"
+  ],
+  "retention_ledger_mismatches": 0,
+  "retention_undercharged_tasks": 0,
+  "retention_missing_tenant_ledgers": 0,
+  "auxiliary_ledger_mismatches": 0,
+  "tables": {
+    "api_keys": {
+      "rows": 1,
+      "sha256": "2c260479dead0888e12059063a40a366244db025413119166301511b8b7ce130"
+    },
+    "attempts": {
+      "rows": 27571,
+      "sha256": "ed7af140fee180f487199d002eabefb208afb348f98b981a8514660276d6a93c"
+    },
+    "batches": {
+      "rows": 420,
+      "sha256": "a61b6c093bc198833f38ede6632649b64c944be571a806ba4b8a1cf2bd52d1a7"
+    },
+    "batchforge_schema_migrations": {
+      "rows": 10,
+      "sha256": "0bf0b864d6362e24c29bd6785487c61ceeef9b2dfbe62a607129bb118b70e0c6"
+    },
+    "blob_objects": {
+      "rows": 63,
+      "sha256": "6991a6b9f5bee5c9d08a545195ed2b6ca8e7b31e8648e389de93a8a4fe607dbd"
+    },
+    "blob_read_leases": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "blob_upload_reservations": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "files": {
+      "rows": 879,
+      "sha256": "e0ed03a9af2f4fcafda5db9eac2b4c61d5f7b9c9afaef5dec7a672ba261e09b3"
+    },
+    "idempotency": {
+      "rows": 420,
+      "sha256": "92275e181837c1098b9a88a5b36fe26a05791561f257427f3f95239b91f6ad5d"
+    },
+    "result_archive_chunks": {
+      "rows": 7,
+      "sha256": "1842f0abe7e38962ff064e1aa9b687521767638b87644f4227b079a88c45cb4d"
+    },
+    "result_archive_files": {
+      "rows": 7,
+      "sha256": "6dd60cbf546a9651ba087fed72b2cb00f996a3315f4c8cfaf8149627862e7bbb"
+    },
+    "result_archive_runs": {
+      "rows": 7,
+      "sha256": "6f3fb1362c7b2b13a70f20779128b629891a3fb4422988ffca3449de98480e9e"
+    },
+    "result_read_leases": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tasks": {
+      "rows": 26943,
+      "sha256": "b48fce9b762987438d1a5a0743f4390f1dff68c469ae2ce004c95d61bd1c419d"
+    },
+    "tenant_auxiliary_limits": {
+      "rows": 8,
+      "sha256": "f7278235502f0e229ac801bdcc012537db53697bd8369cae2da70fcb9900a36f"
+    },
+    "tenant_auxiliary_usage": {
+      "rows": 8,
+      "sha256": "24e2b60f73b5431cbebf8a4b528bb30c1b6d81350578b6c0272ee25384eecc88"
+    },
+    "tenant_blob_usage": {
+      "rows": 1,
+      "sha256": "6a37d12718b4f52c90f67ee9d9a8d8040aaf0c7b12e95165bb4224afcd3aebd2"
+    },
+    "tenant_queues": {
+      "rows": 4,
+      "sha256": "f86217db3afb43ebf6a3f3511ad205728410912813d76509bb53e566ce00532d"
+    },
+    "tenant_result_usage": {
+      "rows": 1,
+      "sha256": "a553f877f5965ed8ba647f37a25a52e6053d641de1aff9a5543e8ee66a2db2d9"
+    },
+    "tenant_retention_limits": {
+      "rows": 1,
+      "sha256": "13cd9e69bbe8b813e32d5b0d16eae38d6d6467ffca5191c051431ae4aa7a29dc"
+    },
+    "tenant_retention_usage": {
+      "rows": 1,
+      "sha256": "a100bbb2cafb2cf19c91587e6ebbb6fc9692ab9400e1fd82d77202259b0dd43b"
+    },
+    "tenants": {
+      "rows": 1,
+      "sha256": "9164d30cd44636aa4363e1db6d434ebc46f8796082fa6c219bfb7e2a24312b3b"
+    },
+    "workers": {
+      "rows": 29,
+      "sha256": "ba194946ff0bc2097ab9d6863ccdafe19da48061b8ee39c13fd480b1d9771e47"
+    }
+  },
+  "prompt_tokens": 34382333,
+  "completion_tokens": 5468585,
+  "restore_verified": true,
+  "temporary_cluster_stopped": true,
+  "temporary_cluster_removed": true,
+  "finished_at": "2026-10-24T07:08:25.332884+00:00",
+  "elapsed_seconds": 16.83968365995679
+}
