@@ -9,6 +9,20 @@ tokens and a 0.90 GPU memory fraction. Its model card describes
 235B total parameters and 22B active parameters. This distinction matters when
 comparing compute demand with another mixture-of-experts model.
 
+The running deployment was retuned to sixteen static sequence slots at
+02:34:07 UTC, keeping the same model revision, TP4 layout, context limit,
+batched-token limit and memory fraction. The fresh startup again reported
+316,144 cache tokens and 17.14 complete contexts, above the 295,040-token
+full-context reservation. The sixteen-slot direct calibration passed all 20
+requests with exactly 109,056 prompt tokens and 13,600 generated tokens in
+176.515 seconds (77.047 generated tokens/s across that burst). Its HTTP service
+P95 was 175.765 seconds. The worker's inference timeout is 1,800 seconds; a
+180-second timeout would leave little margin for these long-output requests.
+API and gateway process identities remained unchanged. See the
+[completed retune](../ops/reports/primary-qwen235b-seq16-complete-2026-10-24.json),
+[raw sixteen-slot calibration](../ops/reports/primary-qwen235b-direct-fixed20-seq16-2026-10-24.json)
+and [profile fit](../ops/reports/primary-qwen235b-seq16-calibration-fit-2026-10-24.json).
+
 Each rank loaded 55.1856 GiB of model state and reported 14.17 GiB available for
 KV cache. The engine reported 316,144 cache tokens and 17.14 complete contexts.
 This establishes memory admission headroom; it does not establish Tensor Core
@@ -58,7 +72,7 @@ report prevents re-running the switch under the same stable identity after an
 ambiguous interruption.
 
 `ops/ha/retune_qwen235b.py` prepares a separate guarded eight-to-sixteen-slot
-candidate. It preserves the numerical runtime fingerprint and the original
+candidate; the completed operation above used that controller. It preserves the numerical runtime fingerprint and the original
 worker's operational settings, reserves 295,040 full-context tokens, and runs a
 fresh direct 20-cell calibration at concurrency sixteen before starting the
 profiled worker. No eight-slot rate is relabeled as a sixteen-slot measurement.
@@ -71,10 +85,10 @@ The frozen SQuAD 1.1 public-text workload contains the full Cartesian product of
 input lengths 128, 512, 2,048, 8,192 and 16,384 with output lengths 32, 128, 512
 and 2,048. Pinned-tokenizer prompt counts must equal the server's actual counts.
 Direct calibration forces the output lengths, validates every stream and usage
-record, and runs at concurrency eight. This is a capacity experiment, not a
+record, and runs separately at concurrency eight and sixteen. This is a capacity experiment, not a
 natural-output quality evaluation.
 
-The initial profile uses two separate nonnegative least-squares fits through the
+Each measured profile uses two separate nonnegative least-squares fits through the
 origin: actual prompt tokens against HTTP time to first visible text, and actual
 output tokens minus one against the visible stream span. Both rates must be
 positive and finite. The first phase includes queueing and the first decode
@@ -91,8 +105,8 @@ engine`, means the FlashAttention backend under the vLLM V1 engine; it does not
 identify FlashAttention's algorithm version. A matching fingerprint is a routing constraint, not a claim
 that semantic quality was evaluated.
 
-Allocation cost remains the operator-supplied whole-Pod scenario divided by
-eight nominal occupied slots. It is not an invoice, a measured marginal task
+Allocation cost remains the operator-supplied $16.10/hour whole-Pod scenario
+divided by the profile's eight or sixteen nominal occupied slots. It is not an invoice, a measured marginal task
 cost or proof of savings. There is one physical GPU type in this experiment;
 logical scheduling profiles must not be presented as measured heterogeneous
 hardware results.
@@ -108,8 +122,8 @@ the applicable [performance-counter permissions](https://developer.nvidia.com/nv
 
 For the installed vLLM 0.10.2, the
 [version-specific profiling guide](https://docs.vllm.ai/en/v0.10.2/contributing/profiling.html)
-supports PyTorch tracing through `VLLM_TORCH_PROFILER_DIR`. The sixteen-slot
-candidate configures an owner-only directory under the application's `.runtime`.
+supports PyTorch tracing through `VLLM_TORCH_PROFILER_DIR`. The running sixteen-slot
+deployment configures an owner-only directory under the application's `.runtime`.
 The installed worker and API implementation hashes were checked: initialization
 constructs the profiler, and only explicit `/start_profile` and `/stop_profile`
 RPCs start and finish a capture. The retune controller never calls those routes.
@@ -129,6 +143,24 @@ during the baseline comparison. The trace analyzer reports per-rank interval
 unions, exclusive category intervals and overlapping intervals; it never sums
 the four ranks into a global elapsed time or infers hardware utilization from
 kernel names.
+
+The prepared `ops/ha/moe_stopped_window.py` experiment snapshots the actual
+sixteen-slot deployment and requires a separate execution step after the timed
+cohort and trace. Preparation binds the exact manifest bytes, environment hashes
+and owned process PID/start-time identities. Repeating preparation cannot
+overwrite an existing snapshot; execution rechecks the binding before stopping
+anything. Protected APIs and gateways are checked by identity and environment
+hash after restoration. It drains platform work, stops the owned watchdog, worker and
+engine, and launches one bounded kernel benchmark per GPU. Each child has a
+330-second hard deadline and an isolated Triton cache; cleanup uses captured
+PID/start-time identities. The controller restores the unchanged sixteen-slot
+engine and worker after either success or failure, with a fresh memory and KV
+capacity check. It never installs a selected kernel configuration. Synthetic
+per-layer timings, including the upstream timer's CUDA graph replay, cannot be
+reported as an improvement to this eager engine's end-to-end throughput.
+The searched token counts are 1–64 and cover decode-sized shapes, not the
+4,096-token chunked prefill case. A winning small-shape configuration therefore
+does not establish a safe or faster configuration for all inference phases.
 
 After the 235B experiment, two independent 120B TP2 replicas are a possible
 follow-up. A simple weight-size projection is about 34.44 GiB per rank instead

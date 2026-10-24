@@ -1,0 +1,81 @@
+{
+  "method": "Installed-source and actual-owned-command derivation; not an exposed live cache-config field",
+  "captured_at": "2026-10-24T02:27:40.034359+00:00",
+  "read_only": true,
+  "cuda_or_vllm_imported_by_audit": false,
+  "generation_requests_sent": 0,
+  "service_mutations": 0,
+  "derived_cache_block_tokens": 16,
+  "engine_identity": {
+    "pid": 169974,
+    "start_ticks": "33063661",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "observed_engine": {
+    "name": "qwen235b",
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "revision": "e156cb4efae43fbee1a1ab073f946a1377e6b969",
+    "tensor_parallel_size": 4,
+    "max_num_seqs": 8,
+    "actual_cuda_visible_devices": "0,1,2,3",
+    "command_block_size_override_present": false,
+    "actual_process_platform_override_environment_keys_present": [],
+    "engine_interpreter_platform_plugin_entrypoints": [],
+    "engine_interpreter_metadata_vllm_version": "0.10.2"
+  },
+  "model_configuration": {
+    "sha256": "f056921e486d3e22aed125b5218b87146ea2ac838ccf1521dea5b08f809e8d59",
+    "model_type": "qwen3_moe",
+    "architectures": ["Qwen3MoeForCausalLM"],
+    "kv_lora_rank": null,
+    "num_attention_heads": 64,
+    "num_key_value_heads": 4
+  },
+  "installed_source": {
+    "config/cache.py": {
+      "sha256": "c5c897e97ad4e40d1f4fe8e481a0124ce1554b4d02c60b8ab68c40fec6a00400",
+      "line": 35,
+      "fact": "CacheConfig.block_size defaults to None; platform resolves the default"
+    },
+    "engine/arg_utils.py": {
+      "sha256": "a2fb6e4befee73c2e92258cfa325a68b36a471c7f86d29a825f35f49045123ad",
+      "lines": [335, 1184],
+      "fact": "EngineArgs inherits the None default and passes its block_size into CacheConfig"
+    },
+    "platforms/cuda.py": {
+      "sha256": "39e92a141e78680c52fa250bfff2601e0baa3f1f6ba68f6924b4293cbe5d0d67",
+      "lines": [137, 138, 142],
+      "fact": "CUDA sets an unspecified cache block size to16; subsequent forced64/128 overrides are inside model_config.use_mla"
+    },
+    "config/__init__.py": {
+      "sha256": "261737c02dc2872f6ba91b971ff4d7b7c437795549584a16471edb40a2996d9a",
+      "lines": [1388, 1397, 1753, 1754],
+      "fact": "qwen3_moe is outside the DeepSeek/Eagle MLA types; is_deepseek_mla isFalse, so use_mla isFalse"
+    },
+    "platforms/__init__.py": {
+      "sha256": "48bf2526618f5f435394dfd4ba52cf21ee71acfd1d0eb4bf45ba3c784727dcc7",
+      "lines": [56, 69, 101],
+      "fact": "The built-in CUDA platform is selected for the installed GPU build; no external platform entrypoint is installed"
+    },
+    "v1/core/kv_cache_utils.py": {
+      "sha256": "c69ce881133c859f041d44ccdc8c1de1cc6b16a91f986f7da060d476719a13cf",
+      "lines": [928, 929, 1022, 1026, 1028],
+      "fact": "KV groups use CacheConfig.block_size; startup token capacity is the block count times the cache block size, not a sum of TP-rank capacities"
+    },
+    "entrypoints/openai/api_server.py": {
+      "sha256": "40b1245fcfa5a18f215a232fc25c99293f16c37dac9c4bf0238d49a1614d7563",
+      "lines": [1054, 1056],
+      "fact": "The server_info development route exposes a configuration string only when development routes are enabled"
+    }
+  },
+  "read_only_http_observations": {
+    "version": {"status": 200, "version": "0.10.2"},
+    "server_info": {"status": 404, "development_endpoints_enabled_by_audit": false, "configuration_printed": false}
+  },
+  "limits": [
+    "The observation is the then-live seq8 process, before the separately owned seq16 retune; it does not certify a future process identity",
+    "Recheck installed source hashes and absence of a CLI/platform override before the adaptive activation window",
+    "16-token admission rounding is single-worker accounting; this does not prove physical KV allocation or protect against another engine caller",
+    "The first metadata inspection used the control-plane interpreter; the reported empty platform entrypoint list was separately rechecked with engine-venv and only stdlib importlib.metadata"
+  ]
+}

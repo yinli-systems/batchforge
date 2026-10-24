@@ -57,3 +57,16 @@ def test_trace_files_must_map_once_to_each_verified_rank_pid():
                     paths - {Path('host_100.12345.pt.trace.json.gz')}):
         with pytest.raises(ValueError):
             probe.map_traces(invalid, ranks)
+
+
+def test_rank_proof_uses_fresh_seq16_startup_and_rejects_stale_seq8_launch():
+    members = [{'pid': 100 + r, 'start_ticks': str(r)} for r in range(4)]
+    current = {m['pid']: m for m in members}
+    report = {'phase': 'complete', 'events': [{'service': 'engine-qwen235b', 'action': 'start', 'result': {'pid': 10}}],
+              'startup_evidence_lines': [f'(Worker_TP{r} pid={100+r}) ready' for r in range(4)]}
+    assert set(probe.ranks_from_retune(report, {'pid': 10}, members, identity=current.get)) == set(range(4))
+    with pytest.raises(ValueError, match='exact engine launch'):
+        probe.ranks_from_retune(report, {'pid': 11}, members, identity=current.get)
+    report['startup_evidence_lines'] = [f'(Worker_TP{r} pid={200+r}) stale seq8' for r in range(4)]
+    with pytest.raises(ValueError, match='Four live'):
+        probe.ranks_from_retune(report, {'pid': 10}, members, identity=current.get)

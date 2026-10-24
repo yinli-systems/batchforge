@@ -89,6 +89,14 @@ def map_traces(paths, ranks):
     return result
 
 
+def ranks_from_retune(retune, leader, members, *, identity=engine_members.identity):
+    starts = [event['result']['pid'] for event in retune.get('events', [])
+              if event.get('service') == 'engine-qwen235b' and event.get('action') == 'start']
+    if retune.get('phase') != 'complete' or starts != [leader['pid']]:
+        raise ValueError('Live owned leader must be the exact engine launch in the completed seq16 report')
+    return rank_mapping('\n'.join(retune['startup_evidence_lines']), members, identity=identity)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--execute', action='store_true')
@@ -119,7 +127,7 @@ def main():
     if not leader or not engine_members.capture(leader_path.with_suffix('.members.json'), leader):
         raise RuntimeError('Cannot verify current owned engine descendants')
     members = engine_members.read(leader_path.with_suffix('.members.json'))['members']
-    ranks = rank_mapping((ROOT / '.runtime/engine-qwen235b.log').read_text(errors='replace'), members)
+    ranks = ranks_from_retune(retune, leader, members)
     api_env = file_env(next(s for s in services if s['role'] == 'api')['env_file'])
     def drained():
         with psycopg.connect(api_env['DATABASE_URL'], connect_timeout=10) as conn:
@@ -132,7 +140,7 @@ def main():
     private_write(run / 'public-workload-manifest.json', manifest)
     report = {'phase': 'prepared', 'created_at': utc_now(), 'controller_pid': os.getpid(), 'controller_sha256': digest(__file__),
               'scope': 'Separate untimed four-request CUDA activity probe; not a throughput benchmark',
-              'rank_identities': ranks, 'profile_directory': str(trace_dir),
+              'engine_leader_identity': leader, 'rank_identities': ranks, 'profile_directory': str(trace_dir),
               'public_workload_sha256': manifest['workload_sha256'], 'profiler_stop_confirmed': False}
     def save(): private_write(run / 'report.json', report)
     save()

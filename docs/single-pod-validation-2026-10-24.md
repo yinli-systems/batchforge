@@ -131,6 +131,50 @@ buffering. Neither is an isolated kernel rate, and 120B measurements are not
 reused as Qwen measurements. Subsequent platform/concurrency measurements are
 recorded independently.
 
+The next guarded restart raised the static full-context limit to 16. Fresh
+startup again measured 316,144 KV tokens and 17.14 full contexts, exceeding
+the 295,040-token reservation. A separate direct 20-cell calibration passed
+all exact token totals in 176.515110 seconds. Its HTTP proxy fits were
+5,573.560942 prefill tokens/s and 11.775314 decode tokens/s, with residuals
+retained in the report. These fitted request rates are not aggregate device
+throughput. The 100-task platform comparison is a separate measurement.
+
+The initial eight-slot durable platform run accepted 100/100 exact-length
+requests in 809.615794 seconds: 545,280 input and 68,000 output tokens,
+0.123515 tasks/s, completion P50/P95/P99 of 71.076502/650.589254/767.969815
+seconds. Every task had one accepted attempt and no retries or failures. The
+engine's measured mean decode stage was 56.123523 seconds per request, with
+67,900 inter-token intervals averaging 0.082656 seconds. Its whole-Pod
+allocation scenario is $3.620782 per 100, or
+$36,207.82 per million for this workload at the assumed $16.10/hour.
+
+The following natural-length summary cohort completed 20/20 in 199.276531
+seconds, with 109,056 input and 6,728 generated tokens. All 20 had final text;
+13 reached their output cap and 7 stopped naturally. Completion P50/P95/P99
+were 23.610710/125.397426/178.249579 seconds. These summaries have no gold
+reference and no correctness score. A smaller finite cohort can have worse
+allocation cost per completion despite generating fewer tokens.
+
+The subsequent static16 fixed100 used the same 235B input bytes and exact
+545,280/68,000 input/output totals. All 100 completed once, without retries,
+failures or capped-length mismatches, in 466.368680 seconds (0.214423 tasks/s).
+Completion P50/P95/P99 were 52.915453/454.555047/456.579551 seconds.
+Protected service identities, environment files and the manifest were unchanged
+during the run; a fresh global query confirmed no pending/running tasks after it.
+Relative to static8, this serial configuration comparison improved throughput
+by 73.6%, reduced P95 by 30.1% and P99 by 40.5%, and reduced allocated cost by
+42.4%: $2.085704 per 100, or $20,857.04 per million at the same hourly scenario.
+The concurrency and fitted scheduler profile both changed; this is not an
+isolated kernel improvement or a replicated statistical estimate.
+
+The 120B and 235B matrices use different tokenizer-specific text boundaries and
+therefore different input bytes, although their requested token-length grid
+and the fixed100 actual input/output totals match. Comparing the optimized
+120B64 configuration with Qwen235B8 also changes quantization and concurrency.
+It is a practical configuration comparison, not an isolated parameter-count
+or model-architecture effect. Adaptive admission is evaluated separately from
+these completed static8/static16 references.
+
 ## Distance to ten million tasks per day
 
 Ten million completions per day require 115.740741 completions/s. Extrapolating
@@ -164,8 +208,8 @@ Secret-bearing environments, raw model outputs and database snapshots remain
 outside Git. Core result archival was pushed as `f1d45b7`.
 
 Local checks, including real isolated PostgreSQL and all HA helper tests, passed
-517 tests with 5 platform skips; subsequent focused publication/microbenchmark
-guards passed 29 tests, and Python compilation also passed. The Linux
+563 tests with 5 platform skips in 26.25 seconds on the current candidate.
+Python compilation also passed. The Linux
 fault-probe tests separately passed all 12 tests. GitHub-hosted checks for the
 earlier implementation did not start because of the account's payment/spending
 limit; a local pass must not be represented as a hosted CI pass.

@@ -1,0 +1,903 @@
+{
+  "schema_version": 1,
+  "experiment": "235BFP8 static8 durable fixed100 followedby natural20 summaries; onceonly; no service/environmentchanges acrosscohorts",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "revision": "e156cb4efae43fbee1a1ab073f946a1377e6b969",
+  "source_sha256": "52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f",
+  "hardware": "one4xH100Pod TP4; FP8blockW8A8dynamic activations, BF16compute/KV",
+  "actual_engine": {
+    "MODEL_NAME": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "ENGINE_MODEL_PATH": "/root/batchforge-runtime/models/qwen3-235b-fp8",
+    "ENGINE_REVISION": "e156cb4efae43fbee1a1ab073f946a1377e6b969",
+    "ENGINE_GPU_MEMORY_UTILIZATION": ".90",
+    "ENGINE_MAX_MODEL_LEN": "18440",
+    "ENGINE_MAX_NUM_SEQS": "8",
+    "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+    "ENGINE_ENABLE_PREFIX_CACHING": "0",
+    "ENGINE_ENABLE_CHUNKED_PREFILL": "1",
+    "ENGINE_DTYPE": "bfloat16",
+    "ENGINE_TENSOR_PARALLEL_SIZE": "4",
+    "enforce_eager": true,
+    "enforce_eager_basis": "managedcommand always contains --enforce-eager; modeloperator confirmed actualstartup"
+  },
+  "worker": {
+    "slots": 8,
+    "token_budget": 147520,
+    "runtime_profile": {
+      "profile_id": "primary-h100-tp4-qwen235b-fp8-seq8",
+      "runtime_fingerprint": "sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3",
+      "prefill_tokens_per_second": 7564.776395023917,
+      "decode_tokens_per_second": 11.661363345280314,
+      "hourly_cost_usd": 2.0125,
+      "calibration_label": "actual-qwen235b-fixed20-c8-http-phase-NNLS:ad691d2621e7ccf5",
+      "cost_source": "operator-allocation-16.1-USD-hour-divided-by-8-slots;assumes-full-occupancy"
+    }
+  },
+  "fixed100": {
+    "run_id": "bench-5c4f920fd31c",
+    "measurement_started_at": "2026-10-24T02:10:25.923514+00:00",
+    "terminal_observation_ended_at": "2026-10-24T02:23:55.539329+00:00",
+    "elapsed_seconds": 809.615794,
+    "completed": 100,
+    "failed": 0,
+    "cancelled": 0,
+    "completed_tasks_per_second": 0.123515,
+    "observed_prompt_tokens": 545280,
+    "observed_completion_tokens": 68000,
+    "observed_prompt_tokens_per_second": 673.5046475637307,
+    "observed_completion_tokens_per_second": 83.99045634230797,
+    "task_completion_seconds": {
+      "samples": 100,
+      "p50": 71.076502,
+      "p95": 650.589254,
+      "p99": 767.969815,
+      "max": 807.014719,
+      "mean": 203.418831
+    },
+    "task_first_queue_seconds": {
+      "samples": 100,
+      "p50": 43.899749,
+      "p95": 521.746135,
+      "p99": 600.731287,
+      "max": 641.627711,
+      "mean": 146.638249
+    },
+    "by_class": {
+      "decode_heavy": {
+        "tasks": 50,
+        "completion_seconds": {
+          "samples": 50,
+          "p50": 216.858212,
+          "p95": 719.12867,
+          "p99": 749.213805,
+          "max": 767.575422,
+          "mean": 269.393548
+        },
+        "prompt_tokens": 71680,
+        "completion_tokens": 50080
+      },
+      "prefill_heavy": {
+        "tasks": 45,
+        "completion_seconds": {
+          "samples": 45,
+          "p50": 38.019336,
+          "p95": 474.684664,
+          "p99": 559.640927,
+          "max": 563.791986,
+          "mean": 93.506373
+        },
+        "prompt_tokens": 391680,
+        "completion_tokens": 7680
+      },
+      "balanced": {
+        "tasks": 5,
+        "completion_seconds": {
+          "samples": 5,
+          "p50": 512.259515,
+          "p95": 775.025422,
+          "p99": 800.61686,
+          "max": 807.014719,
+          "mean": 532.883783
+        },
+        "prompt_tokens": 81920,
+        "completion_tokens": 10240
+      }
+    },
+    "prompt_tokens_per_task": {
+      "samples": 100,
+      "p50": 2048.0,
+      "p95": 16384.0,
+      "p99": 16384.0,
+      "max": 16384,
+      "mean": 5452.8
+    },
+    "completion_tokens_per_task": {
+      "samples": 100,
+      "p50": 320.0,
+      "p95": 2048.0,
+      "p99": 2048.0,
+      "max": 2048,
+      "mean": 680.0
+    },
+    "output_finish_reasons": {
+      "length": 100
+    },
+    "output_content": {
+      "rows_with_valid_content_shape": 100,
+      "final_text_present": 100,
+      "reasoning_only": 0,
+      "no_final_text": 0,
+      "length_capped": 100,
+      "final_text_codepoints": 296557,
+      "reasoning_text_codepoints": 0,
+      "population": "Durable output rows with valid choice/message shapes; length_capped means any choice ended with length",
+      "quality_evaluated": false,
+      "durable_completion_distinct_from_final_answer": true
+    },
+    "gpu_observation": {
+      "samples": 745,
+      "measurement_seconds_including_validation": 819.9691366979969,
+      "engine_maxima": {
+        "vllm:kv_cache_usage_perc": 0.3126834699868408,
+        "vllm:num_requests_waiting": 3.0,
+        "vllm:gpu_cache_usage_perc": 0.3126834699868408,
+        "vllm:num_requests_running": 8.0
+      },
+      "physical_device_utilization": {
+        "0": {
+          "samples": 745,
+          "p50": 98.0,
+          "p95": 99.0,
+          "p99": 100.0,
+          "max": 100.0,
+          "mean": 95.515436
+        },
+        "1": {
+          "samples": 745,
+          "p50": 37.0,
+          "p95": 91.0,
+          "p99": 100.0,
+          "max": 100.0,
+          "mean": 46.285906
+        },
+        "2": {
+          "samples": 745,
+          "p50": 56.0,
+          "p95": 94.0,
+          "p99": 100.0,
+          "max": 100.0,
+          "mean": 57.689933
+        },
+        "3": {
+          "samples": 745,
+          "p50": 78.0,
+          "p95": 94.0,
+          "p99": 100.0,
+          "max": 100.0,
+          "mean": 71.547651
+        }
+      }
+    },
+    "cost": {
+      "assumed_whole_pod_usd_per_hour": 16.1,
+      "basis": "operator supplied whole-Pod allocation scenario; not current invoice or marginal inference cost",
+      "run_allocation_usd": 3.6207817453888897,
+      "usd_per_million_durable_completions": 36207.81745388889
+    }
+  },
+  "natural20_summaries": {
+    "run_id": "bench-bcd3d13f3fe8",
+    "measurement_started_at": "2026-10-24T02:24:07.153550+00:00",
+    "terminal_observation_ended_at": "2026-10-24T02:27:26.430104+00:00",
+    "elapsed_seconds": 199.276531,
+    "completed": 20,
+    "failed": 0,
+    "cancelled": 0,
+    "completed_tasks_per_second": 0.100363,
+    "observed_prompt_tokens": 109056,
+    "observed_completion_tokens": 6728,
+    "observed_prompt_tokens_per_second": 547.259626874978,
+    "observed_completion_tokens_per_second": 33.76212926950239,
+    "task_completion_seconds": {
+      "samples": 20,
+      "p50": 23.61071,
+      "p95": 125.397426,
+      "p99": 178.249579,
+      "max": 191.462617,
+      "mean": 41.289738
+    },
+    "task_first_queue_seconds": {
+      "samples": 20,
+      "p50": 8.11119,
+      "p95": 24.163908,
+      "p99": 27.734277,
+      "max": 28.626869,
+      "mean": 10.297403
+    },
+    "by_class": {
+      "decode_heavy": {
+        "tasks": 10,
+        "completion_seconds": {
+          "samples": 10,
+          "p50": 37.65939,
+          "p95": 160.168579,
+          "p99": 185.203809,
+          "max": 191.462617,
+          "mean": 55.640873
+        },
+        "prompt_tokens": 14336,
+        "completion_tokens": 4925
+      },
+      "prefill_heavy": {
+        "tasks": 9,
+        "completion_seconds": {
+          "samples": 9,
+          "p50": 17.052945,
+          "p95": 62.42631,
+          "p99": 63.619772,
+          "max": 63.918138,
+          "mean": 24.157028
+        },
+        "prompt_tokens": 78336,
+        "completion_tokens": 1536
+      },
+      "balanced": {
+        "tasks": 1,
+        "completion_seconds": {
+          "samples": 1,
+          "p50": 51.972781,
+          "p95": 51.972781,
+          "p99": 51.972781,
+          "max": 51.972781,
+          "mean": 51.972781
+        },
+        "prompt_tokens": 16384,
+        "completion_tokens": 267
+      }
+    },
+    "prompt_tokens_per_task": {
+      "samples": 20,
+      "p50": 2048.0,
+      "p95": 16384.0,
+      "p99": 16384.0,
+      "max": 16384,
+      "mean": 5452.8
+    },
+    "completion_tokens_per_task": {
+      "samples": 20,
+      "p50": 128.0,
+      "p95": 1216.75,
+      "p99": 1881.75,
+      "max": 2048,
+      "mean": 336.4
+    },
+    "output_finish_reasons": {
+      "stop": 7,
+      "length": 13
+    },
+    "output_content": {
+      "rows_with_valid_content_shape": 20,
+      "final_text_present": 20,
+      "reasoning_only": 0,
+      "no_final_text": 0,
+      "length_capped": 13,
+      "final_text_codepoints": 31135,
+      "reasoning_text_codepoints": 0,
+      "population": "Durable output rows with valid choice/message shapes; length_capped means any choice ended with length",
+      "quality_evaluated": false,
+      "durable_completion_distinct_from_final_answer": true
+    },
+    "gpu_observation": {
+      "samples": 182,
+      "measurement_seconds_including_validation": 199.72071860800497,
+      "engine_maxima": {
+        "vllm:gpu_cache_usage_perc": 0.17937038161757268,
+        "vllm:kv_cache_usage_perc": 0.17937038161757268,
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 3.0
+      },
+      "physical_device_utilization": {
+        "0": {
+          "samples": 182,
+          "p50": 97.0,
+          "p95": 99.0,
+          "p99": 100.0,
+          "max": 100.0,
+          "mean": 90.862637
+        },
+        "1": {
+          "samples": 182,
+          "p50": 30.0,
+          "p95": 97.95,
+          "p99": 99.0,
+          "max": 100.0,
+          "mean": 39.307692
+        },
+        "2": {
+          "samples": 182,
+          "p50": 54.0,
+          "p95": 98.8,
+          "p99": 100.0,
+          "max": 100.0,
+          "mean": 55.131868
+        },
+        "3": {
+          "samples": 182,
+          "p50": 68.0,
+          "p95": 89.95,
+          "p99": 100.0,
+          "max": 100.0,
+          "mean": 59.181319
+        }
+      }
+    },
+    "cost": {
+      "assumed_whole_pod_usd_per_hour": 16.1,
+      "basis": "operator supplied whole-Pod allocation scenario; not current invoice or marginal inference cost",
+      "run_allocation_usd": 0.8912089303055557,
+      "usd_per_million_durable_completions": 44560.446515277785
+    }
+  },
+  "phase_histograms": {
+    "fixed100": {
+      "before_at": "2026-10-24T02:10:25.730558+00:00",
+      "after_at": "2026-10-24T02:24:06.018246+00:00",
+      "histograms": {
+        "vllm:e2e_request_latency_seconds": {
+          "count": 100.0,
+          "sum_seconds": 5667.352369070053,
+          "mean_seconds": 56.673523690700534,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 15.0,
+            "0.95": 240.0,
+            "0.99": 240.0
+          },
+          "delta_buckets": {
+            "0.3": 0.0,
+            "0.5": 0.0,
+            "0.8": 0.0,
+            "1.0": 0.0,
+            "1.5": 0.0,
+            "2.0": 0.0,
+            "2.5": 0.0,
+            "5.0": 21.0,
+            "10.0": 25.0,
+            "15.0": 50.0,
+            "20.0": 50.0,
+            "30.0": 50.0,
+            "40.0": 50.0,
+            "50.0": 75.0,
+            "60.0": 75.0,
+            "120.0": 75.0,
+            "240.0": 100.0,
+            "480.0": 100.0,
+            "960.0": 100.0,
+            "1920.0": 100.0,
+            "7680.0": 100.0,
+            "inf": 100.0
+          }
+        },
+        "vllm:request_decode_time_seconds": {
+          "count": 100.0,
+          "sum_seconds": 5612.3523172149435,
+          "mean_seconds": 56.12352317214943,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 15.0,
+            "0.95": 240.0,
+            "0.99": 240.0
+          },
+          "delta_buckets": {
+            "0.3": 0.0,
+            "0.5": 0.0,
+            "0.8": 0.0,
+            "1.0": 0.0,
+            "1.5": 0.0,
+            "2.0": 0.0,
+            "2.5": 0.0,
+            "5.0": 25.0,
+            "10.0": 25.0,
+            "15.0": 50.0,
+            "20.0": 50.0,
+            "30.0": 50.0,
+            "40.0": 50.0,
+            "50.0": 75.0,
+            "60.0": 75.0,
+            "120.0": 75.0,
+            "240.0": 100.0,
+            "480.0": 100.0,
+            "960.0": 100.0,
+            "1920.0": 100.0,
+            "7680.0": 100.0,
+            "inf": 100.0
+          }
+        },
+        "vllm:request_inference_time_seconds": {
+          "count": 100.0,
+          "sum_seconds": 5650.19506134087,
+          "mean_seconds": 56.501950613408695,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 15.0,
+            "0.95": 240.0,
+            "0.99": 240.0
+          },
+          "delta_buckets": {
+            "0.3": 0.0,
+            "0.5": 0.0,
+            "0.8": 0.0,
+            "1.0": 0.0,
+            "1.5": 0.0,
+            "2.0": 0.0,
+            "2.5": 0.0,
+            "5.0": 25.0,
+            "10.0": 25.0,
+            "15.0": 50.0,
+            "20.0": 50.0,
+            "30.0": 50.0,
+            "40.0": 50.0,
+            "50.0": 75.0,
+            "60.0": 75.0,
+            "120.0": 75.0,
+            "240.0": 100.0,
+            "480.0": 100.0,
+            "960.0": 100.0,
+            "1920.0": 100.0,
+            "7680.0": 100.0,
+            "inf": 100.0
+          }
+        },
+        "vllm:request_prefill_time_seconds": {
+          "count": 100.0,
+          "sum_seconds": 37.8427441259264,
+          "mean_seconds": 0.37842744125926403,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 0.3,
+            "0.95": 1.0,
+            "0.99": 1.5
+          },
+          "delta_buckets": {
+            "0.3": 59.0,
+            "0.5": 71.0,
+            "0.8": 80.0,
+            "1.0": 95.0,
+            "1.5": 100.0,
+            "2.0": 100.0,
+            "2.5": 100.0,
+            "5.0": 100.0,
+            "10.0": 100.0,
+            "15.0": 100.0,
+            "20.0": 100.0,
+            "30.0": 100.0,
+            "40.0": 100.0,
+            "50.0": 100.0,
+            "60.0": 100.0,
+            "120.0": 100.0,
+            "240.0": 100.0,
+            "480.0": 100.0,
+            "960.0": 100.0,
+            "1920.0": 100.0,
+            "7680.0": 100.0,
+            "inf": 100.0
+          }
+        },
+        "vllm:request_queue_time_seconds": {
+          "count": 100.0,
+          "sum_seconds": 12.435953158186749,
+          "mean_seconds": 0.12435953158186748,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 0.3,
+            "0.95": 1.0,
+            "0.99": 1.5
+          },
+          "delta_buckets": {
+            "0.3": 86.0,
+            "0.5": 89.0,
+            "0.8": 93.0,
+            "1.0": 96.0,
+            "1.5": 100.0,
+            "2.0": 100.0,
+            "2.5": 100.0,
+            "5.0": 100.0,
+            "10.0": 100.0,
+            "15.0": 100.0,
+            "20.0": 100.0,
+            "30.0": 100.0,
+            "40.0": 100.0,
+            "50.0": 100.0,
+            "60.0": 100.0,
+            "120.0": 100.0,
+            "240.0": 100.0,
+            "480.0": 100.0,
+            "960.0": 100.0,
+            "1920.0": 100.0,
+            "7680.0": 100.0,
+            "inf": 100.0
+          }
+        },
+        "vllm:time_per_output_token_seconds": {
+          "count": 67900.0,
+          "sum_seconds": 5612.3523172149435,
+          "mean_seconds": 0.08265614605618474,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 0.1,
+            "0.95": 0.1,
+            "0.99": 0.2
+          },
+          "delta_buckets": {
+            "0.01": 0.0,
+            "0.025": 0.0,
+            "0.05": 0.0,
+            "0.075": 5.0,
+            "0.1": 66978.0,
+            "0.15": 67142.0,
+            "0.2": 67234.0,
+            "0.3": 67900.0,
+            "0.4": 67900.0,
+            "0.5": 67900.0,
+            "0.75": 67900.0,
+            "1.0": 67900.0,
+            "2.5": 67900.0,
+            "5.0": 67900.0,
+            "7.5": 67900.0,
+            "10.0": 67900.0,
+            "20.0": 67900.0,
+            "40.0": 67900.0,
+            "80.0": 67900.0,
+            "inf": 67900.0
+          }
+        },
+        "vllm:time_to_first_token_seconds": {
+          "count": 100.0,
+          "sum_seconds": 54.98717713356018,
+          "mean_seconds": 0.5498717713356018,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 0.5,
+            "0.95": 2.5,
+            "0.99": 2.5
+          },
+          "delta_buckets": {
+            "0.001": 0.0,
+            "0.005": 0.0,
+            "0.01": 0.0,
+            "0.02": 0.0,
+            "0.04": 0.0,
+            "0.06": 0.0,
+            "0.08": 0.0,
+            "0.1": 5.0,
+            "0.25": 48.0,
+            "0.5": 52.0,
+            "0.75": 73.0,
+            "1.0": 76.0,
+            "2.5": 100.0,
+            "5.0": 100.0,
+            "7.5": 100.0,
+            "10.0": 100.0,
+            "20.0": 100.0,
+            "40.0": 100.0,
+            "80.0": 100.0,
+            "160.0": 100.0,
+            "640.0": 100.0,
+            "2560.0": 100.0,
+            "inf": 100.0
+          }
+        }
+      },
+      "percentile_method": "first cumulative bucket whose delta count >= quantile*delta_count; bucket upper bounds, not interpolated exact percentiles",
+      "limitations": [
+        "Prefill/decode means are engine wall-time stages under continuous batching, not CUDA kernel time.",
+        "Snapshot interval brackets workload submission and output validation. Exact expectedrequest observations and unchanged engine identity are required."
+      ]
+    },
+    "natural20": {
+      "before_at": "2026-10-24T02:24:06.893530+00:00",
+      "after_at": "2026-10-24T02:27:27.013272+00:00",
+      "histograms": {
+        "vllm:e2e_request_latency_seconds": {
+          "count": 20.0,
+          "sum_seconds": 604.5784432888031,
+          "mean_seconds": 30.228922164440156,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 15.0,
+            "0.95": 120.0,
+            "0.99": 240.0
+          },
+          "delta_buckets": {
+            "0.3": 0.0,
+            "0.5": 0.0,
+            "0.8": 0.0,
+            "1.0": 0.0,
+            "1.5": 0.0,
+            "2.0": 0.0,
+            "2.5": 0.0,
+            "5.0": 5.0,
+            "10.0": 6.0,
+            "15.0": 12.0,
+            "20.0": 12.0,
+            "30.0": 13.0,
+            "40.0": 15.0,
+            "50.0": 18.0,
+            "60.0": 18.0,
+            "120.0": 19.0,
+            "240.0": 20.0,
+            "480.0": 20.0,
+            "960.0": 20.0,
+            "1920.0": 20.0,
+            "7680.0": 20.0,
+            "inf": 20.0
+          }
+        },
+        "vllm:request_decode_time_seconds": {
+          "count": 20.0,
+          "sum_seconds": 587.1758117742138,
+          "mean_seconds": 29.35879058871069,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 15.0,
+            "0.95": 120.0,
+            "0.99": 240.0
+          },
+          "delta_buckets": {
+            "0.3": 0.0,
+            "0.5": 0.0,
+            "0.8": 0.0,
+            "1.0": 0.0,
+            "1.5": 0.0,
+            "2.0": 0.0,
+            "2.5": 0.0,
+            "5.0": 5.0,
+            "10.0": 8.0,
+            "15.0": 12.0,
+            "20.0": 12.0,
+            "30.0": 13.0,
+            "40.0": 15.0,
+            "50.0": 18.0,
+            "60.0": 18.0,
+            "120.0": 19.0,
+            "240.0": 20.0,
+            "480.0": 20.0,
+            "960.0": 20.0,
+            "1920.0": 20.0,
+            "7680.0": 20.0,
+            "inf": 20.0
+          }
+        },
+        "vllm:request_inference_time_seconds": {
+          "count": 20.0,
+          "sum_seconds": 595.5735559231834,
+          "mean_seconds": 29.778677796159172,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 15.0,
+            "0.95": 120.0,
+            "0.99": 240.0
+          },
+          "delta_buckets": {
+            "0.3": 0.0,
+            "0.5": 0.0,
+            "0.8": 0.0,
+            "1.0": 0.0,
+            "1.5": 0.0,
+            "2.0": 0.0,
+            "2.5": 0.0,
+            "5.0": 5.0,
+            "10.0": 6.0,
+            "15.0": 12.0,
+            "20.0": 12.0,
+            "30.0": 13.0,
+            "40.0": 15.0,
+            "50.0": 18.0,
+            "60.0": 18.0,
+            "120.0": 19.0,
+            "240.0": 20.0,
+            "480.0": 20.0,
+            "960.0": 20.0,
+            "1920.0": 20.0,
+            "7680.0": 20.0,
+            "inf": 20.0
+          }
+        },
+        "vllm:request_prefill_time_seconds": {
+          "count": 20.0,
+          "sum_seconds": 8.39774414896965,
+          "mean_seconds": 0.4198872074484825,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 0.3,
+            "0.95": 1.5,
+            "0.99": 1.5
+          },
+          "delta_buckets": {
+            "0.3": 11.0,
+            "0.5": 13.0,
+            "0.8": 16.0,
+            "1.0": 18.0,
+            "1.5": 20.0,
+            "2.0": 20.0,
+            "2.5": 20.0,
+            "5.0": 20.0,
+            "10.0": 20.0,
+            "15.0": 20.0,
+            "20.0": 20.0,
+            "30.0": 20.0,
+            "40.0": 20.0,
+            "50.0": 20.0,
+            "60.0": 20.0,
+            "120.0": 20.0,
+            "240.0": 20.0,
+            "480.0": 20.0,
+            "960.0": 20.0,
+            "1920.0": 20.0,
+            "7680.0": 20.0,
+            "inf": 20.0
+          }
+        },
+        "vllm:request_queue_time_seconds": {
+          "count": 20.0,
+          "sum_seconds": 8.073208454879932,
+          "mean_seconds": 0.4036604227439966,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 0.3,
+            "0.95": 1.5,
+            "0.99": 1.5
+          },
+          "delta_buckets": {
+            "0.3": 11.0,
+            "0.5": 13.0,
+            "0.8": 13.0,
+            "1.0": 17.0,
+            "1.5": 20.0,
+            "2.0": 20.0,
+            "2.5": 20.0,
+            "5.0": 20.0,
+            "10.0": 20.0,
+            "15.0": 20.0,
+            "20.0": 20.0,
+            "30.0": 20.0,
+            "40.0": 20.0,
+            "50.0": 20.0,
+            "60.0": 20.0,
+            "120.0": 20.0,
+            "240.0": 20.0,
+            "480.0": 20.0,
+            "960.0": 20.0,
+            "1920.0": 20.0,
+            "7680.0": 20.0,
+            "inf": 20.0
+          }
+        },
+        "vllm:time_per_output_token_seconds": {
+          "count": 6708.0,
+          "sum_seconds": 587.1758117742138,
+          "mean_seconds": 0.08753366305518989,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 0.1,
+            "0.95": 0.15,
+            "0.99": 0.3
+          },
+          "delta_buckets": {
+            "0.01": 0.0,
+            "0.025": 0.0,
+            "0.05": 0.0,
+            "0.075": 3.0,
+            "0.1": 6245.0,
+            "0.15": 6520.0,
+            "0.2": 6598.0,
+            "0.3": 6708.0,
+            "0.4": 6708.0,
+            "0.5": 6708.0,
+            "0.75": 6708.0,
+            "1.0": 6708.0,
+            "2.5": 6708.0,
+            "5.0": 6708.0,
+            "7.5": 6708.0,
+            "10.0": 6708.0,
+            "20.0": 6708.0,
+            "40.0": 6708.0,
+            "80.0": 6708.0,
+            "inf": 6708.0
+          }
+        },
+        "vllm:time_to_first_token_seconds": {
+          "count": 20.0,
+          "sum_seconds": 17.40163016319275,
+          "mean_seconds": 0.8700815081596375,
+          "percentile_bucket_upper_seconds": {
+            "0.5": 2.5,
+            "0.95": 2.5,
+            "0.99": 2.5
+          },
+          "delta_buckets": {
+            "0.001": 0.0,
+            "0.005": 0.0,
+            "0.01": 0.0,
+            "0.02": 0.0,
+            "0.04": 0.0,
+            "0.06": 0.0,
+            "0.08": 0.0,
+            "0.1": 1.0,
+            "0.25": 4.0,
+            "0.5": 5.0,
+            "0.75": 9.0,
+            "1.0": 9.0,
+            "2.5": 20.0,
+            "5.0": 20.0,
+            "7.5": 20.0,
+            "10.0": 20.0,
+            "20.0": 20.0,
+            "40.0": 20.0,
+            "80.0": 20.0,
+            "160.0": 20.0,
+            "640.0": 20.0,
+            "2560.0": 20.0,
+            "inf": 20.0
+          }
+        }
+      },
+      "percentile_method": "first cumulative bucket whose delta count >= quantile*delta_count; bucket upper bounds, not interpolated exact percentiles",
+      "limitations": [
+        "Prefill/decode means are engine wall-time stages under continuous batching, not CUDA kernel time.",
+        "Snapshot interval brackets workload submission and output validation. Exact expectedrequest observations and unchanged engine identity are required."
+      ]
+    }
+  },
+  "all_service_identities_environments_and_manifest_unchanged": true,
+  "final_controller_completed_at": "2026-10-24T02:27:27.144179+00:00",
+  "global_active_tasks_at_release": 0,
+  "natural_generation_mode": "noaddedmin_tokens/noaddedignore_eos; requestedcapsstillapply",
+  "natural20_quality_statement": "20/20finaltextpresent;13lengthcapped/7stop; NOgoldreference,EM,semanticanswercorrectnessorhumanqualityscore",
+  "limitations": [
+    "Onefinite100taskburst andone20summarycohort; noindependentrepeatsorproductiondailySLA.",
+    "Fixed100 forcesmin_tokens equaloutputcap; capacitywork, notnaturalanswerquality.",
+    "Natural20promptsaredocument summarieswithoutgold; finaltextpresence andcapcountsareNOTanswercorrectness.",
+    "nvidia-smi physicaldeviceutilization includesbusywait/otherpossibleprocesses; notexclusive modelSMcompute/FLOPS orkernelattribution.",
+    "Enginephasepercentiles are histogramupperbucketbounds; enginewalltimemeans underbatching are notCUDAkernel timings.",
+    "WholePod16.10USD/hour is allocationassumption, notinvoice or marginalcost; excludes preparation/idle/modeldownload,Neon/S3/egresscost.",
+    "120Bsourceffe741... and235Bsource52f84a... aredifferenttokenizer-specificbytes; targettokenlengthshape isaligned. Comparing120MXFP4seq64/.85 to235FP8seq8/.90 ispracticalconfiguration comparison, notisolatedarchitectureorpolicycausality."
+  ],
+  "evidence": [
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-fixed100-2026-10-24.json",
+      "sha256": "9a4862be0532e905632332648b5f82f4a4bfc8c959d16d379e3c85df4774d95b"
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-fixed100-observations-2026-10-24.json",
+      "sha256": "51b5c5e9fef40d210ffe4d156dac002670e41d10d05f44308b5f2100c2339cb0"
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-fixed100-phase-before-2026-10-24.json",
+      "sha256": "9b5a28ddab29e363b96efc10da6526eabed3b1df857264ae9314b0a0ccb6391d"
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-fixed100-phase-after-2026-10-24.json",
+      "sha256": "e8f6831c8e8feafa923876df1849ba83c231e9f038bce40aae110fd4bcbc7d12"
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-fixed100-phases-2026-10-24.json",
+      "sha256": "6f3e85e2d3191a87fe1ca2c1aede0981cc6e38c8d8693ae6caa590a432623382"
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-natural20-2026-10-24.json",
+      "sha256": "f7ef526e8698c7588fc98f81025c880df2c57f24eedb1ea6f4b1382690cb524d"
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-natural20-observations-2026-10-24.json",
+      "sha256": "2ef364ef3c6de94fb9b46dccc2b2939dca035397fc735522caa343c6140df69b"
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-natural20-phase-before-2026-10-24.json",
+      "sha256": "c3b2a2ee311494331b291f5e3f004e09186aa5ed35ef269636270286508dd847"
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-natural20-phase-after-2026-10-24.json",
+      "sha256": "40c7616ec05df140570e08b9547451b6468827208612a3c33d6ae2af7afe2c5a"
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-natural20-phases-2026-10-24.json",
+      "sha256": "86b80b05bef11b402e5841096c33ee7cb11a3bffd52e1068d288a1637028f790"
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-platform-cohorts-2026-10-24.json",
+      "sha256": "a59b85c6f57204222a3399ac21a8f4ea522a4a2f55ea8a93f10506d40a1397e0"
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-seq8-platform-controller-source-2026-10-24.py.txt",
+      "sha256": "545fe3b20f0c124a0b6f674b9d50bc93929cafbe7beeb0cd55ef0b84461cc314"
+    }
+  ]
+}

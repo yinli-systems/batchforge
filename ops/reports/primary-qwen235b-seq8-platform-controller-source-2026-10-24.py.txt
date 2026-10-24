@@ -1,0 +1,128 @@
+"""Once-only Qwen235B durable fixed100 then natural20; never changes services."""
+from pathlib import Path
+import argparse,datetime,fcntl,hashlib,json,math,os,subprocess,sys,time,urllib.request
+ROOT=Path('/root/batchforge-runtime/app');os.chdir(ROOT);sys.path.insert(0,str(ROOT))
+from ops.manage import process_identity,owned_record
+from ops.supervise import private_write,private_read,load_manifest
+from ops.ha.retune_full_gpu import file_env
+from prometheus_client.parser import text_string_to_metric_families
+import psycopg
+MODEL='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+SOURCE_SHA='52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f'
+HISTOGRAMS={'vllm:request_prefill_time_seconds','vllm:request_decode_time_seconds','vllm:time_to_first_token_seconds','vllm:time_per_output_token_seconds','vllm:e2e_request_latency_seconds','vllm:request_queue_time_seconds','vllm:request_inference_time_seconds'}
+def stamp():return datetime.datetime.now(datetime.timezone.utc).isoformat()
+def drained(env):
+ with psycopg.connect(env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=5000') as c:
+  if c.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]:raise RuntimeError('not_drained')
+def guard_state(services):
+ result={}
+ for s in services+[{'role':'supervisor','name':'primary'}]:
+  key=s['role']+'-'+s['name'];r=owned_record(ROOT/'.runtime'/(key+'.json'))
+  if not r:raise RuntimeError('owned_service_missing_'+key)
+  entry={'identity':{k:r[k] for k in ('pid','start_ticks','cwd')}}
+  if s.get('env_file'):entry['environment_sha256']=hashlib.sha256(private_read(Path(s['env_file']))).hexdigest()
+  result[key]=entry
+ return result
+
+def metrics():
+ opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+ with opener.open('http://127.0.0.1:8300/metrics',timeout=10) as response:
+  raw=response.read(16*1024*1024+1)
+ if len(raw)>16*1024*1024:raise RuntimeError('metric_response_too_large')
+ selected=[]
+ for family in text_string_to_metric_families(raw.decode()):
+  if family.name not in HISTOGRAMS:continue
+  for sample in family.samples:
+   if sample.name not in {family.name+'_sum',family.name+'_count',family.name+'_bucket'}:continue
+   if not math.isfinite(sample.value):raise RuntimeError('nonfinite_metric')
+   if set(sample.labels)-{'model_name','le','engine'}:raise RuntimeError('unexpected_metric_labels')
+   if sample.labels.get('engine')!='0' or sample.labels.get('model_name')!=MODEL:raise RuntimeError('unexpected_metric_scope')
+   selected.append({'name':sample.name,'labels':sample.labels,'value':sample.value})
+ if {s['name'].removesuffix('_count') for s in selected if s['name'].endswith('_count')}!=HISTOGRAMS:raise RuntimeError('missing_histogram')
+ return {'at':stamp(),'series':selected,'scope':'engine cumulative wall-time histograms; no CUDA kernel attribution'}
+def phase_delta(before,after,expected):
+ def key(s):return (s['name'],tuple(sorted(s['labels'].items())))
+ b={key(s):s['value'] for s in before['series']};a={key(s):s['value'] for s in after['series']}
+ if set(a)!=set(b):raise RuntimeError('histogram_series_changed')
+ d={k:a[k]-b[k] for k in a}
+ if any(v < -1e-9 for v in d.values()):raise RuntimeError('histogram_counter_reset')
+ out={}
+ for family in sorted(HISTOGRAMS):
+  count=sum(v for (name,_),v in d.items() if name==family+'_count');total=sum(v for (name,_),v in d.items() if name==family+'_sum')
+  buckets={}
+  for (name,labels),value in d.items():
+   if name==family+'_bucket':
+    le=float(dict(labels)['le']);buckets[le]=buckets.get(le,0)+value
+  quantiles={}
+  for q in (.5,.95,.99):
+   eligible=[le for le,c in sorted(buckets.items()) if c>=count*q]
+   upper=eligible[0] if eligible and count>0 else None
+   quantiles[str(q)]=upper if upper is not None and math.isfinite(upper) else '+Inf' if upper is not None else None
+  out[family]={'count':count,'sum_seconds':total,'mean_seconds':total/count if count else None,'percentile_bucket_upper_seconds':quantiles,'delta_buckets':{str(k):v for k,v in sorted(buckets.items())}}
+ # Per-output-token observations are not per-request counts.
+ for family in HISTOGRAMS-{'vllm:time_per_output_token_seconds'}:
+  if out[family]['count']!=expected:raise RuntimeError('request_histogram_count_mismatch_'+family)
+ return {'before_at':before['at'],'after_at':after['at'],'histograms':out,'percentile_method':'first cumulative bucket whose delta count >= quantile*delta_count; bucket upper bounds, not interpolated exact percentiles','limitations':['Prefill/decode means are engine wall-time stages under continuous batching, not CUDA kernel time.','Snapshot interval brackets workload submission and output validation. Exact expectedrequest observations and unchanged engine identity are required.']}
+
+def main():
+ p=argparse.ArgumentParser();p.add_argument('--execute',action='store_true');a=p.parse_args()
+ run=ROOT/'.runtime/scheduler-qwen235b-v1';run.mkdir(exist_ok=True,mode=0o700)
+ source=ROOT/'.runtime/qwen235b-v1/workload-20.jsonl'
+ if hashlib.sha256(source.read_bytes()).hexdigest()!=SOURCE_SHA:raise RuntimeError('source_hash_mismatch')
+ if not a.execute:
+  sample=metrics();print(json.dumps({'state':'prepared_no_submission','source_sha256':SOURCE_SHA,'metric_series':len(sample['series']),'cohorts':[100,20]}));return
+ journal=run/'platform-cohorts-v1-journal.json'
+ lock=(run/'platform-cohorts-v1.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+ if journal.exists():raise RuntimeError('existing_job_no_resubmit')
+ env_path=ROOT/'.runtime/scheduler-v6/benchmark.env';env=file_env(env_path);drained(env)
+ manifest,services,_=load_manifest(ROOT/'.runtime/services-primary.json')
+ engines=[s for s in services if s['role']=='engine'];workers=[s for s in services if s['role']=='worker']
+ if len(engines)!=1 or len(workers)!=1 or engines[0]['name']!='qwen235b' or workers[0]['name']!='qwen235b':raise RuntimeError('requires_one_qwen235b_engine_worker')
+ engine=file_env(Path(engines[0]['env_file']));worker=file_env(Path(workers[0]['env_file']))
+ if engine.get('MODEL_NAME')!=MODEL or engine.get('ENGINE_MAX_NUM_SEQS')!='8' or engine.get('ENGINE_MAX_MODEL_LEN')!='18440' or engine.get('ENGINE_MAX_NUM_BATCHED_TOKENS')!='4096' or float(engine.get('ENGINE_GPU_MEMORY_UTILIZATION','0'))!=.90:raise RuntimeError('engine_configuration_mismatch')
+ if worker.get('MODEL_NAME')!=MODEL or worker.get('WORKER_MAX_INFLIGHT')!='8' or worker.get('WORKER_TOKEN_BUDGET')!='147520':raise RuntimeError('worker_configuration_mismatch')
+ profile=json.loads(worker['SCHEDULER_PROFILE_JSON'])
+ if not profile.get('runtime_fingerprint'):raise RuntimeError('missing_calibrated_profile')
+ for s in services:
+  if s['role']=='api':
+   values=file_env(Path(s['env_file']))
+   if values.get('SCHEDULER_POLICY')!='cost_aware' or values.get('RESULT_READERS_ENABLED','').lower()!='true' or values.get('RESULT_ARCHIVE_ENABLED','').lower()!='false':raise RuntimeError('api_policy_reader_archive_gate')
+ before=guard_state(services);manifest_sha=hashlib.sha256(private_read(manifest)).hexdigest()
+ doc={'job_id':'qwen235b-platform-cohorts-v1','phase':'starting','started_at':stamp(),'controller_identity':process_identity(os.getpid()),'controller_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'source_sha256':SOURCE_SHA,'harness_sha256':hashlib.sha256((ROOT/'scripts/scheduler_benchmark.py').read_bytes()).hexdigest(),'identities_before':before,'manifest_sha256':manifest_sha,'jobs':[],'storage_scope':'archivepublisherOFF; no otherworkloads permitted duringcohorts','runtime_profile':{k:profile.get(k) for k in ('profile_id','runtime_fingerprint','prefill_tokens_per_second','decode_tokens_per_second','hourly_cost_usd','calibration_label','cost_source')},'actual_engine':{k:engine.get(k) for k in ('MODEL_NAME','ENGINE_MODEL_PATH','ENGINE_REVISION','ENGINE_GPU_MEMORY_UTILIZATION','ENGINE_MAX_MODEL_LEN','ENGINE_MAX_NUM_SEQS','ENGINE_MAX_NUM_BATCHED_TOKENS','ENGINE_ENABLE_PREFIX_CACHING','ENGINE_ENABLE_CHUNKED_PREFILL','ENGINE_ENFORCE_EAGER','ENGINE_DTYPE','ENGINE_TENSOR_PARALLEL_SIZE')}}
+ private_write(journal,doc)
+ try:
+  for count,repeats,batches,fixed,label in [(100,5,5,True,'qwen235b-cost-fixed100-v1'),(20,1,1,False,'qwen235b-cost-natural20-v1')]:
+   drained(env)
+   if guard_state(services)!=before or hashlib.sha256(private_read(manifest)).hexdigest()!=manifest_sha:raise RuntimeError('protected_service_changed')
+   report=run/(label+'.json')
+   if report.exists() or (run/(label+'-input.jsonl')).exists():raise RuntimeError('existing_cohort_no_resubmit')
+   pre=metrics();private_write(run/(label+'-phase-before.json'),pre)
+   item={'label':label,'state':'launching','intent_at':stamp(),'expected_tasks':count,'repeats':repeats,'batches':batches,'fixed_output':fixed};doc['jobs'].append(item);private_write(journal,doc)
+   cmd=[sys.executable,'-m','scripts.scheduler_benchmark','--env-file',str(env_path),'--workload',str(source),'--report',str(report),'--label',label,'--repeats',str(repeats),'--batches',str(batches),'--hourly-cost','16.1']+(['--fixed-output'] if fixed else [])
+   fd=os.open(run/(label+'.log'),os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+   with os.fdopen(fd,'ab') as out:child=subprocess.Popen(cmd,cwd=ROOT,stdin=subprocess.DEVNULL,stdout=out,stderr=subprocess.STDOUT,start_new_session=True)
+   identity=None
+   for _ in range(100):
+    identity=process_identity(child.pid)
+    if identity or child.poll() is not None:break
+    time.sleep(.01)
+   item.update(state='running',identity=identity);doc['phase']=label;private_write(journal,doc)
+   code=child.wait();item.update(state='validating',exit_code=code,terminal_at=stamp());private_write(journal,doc)
+   post=metrics();private_write(run/(label+'-phase-after.json'),post)
+   if code:raise RuntimeError('benchmark_child_failed')
+   d=json.loads(private_read(report,limit=16*1024*1024));tasks=d.get('tasks',[])
+   checks={'passed':d.get('passed')is True,'count':d.get('completed')==count,'failed0':d.get('failed')==0,'accepted_once':d.get('accepted_exactly_once')is True,'prompt_total':d.get('observed_prompt_tokens')==109056*repeats,'single_attempt':len(tasks)==count and all(t.get('attempts')==1 for t in tasks),'policy':d.get('observed_policies')==['cost_aware'],'within_output_caps':len(tasks)==count and all(0<t.get('completion_tokens',0)<=t.get('output_cap',0) for t in tasks)}
+   if fixed:checks.update(exact_outputs=d.get('all_output_lengths_exact')is True,output_total=d.get('observed_completion_tokens')==13600*repeats)
+   item.update(run_id=d.get('run_id'),validation=checks);private_write(journal,doc)
+   if not all(checks.values()):raise RuntimeError('benchmark_validation_failed')
+   drained(env)
+   if guard_state(services)!=before or hashlib.sha256(private_read(manifest)).hexdigest()!=manifest_sha:raise RuntimeError('protected_service_changed')
+   private_write(run/(label+'-phases.json'),phase_delta(pre,post,count))
+   item.update(state='complete',report_sha256=hashlib.sha256(report.read_bytes()).hexdigest());private_write(journal,doc)
+  doc.update(phase='complete',finished_at=stamp(),identities_after=guard_state(services),all_service_identities_environments_unchanged=True);private_write(journal,doc)
+ except BaseException as error:
+  doc.update(phase='failed_or_uncertain',error_type=type(error).__name__,error_code=str(error) if type(error) is RuntimeError else None,finished_at=stamp());private_write(journal,doc);raise
+ print(json.dumps({'phase':doc['phase'],'jobs':[{'label':j['label'],'run_id':j.get('run_id')} for j in doc['jobs']]}),flush=True)
+if __name__=='__main__':
+ try:main()
+ except Exception as e:print(json.dumps({'error_type':type(e).__name__}),flush=True);raise SystemExit(1)
