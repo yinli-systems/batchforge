@@ -1,0 +1,47 @@
+{
+  "automatic_watchdog_recovery_measured": false,
+  "controlled_watchdog_paused": true,
+  "files": [
+    {
+      "bytes": 18978,
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/fault-cohorts/worker-fault100-v1/plan.json",
+      "review_copy": "ops/reports/qwen235b-worker-fault100-v1-plan-2026-10-24.json",
+      "sha256": "096ce26429d5d468e5de078a886da17ae1ad8c824b6e354141413656211cef1b"
+    },
+    {
+      "bytes": 4670,
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/fault-cohorts/worker-fault100-v1/journal.json",
+      "review_copy": "ops/reports/qwen235b-worker-fault100-v1-cohort-2026-10-24.json",
+      "sha256": "b182478825865c6551a66034f4f5631e431eb2260ac5da829bf2451832cd4b22"
+    },
+    {
+      "bytes": 278629,
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/fault-cohorts/worker-fault100-v1/benchmark-report.json",
+      "review_copy": "ops/reports/qwen235b-worker-fault100-v1-benchmark-2026-10-24.json",
+      "sha256": "95d84fcb2aa48740125c1729cd1c4023cab7d8c5100cc851b0460aa39b657b93"
+    },
+    {
+      "bytes": 333921,
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/worker-fault100-v1-probe-report.json",
+      "review_copy": "ops/reports/qwen235b-worker-fault100-v1-probe-2026-10-24.json",
+      "sha256": "3dc40eeb599889a31765a345f63d50342e7815f07dfda14674f646853160b388"
+    }
+  ],
+  "guarded_original_source_plan": true,
+  "operation": "worker-fault100-v1",
+  "operator_source_sha256": "35b8b852d4093ebcaf7fa4342d4fc3d13badc3c53bea89303f401d3a2495c655",
+  "prepared_at": "2026-10-24T10:07:38.172925+00:00",
+  "proof_crosslinks_verified": true,
+  "run_id": "bench-dbaa003d3251",
+  "runtime_fingerprint": "sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3",
+  "safe_transport_scope": "Four exact JSON metadata files; no raw inputs/outputs, configuration, credentials or dump. benchmark.workload.prompt is null.",
+  "same_pod_original_probe_and_journal_identical": true,
+  "single_batch_no_fault_reference_status": "NOT_EXECUTED at this record; old250.149s reference used five batches and is not a direct fault overhead control",
+  "source_bound_fixture_sha256": "52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f",
+  "status": "COMPLETE_PASS",
+  "version": 1
+}
