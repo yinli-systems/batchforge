@@ -93,6 +93,66 @@ def engine_tensor_parallel_size(args, env: dict) -> str:
     return str(size)
 
 
+def engine_execution_configuration(env: dict) -> dict:
+    """Return the validated execution descriptor for a distinct runtime profile.
+
+    Existing engines remain eager. The only opt-in alternative is the bounded
+    vLLM0.10.2 decode-graph experiment: no compiler, mixed-batch graphs, custom
+    passes or arbitrary CLI additions. The rollout controller must bind this
+    descriptor into a new worker fingerprint and remeasure post-capture KV
+    capacity before admitting work; argv validation cannot establish GPU memory
+    headroom or the installed package version.
+    """
+    eager = env.get("ENGINE_ENFORCE_EAGER", "1")
+    if eager not in ("0", "1"):
+        raise ValueError("ENGINE_ENFORCE_EAGER must be 0 or 1")
+    raw = env.get("ENGINE_COMPILATION_CONFIG")
+    if eager == "1":
+        if raw is not None:
+            raise ValueError("ENGINE_COMPILATION_CONFIG requires ENGINE_ENFORCE_EAGER=0")
+        return {"enforce_eager": True}
+    if not isinstance(raw, str) or not 1 <= len(raw) <= 4096:
+        raise ValueError("Decode graphs require an explicit bounded ENGINE_COMPILATION_CONFIG JSON object")
+
+    def unique_object(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError("Duplicate ENGINE_COMPILATION_CONFIG key")
+            value[key] = item
+        return value
+
+    try:
+        config = json.loads(raw, object_pairs_hook=unique_object)
+    except (json.JSONDecodeError, RecursionError) as error:
+        raise ValueError("Invalid ENGINE_COMPILATION_CONFIG JSON") from error
+    expected = {"level", "cudagraph_mode", "cudagraph_capture_sizes"}
+    if (not isinstance(config, dict) or set(config) != expected
+            or type(config["level"]) is not int or config["level"] != 0
+            or config["cudagraph_mode"] != "FULL_DECODE_ONLY"):
+        raise ValueError("Only level=0 and FULL_DECODE_ONLY with explicit capture sizes are supported")
+    slots = env.get("ENGINE_MAX_NUM_SEQS", "8")
+    if not isinstance(slots, str) or not re.fullmatch(r"[1-9][0-9]*", slots) or not 1 <= int(slots) <= 64:
+        raise ValueError("Decode graphs require ENGINE_MAX_NUM_SEQS between 1 and 64")
+    sizes = config["cudagraph_capture_sizes"]
+    if (not isinstance(sizes, list) or not 1 <= len(sizes) <= 64
+            or any(type(size) is not int or not 1 <= size <= int(slots) for size in sizes)
+            or sizes != sorted(set(sizes)) or sizes[0] != 1 or sizes[-1] != int(slots)):
+        raise ValueError("Capture sizes must be unique sorted integers from 1 through ENGINE_MAX_NUM_SEQS, at most 64")
+    return {"enforce_eager": False, "compilation_config": {
+        "level": 0, "cudagraph_mode": "FULL_DECODE_ONLY",
+        "cudagraph_capture_sizes": sizes,
+    }}
+
+
+def engine_execution_arguments(env: dict) -> list[str]:
+    configuration = engine_execution_configuration(env)
+    if configuration["enforce_eager"]:
+        return ["--enforce-eager"]
+    return ["--compilation-config", json.dumps(configuration["compilation_config"],
+                                               sort_keys=True, separators=(",", ":"))]
+
+
 def command(args, env: dict) -> list[str]:
     python = args.python or str(ROOT / ".venv" / "bin" / "python")
     if args.role == "api":
@@ -124,8 +184,9 @@ def command(args, env: dict) -> list[str]:
             "--tensor-parallel-size", tensor_parallel_size, "--dtype", env.get("ENGINE_DTYPE", "half"),
             "--max-model-len", env.get("ENGINE_MAX_MODEL_LEN", "2048"),
             "--max-num-seqs", env.get("ENGINE_MAX_NUM_SEQS", "8"),
-            "--gpu-memory-utilization", env.get("ENGINE_GPU_MEMORY_UTILIZATION", "0.06"),
-            "--enforce-eager", "--disable-log-requests"]
+            "--gpu-memory-utilization", env.get("ENGINE_GPU_MEMORY_UTILIZATION", "0.06")]
+    result.extend(engine_execution_arguments(env))
+    result.append("--disable-log-requests")
     if env.get("ENGINE_REVISION"):
         result.extend(["--revision", env["ENGINE_REVISION"]])
     if env.get("ENGINE_MAX_NUM_BATCHED_TOKENS"):
