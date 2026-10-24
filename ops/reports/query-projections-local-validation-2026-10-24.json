@@ -1,0 +1,51 @@
+{
+  "changes": [
+    "Inline upload RETURNING contains only public file metadata, not stored input bytes",
+    "Idempotency locking SELECT keeps body_hash/response and FOR UPDATE",
+    "Create selects id only after validated external input; inline path retains content",
+    "Overview selects only bounded readiness metadata keys consumed by worker_view"
+  ],
+  "limitations": [
+    "Result field byte counts exclude protocol/TLS/provider metering",
+    "Synthetic fixture sizes do not establish real production savings",
+    "New source has not yet been qualified on Linux/PG17 or deployed",
+    "Future schema12 overlay must apply its narrow registration change onto this store, not overwrite it with the earlier d90-based private copy"
+  ],
+  "observed_at": "2026-10-24T12:39:26.109205+00:00",
+  "prior_independent_projection_review_sha256": "0f903270fc9a7eac156ca46d2058b6bdb0d650d974dca9e768a588a233650a4b",
+  "prior_private_candidate_sha256": "caa56e57ba0a27eac11d5c3d687456abc2be0d0f4f94b918a66821d94d548945",
+  "scope": "Local canonical four SQL projection integration and durable PostgreSQL regressions. No production deployment, provider billing, WAN latency or admission root-cause claim.",
+  "source_sha256": {
+    "backend/store.py": "caa56e57ba0a27eac11d5c3d687456abc2be0d0f4f94b918a66821d94d548945",
+    "tests/test_admission_observability.py": "b3fb1f201d28a5c67eb7b9dabededa54b5912b757a21957fc0ae6b748c992938",
+    "tests/test_query_projections.py": "ae7e265f0a5a6e29cf63065c6c4ee81257b0f23db1be591c1ad86d6e8e7442b2"
+  },
+  "test_evidence": [
+    "Public worker view matches full stored metadata for valid, bool/out-of-range, array, scalar and JSON-null metadata; actual result field bytes stay bounded",
+    "Over100KB input remains byte-identical in storage while upload result has no content field and stays below1KB",
+    "Actual idempotency success/replay/conflict preserve row locking and narrow fields",
+    "External create avoids duplicate stored payload retrieval; inline create still validates stored content; accepted task body conserved"
+  ],
+  "unchanged_contracts": [
+    "SQL conditions, parameters, lock clauses, transactions, quotas, usage and ACLs unchanged",
+    "Existing admission observability wrappers and label/stage behavior unchanged",
+    "Canonical backend directly imported by tests; no .runtime candidate imports or whole-file hash pins"
+  ],
+  "validation": {
+    "command": "PYTHONPATH=. .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_query_projections.py tests/test_admission_observability.py",
+    "existing_admission_cases": 17,
+    "fresh_private_unix_only_cluster": true,
+    "gpu_or_pod_used": false,
+    "new_actual_postgres_projection_cases": 9,
+    "passed": 26,
+    "postgres_binary_version": "postgres (PostgreSQL) 16.2",
+    "production_credentials_inherited": false,
+    "production_used": false,
+    "returncode": 0,
+    "seconds": 2.59,
+    "skipped": 0,
+    "stderr_bytes": 0,
+    "temporary_cluster_stopped_removed": true
+  },
+  "version": 1
+}

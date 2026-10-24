@@ -113,7 +113,7 @@ class Store:
         if self.blobs:
             return file_view(await self.blobs.put_input(tenant, filename[:255], content, len(rows)))
         async with self.pool.connection() as conn:
-            row = await one(conn, "INSERT INTO files(id,tenant_id,filename,kind,content,bytes) VALUES(%s,%s,%s,'input',%s,%s) RETURNING *", (identifier("file"), tenant, filename[:255], content, len(content)))
+            row = await one(conn, "INSERT INTO files(id,tenant_id,filename,kind,content,bytes) VALUES(%s,%s,%s,'input',%s,%s) RETURNING id,bytes,created_at,filename", (identifier("file"), tenant, filename[:255], content, len(content)))
         return file_view(row)
 
     async def idempotency(self, conn, tenant, scope, key, body):
@@ -129,7 +129,7 @@ class Store:
         if self.schema_version >= 11:
             await conn.execute('SELECT public.batchforge_idempotency_admit(%s,%s,%s)', (tenant, scope, key))
         await conn.execute("INSERT INTO idempotency(tenant_id,scope,key,body_hash) VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING", (tenant, scope, key, digest))
-        row = await one(conn, "SELECT * FROM idempotency WHERE tenant_id=%s AND scope=%s AND key=%s FOR UPDATE", (tenant, scope, key))
+        row = await one(conn, "SELECT body_hash,response FROM idempotency WHERE tenant_id=%s AND scope=%s AND key=%s FOR UPDATE", (tenant, scope, key))
         if row["body_hash"] != digest:
             raise APIError(409, "Idempotency key was used with a different request", "idempotency_conflict")
         return row["response"]
@@ -216,7 +216,10 @@ class Store:
                 if previous is not None:
                     return previous
                 with admission_stage('input_lookup'):
-                    file = await one(conn, "SELECT * FROM files WHERE id=%s AND tenant_id=%s AND kind='input'", (body["input_file_id"], tenant))
+                    lookup = ("SELECT id FROM files WHERE id=%s AND tenant_id=%s AND kind='input'"
+                              if external_rows is not None else
+                              "SELECT id,content FROM files WHERE id=%s AND tenant_id=%s AND kind='input'")
+                    file = await one(conn, lookup, (body["input_file_id"], tenant))
                 if not file:
                     raise APIError(404, "Input file not found", "not_found")
                 rows = external_rows
@@ -613,6 +616,6 @@ class Store:
                 buckets = await (await conn.execute("SELECT timestamp,completed,failed,tokens FROM batchforge_attempt_hourly WHERE tenant_id=%s AND timestamp>=date_trunc('hour',now(),'UTC')-interval '23 hours' ORDER BY timestamp", (tenant,))).fetchall()
             else:
                 buckets = await (await conn.execute("SELECT date_trunc('hour',finished_at) AS timestamp,count(*) FILTER(WHERE status='completed') AS completed,count(*) FILTER(WHERE status='failed') AS failed,COALESCE(sum(prompt_tokens+completion_tokens) FILTER(WHERE status='completed'),0) AS tokens FROM attempts WHERE tenant_id=%s AND finished_at>=now()-interval '24 hours' GROUP BY 1 ORDER BY 1", (tenant,))).fetchall()
-            workers = await (await conn.execute("SELECT id,name,model,concurrency,metadata,last_seen_at,CASE WHEN last_seen_at>clock_timestamp()-(%s*interval '1 second') THEN 'online' ELSE 'offline' END AS status FROM workers ORDER BY last_seen_at DESC LIMIT 100", (self.settings.lease_seconds * 2,))).fetchall()
+            workers = await (await conn.execute("SELECT id,name,model,concurrency,jsonb_build_object('engine_count',metadata->'engine_count','ready_engine_count',metadata->'ready_engine_count') AS metadata,last_seen_at,CASE WHEN last_seen_at>clock_timestamp()-(%s*interval '1 second') THEN 'online' ELSE 'offline' END AS status FROM workers ORDER BY last_seen_at DESC LIMIT 100", (self.settings.lease_seconds * 2,))).fetchall()
             batches = await (await conn.execute("SELECT * FROM batches WHERE tenant_id=%s ORDER BY created_at DESC,id DESC LIMIT 10", (tenant,))).fetchall()
         return {"stats": {key: int(value) for key, value in stats.items()}, "throughput": [{**row, "timestamp": row["timestamp"].isoformat(), "tokens": int(row["tokens"])} for row in buckets], "workers": [worker_view(row) for row in workers], "recent_batches": [batch_view(row) for row in batches]}
