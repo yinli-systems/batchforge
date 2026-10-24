@@ -1,0 +1,127 @@
+"""Truthful new-job SYNTHETIC metadata only; no production/model mutations."""
+import copy
+from pathlib import Path
+import json
+import runpy
+from types import SimpleNamespace
+import unittest
+
+ROOT=Path(__file__).resolve().parents[1]
+M=runpy.run_path(str(ROOT/'.runtime/prepare_default_matched_retirement.py'),run_name='pure_prepare_test')
+FIX=runpy.run_path(str(ROOT/'.runtime/test_matched_v11_receipt.py'),run_name='synthetic_exact_export_fixture')
+
+class PrepareTests(unittest.TestCase):
+    def setUp(self):
+        self.f=FIX['Fixture']()
+        # Synthetic records describe the actual fixed20-cell contract. No old
+        # report/task IDs or legacy custom_id prefixes are reused as new work.
+        for label,values in self.f.values.items():
+            report=values['report.json'];groups={}
+            for index,task in enumerate(report['tasks']):
+                prompt=(128,512,2048,8192,16384)[(index%20)//4]
+                task['prompt_tokens']=task['accepted_prompt_tokens']=prompt
+                ratio=prompt/task['completion_tokens'];kind='prefill_heavy' if ratio>=16 else 'decode_heavy' if ratio<=4 else 'balanced'
+                groups.setdefault(kind,[]).append(task)
+            report['prompt_tokens']=sum(t['prompt_tokens'] for t in report['tasks'])
+            report['attempt_records']=len(report['tasks'])
+            report['by_class']={k:dict(tasks=len(v),prompt_tokens=sum(t['prompt_tokens'] for t in v),
+                completion_tokens=sum(t['completion_tokens'] for t in v),completion_seconds=FIX['d'](len(v))) for k,v in groups.items()}
+            for index,file in values['output-collection.json']['files'].items():
+                file['prompt_tokens']=sum(t['prompt_tokens'] for t in report['tasks'] if int(t['custom_id'].rsplit('-',1)[1])//20==int(index))
+        self.f.persist()
+        self.pair=self.f.root/M['OPERATION'];self.pair.mkdir(mode=0o700)
+        first=self.f.values['baseline'];doc=first['controller.json']
+        self.plan={'phase':'prepared','jobs':list(M['JOBS'].values()),'controller_sha256':M['CONTROLLER_SHA'],
+            'specification':{'operation':M['OPERATION'],**{k+'_job':v for k,v in M['JOBS'].items()}},
+            'binding':{'source_sha256':doc['source_sha256'],'configuration_sha256':doc['configuration_sha256'],
+                'service_processes':doc['service_identities_before'],'runtime_fingerprint':first['runtime-proof.json']['engine_runtime_fingerprint']}}
+        plan_sha=self.f.write(self.pair/'plan.json',self.plan)
+        self.args=SimpleNamespace(pair_dir=self.pair,exports_root=self.f.root,prepared_sha256=plan_sha,
+            pair_journal_sha256='',comparison_sha256='',
+            baseline_export_receipt=Path(self.f.manifest['baseline']['export_receipt']),
+            baseline_export_receipt_sha256=self.f.manifest['baseline']['export_receipt_sha256'],
+            candidate_export_receipt=Path(self.f.manifest['candidate']['export_receipt']),
+            candidate_export_receipt_sha256=self.f.manifest['candidate']['export_receipt_sha256'])
+        self.sync_pair()
+    def tearDown(self):self.f.close()
+    def sync_pair(self):
+        result=FIX['M']['strict'](Path(self.f.manifest['comparison']['path']).read_bytes())
+        self.args.comparison_sha256=self.f.write(self.pair/'comparison.json',result)
+        pair=copy.deepcopy(self.f.pair);pair.update(plan_sha256=self.args.prepared_sha256,comparison_sha256=self.args.comparison_sha256,
+            legacy_charged_payload_baseline_bytes=205935962)
+        self.args.pair_journal_sha256=self.f.write(self.pair/'controller-journal.json',pair)
+    def resign_changed_round(self,label):
+        """Simulate a freshly trusted synthetic export; no real receipt is used."""
+        values=self.f.values[label];job=M['JOBS'][label];directory=self.f.root/label;report=values['report.json'];doc=values['controller.json']
+        raw=lambda value:FIX['M']['encoded'](value)
+        reportsha=FIX['M']['sha'](raw(report));values['runtime-proof.json']['report_sha256']=reportsha
+        values['output-collection.json']['binding']['report_sha256']=reportsha
+        for suffix,field in [('report.json','report_sha256'),('runtime-proof.json','runtime_proof_sha256'),('output-collection.json','output_collection_sha256'),('response-audit.json','response_audit_sha256')]:
+            doc[field]=FIX['M']['sha'](raw(values[suffix]))
+        hashes={name:self.f.write(directory/(job+'-'+name),values[name]) for name in M['SUFFIXES']}
+        receipt=FIX['M']['strict'](getattr(self.args,label+'_export_receipt').read_bytes())
+        receipt.update(report_sha256=reportsha,source_inputs_sha256=hashes,metadata_files_written={job+'-'+name:value for name,value in hashes.items()})
+        setattr(self.args,label+'_export_receipt_sha256',self.f.write(getattr(self.args,label+'_export_receipt'),receipt))
+        comparison=FIX['M']['strict']((self.pair/'comparison.json').read_bytes());comparison['source_inputs_sha256'].update({label+'_report':reportsha,label+'_runtime_proof':hashes['runtime-proof.json']})
+        self.args.comparison_sha256=self.f.write(self.pair/'comparison.json',comparison)
+        journal=FIX['M']['strict']((self.pair/'controller-journal.json').read_bytes());journal['comparison_sha256']=self.args.comparison_sha256;journal['rounds'][label]['report_sha256']=reportsha
+        self.args.pair_journal_sha256=self.f.write(self.pair/'controller-journal.json',journal)
+    def test_exact_new_job_exports_form_finite_offline_allowlist(self):
+        result=M['prepare'](self.args)
+        self.assertEqual(len(result['batch_allowlist']),3);self.assertEqual(sum(x['tasks'] for x in result['batch_allowlist']),60)
+        self.assertFalse(result['retire_keys']);self.assertFalse(result['owner_changes_issued']);self.assertTrue(result['live_preflight_still_required'])
+        self.assertEqual(result['min_age_seconds'],3600);self.assertEqual(result['replay_ttl_seconds'],86400)
+        self.assertEqual(result['input_proofs']['externally_pinned_exporter_receipts_sha256'],{
+            k:getattr(self.args,k+'_export_receipt_sha256') for k in M['JOBS']})
+        for label,values in self.f.values.items():self.assertTrue(all(t['custom_id'].startswith(M['JOBS'][label]+'-') for t in values['report.json']['tasks']))
+    def test_missing_candidate_export_refuses(self):
+        (self.f.root/'candidate'/(M['JOBS']['candidate']+'-response-audit.json')).unlink()
+        with self.assertRaises(ValueError):M['prepare'](self.args)
+    def test_pending_pair_refuses(self):
+        path=self.pair/'controller-journal.json';value=FIX['M']['strict'](path.read_bytes());value['pending_action']={'stage':'runner_spawn'}
+        self.args.pair_journal_sha256=self.f.write(path,value)
+        with self.assertRaisesRegex(ValueError,'pair_not_terminal_or_unknown'):M['prepare'](self.args)
+    def test_collection_and_controller_rehash_cannot_replace_trusted_export(self):
+        label='baseline';job=M['JOBS'][label];directory=self.f.root/label
+        path=directory/(job+'-output-collection.json');value=FIX['M']['strict'](path.read_bytes())
+        value['binding']['batch_files'][0]['file_id']='file_unrelated_QA_or_legacy';value['files']['0']['sha256']='0'*64
+        changed=self.f.write(path,value);path=directory/(job+'-controller.json');doc=FIX['M']['strict'](path.read_bytes());doc['output_collection_sha256']=changed;self.f.write(path,doc)
+        with self.assertRaisesRegex(ValueError,'exact_artifact_bytes_or_receipt_differs'):M['prepare'](self.args)
+    def test_controller_original_bytes_are_receipt_bound(self):
+        path=self.f.root/'candidate'/(M['JOBS']['candidate']+'-controller.json');doc=FIX['M']['strict'](path.read_bytes());doc['child_pid']=99999999;self.f.write(path,doc)
+        with self.assertRaisesRegex(ValueError,'exact_artifact_bytes_or_receipt_differs'):M['prepare'](self.args)
+    def test_foreign_legacy_custom_id_refuses_even_with_new_trusted_synthetic_receipt(self):
+        self.f.values['candidate']['report.json']['tasks'][0]['custom_id']='qwen235b-soak30m-v1-00000000';self.resign_changed_round('candidate')
+        with self.assertRaisesRegex(ValueError,'task_acceptance_or_usage_invalid'):M['prepare'](self.args)
+    def test_qa_custom_id_refuses(self):
+        self.f.values['candidate']['report.json']['tasks'][0]['custom_id']='qwen235b-public-answer20-00000000';self.resign_changed_round('candidate')
+        with self.assertRaisesRegex(ValueError,'task_acceptance_or_usage_invalid'):M['prepare'](self.args)
+    def test_index_beyond_planned_job_refuses(self):
+        self.f.values['candidate']['report.json']['tasks'][0]['custom_id']=M['JOBS']['candidate']+'-00000720';self.resign_changed_round('candidate')
+        with self.assertRaisesRegex(ValueError,'task_acceptance_or_usage_invalid'):M['prepare'](self.args)
+    def test_duplicate_custom_id_refuses(self):
+        rows=self.f.values['candidate']['report.json']['tasks'];rows[0]['custom_id']=rows[1]['custom_id'];self.resign_changed_round('candidate')
+        with self.assertRaisesRegex(ValueError,'task_acceptance_or_usage_invalid'):M['prepare'](self.args)
+    def test_duplicate_task_id_refuses(self):
+        rows=self.f.values['candidate']['report.json']['tasks'];rows[0]['id']=rows[1]['id'];self.resign_changed_round('candidate')
+        with self.assertRaisesRegex(ValueError,'task_identity_or_usage_invalid'):M['prepare'](self.args)
+    def test_usage_mismatch_refuses(self):
+        self.f.values['candidate']['report.json']['tasks'][0]['accepted_prompt_tokens']+=1;self.resign_changed_round('candidate')
+        with self.assertRaisesRegex(ValueError,'task_acceptance_or_usage_invalid'):M['prepare'](self.args)
+    def test_fixed_flag_cannot_mask_wrong_twenty_cell_input(self):
+        values=self.f.values['candidate'];report=values['report.json'];row=report['tasks'][12]
+        row['prompt_tokens']+=1;row['accepted_prompt_tokens']+=1;report['prompt_tokens']+=1
+        report['by_class']['prefill_heavy']['prompt_tokens']+=1;values['output-collection.json']['files']['0']['prompt_tokens']+=1
+        self.resign_changed_round('candidate')
+        with self.assertRaisesRegex(ValueError,'batch_not_exact_fixed_twenty_cell_fixture'):M['prepare'](self.args)
+    def test_changed_trusted_receipt_sha_refuses(self):
+        self.args.candidate_export_receipt_sha256='0'*64
+        with self.assertRaisesRegex(ValueError,'export_receipt_sha_differs'):M['prepare'](self.args)
+    def test_nonprivate_metadata_refuses(self):
+        path=self.f.root/'baseline'/(M['JOBS']['baseline']+'-report.json');path.chmod(0o644)
+        with self.assertRaises(ValueError):M['prepare'](self.args)
+    def test_export_root_outside_runtime_refuses(self):
+        self.args.exports_root=Path('/tmp')
+        with self.assertRaisesRegex(ValueError,'private_runtime_exports_required'):M['prepare'](self.args)
+
+if __name__=='__main__':unittest.main()

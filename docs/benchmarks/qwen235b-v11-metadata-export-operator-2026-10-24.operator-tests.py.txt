@@ -1,0 +1,163 @@
+"""Private SYNTHETIC child/metadata fixtures; no serving-host/API/model calls."""
+from pathlib import Path
+import copy
+import fcntl
+import json
+import os
+import runpy
+import sys
+import threading
+import unittest
+from unittest import mock
+
+ROOT=Path(__file__).resolve().parent.parent
+M=runpy.run_path(str(ROOT/'.runtime/export_matched_v11_operator.py'),run_name='local_export_operator_test')
+FIX=runpy.run_path(str(ROOT/'.runtime/test_matched_v11_receipt.py'),run_name='synthetic_export_metadata_fixture')
+G=M['Operator'].__init__.__globals__
+
+class ExportTests(unittest.TestCase):
+ def setUp(self):
+  self.f=FIX['Fixture']();self.original_pair=G['PAIR'];self.original_runs=G['RUNS'];self.pair=self.f.root/M['OPERATION'];self.pair.mkdir(mode=0o700)
+  self.runs=self.f.root/'runs';self.runs.mkdir(mode=0o700);G['PAIR']=self.pair;G['RUNS']=self.runs
+  self.f.write(self.pair/'controller-journal.json',self.f.pair)
+  self.f.write(self.pair/'comparison.json',M['load'](Path(self.f.manifest['comparison']['path']).read_bytes()))
+  for label,job in M['JOBS'].items():
+   target=self.runs/job;target.mkdir(mode=0o700)
+   for name,source in M['SOURCE_NAMES'].items():self.f.write(target/source,self.f.values[label][name])
+  self.calls=[];self.stdout={};self.mode=None
+ def tearDown(self):G['PAIR']=self.original_pair;G['RUNS']=self.original_runs;self.f.close()
+ def child(self,argv,export_label='unit'):
+  label=argv[argv.index('--round')+1];written='--write' in argv
+  self.calls.append((label,written))
+  current=self.pair/'metadata-export-operators'/export_label/'journal.json'
+  journal=M['load'](current.read_bytes())
+  self.assertEqual(journal['pending_action']['round'],label)
+  if written:self.assertEqual(journal['pending_action']['stage'],'export_write')
+  else:self.assertIn(journal['pending_action']['stage'],('prepare_validate','execute_validate'))
+  receipt=M['load'](Path(self.f.manifest[label]['export_receipt']).read_bytes())
+  if not written:receipt['metadata_files_written']={}
+  if self.mode=='candidate_validate_fails' and label=='candidate' and not written and len(self.calls)>2:
+   return dict(returncode=1,stdout=b'{"validated":false,"reason_code":"OperationalError"}\n',stderr_sha256=M['sha'](b''),stderr_bytes=0)
+  if written:
+   parent=self.pair/'exports'
+   if not parent.exists():parent.mkdir(mode=0o700)
+   target=parent/label;target.mkdir(mode=0o700)
+   for index,(name,source) in enumerate(M['SOURCE_NAMES'].items()):
+    path=target/(M['JOBS'][label]+'-'+name);path.write_bytes((self.runs/M['JOBS'][label]/source).read_bytes());path.chmod(0o600)
+    if self.mode=='timeout_after_partial' and index==0:raise M['Refusal']('child_timeout_unknown_export_outcome')
+    if self.mode=='success_with_partial_files':break
+  raw=(json.dumps(receipt,indent=2)+'\n\n').encode();self.stdout[(label,written,len(self.calls))]=raw
+  if self.mode=='invalid_stdout' and len(self.calls)>2:raw=b'SYNTHETIC_PRIVATE_BODY_NEVER_SAVE'
+  return dict(returncode=0,stdout=raw,stderr_sha256=M['sha'](b'SYNTHETIC_DIAGNOSTIC'),stderr_bytes=20)
+ def operator(self,label='unit'):return M['Operator'](label,runner=lambda argv:self.child(argv,label))
+ def prepared(self):
+  operator=self.operator();result=operator.prepare();return result['operator_prepared_sha256']
+ def test_prepare_has_only_validation_and_private_plan_no_exports(self):
+  checksum=self.prepared();self.assertEqual(self.calls,[('baseline',False),('candidate',False)])
+  self.assertFalse((self.pair/'exports').exists())
+  root=self.pair/'metadata-export-operators/unit';self.assertEqual(M['sha']((root/'plan.json').read_bytes()),checksum)
+  self.assertEqual(root.stat().st_mode&0o777,0o700)
+  self.assertTrue(all(p.stat().st_mode&0o777==0o600 for p in root.rglob('*.json')))
+ def test_success_preserves_exact_stdout_and_exact_fourteen_transport_files(self):
+  expected=self.prepared();result=self.operator().execute(expected);self.assertEqual(result['phase'],'complete')
+  self.assertEqual(self.calls,[('baseline',False),('candidate',False),('baseline',False),('candidate',False),('baseline',True),('candidate',True)])
+  root=self.pair/'metadata-export-operators/unit';manifest=M['load']((root/'transport-manifest.json').read_bytes());self.assertEqual(len(manifest['files']),14)
+  for label in M['JOBS']:
+   expectedstdout=next(v for (l,w,_),v in self.stdout.items() if l==label and w)
+   self.assertEqual((root/'receipts'/(label+'-export-receipt.json')).read_bytes(),expectedstdout)
+   self.assertEqual(len(list((self.pair/'exports'/label).iterdir())),5)
+  for item in manifest['files']:
+   raw=Path(item['source_path']).read_bytes();self.assertEqual(M['sha'](raw),item['sha256']);self.assertEqual(len(raw),item['bytes'])
+   self.assertFalse(any(x in item['relative_path'] for x in ('.jsonl','.env','checkpoint','plan.json')))
+  self.assertEqual((root/'payload/pair-controller-journal.json').read_bytes(),(self.pair/'controller-journal.json').read_bytes())
+  self.assertEqual((root/'payload/comparison.json').read_bytes(),(self.pair/'comparison.json').read_bytes())
+ def test_execute_cannot_repeat_or_change_complete_journal(self):
+  expected=self.prepared();self.operator().execute(expected);root=self.pair/'metadata-export-operators/unit';before=(root/'journal.json').read_bytes();calls=list(self.calls)
+  with self.assertRaises(M['Refusal']):self.operator().execute(expected)
+  self.assertEqual(before,(root/'journal.json').read_bytes());self.assertEqual(self.calls,calls)
+ def test_both_execute_previews_must_pass_before_first_write(self):
+  expected=self.prepared();self.mode='candidate_validate_fails'
+  with self.assertRaises(M['Refusal']):self.operator().execute(expected)
+  self.assertFalse((self.pair/'exports').exists());self.assertFalse(any(w for _,w in self.calls))
+  journal=M['load']((self.pair/'metadata-export-operators/unit/journal.json').read_bytes());self.assertEqual(journal['phase'],'manual_recovery_required');self.assertEqual(journal['pending_action']['round'],'candidate')
+ def test_partial_write_timeout_preserves_pending_and_never_auto_replays(self):
+  expected=self.prepared();self.mode='timeout_after_partial'
+  with self.assertRaises(M['Refusal']):self.operator().execute(expected)
+  root=self.pair/'metadata-export-operators/unit';journal=M['load']((root/'journal.json').read_bytes())
+  self.assertEqual(journal['pending_action'],{'stage':'export_write','round':'baseline'});self.assertEqual(journal['phase'],'manual_recovery_required')
+  self.assertTrue((self.pair/'exports/baseline').exists());self.assertFalse((self.pair/'exports/candidate').exists());self.assertFalse((root/'transport-manifest.json').exists())
+  calls=list(self.calls)
+  with self.assertRaises(M['Refusal']):self.operator().execute(expected)
+  self.assertEqual(self.calls,calls);self.assertEqual(journal,M['load']((root/'journal.json').read_bytes()))
+ def test_valid_stdout_with_partial_exports_keeps_pending(self):
+  expected=self.prepared();self.mode='success_with_partial_files'
+  with self.assertRaises(M['Refusal']):self.operator().execute(expected)
+  root=self.pair/'metadata-export-operators/unit';journal=M['load']((root/'journal.json').read_bytes());self.assertEqual(journal['pending_action']['stage'],'export_write')
+  self.assertTrue((root/'receipts/baseline-export-receipt.json').exists());self.assertFalse((root/'receipts/candidate-export-receipt.json').exists())
+ def test_unknown_stdout_never_persisted_as_receipt_or_error_text(self):
+  expected=self.prepared();self.mode='invalid_stdout'
+  with self.assertRaises(Exception):self.operator().execute(expected)
+  root=self.pair/'metadata-export-operators/unit'
+  for path in root.rglob('*.json'):self.assertNotIn(b'SYNTHETIC_PRIVATE_BODY_NEVER_SAVE',path.read_bytes())
+ def test_wrong_prepared_sha_never_arms_or_changes_plan(self):
+  self.prepared();root=self.pair/'metadata-export-operators/unit';before=(root/'journal.json').read_bytes()
+  with self.assertRaises(M['Refusal']):self.operator().execute('0'*64)
+  self.assertEqual((root/'journal.json').read_bytes(),before);self.assertFalse((root/'execution-marker.json').exists())
+ def test_existing_exports_refuse_new_prepare(self):
+  (self.pair/'exports').mkdir(mode=0o700)
+  with self.assertRaises(M['Refusal']):self.operator().prepare()
+  self.assertFalse((self.pair/'metadata-export-operators').exists())
+ def test_nonterminal_pair_refuses_before_operator_directory(self):
+  value=copy.deepcopy(self.f.pair);value['phase']='running';self.f.write(self.pair/'controller-journal.json',value)
+  with self.assertRaises(Exception):self.operator().prepare()
+  self.assertFalse((self.pair/'metadata-export-operators').exists());self.assertFalse(self.calls)
+ def test_terminal_comparison_must_match_pair_sha(self):
+  raw=(self.pair/'comparison.json').read_bytes();(self.pair/'comparison.json').write_bytes(raw+b' ')
+  with self.assertRaises(M['Refusal']):self.operator().prepare()
+  self.assertFalse((self.pair/'exports').exists())
+ def test_operator_lock_prevents_parallel_execute_and_journal_overwrite(self):
+  expected=self.prepared();root=self.pair/'metadata-export-operators/unit';fd=open(root/'operation.lock','r+b');fcntl.flock(fd.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB);before=(root/'journal.json').read_bytes()
+  try:
+   with self.assertRaises(BlockingIOError):self.operator().execute(expected)
+  finally:fd.close()
+  self.assertEqual(before,(root/'journal.json').read_bytes());self.assertFalse((root/'execution-marker.json').exists())
+ def test_different_labels_cannot_execute_same_pair_concurrently(self):
+  first=self.prepared();second=self.operator('alternate').prepare()['operator_prepared_sha256']
+  alternate=self.pair/'metadata-export-operators/alternate';before=(alternate/'journal.json').read_bytes()
+  entered=threading.Event();release=threading.Event();failures=[];results=[]
+  def blocked_child(argv):
+   entered.set()
+   if not release.wait(5):raise RuntimeError('synthetic_test_wait_expired')
+   return self.child(argv)
+  def execute_first():
+   try:results.append(M['Operator']('unit',runner=blocked_child).execute(first))
+   except Exception as error:failures.append(error)
+  worker=threading.Thread(target=execute_first);worker.start()
+  try:
+   self.assertTrue(entered.wait(5));calls=list(self.calls)
+   with self.assertRaises(BlockingIOError):self.operator('alternate').execute(second)
+   self.assertEqual(self.calls,calls);self.assertEqual((alternate/'journal.json').read_bytes(),before)
+   self.assertFalse((alternate/'execution-marker.json').exists())
+   self.assertFalse((self.pair/'exports').exists())
+  finally:release.set();worker.join(10)
+  self.assertFalse(worker.is_alive());self.assertFalse(failures);self.assertEqual(results[0]['phase'],'complete')
+ def test_pair_lock_refuses_unsafe_mode_and_hardlink(self):
+  lock=self.pair/'metadata-export.lock';lock.write_bytes(b'');lock.chmod(0o644)
+  with self.assertRaisesRegex(M['Refusal'],'unsafe_metadata_export_lock'):self.operator().prepare()
+  lock.chmod(0o600)
+  os.link(lock,self.pair/'other-lock')
+  with self.assertRaisesRegex(M['Refusal'],'unsafe_metadata_export_lock'):self.operator().prepare()
+  self.assertFalse((self.pair/'metadata-export-operators').exists());self.assertFalse(self.calls)
+ def test_schema_only_mode_does_not_require_mac_plot_file(self):
+  original=Path.read_bytes
+  def unavailable(path):
+   if path==ROOT/'scripts/plot_sustained_comparison.py':raise FileNotFoundError('SYNTHETIC absent Pod renderer')
+   return original(path)
+  with mock.patch.object(Path,'read_bytes',unavailable):self.prepared()
+ def test_local_child_pipe_capture_bounded_and_stderr_not_in_stdout(self):
+  value=M['run_child']([sys.executable,'-c','import sys;sys.stdout.write("SAFE_METADATA");sys.stderr.write("DIAGNOSTIC")'])
+  self.assertEqual(value['stdout'],b'SAFE_METADATA');self.assertEqual(value['stderr_bytes'],10);self.assertNotIn('DIAGNOSTIC',str({k:v for k,v in value.items() if k!='stdout'}))
+ def test_local_child_oversized_output_refuses(self):
+  with self.assertRaises(M['Refusal']):M['run_child']([sys.executable,'-c','import sys;sys.stdout.buffer.write(b"x"*70000)'])
+
+if __name__=='__main__':unittest.main()

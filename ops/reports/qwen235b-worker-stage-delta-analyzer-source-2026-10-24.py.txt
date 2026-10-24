@@ -1,0 +1,149 @@
+"""Pure metadata analysis of two operator-bound worker histogram snapshots.
+
+No network, database, inference or collection. Histogram quantiles are bucket
+estimates. A changed worker identity/source/environment is a refusal, not a
+counter-reset correction. Default validates; --output writes one new private
+metadata result. Input SHA values are operator anchors, not signatures.
+"""
+from __future__ import annotations
+import argparse
+from datetime import datetime
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import re
+import stat
+
+STAGES = ('engine_ready_wait', 'tokenize', 'kv_admission_wait', 'report_ack')
+OUTCOMES = ('ok', 'error', 'cancelled')
+SOURCES = {'worker/runtime.py', 'worker/metrics.py', 'worker/config.py', 'worker/kv_admission.py'}
+PREFIX = 'batchforge_worker_stage_seconds_'
+
+def require(value, code):
+    if not value: raise ValueError(code)
+def sha(raw): return hashlib.sha256(raw).hexdigest()
+def finite(value): return type(value) in (int,float) and math.isfinite(value) and value >= 0
+
+def load(raw, expected):
+    require(re.fullmatch('[0-9a-f]{64}',expected or '') is not None and sha(raw)==expected,'snapshot_sha_differs')
+    def unique(pairs):
+        d={}
+        for k,v in pairs:
+            require(k not in d,'duplicate_json_key');d[k]=v
+        return d
+    def invalid(_): raise ValueError('nonfinite_json')
+    d=json.loads(raw,object_pairs_hook=unique,parse_constant=invalid)
+    require(set(d)=={'version','observed_at','worker_identity','source_sha256','worker_configuration_sha256','metrics'} and type(d['version']) is int and d['version']==1,'snapshot_schema_differs')
+    identity=d['worker_identity']
+    require(set(identity)=={'pid','start_ticks','cwd'} and type(identity['pid']) is int and identity['pid']>1
+        and isinstance(identity['start_ticks'],str) and re.fullmatch('[0-9]+',identity['start_ticks']) is not None
+        and identity['cwd']=='/root/batchforge-runtime/app','owned_worker_identity_required')
+    require(set(d['source_sha256'])==SOURCES and all(re.fullmatch('[0-9a-f]{64}',v or '') for v in [*d['source_sha256'].values(),d['worker_configuration_sha256']]),'source_or_configuration_binding_invalid')
+    at=datetime.fromisoformat(d['observed_at']);require(at.utcoffset() is not None,'aware_snapshot_time_required')
+    require(isinstance(d['metrics'],list) and len(d['metrics'])<=512,'bounded_metrics_required')
+    groups={};seen=set()
+    for sample in d['metrics']:
+        require(isinstance(sample,dict) and set(sample)=={'name','labels','value'},'metric_schema_differs')
+        name,labels,value=sample['name'],sample['labels'],sample['value']
+        require(name in {PREFIX+s for s in ('bucket','sum','count')} and isinstance(labels,dict),'unexpected_metric')
+        suffix=name[len(PREFIX):]
+        require(set(labels)==({'stage','outcome','le'} if suffix=='bucket' else {'stage','outcome'})
+            and labels['stage'] in STAGES and labels['outcome'] in OUTCOMES and finite(value),'metric_labels_or_value_invalid')
+        key=(labels['stage'],labels['outcome']);item=groups.setdefault(key,{'buckets':{}})
+        if suffix=='bucket':
+            text=labels['le'];require(isinstance(text,str),'bucket_bound_invalid')
+            bound=math.inf if text=='+Inf' else float(text)
+            require(bound==math.inf and text=='+Inf' or math.isfinite(bound) and bound>=0,'bucket_bound_invalid')
+            series=(*key,suffix,bound)
+            require(series not in seen,'duplicate_metric');seen.add(series);item['buckets'][bound]=float(value)
+        else:
+            series=(*key,suffix);require(series not in seen,'duplicate_metric');seen.add(series);item[suffix]=float(value)
+    for item in groups.values(): check_histogram(item)
+    return d,at,groups
+
+def check_histogram(item):
+    require(set(item)=={'buckets','count','sum'} and item['count'].is_integer(),'complete_histogram_required')
+    buckets=item['buckets'];bounds=sorted(buckets)
+    require(len(bounds)>=2 and bounds[-1]==math.inf and any(math.isfinite(b) for b in bounds),'finite_and_infinite_buckets_required')
+    values=[buckets[b] for b in bounds]
+    require(all(v.is_integer() and 0<=v<=item['count'] for v in values) and values==sorted(values)
+        and values[-1]==item['count'] and (item['count']>0 or item['sum']==0),'histogram_invariant_failed')
+    lower_sum=upper_sum=0.0;previous_bound=previous_count=0.0
+    tail=0.0
+    for bound in bounds:
+        population=buckets[bound]-previous_count
+        lower_sum+=previous_bound*population
+        if math.isfinite(bound):upper_sum+=bound*population
+        else:tail=population
+        previous_bound,previous_count=bound,buckets[bound]
+    tolerance=1e-9*max(1.0,item['sum'],lower_sum,upper_sum)
+    require(item['sum']+tolerance>=lower_sum and (tail>0 or item['sum']<=upper_sum+tolerance),
+        'histogram_sum_outside_bucket_bounds')
+
+def quantile(hist,q):
+    target=hist['count']*q
+    if target==0:return None
+    lower=previous=0.0
+    for upper,value in sorted(hist['buckets'].items()):
+        if value>=target:
+            if upper==math.inf:return None  # unbounded tail is unknown, never replace with a finite bound
+            return lower+(upper-lower)*(target-previous)/(value-previous) if value>previous else upper
+        lower,previous=upper,value
+    raise ValueError('histogram_quantile_unreachable')
+
+def analyze(before_raw,before_sha,after_raw,after_sha):
+    before,t0,first=load(before_raw,before_sha);after,t1,last=load(after_raw,after_sha)
+    for field in ('worker_identity','source_sha256','worker_configuration_sha256'):
+        require(before[field]==after[field],'worker_identity_source_or_configuration_changed')
+    require(t1>t0,'snapshot_time_not_increasing')
+    require(set(first)<=set(last),'histogram_series_disappeared')
+    result=[]
+    for key,item in sorted(last.items()):
+        old=first.get(key)
+        if old is None:old={'count':0.0,'sum':0.0,'buckets':dict.fromkeys(item['buckets'],0.0)}
+        require(set(old['buckets'])==set(item['buckets']),'bucket_schema_changed')
+        delta={k:item[k]-old[k] for k in ('sum','count')}
+        delta['buckets']={b:item['buckets'][b]-old['buckets'][b] for b in item['buckets']}
+        require(all(finite(v) for v in [delta['sum'],delta['count'],*delta['buckets'].values()]),'histogram_counter_decreased')
+        check_histogram(delta)
+        result.append({'stage':key[0],'outcome':key[1],'observations':int(delta['count']),
+            'overlapping_stage_sum_seconds':delta['sum'],'mean_seconds':delta['sum']/delta['count'] if delta['count'] else None,
+            'bucket_quantile_estimate_seconds':{'p50':quantile(delta,.5),'p95':quantile(delta,.95),'p99':quantile(delta,.99)},
+            'finite_maximum_bucket_seconds':max(b for b in delta['buckets'] if math.isfinite(b)),
+            'observations_above_finite_buckets':int(delta['count']-delta['buckets'][max(b for b in delta['buckets'] if math.isfinite(b))])})
+    return {'version':1,'before_sha256':before_sha,'after_sha256':after_sha,'worker_identity':before['worker_identity'],
+        'source_sha256':before['source_sha256'],'worker_configuration_sha256':before['worker_configuration_sha256'],
+        'utc_bracket_seconds':(t1-t0).total_seconds(),'stages':result,
+        'limitations':['Operator-provided exact identity/source/environment bindings; not an independent loaded-code attestation.',
+            'Process-lifetime histogram deltas, not durable per-attempt traces, GPU kernel time, TTFT or task completion percentiles.',
+            'Stage sums include overlapping tasks. UTC snapshot bracket is not an inference benchmark wall interval.',
+            'Bucket quantiles use linear interpolation; values in the unbounded tail are null, never invented.',
+            'No correction for worker restarts or missing series; crash-lost observations cannot be recovered.',
+            'Outcome is stage-local; a cancelled wait can represent a timeout and does not classify the durable task.']}
+
+def private_read(path):
+    fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
+    with os.fdopen(fd,'rb') as f:
+        info=os.fstat(f.fileno());require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o077 and info.st_size<=1024**2,'private_bounded_metadata_required')
+        return f.read(1024**2+1)
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__)
+    for name in ('before','after'):p.add_argument('--'+name,type=Path,required=True);p.add_argument('--'+name+'-sha256',required=True)
+    p.add_argument('--output',type=Path);a=p.parse_args();os.umask(0o077)
+    try:
+        d=analyze(private_read(a.before),a.before_sha256,private_read(a.after),a.after_sha256)
+        raw=(json.dumps(d,sort_keys=True,indent=2,allow_nan=False)+'\n').encode()
+        if a.output:
+            parent=a.output.parent.lstat();require(stat.S_ISDIR(parent.st_mode) and parent.st_uid==os.geteuid() and not parent.st_mode&0o077,'private_output_directory_required')
+            fd=os.open(a.output,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+            with os.fdopen(fd,'wb') as f:f.write(raw);f.flush();os.fsync(f.fileno())
+            fd=os.open(a.output.parent,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+            try:os.fsync(fd)
+            finally:os.close(fd)
+        print(json.dumps({'validated':True,'observations':sum(x['observations'] for x in d['stages']),'output_written':bool(a.output),'analysis_sha256':sha(raw)}));return 0
+    except Exception as e:
+        print(json.dumps({'validated':False,'reason_code':str(e) if type(e) is ValueError else type(e).__name__}));return 1
+if __name__=='__main__':raise SystemExit(main())

@@ -1,0 +1,117 @@
+"""Synthetic metadata only; no real workload or production calls."""
+import copy
+import hashlib
+import importlib.util
+import json
+from pathlib import Path
+import pytest
+
+spec=importlib.util.spec_from_file_location('bf_stage_delta',Path(__file__).with_name('analyze_worker_stage_deltas.py'))
+m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+
+def fixture(count,buckets,total,time):
+    metrics=[]
+    for bound,value in buckets:
+        metrics.append({'name':m.PREFIX+'bucket','labels':{'stage':'kv_admission_wait','outcome':'ok','le':bound},'value':value})
+    for suffix,value in [('count',count),('sum',total)]:
+        metrics.append({'name':m.PREFIX+suffix,'labels':{'stage':'kv_admission_wait','outcome':'ok'},'value':value})
+    return {'version':1,'observed_at':time,'worker_identity':{'pid':200,'start_ticks':'12345','cwd':'/root/batchforge-runtime/app'},
+        'source_sha256':dict.fromkeys(m.SOURCES,'a'*64),'worker_configuration_sha256':'b'*64,'metrics':metrics}
+
+def pair():
+    return (fixture(2,[('1',1),('5',2),('+Inf',2)],4,'2026-10-24T00:00:00+00:00'),
+        fixture(6,[('1',2),('5',5),('+Inf',6)],20,'2026-10-24T00:01:00+00:00'))
+def encode(d):return (json.dumps(d)+'\n').encode()
+def run(a,b):
+    ar,br=encode(a),encode(b)
+    return m.analyze(ar,m.sha(ar),br,m.sha(br))
+
+def test_delta_and_unbounded_quantiles_do_not_invent_tail():
+    a,b=pair();d=run(a,b);v=d['stages'][0]
+    assert v['observations']==4 and v['overlapping_stage_sum_seconds']==16 and v['mean_seconds']==4
+    assert v['bucket_quantile_estimate_seconds']=={'p50':3,'p95':None,'p99':None}
+    assert v['observations_above_finite_buckets']==1 and d['utc_bracket_seconds']==60
+
+
+def test_unseen_series_can_first_appear_without_counter_reset():
+    a,b=pair();a['metrics']=[];d=run(a,b)
+    assert d['stages'][0]['observations']==6
+
+
+def test_unchanged_zero_interval_counts_have_no_quantile():
+    a,b=pair();b['metrics']=copy.deepcopy(a['metrics']);d=run(a,b)['stages'][0]
+    assert d['observations']==0 and d['mean_seconds'] is None
+    assert all(v is None for v in d['bucket_quantile_estimate_seconds'].values())
+
+
+@pytest.mark.parametrize('field',['worker_identity','source_sha256','worker_configuration_sha256'])
+def test_identity_and_source_drift_are_not_reset_corrections(field):
+    a,b=pair()
+    if field=='worker_identity':b[field]['start_ticks']='54321'
+    elif field=='source_sha256':b[field]['worker/runtime.py']='c'*64
+    else:b[field]='d'*64
+    with pytest.raises(ValueError,match='changed'):run(a,b)
+
+
+def test_negative_delta_is_rejected_even_when_after_histogram_itself_valid():
+    a,b=pair();b['metrics']=copy.deepcopy(a['metrics']);b['metrics'][-1]['value']=3
+    with pytest.raises(ValueError,match='decreased'):run(a,b)
+
+
+def test_disappearing_series_is_not_zero_filled():
+    a,b=pair();b['metrics']=[]
+    with pytest.raises(ValueError,match='disappeared'):run(a,b)
+
+
+def test_changed_bucket_schema_is_rejected():
+    a,b=pair();b['metrics'][0]['labels']['le']='2'
+    with pytest.raises(ValueError,match='bucket_schema_changed'):run(a,b)
+
+
+@pytest.mark.parametrize('mutation', ['duplicate','dynamic_label','wrong_count','nonmonotone','nan','raw_extra'])
+def test_invalid_or_sensitive_exposition_is_refused(mutation):
+    a,b=pair()
+    if mutation=='duplicate':b['metrics'].append(copy.deepcopy(b['metrics'][0]))
+    elif mutation=='dynamic_label':b['metrics'][0]['labels']['task_id']='secret'
+    elif mutation=='wrong_count':b['metrics'][-2]['value']=7
+    elif mutation=='nonmonotone':b['metrics'][0]['value']=6
+    elif mutation=='nan':b['metrics'][0]['value']=float('nan')
+    else:b['response']='secret prompt'
+    with pytest.raises((ValueError,TypeError)):run(a,b)
+
+
+def test_raw_byte_trust_anchor_cannot_be_reformatted():
+    a,b=pair();raw=encode(a)
+    with pytest.raises(ValueError,match='snapshot_sha_differs'):
+        m.analyze(raw+b' ',m.sha(raw),encode(b),m.sha(encode(b)))
+
+
+@pytest.mark.parametrize('timestamp',['2026-10-23T00:00:00+00:00','2026-10-24T00:01:00'])
+def test_naive_or_backwards_snapshot_bracket_refuses(timestamp):
+    a,b=pair();b['observed_at']=timestamp
+    with pytest.raises(ValueError):run(a,b)
+
+
+@pytest.mark.parametrize('total', [100.0,0.5])
+def test_sum_must_obey_bucket_implied_bounds(total):
+    a,b=pair()
+    if total==100:
+        b=fixture(1,[('1',1),('5',1),('+Inf',1)],total,b['observed_at'])
+    else:
+        b=fixture(1,[('1',0),('5',0),('+Inf',1)],total,b['observed_at'])
+    with pytest.raises(ValueError,match='histogram_sum_outside_bucket_bounds'):run(a,b)
+
+
+def test_plausible_cumulative_snapshots_can_have_impossible_delta_sum():
+    a=fixture(1,[('1',0),('5',1),('+Inf',1)],4.9,'2026-10-24T00:00:00+00:00')
+    b=fixture(2,[('1',0),('5',2),('+Inf',2)],5.0,'2026-10-24T00:01:00+00:00')
+    for d in (a,b):
+        raw=encode(d);m.load(raw,m.sha(raw))
+    with pytest.raises(ValueError,match='histogram_sum_outside_bucket_bounds'):run(a,b)
+
+
+def test_sum_near_float_rounding_bound_is_not_falsely_refused():
+    a,b=pair()
+    a['metrics']=[]
+    b=fixture(1,[('1',0),('5',1),('+Inf',1)],5.0+1e-12,b['observed_at'])
+    assert run(a,b)['stages'][0]['observations']==1

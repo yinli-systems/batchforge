@@ -1,0 +1,87 @@
+"""Completed SYNTHETIC metadata only; no DB, live PID, exporter CLI or dump."""
+import copy
+from pathlib import Path
+import runpy
+from types import SimpleNamespace
+from unittest import mock
+import pytest
+
+ROOT=Path(__file__).resolve().parents[1]
+B=runpy.run_path(str(ROOT/'.runtime/schema11-pre-fault-backup-controller-v1.py'),run_name='backup_fixture_test')
+E=runpy.run_path(str(ROOT/'.runtime/test_export_matched_v11_operator.py'),run_name='completed_export_fixture_test')
+G=B['historical_proof'].__globals__
+
+@pytest.fixture
+def completed(monkeypatch,request):
+    case=E['ExportTests']('test_success_preserves_exact_stdout_and_exact_fourteen_transport_files');case.setUp()
+    try:
+        if getattr(request,'param',None):
+            path=case.pair/'controller-journal.json';raw=path.read_bytes();path.write_bytes(raw+b' '*(request.param-len(raw)))
+        op=case.operator('metadata-export-v1');prepared=op.prepare();op.execute(prepared['operator_prepared_sha256'])
+        module=SimpleNamespace(**E['G']);monkeypatch.setitem(G,'load_metadata_operator',lambda:module)
+        yield case,module
+    finally:case.tearDown()
+
+def run_proof():
+    with mock.patch('subprocess.run',side_effect=AssertionError('NO subprocess/exporter replay permitted')):
+        return B['historical_proof']()
+
+def rewrite(case,path,value):case.f.write(path,value)
+def operator_path(case):return case.pair/'metadata-export-operators/metadata-export-v1'
+
+def test_completed_original_write_receipts_all_fourteen_bytes_bound_without_live_calls(completed):
+    case,module=completed;proof,returned=run_proof()
+    assert returned is module and proof['metadata_export_transport_file_count']==14
+    assert len(proof['matched_export_sha256'])==10
+    assert len(proof['historical_proof_file_sha256'])==30
+    assert proof['metadata_export_operator_source_sha256']==B['EXPORT_OPERATOR_SHA']
+    # The proof reads no present service env/proc/current backend source.
+    assert all('.env' not in p and '/proc/' not in p for p in proof['historical_proof_file_sha256'])
+
+@pytest.mark.parametrize('problem',['pending','not_complete','prepared_sha','marker','manifest_sha','missing_receipt'])
+def test_unknown_incomplete_or_unbound_operator_is_refused(completed,problem):
+    case,module=completed;directory=operator_path(case);path=directory/'journal.json';doc=module.load(path.read_bytes())
+    if problem=='pending':doc['pending_action']={'stage':'export_write','round':'candidate'}
+    elif problem=='not_complete':doc['phase']='manual_recovery_required'
+    elif problem=='prepared_sha':doc['operator_prepared_sha256']='0'*64
+    elif problem=='manifest_sha':doc['transport_manifest_sha256']='0'*64
+    elif problem=='marker':rewrite(case,directory/'execution-marker.json',{'phase':'execute_intent','operator_prepared_sha256':'0'*64})
+    elif problem=='missing_receipt':(directory/'receipts/candidate-export-receipt.json').unlink()
+    rewrite(case,path,doc)
+    with pytest.raises(Exception):run_proof()
+
+@pytest.mark.parametrize('problem',['byte_change','foreign_path','duplicate','missing','extra','receipt_preview','raw_extra'])
+def test_manifest_and_actual_write_proof_must_be_exact(completed,problem):
+    case,module=completed;directory=operator_path(case);manifest=module.load((directory/'transport-manifest.json').read_bytes())
+    if problem=='byte_change':Path(manifest['files'][0]['source_path']).write_bytes(b'SYNTHETIC DIFFERENT METADATA')
+    elif problem=='foreign_path':manifest['files'][0]['source_path']=str(case.f.root/'foreign.json')
+    elif problem=='duplicate':manifest['files'][-1]=copy.deepcopy(manifest['files'][0])
+    elif problem=='missing':manifest['files'].pop()
+    elif problem=='extra':manifest['files'].append(copy.deepcopy(manifest['files'][0]))
+    elif problem=='receipt_preview':
+        path=directory/'receipts/baseline-export-receipt.json';value=module.load(path.read_bytes());value['metadata_files_written']={};rewrite(case,path,value)
+    elif problem=='raw_extra':
+        path=case.pair/'exports/baseline/UNAUTHORIZED.jsonl';path.write_bytes(b'SYNTHETIC ONLY');path.chmod(0o600)
+    rewrite(case,directory/'transport-manifest.json',manifest)
+    journal=module.load((directory/'journal.json').read_bytes());journal['transport_manifest_sha256']=module.sha((directory/'transport-manifest.json').read_bytes());rewrite(case,directory/'journal.json',journal)
+    with pytest.raises(Exception):run_proof()
+
+@pytest.mark.parametrize('completed',[70000],indirect=True)
+def test_pair_larger_than_64k_is_valid_but_above_two_mib_is_refused(completed):
+    case,module=completed
+    assert len((case.pair/'controller-journal.json').read_bytes())==70000
+    proof,_=run_proof();assert proof['metadata_export_transport_file_count']==14
+    path=case.pair/'controller-journal.json';path.write_bytes(path.read_bytes()+b' '*B['PAIR_JOURNAL_LIMIT'])
+    with pytest.raises(Exception,match='unsafe_private_metadata'):run_proof()
+
+@pytest.mark.parametrize('operation',B['OPERATIONS'])
+def test_only_two_unique_operation_names_allowed(operation):assert B['parse_args'](['--operation',operation]).operation==operation
+
+def test_arbitrary_backup_operation_refused_before_any_io():
+    with pytest.raises(SystemExit):B['parse_args'](['--operation','arbitrary'])
+
+def test_production_source_never_invokes_historical_exporter_or_current_cli():
+    source=(ROOT/'.runtime/schema11-pre-fault-backup-controller-v1.py').read_text()
+    assert 'export_sustained_v11_metadata.py' not in source
+    assert '--round' not in source and 'subprocess.run(argv' in source
+    assert 'op.context(receipts, loaded)' in source and 'PAIR_JOURNAL_LIMIT = 2 * 1024**2' in source

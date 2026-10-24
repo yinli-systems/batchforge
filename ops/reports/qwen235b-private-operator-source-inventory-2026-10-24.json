@@ -1,0 +1,267 @@
+{
+  "archive_scope": "Reviewed source and tests only; no actual config, credentials, task/input/output data, process environment, or SQL dump included.",
+  "copied_files": [
+    {
+      "bytes": 40224,
+      "group": "postpair_rollout",
+      "kind": "operator_source",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/deploy_postpair_sources.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-postpair-rollout-operator-source-2026-10-24.py.txt",
+      "sha256": "7910f4438d374e26fb3c9f6cca95f86b1324157f2b249b83551b7cc579f8d865"
+    },
+    {
+      "bytes": 26704,
+      "group": "postpair_rollout",
+      "kind": "pure_tests",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/test_deploy_postpair_sources.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-postpair-rollout-operator-tests-2026-10-24.py.txt",
+      "sha256": "f6127b46f92dd4fda775fb5690e701f2ea2124cbc51c0579f7a12ec3e7fc55a3"
+    },
+    {
+      "bytes": 6306,
+      "group": "postpair_rollout",
+      "kind": "local_pg_tests",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/test_deploy_postpair_sources_postgres.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-postpair-rollout-postgres-tests-2026-10-24.py.txt",
+      "sha256": "e2ed9066c0ad11b5882457c9cebe1273cbb8d6bdebe631e195893da1b374481f"
+    },
+    {
+      "bytes": 45923,
+      "group": "default_matched_retirement",
+      "kind": "operator_source",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/default_matched_history_retirement.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-default-matched-retirement-operator-source-2026-10-24.py.txt",
+      "sha256": "aeff8fd0a349421ffb57d86bb1c9cc9c9ece71fe5d892c8cbd5431d5cd683e07"
+    },
+    {
+      "bytes": 30106,
+      "group": "default_matched_retirement",
+      "kind": "tests",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/test_default_matched_history_retirement.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-default-matched-retirement-operator-tests-2026-10-24.py.txt",
+      "sha256": "e8ce8456c7890e831186381d81f831aeb807d6f1e3e5b127f461b1cd39d22f83"
+    },
+    {
+      "bytes": 15820,
+      "group": "matched_retirement_preparer",
+      "kind": "operator_source",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/prepare_default_matched_retirement.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-matched-retirement-preparer-source-2026-10-24.py.txt",
+      "sha256": "a9625bc6d011c407a6b721c49c841a4c145c9f0dfe5c20327f1bdbbe6c24690c"
+    },
+    {
+      "bytes": 10890,
+      "group": "matched_retirement_preparer",
+      "kind": "pure_tests",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/test_prepare_default_matched_retirement.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-matched-retirement-preparer-tests-2026-10-24.py.txt",
+      "sha256": "5be352ee55bfa0a7edec1c551a9e85f30cb9defea2cf2770a82014a9fe0a2d85"
+    },
+    {
+      "bytes": 12915,
+      "group": "schema11_pre_fault_backup",
+      "kind": "operator_source",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/schema11-pre-fault-backup-controller-v1.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-schema11-pre-fault-backup-operator-source-2026-10-24.py.txt",
+      "sha256": "ce1299466dcdc262ce142dfd6bfc84426622c40a95fce16ed79c095c9f930c82"
+    },
+    {
+      "bytes": 9685,
+      "group": "worker_stage_analyzer",
+      "kind": "operator_source",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/analyze_worker_stage_deltas.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-worker-stage-delta-analyzer-source-2026-10-24.py.txt",
+      "sha256": "0a0385d0c154d9efb232b49ad2769cc549f261cbf9d78b9a36f3c595ccf01d5a"
+    },
+    {
+      "bytes": 5164,
+      "group": "worker_stage_analyzer",
+      "kind": "pure_tests",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/test_analyze_worker_stage_deltas.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-worker-stage-delta-analyzer-tests-2026-10-24.py.txt",
+      "sha256": "e348195d85f06b8614f33da89e76c64c52bfcb21cf636f1c34451987d1ede1b7"
+    },
+    {
+      "bytes": 5660,
+      "group": "schema11_pre_fault_backup",
+      "kind": "pure_tests",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/test_schema11_pre_fault_backup_controller.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-schema11-backup-operator-tests-2026-10-24.py.txt",
+      "sha256": "7ec6ad1963ba3b189dfdeac3a7f81b60c78186633bfab27ab0145d95231a63c2"
+    },
+    {
+      "bytes": 10775,
+      "group": "worker_stage_snapshot_collector",
+      "kind": "operator_source",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/collect_worker_stage_snapshot.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-worker-stage-snapshot-collector-source-2026-10-24.py.txt",
+      "sha256": "e81a27b00112076bf444d2ba85dc8c96bc5b28c402e489169d9ebd7831edaaec"
+    },
+    {
+      "bytes": 11527,
+      "group": "worker_stage_snapshot_collector",
+      "kind": "pure_tests",
+      "original_bytes_preserved": true,
+      "original_private_source": ".runtime/test_collect_worker_stage_snapshot.py",
+      "production_execution_status": "NOT_EXECUTED",
+      "review_copy": "ops/reports/qwen235b-worker-stage-snapshot-collector-tests-2026-10-24.py.txt",
+      "sha256": "66df323555e7007a0a346de4410f5720a37becf3d9d85cfadcf6cae38d5014a6"
+    }
+  ],
+  "existing_source_references": [
+    {
+      "bytes": 19137,
+      "duplicated": false,
+      "name": "metadata_export_operator",
+      "path": "docs/benchmarks/qwen235b-v11-metadata-export-operator-2026-10-24.operator-source.py.txt",
+      "production_execution_status": "NOT_EXECUTED",
+      "sha256": "36336209d22979e88be63bebe8318a6536c553095a9a0d99aba998adaffb9438"
+    },
+    {
+      "bytes": 12079,
+      "duplicated": false,
+      "name": "metadata_export_operator_tests",
+      "path": "docs/benchmarks/qwen235b-v11-metadata-export-operator-2026-10-24.operator-tests.py.txt",
+      "production_execution_status": "NOT_EXECUTED",
+      "sha256": "2a2f2f73f4d1bd535d31ad7d3eea5b7b282cd337f7cf651f388927cce3930b29"
+    },
+    {
+      "bytes": 27575,
+      "duplicated": false,
+      "name": "metadata_receipt_validator",
+      "path": "docs/benchmarks/qwen235b-v11-receipt-validator-source-2026-10-24.py.txt",
+      "production_execution_status": "NOT_EXECUTED",
+      "sha256": "5534f19cb83c5408af41cd6497d3c6307039ca6748cb93f8c6c3512d6da592d6"
+    },
+    {
+      "bytes": 19203,
+      "duplicated": false,
+      "name": "metadata_receipt_validator_tests",
+      "path": "docs/benchmarks/qwen235b-v11-receipt-validator-tests-2026-10-24.py.txt",
+      "production_execution_status": "NOT_EXECUTED",
+      "sha256": "32c770723bc43a71f99424f586bdcfbc9020554094406f47f555981cc3784afa"
+    }
+  ],
+  "inventory_version": 2,
+  "known_compatibility_findings": [
+    {
+      "actual_final_journal_size_observed": false,
+      "fixed_source_sha256": "ce1299466dcdc262ce142dfd6bfc84426622c40a95fce16ed79c095c9f930c82",
+      "priority": "P2",
+      "reason": "Legal parent cleanup journal exceeds64KiB; reader now explicit2MiB. Historical exporter live PID/env checks also prevented future post-roll refresh; completed original WRITE metadata evidence now validates offline while present services remain freshly guarded.",
+      "status": "FIXED and independently reviewed in ce129 backup; no production execution",
+      "superseded_source_sha256": "ab6287120d51f2ad5ba78c31432549a74037cfc6b7c129d1485bb7fd15cb2cbc",
+      "synthetic_size_evidence": "ops/reports/qwen235b-pair-journal-size-bound-analysis-2026-10-24.json",
+      "synthetic_size_evidence_sha256": "b6b50eae371cfd6700f1d9923d58dd705710c38f4a013773d7b185f70e2bdabf"
+    }
+  ],
+  "linux17_release_scope": {
+    "claim": "Release evidence for serving/helper bundle dependencies does not qualify these separate private operators on Linux17.",
+    "commit": "693d658aa944d3a8ebee596ce9b5c9f9d75fdce5",
+    "covered_bundle_python_files": 10,
+    "frontend_validation": "Separate independent Node console-actions 8/8, outside Linux Python/SQL snapshot",
+    "private_runtime_operators_included": false,
+    "source_tree_sha256": "ad6f46a0f4bec39a8562a0ae80846a60640f6818baceaa322fcbf2a52b6ee019"
+  },
+  "next_steps": "Root reviews/scans exact paths before private-repository commit. Separate explicit guarded production prepare/apply is still required; no commit or push performed by this agent.",
+  "prepared_at": "2026-10-24T09:30:09.822828+00:00",
+  "status": "NOT_EXECUTED",
+  "status_scope": "These private operators have not been executed or deployed in production; local test executions below did occur.",
+  "validation": {
+    "default_matched_retirement": {
+      "author_combined_passed": 37,
+      "author_elapsed_seconds": 1.33,
+      "final_pin_only_revision_independently_approved": true,
+      "final_source_sha256": "aeff8fd0a349421ffb57d86bb1c9cc9c9ece71fe5d892c8cbd5431d5cd683e07",
+      "independent_combined_passed": 37,
+      "independent_elapsed_seconds": 1.47,
+      "local_pure_passed": 33,
+      "local_unix_only_pg16_2_passed": 4,
+      "production_or_linux17_operator_execution": false,
+      "temporary_clusters_removed": true,
+      "temporary_clusters_stopped": true
+    },
+    "final_owner_and_backup_reverification": {
+      "backup_pure_tests": 19,
+      "elapsed_seconds": 2.34,
+      "final_exact_source_and_tests": true,
+      "local_unix_only_pg16_2_combined_passed": 56,
+      "owner_tests": 37,
+      "production_or_linux17_operator_execution": false,
+      "skipped": 0,
+      "temporary_cluster_removed": true,
+      "temporary_cluster_stopped": true
+    },
+    "local_reverification_this_pack": {
+      "all_copied_python_sources_and_tests_compile": true,
+      "analyzer_and_preparer_pure_tests_passed": 37,
+      "elapsed_seconds": 0.77,
+      "source_bytes_and_expected_hashes_equal": true
+    },
+    "matched_retirement_preparer": {
+      "actual_terminal_pair_consumed": false,
+      "independent_review_approved": true,
+      "local_synthetic_metadata_passed": 15,
+      "owner_mutations": false,
+      "production_or_linux17_operator_execution": false
+    },
+    "postpair_rollout": {
+      "independent_combined_passed": 18,
+      "independent_elapsed_seconds": 6.79,
+      "local_pure_passed": 16,
+      "local_unix_only_pg16_2_passed": 2,
+      "production_or_linux17_operator_execution": false,
+      "temporary_cluster_removed": true,
+      "temporary_cluster_stopped": true
+    },
+    "schema11_pre_fault_backup": {
+      "actual_backup_or_restore_by_this_operator": false,
+      "explicit_pair_journal_limit_bytes": 2097152,
+      "historical_live_exporter_invocations": 0,
+      "independent_elapsed_seconds": 1.15,
+      "independent_local_synthetic_metadata_passed": 19,
+      "local_synthetic_metadata_passed": 19,
+      "production_or_linux17_operator_execution": false,
+      "tracked_proof_files": 30,
+      "transport_file_count": 14,
+      "validated_original_write_receipts": 2
+    },
+    "worker_stage_analyzer": {
+      "actual_worker_histogram_snapshots_consumed": false,
+      "independent_review_approved": true,
+      "local_synthetic_histogram_passed": 22,
+      "production_or_linux17_operator_execution": false
+    },
+    "worker_stage_snapshot_collector": {
+      "actual_production_metrics_collected": false,
+      "independent_review_approved": true,
+      "local_elapsed_seconds": 0.49,
+      "local_mock_tests_passed": 15,
+      "production_or_linux17_operator_execution": false
+    }
+  }
+}

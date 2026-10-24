@@ -1,0 +1,357 @@
+"""Private operator safety tests; local files/fake processes only, no live I/O."""
+from __future__ import annotations
+from datetime import datetime,timedelta,timezone
+import hashlib
+import io
+import json
+from pathlib import Path
+import runpy
+import tarfile
+import tempfile
+import unittest
+from contextlib import contextmanager
+
+ROOT=Path(__file__).resolve().parents[1]
+M=runpy.run_path(str(ROOT/'.runtime/deploy_postpair_sources.py'),run_name='pure_postpair_test')
+SOURCES={name:(ROOT/name).read_bytes() for name in M['TARGETS']}
+
+def private(path,raw):
+    path.parent.mkdir(parents=True,exist_ok=True,mode=0o700);path.write_bytes(raw);path.chmod(0o600)
+def jsonfile(path,value):
+    private(path,M['encoded'](value));return {'path':str(path),'sha256':M['sha'](path.read_bytes())}
+
+class Clock:
+    def __init__(self):self.now=0
+    def __call__(self):return self.now
+    def sleep(self,seconds):self.now+=seconds
+
+class Controller:
+    def __init__(self,root,services,watch,clock):
+        self.root,self.clock,self.events=root,clock,[];self.next=100
+        self.records={};self.environ={};self.argv={};self.quiet=True;self.worker_ready_at=0
+        self.fail_stage=None;self.probe=None
+        for n,s in enumerate([*services,watch]):
+            key=self.key(s);self.records[key]={'pid':n+10,'start_ticks':str(n+50),'cwd':str(root),'command':['--key','NEVER-PERSIST-process-command']}
+            self.environ[key]={**M['values'](s['env_file'] and Path(s['env_file']).read_bytes()),'AMBIENT':'NEVER-PERSIST-ambient'}
+            self.argv[key]=('python-'+key).encode()
+    @staticmethod
+    def key(s):return s['role']+'-'+s['name']
+    def record(self,s):return self.records.get(self.key(s))
+    def responding(self,s,ready=False):
+        return self.record(s) is not None and (s['role']!='worker' or self.clock()>=self.worker_ready_at)
+    def engine_quiescence(self,s):
+        self.events.append(('engine','GET_metrics'))
+        return {'quiescent':self.quiet,'error':None if self.quiet else 'metrics_unavailable'}
+    def read(self,controller,s):
+        key=self.key(s);r=self.record(s);M['require'](r is not None,'owned_service_missing')
+        env=self.environ[key];argv=self.argv[key]
+        return r,dict(env),argv,{k:r[k] for k in ('pid','start_ticks','cwd')}|{
+            'process_environ_sha256':M['sha'](M['encoded'](env)),'process_argv_sha256':M['sha'](argv)}
+    def intent(self,stage):
+        saved=json.loads(self.probe.report_path.read_bytes())
+        assert saved['pending_action']['stage']==stage and saved['pending_action']['nonce']
+    def graceful_stop(self,s,expected,grace,check):
+        assert self.record(s)==expected;stage='watchdog_stop' if s['role']=='supervisor' else 'idle_worker_stop'
+        self.intent(stage);check();self.events.append((self.key(s),'stop'));self.records.pop(self.key(s))
+        if self.fail_stage==stage:raise OSError('NEVER-PERSIST-stop-error')
+    def start(self,root,s,environment):
+        stage='worker_start' if s['role']=='worker' else 'watchdog_start';self.intent(stage)
+        assert self.record(s) is None
+        self.next+=1;key=self.key(s);self.events.append((key,'start'))
+        self.records[key]={'pid':self.next,'start_ticks':str(self.next*10),'cwd':str(root),'command':['--key','NEVER-PERSIST-new-command']}
+        self.environ[key]={**environment,**M['values'](Path(s['env_file']).read_bytes())}
+        if self.fail_stage==stage:raise TimeoutError('NEVER-PERSIST-start-ack')
+        return {'status':'started','pid':self.next}
+
+class PostpairTests(unittest.TestCase):
+    @contextmanager
+    def evidence_fixture(self):
+        helpers=runpy.run_path(str(ROOT/'.runtime/test_prepare_default_matched_retirement.py'),run_name='postpair_synthetic_proof_fixture')
+        fixture=helpers['PrepareTests']();fixture.setUp()
+        try:
+            from backend.migrate import MIGRATIONS
+            root=fixture.f.root;now=datetime(2026,10,24,12,0,tzinfo=timezone.utc)
+            linux_manifest=json.loads((ROOT/'.runtime/linux-pg17-source-693d658/.validation-manifest.json').read_bytes())
+            manifest_entry=jsonfile(root/'SYNTHETIC-linux-manifest.json',linux_manifest)
+            linux={'commit':M['VALIDATION_COMMIT'],'source_tree_sha256':M['VALIDATION_TREE'],
+                'source_manifest_sha256':manifest_entry['sha256'],'server_version':'17.11 SYNTHETIC metadata fixture',
+                'phase':'complete','passed':True,'finished_at':now.isoformat(),'temporary_cluster_stopped':True,
+                'temporary_cluster_removed':True,'unix_socket_only':True,'source_files_unchanged_after_tests':True,
+                'import_origins_verified_inside_snapshot':True,'remaining_scoped_test_processes':[],
+                'production_database_accessed':False,'production_credentials_inherited':False,'source_database_url_supplied':False,
+                'server_os_uid':123,'pytest':{'exit_status':0,'skips':[],'passed':1000}}
+            dump=root/'SYNTHETIC-not-a-real-backup.dump';private(dump,b'SYNTHETIC FIXTURE ONLY')
+            backup={'observed_at':now.isoformat(),'compatible':True,'archive_list_verified':True,'database_modified':False,
+                'credentials_in_argv':False,'configured_sslmode':'verify-full','snapshot_path':str(dump),
+                'snapshot_bytes':dump.stat().st_size,'snapshot_sha256':M['sha'](dump.read_bytes())}
+            restore={'passed':True,'restore_verified':True,'schema_version':11,'snapshot_sha256':backup['snapshot_sha256'],
+                'snapshot_bytes':backup['snapshot_bytes'],'temporary_cluster_stopped':True,'temporary_cluster_removed':True,
+                'unix_socket_only':True,'live_database_modified':False,'migration_checksums':{str(v):h for v,_,h in MIGRATIONS},
+                **{k:0 for k in (*M['INVARIANTS'],'history_rollup_mismatches')}}
+            spec={'linux_report':jsonfile(root/'SYNTHETIC-linux-report.json',linux),'linux_manifest':manifest_entry,
+                'fresh_backup':jsonfile(root/'SYNTHETIC-backup.json',backup),'current_restore':jsonfile(root/'SYNTHETIC-restore.json',restore),
+                'matched':{'plan':{'path':str(fixture.pair/'plan.json'),'sha256':fixture.args.prepared_sha256},
+                    'journal':{'path':str(fixture.pair/'controller-journal.json'),'sha256':fixture.args.pair_journal_sha256},
+                    'comparison':{'path':str(fixture.pair/'comparison.json'),'sha256':fixture.args.comparison_sha256},'exports':{},'receipts':{}}}
+            for label,job in M['JOBS'].items():
+                spec['matched']['exports'][label]={suffix:{'path':str(root/label/(job+'-'+suffix)),
+                    'sha256':M['sha']((root/label/(job+'-'+suffix)).read_bytes())} for suffix in M['SUFFIXES']}
+                spec['matched']['receipts'][label]={'path':str(getattr(fixture.args,label+'_export_receipt')),
+                    'sha256':getattr(fixture.args,label+'_export_receipt_sha256')}
+            old_plan_sha=M['evidence'].__globals__['PLAN_SHA']
+            M['evidence'].__globals__['PLAN_SHA']=fixture.args.prepared_sha256
+            try:yield spec,now
+            finally:M['evidence'].__globals__['PLAN_SHA']=old_plan_sha
+        finally:fixture.tearDown()
+    def test_full_evidence_gate_accepts_only_synthetic_complete_exact_bound_proofs(self):
+        with self.evidence_fixture() as (spec,now):
+            result=M['evidence'](ROOT,spec,SOURCES,now)
+            self.assertEqual(result['linux']['commit'],M['VALIDATION_COMMIT'])
+            self.assertEqual(result['frontend']['source_sha256'],M['TARGETS']['frontend/app.js'])
+            self.assertIn('excluded from Linux',result['frontend']['validation_scope'])
+            self.assertEqual(set(result['matched']['exports']),{'baseline','candidate'})
+    def test_bad_linux_restore_backup_or_export_proofs_refuse(self):
+        for variation in ('linux_cleanup','linux_commit','restore10','history_rollup','stale_backup','missing_receipt','nested_export_swap','unapproved_plan'):
+            with self.subTest(variation=variation),self.evidence_fixture() as (spec,now):
+                if variation=='missing_receipt':spec['matched']['receipts'].pop('candidate')
+                elif variation=='unapproved_plan':
+                    entry=spec['matched']['plan'];doc=json.loads(Path(entry['path']).read_bytes())
+                    doc['SYNTHETIC_unreviewed_plan_field']=True
+                    spec['matched']['plan']=jsonfile(Path(entry['path']),doc)
+                    entry=spec['matched']['journal'];doc=json.loads(Path(entry['path']).read_bytes())
+                    doc['plan_sha256']=spec['matched']['plan']['sha256']
+                    spec['matched']['journal']=jsonfile(Path(entry['path']),doc)
+                elif variation=='nested_export_swap':
+                    entry=spec['matched']['exports']['baseline']['controller.json'];doc=json.loads(Path(entry['path']).read_bytes())
+                    doc['child_pid']=999999;spec['matched']['exports']['baseline']['controller.json']=jsonfile(Path(entry['path']),doc)
+                else:
+                    key='linux_report' if variation.startswith('linux_') else ('fresh_backup' if variation=='stale_backup' else 'current_restore')
+                    entry=spec[key];doc=json.loads(Path(entry['path']).read_bytes())
+                    if variation=='linux_cleanup':doc['temporary_cluster_removed']=False
+                    elif variation=='linux_commit':doc['commit']='0'*40
+                    elif variation=='restore10':doc['schema_version']=10
+                    elif variation=='history_rollup':doc['history_rollup_mismatches']=1
+                    else:doc['observed_at']=(now-timedelta(hours=2)).isoformat()
+                    spec[key]=jsonfile(Path(entry['path']),doc)
+                with self.assertRaises((RuntimeError,ValueError,KeyError)):M['evidence'](ROOT,spec,SOURCES,now)
+    def setup(self,temporary,initial_configuration_drift=None):
+        root=(Path(temporary)/'app').resolve();root.mkdir(mode=0o700);(root/'.runtime').mkdir(mode=0o700)
+        run=root/'.runtime/postpair-test';run.mkdir(mode=0o700)
+        manifest=root/'.runtime/services.json';private(manifest,b'{"services":[]}')
+        profile={'profile_id':'projected-static16','runtime_fingerprint':'sha256:'+'1'*64}
+        service_defs=[('api','a',8082),('api','b',8083),('gateway','edge',8080),('engine','qwen235b',8300),('worker','qwen235b',9105)]
+        services=[]
+        for role,name,port in service_defs:
+            env=root.parent/(role+'-'+name+'.env')
+            data={'MODEL_NAME':M['MODEL'],'TOKEN':'NEVER-PERSIST-worker-token'}
+            if role=='engine':data['ENGINE_TENSOR_PARALLEL_SIZE']='4'
+            if role=='worker':data.update(WORKER_MAX_INFLIGHT='64',WORKER_ADAPTIVE_KV_ENABLED='true',
+                WORKER_TOKEN_BUDGET='298384',WORKER_ID='owned-worker',SCHEDULER_PROFILE_JSON=json.dumps(profile),
+                INFERENCE_BASE_URLS='http://127.0.0.1:8300',WORKER_SHUTDOWN_SECONDS='240')
+            import shlex
+            private(env,(''.join(k+'='+shlex.quote(v)+'\n' for k,v in data.items())).encode())
+            services.append(dict(role=role,name=name,port=port,env_file=str(env),python='/private/venv/bin/python',gpu='0,1,2,3' if role=='engine' else None))
+        watch=dict(role='supervisor',name='primary',env_file=str(root.parent/'supervisor.env'),python='/private/venv/bin/python')
+        private(Path(watch['env_file']),('SUPERVISOR_MANIFEST='+str(manifest)+'\n').encode())
+        owner=root.parent/'neon-owner.env';benchmark=root/'.runtime/scheduler-v6/benchmark.env'
+        private(owner,b'OWNER=SYNTHETIC-NEVER-PERSIST-owner\n')
+        private(benchmark,b'BENCHMARK=SYNTHETIC-NEVER-PERSIST-benchmark\n')
+        for name in M['TARGETS']:private(root/name,('# original '+name+'\n').encode())
+        clock=Clock();controller=Controller(root,services,watch,clock)
+        dump=root/'.runtime/SYNTHETIC-backup';private(dump,b'SYNTHETIC BACKUP ONLY')
+        def evidence(root,spec,sources):
+            current={str(p.relative_to(root)):M['sha'](p.read_bytes()) for folder in ('backend','worker','ops','scripts')
+                for p in (root/folder).rglob('*') if p.is_file() and p.suffix in {'.py','.sql'}}
+            return {'matched':{'historical_services':{controller.key(s):controller.read(controller,s)[3] for s in [*services,watch]},
+                'historical_configuration':{str(p):M['sha'](p.read_bytes()) for p in
+                    [manifest,owner,benchmark,*[Path(s['env_file']) for s in [*services,watch]]]},
+                'historical_source_sha256':current},'backup':{'observed_at':datetime.now(timezone.utc).isoformat(),
+                'snapshot_path':str(dump),'snapshot_state':M['snapshot_state'](dump)}}
+        proof=evidence(root,{},SOURCES)
+        if initial_configuration_drift is not None:
+            target={'manifest':manifest,'owner':owner,'benchmark':benchmark}[initial_configuration_drift]
+            private(target,b'SYNTHETIC-NEVER-PERSIST-initial-config-drift\n')
+        job=M['Deployment'](root=root,run=run,manifest=manifest,services=services,controller=controller,
+            sources=SOURCES,bundle_sha='1'*64,proof_spec={},evidence_checker=lambda *_:proof,
+            process_reader=controller.read,drained=lambda:None,profile=lambda:{'capacity':64,'kv_budget':298384},
+            starter=controller.start,clock=clock,sleep=clock.sleep)
+        controller.probe=job
+        return job,controller,clock
+    def test_complete_roll_preserves_protected_processes_and_only_shutdown_key(self):
+        with tempfile.TemporaryDirectory() as d:
+            job,c,clock=self.setup(d);original=dict(c.records);result=job.apply()
+            self.assertEqual(result['phase'],'complete');self.assertFalse(result['manual_recovery_required'])
+            changes=[e for e in c.events if e[1] in ('stop','start')]
+            self.assertEqual(changes,[('supervisor-primary','stop'),('worker-qwen235b','stop'),('worker-qwen235b','start'),('supervisor-primary','start')])
+            for key,record in original.items():
+                if not key.startswith(('worker-','supervisor-')):self.assertEqual(c.records[key],record)
+            for name,expected in M['TARGETS'].items():self.assertEqual(M['source_state'](job.root/name)[0]['sha256'],expected)
+            env=M['values'](Path(job.worker['env_file']).read_bytes());self.assertEqual(env['WORKER_SHUTDOWN_SECONDS'],'600')
+            self.assertNotIn('NEVER-PERSIST',json.dumps(result));self.assertIsNone(result['pending_action'])
+            self.assertEqual(job.report_path.stat().st_mode&0o777,0o600)
+            before=list(c.events)
+            with self.assertRaisesRegex(RuntimeError,'existing_operation_no_replay'):job.apply()
+            self.assertEqual(c.events,before)
+    def test_actual_nine_file_configuration_shape_and_all_auxiliary_drifts_fail_closed(self):
+        for field in ('manifest','owner','benchmark'):
+            with self.subTest(field=field,when='initial'),tempfile.TemporaryDirectory() as d:
+                with self.assertRaisesRegex(RuntimeError,'live_configuration_differs_from_completed_pair'):
+                    self.setup(d,initial_configuration_drift=field)
+            with self.subTest(field=field,when='guard'),tempfile.TemporaryDirectory() as d:
+                job,c,_=self.setup(d)
+                config=job.proofs['matched']['historical_configuration']
+                self.assertEqual(len(config),9);self.assertEqual(len(job.auxiliary_configuration),2)
+                target={'manifest':job.manifest,'owner':job.root.parent/'neon-owner.env',
+                    'benchmark':job.root/'.runtime/scheduler-v6/benchmark.env'}[field]
+                private(target,b'SYNTHETIC-NEVER-PERSIST-changed-configuration\n')
+                with self.assertRaisesRegex(RuntimeError,'manifest_drift|auxiliary_configuration_drift'):job.apply()
+                self.assertFalse(any(e[1] in ('stop','start') for e in c.events))
+                self.assertNotIn('NEVER-PERSIST',job.report_path.read_text())
+                self.assertFalse((job.run/'neon-owner.env').exists())
+                self.assertFalse((job.run/'benchmark.env').exists())
+    def test_partial_or_unknown_mutations_never_start_next_service(self):
+        for stage in ('watchdog_stop','idle_worker_stop','worker_start','watchdog_start'):
+            with self.subTest(stage=stage),tempfile.TemporaryDirectory() as d:
+                job,c,_=self.setup(d);c.fail_stage=stage
+                with self.assertRaises((OSError,TimeoutError)):job.apply()
+                self.assertTrue(job.report['manual_recovery_required']);self.assertEqual(job.report['pending_action']['stage'],stage)
+                self.assertEqual(job.report['pending_action']['outcome'],'unknown_or_confirmation_not_durable')
+                self.assertTrue(job.report['pending_action']['nonce'])
+                if stage!='watchdog_start':self.assertNotIn(('supervisor-primary','start'),c.events)
+                if stage in ('watchdog_stop','idle_worker_stop'):self.assertNotIn(('worker-qwen235b','start'),c.events)
+                before=list(c.events)
+                with self.assertRaises(RuntimeError):job.apply()
+                self.assertEqual(c.events,before);self.assertNotIn('NEVER-PERSIST',json.dumps(job.report))
+    def test_exact_stop_callback_allows_draining_503_and_exit_before_pidfile_unlink(self):
+        with tempfile.TemporaryDirectory() as d:
+            job,c,_=self.setup(d);read=c.record;inside=[None];observed=[]
+            def record(service):
+                if service is inside[0]:raise AssertionError('target sampled outside pidfd owner')
+                return read(service)
+            c.record=record
+            def graceful_stop(service,expected,grace,check):
+                self.assertEqual(read(service),expected)
+                c.intent('watchdog_stop' if service is job.watchdog else 'idle_worker_stop')
+                # Model the callback after exact role lock + pidfd acquisition.
+                # A draining worker returns ready503; after kernel exit /proc
+                # vanishes while the unchanged PID file is still present.
+                if service is job.worker:c.worker_ready_at=1000
+                inside[0]=service
+                try:check();observed.append((c.key(service),'draining'))
+                finally:inside[0]=None
+                c.records.pop(c.key(service));c.events.append((c.key(service),'stop'))
+                inside[0]=service
+                try:check();observed.append((c.key(service),'exited_pidfile_pending'))
+                finally:inside[0]=None
+                if service is job.worker:c.worker_ready_at=0
+                # The real helper checks the original PID file before unlink.
+            c.graceful_stop=graceful_stop
+            self.assertEqual(job.apply()['phase'],'complete')
+            self.assertEqual(len(observed),4)
+    def test_stop_callback_keeps_other_services_and_exact_pending_identity_guarded(self):
+        for drift in ('other_ready','other_pid','other_env','source','wrong_target','wrong_pending'):
+            with self.subTest(drift=drift),tempfile.TemporaryDirectory() as d:
+                job,c,_=self.setup(d)
+                def graceful_stop(service,expected,grace,check):
+                    self.assertIs(service,job.watchdog)
+                    if drift=='other_ready':c.worker_ready_at=1000
+                    elif drift=='other_pid':c.records['api-a']={**c.records['api-a'],'pid':999}
+                    elif drift=='other_env':c.environ['api-a']['TOKEN']='NEVER-PERSIST-drift'
+                    elif drift=='source':(job.root/'worker/runtime.py').write_bytes(b'# foreign\n')
+                    elif drift=='wrong_target':job.guard(stopping_target=job.api)
+                    else:job.report['pending_action']['pid']=999
+                    check()
+                    raise AssertionError('drift should have failed closed')
+                c.graceful_stop=graceful_stop
+                with self.assertRaises(RuntimeError):job.apply()
+                self.assertEqual(job.report['pending_action']['stage'],'watchdog_stop')
+                self.assertNotIn(('worker-qwen235b','start'),c.events)
+                self.assertNotIn(('supervisor-primary','start'),c.events)
+    def test_source_write_after_replace_failure_is_unknown_without_worker_restart(self):
+        with tempfile.TemporaryDirectory() as d:
+            job,c,_=self.setup(d)
+            def writer(*args):M['atomic_source'](*args);raise OSError('NEVER-PERSIST-fsync')
+            job.writer=writer
+            with self.assertRaises(OSError):job.apply()
+            self.assertEqual(job.report['pending_action']['stage'],'source_copy')
+            self.assertNotIn(('worker-qwen235b','start'),c.events);self.assertNotIn(('supervisor-primary','start'),c.events)
+    def test_confirmation_save_failure_preserves_intent_and_blocks_watchdog(self):
+        with tempfile.TemporaryDirectory() as d:
+            job,c,_=self.setup(d);original=job.save
+            def save():
+                if job.report['events'] and job.report['events'][-1]['stage']=='idle_worker_stop' and job.report['pending_action'] is None:
+                    raise OSError('private confirmation fsync failed')
+                original()
+            job.save=save
+            with self.assertRaises(OSError):job.apply()
+            self.assertEqual(job.report['pending_action']['stage'],'idle_worker_stop')
+            self.assertTrue(job.report['pending_action']['nonce']);self.assertNotIn(('worker-qwen235b','start'),c.events)
+    def test_foreign_source_env_pid_or_effective_env_refuses_before_any_stop(self):
+        for kind in ('source','env','pid','effective'):
+            with self.subTest(kind=kind),tempfile.TemporaryDirectory() as d:
+                job,c,_=self.setup(d)
+                if kind=='source':(job.root/'worker/runtime.py').write_text('# foreign\n')
+                elif kind=='env':Path(job.worker['env_file']).write_bytes(b'TOKEN=NEVER-PERSIST-changed\n')
+                elif kind=='pid':c.records['worker-qwen235b']={**c.records['worker-qwen235b'],'pid':999}
+                else:c.environ['api-a']['TOKEN']='NEVER-PERSIST-other-effective'
+                with self.assertRaises(RuntimeError):job.apply()
+                self.assertFalse(any(e[1] in ('stop','start') for e in c.events))
+    def test_new_worker_may_warm_but_watchdog_waits_for_readiness(self):
+        with tempfile.TemporaryDirectory() as d:
+            job,c,clock=self.setup(d);original=c.start
+            def start(root,s,env):
+                value=original(root,s,env)
+                if s['role']=='worker':c.worker_ready_at=clock()+2
+                elif s['role']=='supervisor':self.assertGreaterEqual(clock(),c.worker_ready_at)
+                return value
+            job.starter=start;self.assertEqual(job.apply()['phase'],'complete');self.assertGreaterEqual(clock(),2)
+    def test_failed_worker_readiness_leaves_watchdog_stopped_and_no_blind_finally(self):
+        with tempfile.TemporaryDirectory() as d:
+            job,c,_=self.setup(d);original=c.start
+            def start(root,s,env):
+                value=original(root,s,env)
+                if s['role']=='worker':c.worker_ready_at=1000
+                return value
+            job.starter=start
+            with self.assertRaisesRegex(RuntimeError,'new_worker_registration_timeout'):job.apply()
+            self.assertEqual(job.report['phase'],'manual_recovery_required');self.assertNotIn(('supervisor-primary','start'),c.events)
+            self.assertIsNotNone(c.record(job.worker));self.assertIsNone(c.record(job.watchdog))
+    def test_expired_backup_or_unquiet_engine_never_stops_a_service(self):
+        for kind in ('age','engine'):
+            with self.subTest(kind=kind),tempfile.TemporaryDirectory() as d:
+                job,c,_=self.setup(d)
+                if kind=='age':job.proofs['backup']['observed_at']=(datetime.now(timezone.utc)-timedelta(hours=2)).isoformat()
+                else:c.quiet=False
+                with self.assertRaises(RuntimeError):job.apply()
+                self.assertFalse(any(e[1] in ('stop','start') for e in c.events))
+    def test_shutdown_patch_preserves_all_other_bytes_and_rejects_duplicates(self):
+        old=b"# note\r\nTOKEN='NEVER-PERSIST'\r\nexport WORKER_SHUTDOWN_SECONDS=240 # old\nPROFILE='unchanged'\n"
+        new=M['shutdown_bytes'](old)
+        self.assertIn(b"# note\r\nTOKEN='NEVER-PERSIST'\r\n",new);self.assertTrue(new.endswith(b"PROFILE='unchanged'\n"))
+        self.assertEqual(new.count(b'WORKER_SHUTDOWN_SECONDS'),1)
+        with self.assertRaisesRegex(RuntimeError,'duplicate_shutdown_assignment'):M['shutdown_bytes'](b'WORKER_SHUTDOWN_SECONDS=1\nWORKER_SHUTDOWN_SECONDS=2\n')
+    def test_exact_bundle_whitelist_hashes_and_archive_links(self):
+        for variation in ('valid','extra','missing','link','wronghash'):
+            with self.subTest(variation=variation),tempfile.TemporaryDirectory() as d:
+                path=Path(d)/'bundle.tar';buf=io.BytesIO()
+                with tarfile.open(fileobj=buf,mode='w') as archive:
+                    for name,data in SOURCES.items():
+                        if variation=='missing' and name=='frontend/app.js':continue
+                        member=tarfile.TarInfo(name);member.size=len(data)
+                        if variation=='link' and name=='frontend/app.js':member.type=tarfile.SYMTYPE;member.linkname='/foreign'
+                        archive.addfile(member,io.BytesIO(data))
+                    if variation=='extra':archive.addfile(tarfile.TarInfo('../foreign'))
+                private(path,buf.getvalue());expected=M['sha'](buf.getvalue()) if variation!='wronghash' else '0'*64
+                if variation=='valid':self.assertEqual(M['bundle'](path,expected),SOURCES)
+                else:
+                    with self.assertRaises(RuntimeError):M['bundle'](path,expected)
+    def test_scoped_cache_eviction_preserves_other_modules_and_refuses_symlink(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);folder=root/'worker/__pycache__';folder.mkdir(parents=True,mode=0o700)
+            private(folder/'runtime.cpython-312.pyc',b'old');private(folder/'unrelated.cpython-312.pyc',b'keep')
+            self.assertEqual(M['scoped_caches'](root,True),['worker/__pycache__/runtime.cpython-312.pyc'])
+            self.assertTrue((folder/'unrelated.cpython-312.pyc').exists())
+            (folder/'runtime.cpython-312.pyc').symlink_to(folder/'unrelated.cpython-312.pyc')
+            with self.assertRaisesRegex(RuntimeError,'unsafe_scoped_cache'):M['scoped_caches'](root,True)
+
+if __name__=='__main__':unittest.main()

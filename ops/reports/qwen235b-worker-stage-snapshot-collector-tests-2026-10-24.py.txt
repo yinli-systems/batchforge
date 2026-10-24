@@ -1,0 +1,173 @@
+"""Local fake HTTP/owned records only; no Pod, network, inference or database."""
+from copy import deepcopy
+from contextlib import redirect_stdout
+from io import BytesIO
+import json
+from pathlib import Path
+import runpy
+import tempfile
+import unittest
+from unittest.mock import patch
+from prometheus_client import generate_latest
+from worker.metrics import Metrics
+
+ROOT=Path(__file__).resolve().parents[1]
+M=runpy.run_path(str(ROOT/'.runtime/collect_worker_stage_snapshot.py'),run_name='pure_stage_collector_test')
+SCHEMA=M['analyzer']()
+
+def private(path,raw):
+    path.parent.mkdir(mode=0o700,parents=True,exist_ok=True);path.write_bytes(raw);path.chmod(0o600)
+def actual_metrics():
+    metrics=Metrics();metrics.stage_seconds.labels('tokenize','ok').observe(.02)
+    metrics.stage_seconds.labels('report_ack','error').observe(.1)
+    return generate_latest(metrics.registry)
+class Response(BytesIO):
+    def __init__(self,raw,status=200):super().__init__(raw);self.status=status
+class HTTP:
+    def __init__(self,raw):self.raw=raw;self.calls=[];self.hook=lambda _:None;self.status=200;self.ready=b'ready\n'
+    def open(self,url,timeout):
+        assert url in {'http://127.0.0.1:9105/readyz','http://127.0.0.1:9105/metrics'} and timeout==3
+        self.calls.append(url);self.hook(url)
+        return Response(self.raw if url.endswith('/metrics') else self.ready,self.status)
+
+class CollectorTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory(prefix='bf-stage-snapshot-fake-')
+        self.root=Path(self.tmp.name).resolve();(self.root/'.runtime').mkdir(mode=0o700)
+        for name in M['SOURCES']:private(self.root/name,(ROOT/name).read_bytes())
+        self.env=self.root/'.runtime/worker.env';private(self.env,b'BATCHFORGE_WORKER_TOKEN=SYNTHETIC_NEVER_EXPORT\n')
+        self.manifest=self.root/'.runtime/services-primary.json'
+        self.document={'services':[dict(role='worker',name='qwen235b',port=9105,env_file=str(self.env),python='/unused/python'),
+            dict(role='api',name='a',port=8082,env_file='/DO_NOT_READ_API_OR_OWNER_CONFIG',python='/unused/python')]}
+        self.save_manifest()
+        self.record=dict(pid=12345,start_ticks='99999',cwd=str(M['EXPECTED_ROOT']),command=['SYNTHETIC_NEVER_EXPORT_COMMAND'])
+        self.http=HTTP(actual_metrics());self.reader=lambda _:deepcopy(self.record)
+    def tearDown(self):self.tmp.cleanup()
+    def save_manifest(self):private(self.manifest,M['encoded'](self.document))
+    def collect(self):return M['collect'](self.root,self.manifest,record_reader=self.reader,opener=self.http,schema=SCHEMA)
+    def test_actual_release_metrics_roundtrip_exact_schema_and_only_stage_series(self):
+        self.http.raw+=b'irrelevant_metric{secret="SYNTHETIC_NEVER_EXPORT"} 42\n'
+        body=self.collect();doc,_,groups=SCHEMA['load'](body,M['sha'](body))
+        self.assertEqual(set(doc),{'version','observed_at','worker_identity','source_sha256','worker_configuration_sha256','metrics'})
+        self.assertEqual(set(doc['worker_identity']),{'pid','start_ticks','cwd'})
+        self.assertEqual(doc['source_sha256'],M['SOURCES']);self.assertEqual(doc['worker_configuration_sha256'],M['sha'](self.env.read_bytes()))
+        self.assertEqual(set(groups),{('tokenize','ok'),('report_ack','error')})
+        self.assertTrue(all(set(g['buckets'])==M['BUCKETS'] for g in groups.values()))
+        self.assertFalse(any('created' in x['name'] for x in doc['metrics']))
+        self.assertNotIn('SYNTHETIC_NEVER_EXPORT',body.decode());self.assertEqual(len(self.http.calls),3)
+    def test_genuine_lazy_histogram_empty_before_first_task_is_not_fabricated(self):
+        self.http.raw=generate_latest(Metrics().registry)
+        doc=json.loads(self.collect());self.assertEqual(doc['metrics'],[])
+        before=M['encoded'](doc);after=json.loads(self.collect());after['observed_at']='2099-01-01T00:00:00+00:00'
+        result=SCHEMA['analyze'](before,M['sha'](before),M['encoded'](after),M['sha'](M['encoded'](after)))
+        self.assertEqual(result['stages'],[])
+    def test_missing_family_type_or_help_refuses(self):
+        for part in ('all','type','help'):
+            with self.subTest(part=part):
+                lines=actual_metrics().decode().splitlines()
+                self.http.raw=('\n'.join(x for x in lines if not (
+                    (part=='all' and M['FAMILY'] in x) or x.startswith('# '+part.upper()+' '+M['FAMILY']+' ')))+'\n').encode()
+                with self.assertRaises(ValueError):self.collect()
+    def test_any_missing_bucket_sum_or_count_refuses(self):
+        for suffix in ('bucket','sum','count'):
+            with self.subTest(suffix=suffix):
+                lines=actual_metrics().decode().splitlines();index=next(i for i,x in enumerate(lines) if x.startswith(M['PREFIX']+suffix+'{'))
+                lines.pop(index);self.http.raw=('\n'.join(lines)+'\n').encode()
+                with self.assertRaises(ValueError):self.collect()
+    def test_invalid_labels_or_duplicate_series_refuse(self):
+        for variation in ('stage','outcome','label','duplicate','nan'):
+            with self.subTest(variation=variation):
+                raw=actual_metrics()
+                if variation=='stage':raw=raw.replace(b'stage="tokenize"',b'stage="customer_prompt"')
+                elif variation=='outcome':raw=raw.replace(b'outcome="ok"',b'outcome="secret_outcome"')
+                elif variation=='label':raw=raw.replace(b'stage="tokenize"',b'stage="tokenize",tenant="private"')
+                elif variation=='duplicate':raw+=next(x for x in raw.splitlines() if x.startswith((M['PREFIX']+'sum{').encode()))+b'\n'
+                else:raw=raw.replace(b'} 0.02',b'} NaN')
+                self.http.raw=raw
+                with self.assertRaises(ValueError):self.collect()
+    def test_oversized_unterminated_or_invalid_utf8_metrics_refuse(self):
+        for raw in (b'x'*(M['METRICS_LIMIT']+1),actual_metrics().rstrip(b'\n'),b'\xff\n'):
+            with self.subTest(size=len(raw)):
+                self.http.raw=raw
+                with self.assertRaises((ValueError,UnicodeDecodeError)):self.collect()
+    def test_nonready_before_or_after_metrics_refuses(self):
+        for at in (1,3):
+            with self.subTest(at=at):
+                self.http=HTTP(actual_metrics())
+                self.http.hook=lambda _:setattr(self.http,'ready',b'unavailable\n') if len(self.http.calls)==at else None
+                with self.assertRaises(ValueError):self.collect()
+    def test_http_failure_or_redirect_is_never_retried_or_saved(self):
+        self.http.status=503
+        with self.assertRaises(ValueError):self.collect()
+        self.assertEqual(len(self.http.calls),1)
+        with self.assertRaisesRegex(ValueError,'redirect_refused'):M['NoRedirect']().redirect_request(None,None,None,None,None,None)
+    def test_source_env_manifest_and_full_owned_record_drift_refuse(self):
+        for what in ('source','env','manifest','pid','start','record_metadata'):
+            with self.subTest(what=what):
+                # A fresh setup per subcase preserves immutable fixture inputs.
+                case=CollectorTests();case.setUp()
+                try:
+                    def mutate(url):
+                        if not url.endswith('/metrics'):return
+                        if what=='source':private(case.root/'worker/runtime.py',b'# changed\n')
+                        elif what=='env':private(case.env,b'TOKEN=SYNTHETIC_NEVER_EXPORT_CHANGED\n')
+                        elif what=='manifest':case.document['services'][0]['python']='/changed';case.save_manifest()
+                        elif what=='pid':case.record['pid']+=1
+                        elif what=='start':case.record['start_ticks']='100000'
+                        else:case.record['command'].append('changed')
+                    case.http.hook=mutate
+                    with self.assertRaises(ValueError):case.collect()
+                finally:case.tearDown()
+    def test_old_release_source_refuses_before_any_http(self):
+        private(self.root/'worker/runtime.py',b'# old release\n')
+        with self.assertRaisesRegex(ValueError,'release693'):self.collect()
+        self.assertEqual(self.http.calls,[])
+    def test_only_unique_exact_worker_and_port_are_accepted(self):
+        for what in ('duplicate','port','name','no_worker'):
+            with self.subTest(what=what):
+                original=deepcopy(self.document)
+                if what=='duplicate':self.document['services'].append({**self.document['services'][0],'name':'other'})
+                elif what=='port':self.document['services'][0]['port']=9106
+                elif what=='name':self.document['services'][0]['name']='other'
+                else:self.document['services']=self.document['services'][1:]
+                self.save_manifest()
+                with self.assertRaises(ValueError):self.collect()
+                self.assertEqual(self.http.calls,[]);self.document=original
+    def test_unowned_identity_or_unsafe_config_refuses_before_http(self):
+        for what in ('cwd','pid','ticks','envmode','envlink'):
+            with self.subTest(what=what):
+                case=CollectorTests();case.setUp()
+                try:
+                    if what=='cwd':case.record['cwd']='/unrelated'
+                    elif what=='pid':case.record['pid']=True
+                    elif what=='ticks':case.record['start_ticks']='private'
+                    elif what=='envmode':case.env.chmod(0o644)
+                    else:
+                        target=case.env.with_name('real.env');case.env.rename(target);case.env.symlink_to(target)
+                    with self.assertRaises((ValueError,OSError)):case.collect()
+                    self.assertEqual(case.http.calls,[])
+                finally:case.tearDown()
+    def test_private_exclusive_output_and_parent_mode_no_overwrite(self):
+        body=self.collect();path=self.root/'.runtime/stage.json'
+        with patch.dict(M['write_snapshot'].__globals__,ROOT=self.root):
+            M['write_snapshot'](path,body)
+            self.assertEqual(path.read_bytes(),body);self.assertEqual(path.stat().st_mode&0o777,0o600)
+            with self.assertRaises(FileExistsError):M['write_snapshot'](path,body)
+            path.parent.chmod(0o755)
+            with self.assertRaisesRegex(ValueError,'private_snapshot_directory'):M['write_snapshot'](path.with_name('other.json'),body)
+    def test_analyzer_pin_and_fixed_app_cli_refuse_without_collection(self):
+        with patch.dict(M['analyzer'].__globals__,ANALYZER_SHA='0'*64):
+            with self.assertRaisesRegex(ValueError,'analyzer_source_differs'):M['analyzer']()
+        with patch.dict(M['main'].__globals__,ROOT=self.root):
+            self.assertEqual(M['main'](['--output',str(self.root/'.runtime/refused.json')]),1)
+            self.assertFalse((self.root/'.runtime/refused.json').exists())
+    def test_untrusted_lowercase_parser_error_is_type_only(self):
+        import io
+        stream=io.StringIO()
+        def failed(*a,**k):raise ValueError('sensitive_lowercase_parser_detail')
+        with patch.dict(M['main'].__globals__,ROOT=M['EXPECTED_ROOT'],collect=failed),patch.object(M['sys'],'platform','linux'),redirect_stdout(stream):
+            self.assertEqual(M['main'](['--output','/root/batchforge-runtime/app/.runtime/unused.json']),1)
+        doc=json.loads(stream.getvalue());self.assertEqual(doc['reason_code'],'ValueError')
+        self.assertNotIn('sensitive',stream.getvalue())
+
+if __name__=='__main__':unittest.main()

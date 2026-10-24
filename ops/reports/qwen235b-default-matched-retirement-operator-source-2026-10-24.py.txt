@@ -1,0 +1,576 @@
+"""Finite, owner-only default matched-cohort retirement. PREPARE unless --execute.
+
+Exact externally anchored exporter receipts select every batch. No broad scan,
+key retirement, input/object deletion, quota widening, inference or recovery replay.
+An unknown commit or receipt fsync leaves a durable pending action and stops.
+"""
+from __future__ import annotations
+import argparse
+import asyncio
+from contextlib import ExitStack, contextmanager
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import signal
+import stat
+import sys
+import time
+
+SELF=Path(__file__).resolve();ROOT=SELF.parent.parent
+sys.path.insert(0,str(ROOT))
+from ops.ha.history_maintenance import (Journal, atomic_report, private_file, private_directory,
+    operation_lock, MeteredArchive, accounting, canonical_archive_identity, adapter_identity, identity_hash)
+from ops.ha.verify_history_retirement import json_metadata
+from ops.ha.deploy_storage_admission import bound_owner_dsn
+from ops.ha.finalize_api_policy import values
+from ops.ha.set_scheduler_policy import owned_identity
+from ops.ha.local_pg17_restore import verify_database
+from ops.supervise import load_manifest
+from backend.migrate import MIGRATIONS
+from backend.history_retirement import history_page
+from backend.result_archival import ResultArchiver
+from backend.blob_storage import S3BlobStore
+
+TENANT='default';MODEL='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+CUTOFF='2026-10-24T08:23:26.377895+00:00';PUBLISHER='2026-10-24T03:59:21.961089+00:00'
+LEGACY_TASKS=27903;LEGACY_BYTES=205935962;MAX_PAGES=72;PAGE=20;BYTE_LIMIT=8*1024**2
+OPERATION='qwen235b-v11-matched-v1';MIN_AGE=3600;TTL=86400
+PINS={'.runtime/verify_matched_v11_receipt.py':'5534f19cb83c5408af41cd6497d3c6307039ca6748cb93f8c6c3512d6da592d6',
+ '.runtime/export_sustained_v11_metadata.py':'a73b14599f3a0d5656fcaf2aede81e372a4540b5a3e177011701b539549f3f03',
+ '.runtime/qwen235b-v11-matched-controller.py':'6c5e5895d3cc8ef1826ae75752143ced24f127422a0e612c19b6ad6bb2dd457b',
+ 'scripts/compare_sustained_reports.py':'90df1ebbb26a40d7288fb230ec9ddc484e3ece2414c691b6d993936bd17862c3',
+ '.runtime/default-matched-history-retirement-plan.txt':'93fa9d26d5700d83505b8122fdeb67010b04cbc81900fe35cddcd147e4b4786a'}
+HISTORY_FIELDS=('history_retirement_started_at','history_retired_at','history_retired_tasks','history_retired_completed',
+ 'history_retired_failed','history_retired_cancelled','history_retired_prompt_tokens','history_retired_completion_tokens')
+POLICY_COLUMNS='tenant_id,enabled,eligible_created_after,min_age_seconds,replay_ttl_seconds,replay_floor'
+POLICY_NAMES=POLICY_COLUMNS.split(',')
+
+class Refusal(RuntimeError):pass
+def require(value,code):
+    if not value:raise Refusal(code)
+def stamp():return datetime.now(timezone.utc).isoformat()
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def encode(value):return (json.dumps(json_metadata(value),sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode()
+def clean(value):
+    if isinstance(value,datetime):return value.astimezone(timezone.utc).isoformat()
+    if isinstance(value,dict):return {k:clean(v) for k,v in value.items()}
+    if isinstance(value,(list,tuple)):return [clean(v) for v in value]
+    return json_metadata(value)
+def load(raw):
+    def unique(pairs):
+        result={}
+        for k,v in pairs:require(k not in result,'duplicate_metadata_key');result[k]=v
+        return result
+    def invalid(_):raise Refusal('nonfinite_metadata')
+    return json.loads(raw.decode('utf-8'),object_pairs_hook=unique,parse_constant=invalid)
+def read(path,limit=16*1024**2):
+    path=Path(path)
+    require(path.is_absolute() and path.resolve()==path and path.is_relative_to(ROOT/'.runtime'),'same_pod_private_metadata_required')
+    return private_file(path,limit)
+def pinned(path,checksum):
+    require(isinstance(checksum,str) and re.fullmatch('[0-9a-f]{64}',checksum),'explicit_sha256_required')
+    raw=read(path);require(sha(raw)==checksum,'immutable_input_sha_differs');return load(raw)
+def module(name,path):
+    spec=importlib.util.spec_from_file_location(name,path);value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
+def one(conn,query,args=()):
+    result=conn.execute(query,args);row=result.fetchone()
+    return None if row is None else dict(zip([d.name for d in result.description],row))
+def rows(conn,query,args=()):
+    result=conn.execute(query,args);return [dict(zip([d.name for d in result.description],row)) for row in result.fetchall()]
+def policy(conn,locked=False):
+    return clean(one(conn,'SELECT '+POLICY_COLUMNS+' FROM tenant_history_retirement_policy WHERE tenant_id=%s'+(' FOR UPDATE NOWAIT' if locked else ''),(TENANT,)))
+def target_policy(previous,enabled):
+    return dict(tenant_id=TENANT,enabled=enabled,eligible_created_after=CUTOFF,min_age_seconds=MIN_AGE,
+        replay_ttl_seconds=TTL,replay_floor=0 if previous is None else previous['replay_floor'])
+
+def metadata_inputs(args):
+    """External manifest/receipt SHA anchors ALL five artifacts, including controller."""
+    for path,digest in PINS.items():require(sha((ROOT/path).read_bytes())==digest,'reviewed_dependency_source_changed')
+    receiver=module('matched_owner_receipt_validation',ROOT/'.runtime/verify_matched_v11_receipt.py')
+    exporter=module('matched_owner_schema',ROOT/'.runtime/export_sustained_v11_metadata.py')
+    controller=module('matched_owner_controller',ROOT/'.runtime/qwen235b-v11-matched-controller.py')
+    from scripts import compare_sustained_reports as compare
+    tools=(exporter,controller,compare,None)  # No local renderer on serving Pod.
+    manifest=pinned(args.receipt_manifest,args.receipt_manifest_sha256)
+    entry={'directory':exporter.S,'export_receipt':exporter.S,'export_receipt_sha256':exporter.H}
+    file={'path':exporter.S,'sha256':exporter.H}
+    exporter.validate_schema(manifest,{'version':exporter.I,'operation':exporter.S,'prepared_plan_sha256':exporter.H,
+        'baseline':entry,'candidate':entry,'comparison':file,'pair_journal':file})
+    require(manifest['version']==1 and manifest['operation']==OPERATION and manifest['prepared_plan_sha256']==receiver.PLAN_SHA,'wrong_exact_matched_operation')
+    resolved={label:receiver.validate_round(label,manifest[label],tools) for label in receiver.JOBS}
+    left,right=resolved['baseline'],resolved['candidate']
+    require(left['journal']['configuration_sha256']==right['journal']['configuration_sha256']
+        and left['journal']['service_identities_before']==right['journal']['service_identities_before'],'historical_round_bindings_differ')
+    comparison_raw=read(Path(manifest['comparison']['path']));require(sha(comparison_raw)==manifest['comparison']['sha256'],'comparison_sha_differs')
+    shas={f'{label}_{suffix}':resolved[label]['artifact_sha256'][name] for label in resolved for suffix,name in [('report','report.json'),('runtime_proof','runtime-proof.json')]}
+    result=compare.compare(left['report'],right['report'],left['proof'],right['proof'],before_sha=shas['baseline_report'],after_sha=shas['candidate_report'],input_shas=shas)
+    require(encode(load(comparison_raw))==encode(result),'comparison_recomputation_differs')
+    pair_raw=read(Path(manifest['pair_journal']['path']))
+    pair=receiver.validate_pair(pair_raw,manifest['pair_journal']['sha256'],tools)
+    require(pair['comparison_sha256']==sha(comparison_raw) and pair['legacy_charged_payload_baseline_bytes']==LEGACY_BYTES,'terminal_pair_comparison_or_legacy_differs')
+    allow=pinned(args.allowlist,args.allowlist_sha256)
+    require(allow['phase']=='offline_prepared_NOT_authorization_to_delete' and allow['tenant']==TENANT
+        and allow['operation']==OPERATION and allow['created_after']==CUTOFF and allow['publisher_cutoff']==PUBLISHER
+        and allow['min_age_seconds']==MIN_AGE and allow['replay_ttl_seconds']==TTL and allow['retire_keys'] is False
+        and allow['task_page_limit']==PAGE and allow['archive_byte_limit_per_page']==BYTE_LIMIT
+        and allow['protected_legacy_retained_tasks']==LEGACY_TASKS and allow['protected_legacy_charged_payload_bytes']==LEGACY_BYTES
+        and allow['owner_changes_issued'] is False and allow['database_http_gpu_access'] is False,'fixed_allowlist_scope_changed')
+    require(sha((ROOT/'.runtime/prepare_default_matched_retirement.py').read_bytes())==args.preparer_sha256
+        and allow['preparer_sha256']==args.preparer_sha256,'reviewed_preparer_sha_differs')
+    require(allow['input_proofs']['prepared_sha256']==manifest['prepared_plan_sha256']
+        and allow['input_proofs']['pair_journal_sha256']==manifest['pair_journal']['sha256']
+        and allow['input_proofs']['comparison_sha256']==manifest['comparison']['sha256'],'allowlist_external_proofs_differ')
+    expected={};batches=[];inputs={str(args.receipt_manifest):args.receipt_manifest_sha256,str(args.allowlist):args.allowlist_sha256}
+    for label,round_ in resolved.items():
+        job=receiver.JOBS[label]
+        require(pair['rounds'][label]['report_sha256']==round_['artifact_sha256']['report.json']
+            and pair[label+'_full_plan_passed'] is round_['report']['passed'],'pair_report_or_partial_flag_differs')
+        directory=Path(manifest[label]['directory']);collection=load(read(directory/(job+'-output-collection.json')))
+        taskgroups={}
+        for task in round_['report']['tasks']:
+            require(task['id'] not in expected,'duplicate_cross_round_task')
+            expected[task['id']]=[task['id'],task['batch_id'],task['custom_id'],task['prompt_tokens'],task['completion_tokens']]
+            taskgroups.setdefault(task['batch_id'],[]).append(task)
+        for item in sorted(collection['binding']['batch_files'],key=lambda x:x['index']):
+            file=collection['files'][str(item['index'])];members=taskgroups[item['batch_id']]
+            require(len(members)==PAGE and file['bytes']>0,'exact_twenty_tasks_per_batch_required')
+            batches.append(dict(job_id=job,batch_id=item['batch_id'],output_file_id=item['file_id'],output_sha256=file['sha256'],
+                output_bytes=file['bytes'],tasks=PAGE,prompt_tokens=file['prompt_tokens'],completion_tokens=file['completion_tokens'],task_ids=sorted(t['id'] for t in members)))
+        inputs[manifest[label]['export_receipt']]=manifest[label]['export_receipt_sha256']
+        inputs.update({str(directory/(job+'-'+name)):digest for name,digest in round_['artifact_sha256'].items()})
+    inputs.update({manifest[k]['path']:manifest[k]['sha256'] for k in ('pair_journal','comparison')})
+    require(batches==allow['batch_allowlist'] and allow['max_pages']==len(batches)
+        and 1<=len(batches)<=MAX_PAGES and len(expected)==PAGE*len(batches)<=1440
+        and len({b['batch_id'] for b in batches})==len(batches),'allowlist_not_exact_external_report_population')
+    return allow,expected,inputs
+
+
+def backup_proof(path,digest,matched_inputs):
+    """Fresh same-Pod schema11 SQL backup + actual isolated PG17 restore; no export."""
+    doc=pinned(path,digest)
+    require(doc.get('phase')=='complete' and doc.get('passed') is True and doc.get('schema_version')==11
+        and doc.get('services_and_configuration_unchanged') is True and doc.get('off_pod_copy_verified') is False
+        and doc.get('matched_operation')==OPERATION and doc.get('source_sha256')=='ce1299466dcdc262ce142dfd6bfc84426622c40a95fce16ed79c095c9f930c82','fresh_same_pod_backup_required')
+    require(doc.get('matched_plan_sha256')=='8d1b3745c9dfb9a12f11394fcc3d57af7150d33c3a46414646f13c2b02f7a45e','backup_matched_plan_differs')
+    directory=Path(path).parent
+    raw=load(read(directory/'fresh-backup-raw.json',2*1024**2));restore_raw=read(directory/'restore.json',4*1024**2);restore=load(restore_raw)
+    require(sha(restore_raw)==doc['restore_report_sha256'] and restore.get('passed') is True and restore.get('schema_version')==11
+        and restore.get('unix_socket_only') is True and restore.get('temporary_cluster_stopped') is True and restore.get('temporary_cluster_removed') is True
+        and restore.get('live_database_modified') is False and str(restore.get('server_version','')).startswith('17.')
+        and restore.get('source_sha256')==sha((ROOT/'ops/ha/local_pg17_restore.py').read_bytes()),'actual_isolated_pg17_restore_proof_required')
+    require(raw.get('archive_list_verified') is True and raw.get('server_major')==17 and raw.get('database_modified') is False
+        and raw.get('snapshot_sha256')==doc['snapshot_sha256']==restore.get('snapshot_sha256')
+        and raw.get('snapshot_bytes')==doc['snapshot_bytes']==restore.get('snapshot_bytes'),'snapshot_restore_binding_differs')
+    require(restore.get('migration_checksums')=={str(v):checksum for v,_,checksum in MIGRATIONS} and MIGRATIONS[-1][0]==11,'backup_registry11_differs')
+    observed=datetime.fromisoformat(raw['observed_at'].replace('Z','+00:00'));age=(datetime.now(timezone.utc)-observed).total_seconds()
+    require(observed.utcoffset() is not None and 0<=age<=3600,'backup_older_than_one_hour_or_future')
+    archive=Path(raw['snapshot_path']);require(archive.is_absolute() and archive.resolve()==archive and archive.is_relative_to(ROOT/'.runtime/backups'),'same_pod_snapshot_path_required')
+    fd=os.open(archive,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    try:
+        info=os.fstat(fd);require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o077
+            and info.st_nlink==1 and info.st_size==raw['snapshot_bytes'],'private_snapshot_identity_differs')
+        with os.fdopen(fd,'rb',closefd=False) as f:require(hashlib.file_digest(f,'sha256').hexdigest()==raw['snapshot_sha256'],'snapshot_checksum_differs')
+    finally:os.close(fd)
+    # The backup's metadata-only export inventory must contain these exact source artifacts.
+    export_expected={label+'/'+Path(p).name:h for label in ('baseline','candidate') for p,h in matched_inputs.items() if '/exports/'+label+'/' in p}
+    require(len(export_expected)==10 and doc.get('matched_export_sha256')==export_expected,'backup_export_inventory_differs')
+    return dict(journal_sha256=digest,snapshot_sha256=raw['snapshot_sha256'],snapshot_bytes=raw['snapshot_bytes'],
+        restore_report_sha256=sha(restore_raw),observed_at=raw['observed_at'],off_pod_copy_verified=False,
+        snapshot_path=str(archive),snapshot_stat={k:getattr(info,k) for k in ('st_dev','st_ino','st_size','st_mtime_ns','st_ctime_ns')},
+        proof_files={str(p):sha(read(p,4*1024**2)) for p in (Path(path),directory/'fresh-backup-raw.json',directory/'restore.json')})
+
+
+def digest_query(conn,query,args=()):
+    """Only per-row hashes leave PostgreSQL, never body/error/answer/key text."""
+    result=conn.execute("SELECT encode(sha256(convert_to(row_to_json(q)::text,'UTF8')),'hex') FROM ("+query+') q ORDER BY 1',args)
+    digest=hashlib.sha256();count=0
+    for (value,) in result:
+        digest.update(value.encode()+b'\n');count+=1
+    return dict(rows=count,sha256=digest.hexdigest())
+
+def database_snapshot(conn,batches,expected_tasks,retired=()):
+    ids=[b['batch_id'] for b in batches];task_ids=list(expected_tasks);retired=set(retired)
+    with conn.transaction():
+        conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
+        require(one(conn,"SELECT count(*) AS n FROM tasks WHERE status IN ('pending','running')")['n']==0,'global_drain_required')
+        full=verify_database(conn,MIGRATIONS)
+        invariants={k:v for k,v in full.items() if k.endswith('mismatches') or k in ('unvalidated_constraints','retention_undercharged_tasks','retention_missing_tenant_ledgers')}
+        legacy=one(conn,"""SELECT count(*) AS tasks,coalesce(sum(t.retention_body_bytes+t.retention_response_bytes+t.retention_error_bytes),0) AS charged
+          FROM tasks t JOIN batches b ON b.id=t.batch_id WHERE t.tenant_id='default' AND b.created_at<%s""",(CUTOFF,))
+        require((legacy['tasks'],legacy['charged'])==(LEGACY_TASKS,LEGACY_BYTES),'protected_legacy_baseline_differs')
+        selected=[]
+        for batch in batches:
+            bid=batch['batch_id'];was_retired=bid in retired
+            b=one(conn,"""SELECT id,tenant_id,model,metadata->>'sustained_job' AS job,created_at,completed_at,total_count,completed_count,
+             pending_count,running_count,failed_count,cancelled_count,prompt_tokens,completion_tokens,output_file_id,
+             history_retirement_started_at,history_retired_at,history_retired_tasks,history_retired_completed,
+             history_retired_failed,history_retired_cancelled,history_retired_prompt_tokens,history_retired_completion_tokens,
+             completed_at<=clock_timestamp()-interval '3600 seconds' AS old_enough FROM batches WHERE id=%s""",(bid,))
+            require(b is not None and b['tenant_id']==TENANT and b['model']==MODEL and b['job']==batch['job_id']
+                and b['created_at']>=datetime.fromisoformat(CUTOFF) and b['completed_at'] is not None and b['completed_at']>=b['created_at']
+                and b['old_enough'] is True,'selected_batch_scope_or_minimum_age_not_ready')
+            require(b['total_count']==b['completed_count']==PAGE and all(b[k]==0 for k in ('pending_count','running_count','failed_count','cancelled_count'))
+                and b['prompt_tokens']==batch['prompt_tokens'] and b['completion_tokens']==batch['completion_tokens']
+                and b['output_file_id']==batch['output_file_id'],'selected_batch_business_totals_differ')
+            data=rows(conn,"""SELECT id,batch_id,custom_id,prompt_tokens,completion_tokens,status,retention_payload_cleared,
+              retention_body_bytes+retention_response_bytes+retention_error_bytes AS charged,lease_expires_at
+              FROM tasks WHERE batch_id=%s ORDER BY id""",(bid,))
+            require(len(data)==(0 if was_retired else PAGE),'selected_task_count_drift')
+            if not was_retired:
+                require([[t[k] for k in ('id','batch_id','custom_id','prompt_tokens','completion_tokens')] for t in data]
+                    ==sorted([expected_tasks[t] for t in batch['task_ids']]),'selected_exact_task_identity_or_usage_differs')
+                require(all(t['status']=='completed' and t['retention_payload_cleared'] and t['lease_expires_at'] is None for t in data),'selected_task_payload_or_lease_not_clear')
+                require(all(b[k] is None for k in ('history_retirement_started_at','history_retired_at'))
+                    and all(b[k]==0 for k in HISTORY_FIELDS[2:]),'selected_history_already_marked')
+            else:
+                require(b['history_retirement_started_at'] is not None and b['history_retired_at'] is not None
+                    and b['history_retired_tasks']==b['history_retired_completed']==PAGE and b['history_retired_failed']==b['history_retired_cancelled']==0
+                    and b['history_retired_prompt_tokens']==batch['prompt_tokens'] and b['history_retired_completion_tokens']==batch['completion_tokens'],'selected_retired_markers_differ')
+            active=one(conn,"""SELECT (SELECT count(*) FROM attempts WHERE batch_id=%s AND (status='running' OR finished_at IS NULL)) AS attempts,
+             (SELECT count(*) FROM result_read_leases WHERE tenant_id='default' AND batch_id=%s AND expires_at>clock_timestamp()) AS readers,
+             (SELECT count(*) FROM result_archive_runs WHERE tenant_id='default' AND batch_id=%s AND state='building') AS writers""",(bid,bid,bid))
+            require(not any(active.values()),'selected_active_attempt_reader_or_writer')
+            selected.append(dict(batch_id=bid,tasks=len(data),charged_bytes=sum(t['charged'] for t in data),attempts=one(conn,'SELECT count(*) AS n FROM attempts WHERE batch_id=%s',(bid,))['n']))
+        protection={
+          'outside_tasks':digest_query(conn,'SELECT * FROM tasks WHERE NOT (tenant_id=%s AND batch_id=ANY(%s))',(TENANT,ids)),
+          'outside_attempts':digest_query(conn,'SELECT * FROM attempts WHERE NOT (tenant_id=%s AND batch_id=ANY(%s))',(TENANT,ids)),
+          'batches_business':digest_query(conn,'SELECT to_jsonb(b)-%s::text[] AS business FROM batches b',(list(HISTORY_FIELDS),)),
+          'outside_batch_history':digest_query(conn,'SELECT * FROM batches WHERE NOT (tenant_id=%s AND id=ANY(%s))',(TENANT,ids)),
+          'keys':digest_query(conn,'SELECT * FROM idempotency'),
+          'hourly':digest_query(conn,'SELECT * FROM batchforge_attempt_hourly'),
+          'other_policy':digest_query(conn,"SELECT * FROM tenant_history_retirement_policy WHERE tenant_id<>'default'"),
+        }
+        for table in ('files','blob_objects','blob_upload_reservations','result_archive_runs','result_archive_files','result_archive_chunks',
+                      'tenant_retention_limits','tenant_auxiliary_limits','tenant_result_usage'):
+            protection[table]=digest_query(conn,'SELECT * FROM '+table)
+        usage=one(conn,"SELECT retained_tasks,charged_payload_bytes FROM tenant_retention_usage WHERE tenant_id='default'")
+        current_policy=policy(conn)
+    return clean(dict(protection=protection,legacy=legacy,selected=selected,usage=usage,policy=current_policy,invariants=invariants))
+
+
+def refund_arithmetic(before,usage,retired):
+    rows_before={b['batch_id']:b for b in before['selected']}
+    require(len(set(retired))==len(retired) and set(retired)<=rows_before.keys(),'invalid_confirmed_batch_set')
+    refunded_tasks=sum(rows_before[bid]['tasks'] for bid in retired);refunded_bytes=sum(rows_before[bid]['charged_bytes'] for bid in retired)
+    require(usage['retained_tasks']==before['usage']['retained_tasks']-refunded_tasks
+        and usage['charged_payload_bytes']==before['usage']['charged_payload_bytes']-refunded_bytes,'measured_retention_refund_differs')
+    return dict(refunded_tasks=refunded_tasks,refunded_payload_bytes=refunded_bytes,
+        retired_attempts=sum(rows_before[bid]['attempts'] for bid in retired))
+
+
+def compare_snapshots(before,after,retired):
+    require(before['protection']==after['protection'] and before['legacy']==after['legacy'],'outside_history_output_or_usage_changed')
+    require(not any(after['invariants'].values()),'final_ledger_invariant_failed')
+    return refund_arithmetic(before,after['usage'],retired)
+
+
+def policy_cas(conn,previous,enabled):
+    """Same-TX prior-state CAS. No outer lock followed by a second helper connection."""
+    target=target_policy(previous,enabled)
+    with conn.transaction():
+        conn.execute('SET TRANSACTION ISOLATION LEVEL READ COMMITTED')
+        require(conn.execute("SELECT id FROM tenants WHERE id='default' FOR NO KEY UPDATE NOWAIT").fetchone()==(TENANT,),'default_tenant_missing')
+        actual=policy(conn,locked=True);require(actual==previous,'policy_prior_state_changed')
+        if enabled:
+            require(previous is None or previous['enabled'] is False and previous['replay_ttl_seconds']==TTL,'policy_already_enabled_or_ttl_differs')
+            if previous is None:
+                conn.execute('INSERT INTO tenant_history_retirement_policy(tenant_id,enabled,eligible_created_after,min_age_seconds,replay_ttl_seconds) VALUES(%s,true,%s,%s,%s)',(TENANT,CUTOFF,MIN_AGE,TTL))
+            else:
+                conn.execute("UPDATE tenant_history_retirement_policy SET enabled=true,eligible_created_after=%s,min_age_seconds=%s,replay_ttl_seconds=%s WHERE tenant_id='default'",(CUTOFF,MIN_AGE,TTL))
+        else:
+            require(previous==target_policy(previous,True),'disable_requires_exact_owned_enabled_policy')
+            conn.execute("UPDATE tenant_history_retirement_policy SET enabled=false WHERE tenant_id='default'")
+        result=policy(conn);require(result==target,'policy_target_or_floor_changed')
+    return result  # Only after the COMMIT acknowledgement.
+
+
+async def verify_archive(pool,meter,item,expected=None):
+    verifier=ResultArchiver(pool,meter,max_archived_bytes_per_tenant=1)
+    async with pool.connection() as conn:
+        run,files,chunks=await verifier._ready(conn,TENANT,item['batch_id'])
+    require(run and run['purged_at'] is not None and run['writer_token'] is None and run['lease_expires_at'] is None,'ready_purged_writerless_archive_required')
+    require(len(files)==1 and files[0]['file_id']==item['output_file_id'] and files[0]['kind']=='output'
+        and files[0]['bytes']==item['output_bytes'] and files[0]['sha256']==item['output_sha256']
+        and files[0]['line_count']==files[0]['expected_count']==PAGE,'collected_archive_file_identity_differs')
+    require(1<=len(chunks)<=PAGE and all(type(c['bytes']) is int and c['bytes']>0 for c in chunks),'bounded_positive_archive_chunks_required')
+    declared=sum(c['bytes'] for c in chunks)
+    require(declared==item['output_bytes'] and declared*3<=BYTE_LIMIT,'three_verification_passes_exceed_page_budget')
+    identity=clean(dict(archive_id=run['id'],manifest_sha256=run['manifest_sha256'],file_id=files[0]['file_id'],
+        bytes=files[0]['bytes'],sha256=files[0]['sha256'],count=files[0]['line_count']))
+    if expected is not None:require(identity==expected,'archive_generation_changed')
+    await asyncio.to_thread(verifier._verify_files,files,chunks)
+    return identity
+
+
+def exact_page(result,expected,attempts,apply):
+    require(isinstance(result,dict) and set(result)=={'eligible','apply','tasks','attempts','remaining_tasks','archive_id','manifest_sha256'}
+        and result['eligible'] is True and result['apply'] is apply
+        and all(type(result[k]) is int for k in ('tasks','attempts','remaining_tasks'))
+        and result['tasks']==PAGE and result['attempts']==attempts and PAGE<=attempts<=PAGE*3
+        and result['remaining_tasks']==(0 if apply else PAGE)
+        and result['archive_id']==expected['archive_id'] and result['manifest_sha256']==expected['manifest_sha256'],
+        'exact_page_outcome_or_attempt_count_differs')
+    return result
+
+
+class Driver:
+    """Small injected state machine; Context does all private production observation."""
+    def __init__(self,context,journal,prepared,*,clock=time.monotonic,sleep=asyncio.sleep,stop=lambda:False):
+        require(1<=len(context.batches)<=MAX_PAGES and len({b['batch_id'] for b in context.batches})==len(context.batches)
+            and all(b['tasks']==PAGE for b in context.batches),'bounded_unique_twenty_task_batches_required')
+        self.context=context;self.journal=journal;self.report=prepared;self.clock=clock;self.sleep=sleep;self.stop=stop;self.started=False
+    def save(self,value):self.journal.save(clean(value));self.report=clean(value)
+    async def action(self,stage,callback,**metadata):
+        self.context.guard();require(not self.stop(),'interrupted_before_action')
+        require(not self.report.get('pending_action'),'unresolved_action_no_replay')
+        candidate={**self.report,'phase':stage+'_intent','pending_action':dict(stage=stage,**metadata)}
+        self.journal.append('intent',stage=stage,**metadata);self.save(candidate)
+        result=await callback()
+        candidate={**self.report,'phase':stage+'_confirmed','pending_action':None}
+        candidate.setdefault('actions',[])
+        # Copy rather than mutate the report that still contains the durable intent.
+        candidate['actions']=[*candidate['actions'],dict(stage=stage,result=clean(result),**metadata)]
+        self.journal.append('confirmed',stage=stage,**metadata);self.save(candidate)
+        return result
+    async def run(self):
+        require(not self.started and self.report.get('phase')=='prepared' and not self.report.get('pending_action'),'operation_already_started_no_replay')
+        self.started=True;retired=[];started=self.clock()
+        try:
+            self.context.guard()
+            before=getattr(self.context,'initial_snapshot',None) or await self.context.snapshot(retired)
+            require(before==self.report['before_snapshot'],'prepared_snapshot_changed')
+            prior=before['policy'];require(prior is None or prior['enabled'] is False and prior['replay_ttl_seconds']==TTL,'default_policy_not_disabled')
+            archives={}
+            for item in self.context.batches:
+                self.context.guard();require(not self.stop(),'interrupted_during_readonly_verification')
+                archives[item['batch_id']]=await self.context.archive(item)
+            self.save({**self.report,'archives_before':archives,'phase':'archives_verified'})
+            async def enable():return self.context.policy(prior,True)
+            enabled=await self.action('policy_enable',enable)
+            # Preview EVERY exact batch before deleting even the first page.
+            for item in self.context.batches:
+                self.context.guard();require(not self.stop(),'interrupted_before_preview')
+                preview=await self.context.preview(item)
+                expected=archives[item['batch_id']]
+                attempts=next(b['attempts'] for b in before['selected'] if b['batch_id']==item['batch_id'])
+                exact_page(preview,expected,attempts,False)
+            last=None
+            for item in self.context.batches:
+                if last is not None:
+                    wait=max(0,10-(self.clock()-last))
+                    if wait:await self.sleep(wait)
+                self.context.guard();require(not self.stop(),'interrupted_before_page')
+                current=await self.context.progress(before,retired)
+                require(current['policy']==enabled,'enabled_policy_drift')
+                expected=archives[item['batch_id']]
+                attempts=next(b['attempts'] for b in before['selected'] if b['batch_id']==item['batch_id'])
+                async def page(item=item,expected=expected,attempts=attempts):
+                    result=await self.context.page(item)
+                    return exact_page(result,expected,attempts,True)
+                result=await self.action('history_page',page,batch_id=item['batch_id'],limit=PAGE,manifest_sha256=expected['manifest_sha256'])
+                retired.append(item['batch_id']);last=self.clock()
+                current=await self.context.progress(before,retired);refund=current['measured_refund']
+                self.save({**self.report,'confirmed_batches':retired[:],'measured_refund':refund})
+            after=await self.context.snapshot(retired);refund=compare_snapshots(before,after,retired)
+            require(after['policy']==enabled,'policy_changed_before_final_verify')
+            final={}
+            for item in self.context.batches:
+                self.context.guard();require(not self.stop(),'interrupted_during_final_verify')
+                final[item['batch_id']]=await self.context.archive(item,archives[item['batch_id']])
+            self.save({**self.report,'archives_after':final,'after_snapshot':after,'measured_refund':refund})
+            async def disable():return self.context.policy(enabled,False)
+            disabled=await self.action('policy_disable',disable)
+            end=await self.context.snapshot(retired);compare_snapshots(before,end,retired)
+            require(end['policy']==disabled,'final_disabled_policy_changed')
+            self.context.guard()
+            self.save({**self.report,'phase':'complete','passed':True,'pending_action':None,'finished_at':stamp(),
+                'elapsed_seconds':self.clock()-started,'final_snapshot':end,'verified_archive_bytes':self.context.verified_bytes(),
+                'retire_keys':False,'replay_floor_unchanged':True,'all_selected_output_hashes_unchanged':True})
+            return self.report
+        except BaseException as error:
+            candidate={**self.report,'phase':'manual_recovery_required','passed':False,'manual_recovery_required':True,
+                'error_type':type(error).__name__,'error_code':str(error) if type(error) is Refusal else type(error).__name__,
+                'finished_at':stamp(),'automatic_replay':False}
+            try:self.save(candidate)
+            except BaseException:pass
+            raise  # No finally disable, retry, cleanup, policy compensation or workload resubmission.
+
+
+class Context:
+    def __init__(self,args,batches,expected,inputs):
+        import psycopg
+        self.args=args;self.batches=batches;self.expected=expected;self.inputs=inputs
+        manifest,services,_=load_manifest(args.manifest,root=ROOT)
+        apis=sorted((s for s in services if s['role']=='api'),key=lambda s:s['name'])
+        require([(s['name'],s['port']) for s in apis]==[('a',8082),('b',8083)],'exact_current_api_pair_required')
+        self.services=[*services,dict(role='supervisor',name='primary',env_file=str(ROOT.parent/'supervisor.env'))]
+        envs=[values(private_file(Path(s['env_file']))) for s in apis]
+        require(all(e.get('RESULT_ARCHIVE_AFTER') and datetime.fromisoformat(e['RESULT_ARCHIVE_AFTER'].replace('Z','+00:00'))==datetime.fromisoformat(PUBLISHER)
+            and e.get('MODEL_NAME')==MODEL and e.get('BLOB_STORAGE_BACKEND')=='s3' for e in envs),'existing_publisher_model_or_storage_changed')
+        self.dsn=bound_owner_dsn(private_file(args.owner_env),[e['DATABASE_URL'] for e in envs])
+        access=values(private_file(args.access_env))
+        storage={k:access.get(k) or envs[0].get(k) for k in ('AWS_ENDPOINT_URL_S3','AWS_REGION','AWS_ACCESS_KEY_ID','AWS_SECRET_ACCESS_KEY')}
+        require(all(storage.values()) and envs[0]['BLOB_STORAGE_BUCKET']==envs[1]['BLOB_STORAGE_BUCKET'],'existing_s3_credentials_required')
+        require(all(e.get('AWS_ENDPOINT_URL_S3')==storage['AWS_ENDPOINT_URL_S3'] and e.get('AWS_REGION')==storage['AWS_REGION'] for e in envs),'same_existing_s3_endpoint_required')
+        self.adapter=S3BlobStore.from_credentials(endpoint_url=storage['AWS_ENDPOINT_URL_S3'],region=storage['AWS_REGION'],bucket=envs[0]['BLOB_STORAGE_BUCKET'],
+            access_key_id=storage['AWS_ACCESS_KEY_ID'],secret_access_key=storage['AWS_SECRET_ACCESS_KEY'])
+        self.archive_identity=identity_hash(adapter_identity(self.adapter))
+        self.manifest=manifest;self.meters={b['batch_id']:MeteredArchive(self.adapter,BYTE_LIMIT) for b in batches}
+        self.owner=psycopg.connect(self.dsn,autocommit=True,connect_timeout=10,options='-c statement_timeout=30000 -c lock_timeout=1000 -c default_transaction_isolation=read\\ committed')
+        require(self.owner.execute("SELECT current_user=pg_get_userbyid(relowner) FROM pg_class WHERE oid='public.tenant_history_retirement_policy'::regclass").fetchone()==(True,),'schema_owner_required')
+        self.backup=backup_proof(args.backup_journal,args.backup_journal_sha256,inputs)
+        self.binding=self.current_binding()
+    def processes(self):
+        result={}
+        for service in self.services:
+            identity=owned_identity(ROOT,service);require(identity is not None,'owned_process_required')
+            pid=identity['pid'];private={}
+            for name in ('environ','cmdline'):
+                raw=(Path('/proc')/str(pid)/name).read_bytes();require(len(raw)<=2*1024**2,'process_metadata_bound_exceeded')
+                private[name+'_sha256']=sha(raw)
+            require(owned_identity(ROOT,service)==identity,'process_changed_while_reading')
+            result[service['role']+'-'+service['name']]={**identity,**private}
+        return result
+    def current_binding(self):
+        source={}
+        for base in ('backend','worker','ops','scripts'):
+            for p in sorted((ROOT/base).rglob('*')):
+                if p.suffix in ('.py','.sql'):
+                    require(not p.is_symlink(),'source_symlink_refused')
+                    if p.is_file():source[str(p.relative_to(ROOT))]=sha(p.read_bytes())
+        source[str(SELF.relative_to(ROOT))]=sha(SELF.read_bytes())
+        source.update({p:sha((ROOT/p).read_bytes()) for p in [*PINS,'.runtime/prepare_default_matched_retirement.py']})
+        files={str(p):sha(private_file(p)) for p in [self.manifest,*[Path(s['env_file']) for s in self.services],self.args.owner_env,self.args.access_env]}
+        return clean(dict(source_sha256=source,environment_sha256=files,service_identities=self.processes(),archive_identity_sha256=self.archive_identity,
+            input_sha256=self.inputs,backup=self.backup))
+    def guard(self):
+        if hasattr(self,'operation_spec'):
+            require(sha(read(self.operation_spec[0],32*1024**2))==self.operation_spec[1],'immutable_prepared_operation_changed')
+        observed=datetime.fromisoformat(self.backup['observed_at'].replace('Z','+00:00'))
+        require(0<=(datetime.now(timezone.utc)-observed).total_seconds()<=3600,'backup_no_longer_fresh')
+        for path,digest in self.backup['proof_files'].items():require(sha(read(Path(path),4*1024**2))==digest,'backup_proof_changed')
+        archive=Path(self.backup['snapshot_path']);info=archive.lstat()
+        require(not archive.is_symlink() and {k:getattr(info,k) for k in self.backup['snapshot_stat']}==self.backup['snapshot_stat'],'backup_snapshot_identity_changed')
+        require(self.current_binding()==self.binding,'prepared_source_env_pid_input_or_backup_drift')
+        require(all(sha(read(Path(p)))==h for p,h in self.inputs.items()),'source_metadata_changed')
+    async def snapshot(self,retired):
+        value=database_snapshot(self.owner,self.batches,self.expected,retired)
+        count=await accounting(self.pool,TENANT)
+        require(value['usage']=={k:count[k] for k in ('retained_tasks','charged_payload_bytes')},'accounting_snapshot_changed')
+        return value
+    async def progress(self,before,retired):
+        # Small per-page conservation check, not a repeated full-table/raw-row transport.
+        count=await accounting(self.pool,TENANT)
+        with self.owner.transaction():
+            self.owner.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
+            require(one(self.owner,"SELECT count(*) AS n FROM tasks WHERE status IN ('pending','running')")['n']==0,'global_drain_required')
+            current_policy=policy(self.owner)
+            current_ids=[r[0] for r in self.owner.execute("SELECT id FROM batches WHERE id=ANY(%s) AND history_retired_tasks=20 AND history_retired_at IS NOT NULL ORDER BY id",([b['batch_id'] for b in self.batches],))]
+            require(current_ids==sorted(retired),'confirmed_page_markers_differ')
+        refund=refund_arithmetic(before,{k:count[k] for k in ('retained_tasks','charged_payload_bytes')},retired)
+        return dict(policy=current_policy,measured_refund=refund)
+    async def archive(self,item,expected=None):return await verify_archive(self.pool,self.meters[item['batch_id']],item,expected)
+    async def preview(self,item):return await history_page(self.pool,TENANT,item['batch_id'],limit=PAGE,apply=False)
+    async def page(self,item):
+        verifier=ResultArchiver(self.pool,self.meters[item['batch_id']],max_archived_bytes_per_tenant=1)
+        return await history_page(self.pool,TENANT,item['batch_id'],limit=PAGE,apply=True,archiver=verifier)
+    def policy(self,previous,enabled):return policy_cas(self.owner,previous,enabled)
+    def verified_bytes(self):return sum(m.verified_bytes for m in self.meters.values())
+
+
+@contextmanager
+def named_lock(path):
+    fd=os.open(path,os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW,0o600)
+    try:
+        info=os.fstat(fd);require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o077 and info.st_nlink==1,'unsafe_operation_lock')
+        fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB);yield
+    finally:os.close(fd)
+
+def write_prepared(directory,report):
+    path=directory/'prepared.json'
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'wb') as out:out.write(encode(report));out.flush();os.fsync(out.fileno())
+    fd=os.open(directory,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+    try:os.fsync(fd)
+    finally:os.close(fd)
+    return sha(read(path,32*1024**2))
+
+def claim(directory,prepared_sha):
+    path=directory/'execution.claim'
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'wb') as out:out.write(encode(dict(prepared_sha256=prepared_sha,at=stamp(),automatic_replay=False)));out.flush();os.fsync(out.fileno())
+    fd=os.open(directory,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+    try:os.fsync(fd)
+    finally:os.close(fd)
+
+async def execute(args):
+    from psycopg_pool import AsyncConnectionPool
+    from psycopg.rows import dict_row
+    require(sys.platform=='linux' and os.geteuid()==0,'same_pod_linux_root_operator_required')
+    allow,expected,inputs=metadata_inputs(args)
+    require(re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]{0,63}',args.operation),'new_unique_operation_required')
+    directory=ROOT/'.runtime'/('default-matched-retirement-'+args.operation)
+    if not args.execute:
+        directory.mkdir(mode=0o700)
+        parentfd=os.open(directory.parent,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+        try:os.fsync(parentfd)
+        finally:os.close(parentfd)
+    else:require(directory.is_dir() and not directory.is_symlink(),'separate_prepared_operation_required')
+    journal=Journal(directory);context=None;stop={'value':False};loop=asyncio.get_running_loop()
+    for signum in (signal.SIGINT,signal.SIGTERM):loop.add_signal_handler(signum,lambda:stop.update(value=True))
+    try:
+        with ExitStack() as locks:
+            locks.enter_context(operation_lock(directory))
+            for path in (ROOT/'.runtime/qwen235b-maintenance.lock',ROOT/'.runtime/single-pod-worker-fault.lock',
+                         ROOT/'.runtime/sustained-matched'/OPERATION/'operation.lock'):
+                locks.enter_context(named_lock(path))
+            context=Context(args,allow['batch_allowlist'],expected,inputs)
+            require(context.owner.execute("SELECT pg_try_advisory_lock(hashtextextended('batchforge-history-maintenance:default',0))").fetchone()==(True,),'other_tenant_maintenance_active')
+            options=dict(autocommit=True,row_factory=dict_row,connect_timeout=10,
+                options='-c statement_timeout=15000 -c lock_timeout=1000 -c default_transaction_isolation=read\\ committed')
+            async with AsyncConnectionPool(context.dsn,min_size=1,max_size=2,kwargs=options,open=False) as pool:
+                context.pool=pool;context.guard();before=await context.snapshot([])
+                require(before['policy'] is None or before['policy']['enabled'] is False and before['policy']['replay_ttl_seconds']==TTL,'default_policy_must_be_disabled')
+                if not args.execute:
+                    require(journal.load() is None,'existing_operation_no_reprepare')
+                    report=dict(version=1,phase='prepared',operation=args.operation,prepared_at=stamp(),binding=context.binding,before_snapshot=before,
+                        allowlist_sha256=args.allowlist_sha256,batches=allow['batch_allowlist'],expected_task_count=len(expected),retire_keys=False,
+                        automatic_replay=False,pending_action=None,passed=False,limitations=[
+                         'Logical task/attempt retirement only; no physical heap/WAL/object/role/ACL reclamation or failover proof.',
+                         'Ready archives, input files, idempotency keys, replay floor and protected legacy remain.',
+                         'Unknown actions are manual recovery; this operation cannot be resumed or replayed.'])
+                    prepared_sha=write_prepared(directory,report)
+                    journal.save(report);print(json.dumps(dict(phase='prepared',prepared_sha256=prepared_sha,pages=len(context.batches),tasks=len(expected))));return 0
+                report=pinned(directory/'prepared.json',args.prepared_sha256)
+                require(journal.load()==report,'mutable_report_not_exact_prepared_state')
+                context.operation_spec=(directory/'prepared.json',args.prepared_sha256)
+                require(report['version']==1 and report['operation']==args.operation and report['expected_task_count']==len(expected) and report['retire_keys'] is False
+                    and report['phase']=='prepared' and not report.get('pending_action') and report['binding']==context.binding
+                    and report['before_snapshot']==before and report['batches']==context.batches and report['allowlist_sha256']==args.allowlist_sha256,'exact_prepared_state_required')
+                context.initial_snapshot=before
+                claim(directory,args.prepared_sha256)
+                result=await Driver(context,journal,{**report,'prepared_sha256':args.prepared_sha256},stop=lambda:stop['value']).run()
+                print(json.dumps({k:result[k] for k in ('phase','passed','measured_refund','verified_archive_bytes','retire_keys','replay_floor_unchanged')}));return 0
+    finally:
+        if context is not None:context.owner.close()
+        for signum in (signal.SIGINT,signal.SIGTERM):loop.remove_signal_handler(signum)
+
+def main(argv=None):
+    p=argparse.ArgumentParser(description=__doc__)
+    for name in ('receipt-manifest','allowlist','backup-journal'):p.add_argument('--'+name,type=Path,required=True);p.add_argument('--'+name+'-sha256',required=True)
+    p.add_argument('--preparer-sha256',required=True);p.add_argument('--operation',required=True)
+    p.add_argument('--manifest',type=Path,default=ROOT/'.runtime/services-primary.json')
+    p.add_argument('--owner-env',type=Path,default=ROOT.parent/'neon-owner.env');p.add_argument('--access-env',type=Path,required=True)
+    p.add_argument('--execute',action='store_true');p.add_argument('--prepared-sha256')
+    args=p.parse_args(argv);os.umask(0o077)
+    try:
+        require(bool(args.prepared_sha256)==args.execute,'execute_requires_exact_prepared_sha256')
+        return asyncio.run(execute(args))
+    except BaseException as error:
+        print(json.dumps(dict(passed=False,error_code=str(error) if type(error) is Refusal else type(error).__name__,automatic_replay=False)),flush=True);return 1
+if __name__=='__main__':raise SystemExit(main())

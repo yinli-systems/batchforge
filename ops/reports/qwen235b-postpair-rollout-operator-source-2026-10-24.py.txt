@@ -1,0 +1,524 @@
+#!/usr/bin/env python3
+"""Prepare then apply a fixed post-pair source bundle; never restart inference.
+
+Private operator tool only. No action is replayed after an uncertain outcome.
+Only an idle worker and its watchdog may change PID. No owner DB writes.
+"""
+from __future__ import annotations
+import argparse
+from contextlib import contextmanager
+from datetime import datetime,timezone
+import fcntl
+import hashlib
+import importlib.util
+import io
+import json
+import math
+import os
+from pathlib import Path
+import re
+import secrets
+import signal
+import stat
+import subprocess
+import sys
+import tarfile
+import threading
+import time
+
+SELF=Path(__file__).resolve();ROOT=SELF.parents[1]
+sys.dont_write_bytecode=True
+if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
+from ops.ha.deploy_adaptive_worker_source import atomic_source,source_state
+from ops.ha.deploy_upload_protocol import private_file,validation_binding
+from ops.ha.deploy_history_retirement import snapshot_digest,INVARIANTS
+from ops.ha.finalize_api_policy import values
+from ops.ha.set_scheduler_policy import atomic_bytes
+from ops.supervise import load_manifest
+
+MODEL='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+VALIDATION_COMMIT='693d658aa944d3a8ebee596ce9b5c9f9d75fdce5'
+VALIDATION_TREE='ad6f46a0f4bec39a8562a0ae80846a60640f6818baceaa322fcbf2a52b6ee019'
+EXPORTER_SHA='a73b14599f3a0d5656fcaf2aede81e372a4540b5a3e177011701b539549f3f03'
+PLAN_SHA='8d1b3745c9dfb9a12f11394fcc3d57af7150d33c3a46414646f13c2b02f7a45e'
+JOBS={'baseline':'qwen235b-soak30m-v11-response1m-v1','candidate':'qwen235b-soak30m-v11-response64k-v1'}
+TARGETS={
+ 'worker/__init__.py':'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+ 'worker/__main__.py':'70017c658180a9195340611de8089f6cbacb1775d0a907f9b0fa00e62ce8a062',
+ 'worker/config.py':'e6f70e8ab7ef47059a74a09a4f105e6de8c57bcca2b990d7fd7e6a53bc9d24e4',
+ 'worker/kv_admission.py':'e26dff615204edde0ffdeba44271dc84ced4b6d26477f90b6df874fd6a270d6e',
+ 'worker/runtime.py':'56be1af6502a617540cdabf8c65e0662a833909dd2b8746df0910f3fd96eb04d',
+ 'worker/metrics.py':'f9119336068200ffc8fa994924b93d15a824493c8502d86e237678ebfb0a5196',
+ 'ops/manage.py':'159fc37c6f9a64e36e5e0f20bc97a8adf08d6ce93934f988339bab534879d0a0',
+ 'ops/ha/single_pod_fault_probe.py':'54b33493e0b4e1869b48bda24a59d86cc947576f2a9f8e1b1f570ed1e5f17d09',
+ 'ops/ha/single_pod_engine_fault_probe.py':'a1d62e89cd0daa302fd9d5c62016708859cf7bd7e60daa09327ee106f174d990',
+ 'ops/ha/decode_graph_qwen235b.py':'f6479ca7bf69f47619fad5c4fa1bd724929d284725d91fb2568e50d7e9d588a2',
+ 'frontend/app.js':'df15836d589c80165166215b89954fc93897a28f82de7d22420cc2afa34b5ad8'}
+SUFFIXES=('report.json','controller.json','runtime-proof.json','output-collection.json','response-audit.json')
+
+def require(value,code):
+    if not value:raise RuntimeError(code)
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def stamp():return datetime.now(timezone.utc).isoformat()
+def encoded(value):return (json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode()
+def load(raw):
+    def unique(pairs):
+        value={}
+        for k,v in pairs:require(k not in value,'duplicate_json_key');value[k]=v
+        return value
+    def bad(_):raise RuntimeError('nonfinite_json')
+    return json.loads(raw.decode('utf-8'),object_pairs_hook=unique,parse_constant=bad)
+def fsync_directory(path):
+    fd=os.open(path,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+    try:os.fsync(fd)
+    finally:os.close(fd)
+def save(path,value):
+    atomic_bytes(path,encoded(value));fsync_directory(path.parent)
+def directory(path,fresh=False):
+    if fresh:path.mkdir(mode=0o700)
+    require(path.resolve()==path,'directory_symlink_refused');info=path.lstat()
+    require(stat.S_ISDIR(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o077,'unsafe_private_directory')
+def checked_file(entry,root):
+    require(set(entry)=={'path','sha256'} and re.fullmatch('[0-9a-f]{64}',entry['sha256']) is not None,'exact_proof_path_sha_required')
+    path=Path(entry['path']);require(path.resolve()==path and path.is_relative_to(root/'.runtime'),'same_pod_runtime_proof_required')
+    raw=private_file(path,16*1024**2);require(sha(raw)==entry['sha256'],'proof_sha_differs');return load(raw),raw
+def module_at(path,expected,name):
+    raw=private_file(path,512*1024);require(sha(raw)==expected,'reviewed_helper_sha_differs')
+    spec=importlib.util.spec_from_file_location(name,path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+def snapshot_state(path):
+    info=path.lstat();require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid()
+        and info.st_nlink==1 and stat.S_IMODE(info.st_mode)==0o600 and 0<info.st_size<=512*1024**2,'unsafe_snapshot_state')
+    return {k:getattr(info,k) for k in ('st_dev','st_ino','st_size','st_mtime_ns','st_ctime_ns')}
+
+def bundle(path,expected):
+    raw=private_file(path,4*1024**2);require(sha(raw)==expected,'bundle_sha_differs');sources={}
+    with tarfile.open(fileobj=io.BytesIO(raw),mode='r:*') as archive:
+        for m in archive:
+            require(m.name in TARGETS and m.name not in sources and m.isreg() and 0<=m.size<=512*1024,'exact_eleven_source_bundle_required')
+            source=archive.extractfile(m).read(512*1024+1);require(len(source)==m.size and sha(source)==TARGETS[m.name],'reviewed_source_sha_differs')
+            if m.name.endswith('.py'):compile(source,m.name,'exec',dont_inherit=True)
+            sources[m.name]=source
+    require(set(sources)==set(TARGETS),'incomplete_source_bundle');return sources
+
+def shutdown_bytes(raw):
+    lines=[];seen=0
+    for line in raw.decode().splitlines(keepends=True):
+        if re.match(r'^\s*(?:export\s+)?WORKER_SHUTDOWN_SECONDS\s*=',line):
+            seen+=1;require(seen==1,'duplicate_shutdown_assignment');lines.append('WORKER_SHUTDOWN_SECONDS=600\n')
+        else:lines.append(line)
+    if not seen:
+        if lines and not lines[-1].endswith(('\n','\r')):lines.append('\n')
+        lines.append('WORKER_SHUTDOWN_SECONDS=600\n')
+    patched=''.join(lines).encode();old=values(raw);new=values(patched)
+    require(new.get('WORKER_SHUTDOWN_SECONDS')=='600' and {k:v for k,v in new.items() if k!='WORKER_SHUTDOWN_SECONDS'}==
+        {k:v for k,v in old.items() if k!='WORKER_SHUTDOWN_SECONDS'},'non_shutdown_environment_change')
+    return patched
+
+def scoped_caches(root,remove=False):
+    entries=[]
+    for name in sorted(k for k in TARGETS if k.endswith('.py')):
+        source=root/name;folder=source.parent/'__pycache__'
+        if not folder.exists() and not folder.is_symlink():continue
+        info=folder.lstat();require(stat.S_ISDIR(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o7022,'unsafe_scoped_cache_directory')
+        pattern=re.compile(re.escape(source.stem)+r'\.[A-Za-z0-9_-]+(?:\.opt-[0-9]+)?\.pyc\Z')
+        for path in folder.iterdir():
+            if not pattern.fullmatch(path.name):continue
+            info=path.lstat();require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o7022,'unsafe_scoped_cache')
+            entries.append((path,info.st_dev,info.st_ino))
+    if remove:
+        for path,device,inode in entries:
+            info=path.lstat();require((info.st_dev,info.st_ino)==(device,inode),'scoped_cache_replaced');path.unlink()
+        for folder in {p.parent for p,_,_ in entries}:fsync_directory(folder)
+    return [str(p.relative_to(root)) for p,_,_ in entries]
+
+def evidence(root,spec,sources,now=None):
+    """Read-only proof gate; no model calls or owner SQL."""
+    from backend.migrate import MIGRATIONS
+    from scripts.compare_sustained_reports import compare,validate_report,validate_proof
+    require(set(spec)=={'matched','fresh_backup','current_restore','linux_report','linux_manifest'},'exact_evidence_spec_required')
+    now=now or datetime.now(timezone.utc);out={}
+    report,_=checked_file(spec['linux_report'],root);manifest,mraw=checked_file(spec['linux_manifest'],root)
+    require(report['commit']==manifest['commit']==VALIDATION_COMMIT and report['source_tree_sha256']==manifest['source_tree_sha256']==VALIDATION_TREE,'exact_reviewed_execution_snapshot_required')
+    out['linux']=validation_binding(Path(spec['linux_report']['path']),Path(spec['linux_manifest']['path']),
+        {k:v for k,v in sources.items() if k.endswith('.py')})
+    out['frontend']={'source_sha256':TARGETS['frontend/app.js'],
+        'validation_scope':'Independent reviewed Node 8/8; excluded from Linux Python/SQL snapshot'}
+    backup,_=checked_file(spec['fresh_backup'],root);restore,_=checked_file(spec['current_restore'],root)
+    age=(now-datetime.fromisoformat(backup['observed_at'].replace('Z','+00:00'))).total_seconds()
+    require(0<=age<=3600 and backup.get('compatible') is True and backup.get('archive_list_verified') is True
+        and backup.get('database_modified') is False and backup.get('credentials_in_argv') is False
+        and backup.get('configured_sslmode')=='verify-full','fresh_compatible_backup_required')
+    dump=Path(backup['snapshot_path']);require(dump.resolve()==dump and dump.is_relative_to(root/'.runtime'),'same_pod_snapshot_required')
+    state=snapshot_state(dump)
+    require(snapshot_digest(dump,backup['snapshot_bytes'])==backup['snapshot_sha256']
+        and snapshot_state(dump)==state,'snapshot_sha_differs')
+    require(restore.get('passed') is True and restore.get('restore_verified') is True and restore.get('schema_version')==11
+        and restore.get('snapshot_sha256')==backup['snapshot_sha256'] and restore.get('snapshot_bytes')==backup['snapshot_bytes']
+        and restore.get('temporary_cluster_stopped') is True and restore.get('temporary_cluster_removed') is True
+        and restore.get('unix_socket_only') is True and restore.get('live_database_modified') is False
+        and restore.get('migration_checksums')=={str(v):h for v,_,h in MIGRATIONS}
+        and all(restore.get(k)==0 for k in (*INVARIANTS,'history_rollup_mismatches')),'clean_schema11_restore_required')
+    out['backup']={'report_sha256':spec['fresh_backup']['sha256'],'restore_sha256':spec['current_restore']['sha256'],
+        'snapshot_sha256':backup['snapshot_sha256'],'snapshot_bytes':backup['snapshot_bytes'],'observed_at':backup['observed_at'],
+        'snapshot_path':str(dump),'snapshot_state':state}
+    matched=spec['matched'];require(set(matched)=={'plan','journal','comparison','exports','receipts'},'matched_evidence_incomplete')
+    plan,praw=checked_file(matched['plan'],root);journal,jraw=checked_file(matched['journal'],root);comparison,craw=checked_file(matched['comparison'],root)
+    require(sha(praw)==PLAN_SHA and plan.get('phase')=='prepared' and plan['specification']['operation']=='qwen235b-v11-matched-v1'
+        and journal.get('operation')=='qwen235b-v11-matched-v1' and journal.get('phase')=='complete'
+        and not journal.get('pending_action') and journal.get('plan_sha256')==sha(praw) and journal.get('comparison_sha256')==sha(craw),'matched_pair_not_complete')
+    require(datetime.fromisoformat(backup['observed_at'])>=datetime.fromisoformat(journal['finished_at'])
+        and datetime.fromisoformat(report['finished_at'])>=datetime.fromisoformat(journal['finished_at']),
+        'backup_and_linux_validation_must_follow_completed_pair')
+    exporter=module_at(root/'.runtime/export_sustained_v11_metadata.py',EXPORTER_SHA,'postpair_export_schema')
+    parsed={};hashes={};exports={}
+    require(set(matched['exports'])==set(matched['receipts'])==set(JOBS),'both_round_exports_required')
+    for label,job in JOBS.items():
+        receipt,_=checked_file(matched['receipts'][label],root);files=matched['exports'][label]
+        require(set(files)==set(SUFFIXES),'all_five_exports_required')
+        data={};shas={}
+        for suffix,entry in files.items():
+            _,raw=checked_file(entry,root);data[suffix]=exporter.validate_artifact(suffix,raw);shas[suffix]=sha(raw)
+        require(receipt.get('validated') is True and receipt.get('job_id')==job and receipt.get('schema_version')==11
+            and receipt.get('raw_outputs_exported') is False and receipt.get('business_state_modified') is False
+            and receipt.get('source_inputs_sha256')==shas and receipt.get('metadata_files_written')=={job+'-'+s:h for s,h in shas.items()},'exact_successful_export_write_receipt_required')
+        doc=data['controller.json'];r=data['report.json'];proof=data['runtime-proof.json'];collection=data['output-collection.json']
+        validate_report(r);validate_proof(proof,shas['report.json'])
+        require(r['job_id']==doc['job_id']==job and doc['label']==label and doc['initial_schema_version']==11
+            and doc['phase']==('complete' if r['passed'] else 'failed_or_partial')
+            and journal['rounds'][label]['report_sha256']==shas['report.json']
+            and doc['protected_services_and_sources_unchanged'] and doc['source_sha256']==plan['binding']['source_sha256']
+            and doc['service_identities_before']==doc['service_identities_after']==plan['binding']['service_processes'],'guarded_round_binding_differs')
+        for suffix,field in (('report.json','report_sha256'),('runtime-proof.json','runtime_proof_sha256'),('output-collection.json','output_collection_sha256'),('response-audit.json','response_audit_sha256')):
+            require(doc[field]==shas[suffix],'round_export_binding_differs')
+        require(collection['phase']=='complete' and collection['binding']['run_id']==job and collection['binding']['report_sha256']==shas['report.json']
+            and collection['completed_count']==r['completed_tasks'] and collection['binding']['expected_completed']==r['completed_tasks'],'collected_outputs_required')
+        parsed[label+'_report']=r;parsed[label+'_proof']=proof;hashes[label+'_report']=shas['report.json'];hashes[label+'_runtime_proof']=shas['runtime-proof.json'];exports[label]=shas
+    recomputed=compare(parsed['baseline_report'],parsed['candidate_report'],parsed['baseline_proof'],parsed['candidate_proof'],
+        before_sha=hashes['baseline_report'],after_sha=hashes['candidate_report'],input_shas=hashes)
+    require(encoded(recomputed)==encoded(comparison),'comparison_not_exact_recomputation')
+    out['matched']={'plan_sha256':sha(praw),'journal_sha256':sha(jraw),'comparison_sha256':sha(craw),'exports':exports,
+        'historical_services':plan['binding']['service_processes'],'historical_configuration':plan['binding']['configuration_sha256'],
+        'historical_source_sha256':{k:v for k,v in plan['binding']['source_sha256'].items() if not k.startswith('.runtime/')}}
+    return out
+
+def dependency_hashes(root):
+    return {str(p.relative_to(root)):sha(p.read_bytes()) for folder in ('backend','worker','ops','scripts')
+        for p in sorted((root/folder).rglob('*')) if p.is_file() and p.suffix in {'.py','.sql'}
+        and str(p.relative_to(root)) not in TARGETS}
+
+def process_data(controller,service):
+    record=controller.record(service);require(record is not None,'owned_service_missing')
+    process=Path('/proc')/str(record['pid']);raw=(process/'environ').read_bytes();argv=(process/'cmdline').read_bytes()
+    environment={k.decode():v.decode() for item in raw.split(b'\0') if b'=' in item for k,v in [item.split(b'=',1)]}
+    require(controller.record(service)==record,'identity_changed_during_process_capture')
+    return record,environment,argv,{'pid':record['pid'],'start_ticks':record['start_ticks'],'cwd':record['cwd'],
+        'process_environ_sha256':sha(raw),'process_argv_sha256':sha(argv)}
+
+def invoke_start(root,service,environment):
+    """Reuse manage.py protocol, preserving the original effective environment."""
+    argv=[service['python'],str(root/'ops/manage.py'),'start',service['role'],'--name',service['name'],
+        '--env-file',service['env_file'],'--python',service['python']]
+    for key in ('port','gpu'):
+        if service.get(key) is not None:argv.extend(('--'+key,str(service[key])))
+    result=subprocess.run(argv,cwd=root,env=environment,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,timeout=30,check=False)
+    require(result.returncode==0 and len(result.stdout)<=4096,'managed_start_unconfirmed')
+    value=load(result.stdout);require(isinstance(value,dict),'manager_protocol_invalid');return value
+
+class Deployment:
+    def __init__(self,*,root,run,manifest,services,controller,sources,bundle_sha,proof_spec,
+                 evidence_checker=evidence,process_reader=process_data,drained=None,profile=None,
+                 starter=invoke_start,writer=atomic_source,clock=time.monotonic,sleep=time.sleep,stop=None):
+        self.root,self.run,self.manifest,self.services,self.controller=root,run,manifest,services,controller
+        require(set(sources)==set(TARGETS) and all(sha(sources[k])==v for k,v in TARGETS.items()),'exact_reviewed_eleven_sources_required')
+        expected={('api','a'),('api','b'),('gateway','edge'),('worker','qwen235b'),('engine','qwen235b')}
+        require(len(services)==5 and {(s['role'],s['name']) for s in services}==expected,'exact_five_services_required')
+        self.worker=next(s for s in services if s['role']=='worker');self.engine=next(s for s in services if s['role']=='engine')
+        self.api=next(s for s in services if s['role']=='api' and s['name']=='a')
+        require(sorted((s['name'],s['port']) for s in services if s['role']=='api')==[('a',8082),('b',8083)]
+            and next(s for s in services if s['role']=='gateway')['port']==8080 and self.engine.get('gpu')=='0,1,2,3','exact_service_ports_topology_required')
+        self.watchdog={'role':'supervisor','name':'primary','env_file':str(root.parent/'supervisor.env'),'python':self.worker['python']}
+        self.all=[*services,self.watchdog];self.sources=sources;self.proof_spec=proof_spec;self.bundle_sha=bundle_sha
+        self.proof_checker=evidence_checker;self.process_reader=process_reader;self.drained=drained or self._drained
+        self.profile_check=profile or self._profile;self.starter=starter;self.writer=writer
+        self.clock,self.sleep,self.stop=clock,sleep,stop or threading.Event()
+        self.manifest_raw=private_file(manifest);self.env={s['env_file']:private_file(Path(s['env_file'])) for s in self.all}
+        self.original_worker_env=self.env[self.worker['env_file']];self.patched_worker_env=shutdown_bytes(self.original_worker_env)
+        self.worker_values=values(self.original_worker_env);self.engine_values=values(self.env[self.engine['env_file']])
+        require(self.worker_values.get('MODEL_NAME')==self.engine_values.get('MODEL_NAME')==MODEL
+            and self.worker_values.get('WORKER_MAX_INFLIGHT')=='64' and self.worker_values.get('WORKER_ADAPTIVE_KV_ENABLED','').lower() in {'true','1'}
+            and self.worker_values.get('INFERENCE_BASE_URLS')==f"http://127.0.0.1:{self.engine['port']}"
+            and self.engine_values.get('ENGINE_TENSOR_PARALLEL_SIZE')=='4','exact_adaptive64_tp4_required')
+        require(values(self.env[self.watchdog['env_file']]).get('SUPERVISOR_MANIFEST')==str(manifest),'watchdog_manifest_differs')
+        self.budget=int(self.worker_values['WORKER_TOKEN_BUDGET']);self.profile_value=json.loads(self.worker_values['SCHEDULER_PROFILE_JSON'])
+        self.full_ids={};self.process_env={};self.process_argv={};ids={}
+        for service in self.all:
+            key=self.key(service);record,environment,argv,binding=self.process_reader(controller,service)
+            require(all(environment.get(k)==v for k,v in values(self.env[service['env_file']]).items()),'effective_service_configuration_differs')
+            self.full_ids[key]=record;self.process_env[key]=environment;self.process_argv[key]=argv;ids[key]=binding
+        self.expected_ids=dict(self.full_ids);self.states={};self.original={}
+        self.expected_process_env={k:dict(v) for k,v in self.process_env.items()}
+        for name in TARGETS:
+            path=root/name;require(path.parent.resolve()==path.parent,'source_parent_symlink')
+            info=path.parent.stat();require(stat.S_ISDIR(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o022,'unsafe_source_parent')
+            state,raw=source_state(path);self.states[name]=state;self.original[name]=raw
+        self.expected_states=dict(self.states);self.dependencies=dependency_hashes(root)
+        self.proofs=self.proof_checker(root,proof_spec,sources)
+        historical=self.proofs['matched']
+        current={str(p.relative_to(root)):sha(p.read_bytes()) for folder in ('backend','worker','ops','scripts')
+            for p in (root/folder).rglob('*') if p.is_file() and p.suffix in {'.py','.sql'}}
+        require(current==historical['historical_source_sha256'],'live_source_differs_from_completed_pair')
+        require(ids==historical['historical_services'],'live_services_differ_from_completed_matched_pair')
+        configurations=historical['historical_configuration']
+        known={**{p:sha(v) for p,v in self.env.items()},str(manifest):sha(self.manifest_raw)}
+        require(set(known)<=set(configurations) and len(configurations)==len(known)+2,'exact_historical_configuration_inventory_required')
+        self.auxiliary_configuration={}
+        for path,digest in configurations.items():
+            if path in known:actual=known[path]
+            else:
+                source=Path(path)
+                require(source.is_absolute() and source.resolve()==source,'canonical_auxiliary_configuration_required')
+                # Owner/benchmark config contents stay in RAM only long enough
+                # to hash. Never copy them into the operation snapshots/report.
+                actual=sha(private_file(source));self.auxiliary_configuration[path]=digest
+            require(actual==digest,'live_configuration_differs_from_completed_pair')
+        binding={'bundle_sha256':bundle_sha,'target_sources':TARGETS,'old_sources':self.states,
+            'manifest_sha256':sha(self.manifest_raw),'environment_sha256':{p:sha(v) for p,v in self.env.items()},
+            'patched_worker_env_sha256':sha(self.patched_worker_env),'processes':ids,'proofs':self.proofs,
+            'dependencies':self.dependencies,'controller_sha256':sha(SELF.read_bytes()),
+            'proof_spec_sha256':sha(encoded(proof_spec))}
+        self.report_path=run/'report.json';self.unknown=False
+        if self.report_path.exists():
+            old=load(private_file(self.report_path,16*1024**2))
+            require(old.get('phase')=='prepared' and old.get('binding')==binding and not old.get('pending_action'),'existing_or_changed_operation_no_replay')
+            self.report=old
+        else:
+            require(not any(run.iterdir()),'incomplete_operation_directory')
+            self.report={'version':1,'phase':'prepared','prepared_at':stamp(),'binding':binding,'pending_action':None,
+                'automatic_replay':False,'watchdog_state':'original_running','worker_state':'original_running','events':[],
+                'engine_api_gateway_restart_attempted':False,'changed_worker_environment_keys':['WORKER_SHUTDOWN_SECONDS'],
+                'manual_recovery_required':False,'rollback_mode':'manual only after unknown action; original sources/env privately retained'}
+            for group,data in (('original',self.original),('staged',sources)):
+                for name,raw in data.items():
+                    if raw is None:continue
+                    target=run/group/name;target.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
+                    atomic_source(target,raw,0o600,time.time_ns())
+            atomic_bytes(run/'worker.env.original',self.original_worker_env);atomic_bytes(run/'worker.env.staged',self.patched_worker_env)
+            self.save()
+        self.private_guard();scoped_caches(root)
+
+    @staticmethod
+    def key(service):return service['role']+'-'+service['name']
+    def save(self):save(self.report_path,self.report)
+    def private_guard(self):
+        for name in TARGETS:
+            require(private_file(self.run/'staged'/name,512*1024)==self.sources[name],'staged_source_changed')
+            if self.original[name] is not None:require(private_file(self.run/'original'/name,512*1024)==self.original[name],'original_source_snapshot_changed')
+        require(private_file(self.run/'worker.env.original')==self.original_worker_env
+            and private_file(self.run/'worker.env.staged')==self.patched_worker_env,'worker_private_snapshot_changed')
+    def guard(self,*,allow_unready_worker=False,stopping_target=None):
+        require(not self.unknown and not self.stop.is_set(),'unknown_or_interrupted_operation')
+        if stopping_target is not None:
+            # Only graceful_stop invokes this callback, after acquiring its
+            # role lock and exact pidfd. That helper owns target identity/exit
+            # checks until it unlinks the unchanged original PID record.
+            require(stopping_target is self.worker or stopping_target is self.watchdog,'invalid_stopping_target')
+            pending=self.report['pending_action'];expected=self.expected_ids[self.key(stopping_target)]
+            stage='idle_worker_stop' if stopping_target is self.worker else 'watchdog_stop'
+            require(pending is not None and pending['stage']==stage and expected is not None
+                and pending['pid']==expected['pid'] and pending['start_ticks']==expected['start_ticks'],'stopping_target_not_exact_pending_action')
+        require(private_file(self.manifest)==self.manifest_raw,'manifest_drift')
+        require(sha(SELF.read_bytes())==self.report['binding']['controller_sha256'],'controller_source_drift')
+        require(dependency_hashes(self.root)==self.dependencies,'dependency_source_drift')
+        require(all(private_file(Path(p))==v for p,v in self.env.items()),'environment_drift')
+        require(all(sha(private_file(Path(p)))==digest for p,digest in self.auxiliary_configuration.items()),'auxiliary_configuration_drift')
+        require(all(source_state(self.root/p)[0]==state for p,state in self.expected_states.items()),'source_drift')
+        require(all(self.controller.record(s)==self.expected_ids[self.key(s)] for s in self.all if s is not stopping_target),'foreign_process_identity')
+        for service in self.all:
+            key=self.key(service)
+            if service is stopping_target or self.expected_ids[key] is None:continue
+            record,environment,argv,_=self.process_reader(self.controller,service)
+            require(record==self.expected_ids[key] and environment==self.expected_process_env[key]
+                and argv==self.process_argv[key],'effective_process_binding_drift')
+        for service in self.services:
+            if service is not stopping_target and self.expected_ids[self.key(service)] is not None and not (allow_unready_worker and service==self.worker):
+                require(self.controller.responding(service,ready=True),'service_not_ready')
+        self.private_guard();self.drained()
+        observed=datetime.fromisoformat(self.proofs['backup']['observed_at']);require(0<=(datetime.now(timezone.utc)-observed).total_seconds()<=3600,'backup_expired')
+        require(snapshot_state(Path(self.proofs['backup']['snapshot_path']))==self.proofs['backup']['snapshot_state'],'snapshot_changed_after_verification')
+        # Proof files are immutable. Rehash small metadata, not the large dump
+        # for each poll. Full dump verification occurs at prepare AND apply.
+        def check(value):
+            if isinstance(value,dict) and set(value)=={'path','sha256'}:checked_file(value,self.root)
+            elif isinstance(value,dict):
+                for item in value.values():check(item)
+        check(self.proof_spec)
+    def _drained(self):
+        import psycopg
+        from backend.migrate import MIGRATIONS
+        dsn=values(self.env[self.api['env_file']])['DATABASE_URL']
+        with psycopg.connect(dsn,autocommit=True,connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=5000 -c lock_timeout=1000') as conn:
+            require(conn.execute('SELECT current_user,current_database()').fetchone()==('bf_runtime','batchforge'),'runtime_database_role_required')
+            require(conn.execute('SELECT version,checksum FROM batchforge_schema_migrations ORDER BY version').fetchall()==[(v,h) for v,_,h in MIGRATIONS],'schema11_registry_changed')
+            require(conn.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()==(0,),'global_drain_required')
+    def _profile(self):
+        import psycopg
+        from ops.ha.adaptive_qwen235b import metric_values
+        expected={'batchforge_worker_capacity':64,'batchforge_worker_ready_engines':1,
+            'batchforge_worker_adaptive_kv_budget_tokens':self.budget,'batchforge_worker_adaptive_kv_paused':0,
+            'batchforge_worker_adaptive_kv_waiting':0,'batchforge_worker_inflight':0,'batchforge_worker_reserved_context_tokens':0}
+        with self.controller.http.open(f"http://127.0.0.1:{self.worker['port']}/metrics",timeout=3) as response:
+            require(response.status==200,'worker_metrics_unavailable');raw=response.read(2*1024**2+1)
+        require(len(raw)<=2*1024**2 and metric_values(raw.decode(),expected)==expected,'worker_exact_kv_gauges_differ')
+        with psycopg.connect(values(self.env[self.api['env_file']])['DATABASE_URL'],autocommit=True,connect_timeout=5,
+                options='-c default_transaction_read_only=on -c statement_timeout=5000') as conn:
+            row=conn.execute("SELECT concurrency,scheduler_profile_id,runtime_fingerprint,coalesce((metadata->>'ready_engine_count')::integer,0),metadata->'kv_admission',metadata->'scheduling_profile' FROM workers WHERE id=%s AND model=%s AND last_seen_at>clock_timestamp()-interval '60 seconds'",(self.worker_values['WORKER_ID'],MODEL)).fetchone()
+        require(row is not None and row[:4]==(64,self.profile_value['profile_id'],self.profile_value['runtime_fingerprint'],1)
+            and row[4]=={'protocol':'vllm-0.10.2-qwen-chat','budget':self.budget,'block_size':16,'single_worker_single_engine':True,'paused':False}
+            and row[5]==self.profile_value,'worker_registration_profile_kv_differs')
+        return {'capacity':64,'kv_budget':self.budget,'registration_verified':True}
+    def quiet(self,stage,timeout=600):
+        began=self.clock();observations=[]
+        while True:
+            self.guard();observation=self.controller.engine_quiescence(self.engine)
+            observations.append({'at':stamp(),**observation})
+            if observation['quiescent']:break
+            require(self.clock()-began<timeout,'private_engine_quiescence_timeout');self.sleep(.5)
+        self.report.setdefault('engine_quiescence',[]).append({'stage':stage,'wait_seconds':self.clock()-began,'observations':observations});self.save()
+    def action(self,stage,call,**metadata):
+        self.guard();require(self.report['pending_action'] is None,'pending_action_no_replay')
+        self.report.update(phase='applying',pending_action={'stage':stage,'nonce':secrets.token_hex(16),'at':stamp(),**metadata},manual_recovery_required=True)
+        self.save()
+        intent=dict(self.report['pending_action'])
+        try:
+            result=call()
+            self.report['events'].append({'stage':stage,'confirmed_at':stamp(),**metadata})
+            self.report['pending_action']=None;self.save();return result
+        except BaseException:
+            self.unknown=True
+            self.report.update(phase='manual_recovery_required',manual_recovery_required=True,
+                pending_action={**intent,'outcome':'unknown_or_confirmation_not_durable'})
+            try:self.save()
+            except BaseException:pass
+            raise
+    def stop_service(self,service,stage):
+        expected=self.expected_ids[self.key(service)]
+        def stop():
+            self.controller.graceful_stop(service,expected,30,lambda:self.guard(stopping_target=service))
+            require(self.controller.record(service) is None,'stop_not_confirmed')
+            self.expected_ids[self.key(service)]=None
+        self.action(stage,stop,pid=expected['pid'],start_ticks=expected['start_ticks'])
+        self.report['watchdog_state' if service==self.watchdog else 'worker_state']='confirmed_stopped';self.save()
+    def start_service(self,service,stage):
+        require(self.expected_ids[self.key(service)] is None and self.controller.record(service) is None,'start_requires_confirmed_absence')
+        def start():
+            result=self.starter(self.root,service,self.process_env[self.key(service)])
+            record,environment,argv,binding=self.process_reader(self.controller,service)
+            wanted=dict(self.process_env[self.key(service)])
+            if service==self.worker:wanted['WORKER_SHUTDOWN_SECONDS']='600'
+            require(result.get('status')=='started' and result.get('pid')==record['pid']
+                and environment==wanted and argv==self.process_argv[self.key(service)],'start_ack_identity_or_effective_environment_unknown')
+            self.expected_ids[self.key(service)]=record
+            self.expected_process_env[self.key(service)]=wanted
+            self.report['worker_after' if service==self.worker else 'watchdog_after']=binding
+        self.action(stage,start,environment_sha256=sha(self.env[service['env_file']]))
+        self.report['worker_state' if service==self.worker else 'watchdog_state']='known_started';self.save()
+    def apply(self):
+        require(self.report['phase']=='prepared' and self.report['pending_action'] is None,'existing_operation_no_replay')
+        self.guard();require(self.proof_checker(self.root,self.proof_spec,self.sources)==self.proofs,'proof_binding_changed')
+        self.quiet('before_idle_worker_stop');self.profile_check()
+        try:
+            self.stop_service(self.watchdog,'watchdog_stop')
+            self.stop_service(self.worker,'idle_worker_stop')
+            self.quiet('after_idle_worker_stop')
+            for name,raw in sorted(self.sources.items()):
+                def write_source(name=name,raw=raw):
+                    state=self.expected_states[name];mtime=max(time.time_ns()+2_000_000_000,state.get('mtime_ns',0)+2_000_000_000)
+                    self.writer(self.root/name,raw,state.get('mode',0o644),mtime)
+                    current,_=source_state(self.root/name);require(current['exists'] and current['sha256']==TARGETS[name],'source_write_not_confirmed')
+                    self.expected_states[name]=current
+                self.action('source_copy',write_source,path=name,old_sha256=self.states[name].get('sha256'),new_sha256=TARGETS[name])
+            def patch():
+                atomic_bytes(Path(self.worker['env_file']),self.patched_worker_env)
+                require(private_file(Path(self.worker['env_file']))==self.patched_worker_env,'worker_env_patch_not_confirmed')
+                self.env[self.worker['env_file']]=self.patched_worker_env
+            self.action('worker_shutdown_env_patch',patch,old_sha256=sha(self.original_worker_env),new_sha256=sha(self.patched_worker_env))
+            self.action('scoped_bytecode_evict',lambda:self.report.update(bytecode_evicted=scoped_caches(self.root,True)))
+            self.quiet('before_new_worker_start')
+            self.start_service(self.worker,'worker_start')
+            deadline=self.clock()+120
+            while True:
+                self.guard(allow_unready_worker=True)
+                try:
+                    require(self.controller.responding(self.worker,ready=True),'new_worker_not_ready')
+                    self.report['worker_registration']=self.profile_check();break
+                except Exception:
+                    require(self.clock()<deadline,'new_worker_registration_timeout');self.sleep(.5)
+            self.quiet('before_watchdog_restore');self.guard()
+            self.start_service(self.watchdog,'watchdog_start');self.guard();self.profile_check()
+            self.report.update(phase='complete',finished_at=stamp(),manual_recovery_required=False,watchdog_state='known_restored',worker_state='ready64',
+                engine_configuration_changed=False,manifest_bytes_unchanged=True,protected_processes_unchanged=True)
+            self.save();return self.report
+        except BaseException as error:
+            self.report.update(phase='manual_recovery_required',manual_recovery_required=True,error_type=type(error).__name__,
+                no_automatic_rollback_or_service_restart=True)
+            try:self.save()
+            except BaseException:pass
+            raise
+
+@contextmanager
+def operator_lock(root):
+    fd=os.open(root/'.runtime/postpair-source-rollout.lock',os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW,0o600)
+    try:
+        info=os.fstat(fd);require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid()
+            and info.st_nlink==1 and not info.st_mode&0o077,'unsafe_operator_lock')
+        fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB);yield
+    finally:os.close(fd)
+
+def main(argv=None):
+    os.umask(0o077)
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--manifest',type=Path,required=True);p.add_argument('--archive',type=Path,required=True)
+    p.add_argument('--sha256',required=True);p.add_argument('--evidence-spec',type=Path,required=True)
+    p.add_argument('--evidence-sha256',required=True);p.add_argument('--operation',required=True)
+    p.add_argument('--prepared-sha256');p.add_argument('--apply',action='store_true')
+    args=p.parse_args(argv);job=None
+    try:
+        require(sys.platform=='linux' and hasattr(os,'pidfd_open') and hasattr(signal,'pidfd_send_signal'),'linux_pidfd_required')
+        require(re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]{0,63}',args.operation) is not None,'invalid_operation')
+        sources=bundle(args.archive,args.sha256)
+        proof_spec,_=checked_file({'path':str(args.evidence_spec),'sha256':args.evidence_sha256},ROOT)
+        manifest,services,_=load_manifest(args.manifest,root=ROOT)
+        namespace={'__name__':'postpair_approved_worker_controller','__file__':str(ROOT/'ops/ha/single_pod_fault_probe.py')}
+        # The live base may still be4098. Load ONLY the pinned54b candidate into
+        # RAM; do not install new serving dependencies merely to pause watchdog.
+        exec(compile(sources['ops/ha/single_pod_fault_probe.py'],namespace['__file__'],'exec'),namespace)
+        controller=namespace['WorkerController'](root=ROOT)
+        run=ROOT/'.runtime'/args.operation
+        directory(ROOT/'.runtime')
+        with operator_lock(ROOT):
+            if not run.exists():
+                require(not args.apply,'apply_requires_prepared_operation');directory(run,fresh=True)
+            else:directory(run)
+            if args.apply:
+                prepared=private_file(run/'report.json',16*1024**2)
+                require(sha(prepared)==args.prepared_sha256 and load(prepared).get('phase')=='prepared','exact_prepared_sha_required')
+            stop=threading.Event()
+            for signum in (signal.SIGINT,signal.SIGTERM):signal.signal(signum,lambda *_:stop.set())
+            job=Deployment(root=ROOT,run=run,manifest=manifest,services=services,controller=controller,
+                sources=sources,bundle_sha=args.sha256,proof_spec=proof_spec,stop=stop)
+            job.guard();job.quiet('prepared_preflight');job.profile_check()
+            if args.apply:job.apply()
+            print(json.dumps({'phase':job.report['phase'],'report':str(job.report_path),
+                'report_sha256':sha(private_file(job.report_path,16*1024**2)),
+                'worker_environment_keys_changed':job.report['changed_worker_environment_keys'],
+                'engine_api_gateway_restart_attempted':False,'applied':args.apply},sort_keys=True))
+            return 0
+    except BaseException as error:
+        # No raw manager output, command, environment, DSN or provider message.
+        print(json.dumps({'phase':'refused_or_manual_recovery_required',
+            'reason_code':str(error) if type(error) is RuntimeError else type(error).__name__,
+            'automatic_replay':False,'report':str(job.report_path) if job else None},sort_keys=True))
+        return 1
+
+if __name__=='__main__':raise SystemExit(main())

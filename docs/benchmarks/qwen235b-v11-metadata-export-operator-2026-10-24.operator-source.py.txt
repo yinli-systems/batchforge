@@ -1,0 +1,274 @@
+"""Prepare/once-execute exact private metadata export after BOTH rounds terminal.
+
+Default performs validations and writes only a fresh private operator plan,
+journal and validation receipts. --execute requires its exact reviewed SHA.
+No SQL/HTTP/SSH/inference, credentials, raw outputs or database dumps are read
+by this operator. Existing frozen exporter children retain runtime guards.
+"""
+from __future__ import annotations
+import argparse
+from contextlib import contextmanager
+import fcntl
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import selectors
+import stat
+import subprocess
+import sys
+import time
+
+SELF=Path(__file__).resolve();ROOT=SELF.parent.parent
+OPERATION='qwen235b-v11-matched-v1'
+PLAN_SHA='8d1b3745c9dfb9a12f11394fcc3d57af7150d33c3a46414646f13c2b02f7a45e'
+JOBS={'baseline':'qwen235b-soak30m-v11-response1m-v1','candidate':'qwen235b-soak30m-v11-response64k-v1'}
+PAIR=ROOT/'.runtime/sustained-matched'/OPERATION
+RUNS=ROOT/'.runtime/sustained'
+PINS={'.runtime/export_sustained_v11_metadata.py':'a73b14599f3a0d5656fcaf2aede81e372a4540b5a3e177011701b539549f3f03',
+ '.runtime/verify_matched_v11_receipt.py':'5534f19cb83c5408af41cd6497d3c6307039ca6748cb93f8c6c3512d6da592d6',
+ '.runtime/qwen235b-v11-matched-controller.py':'6c5e5895d3cc8ef1826ae75752143ced24f127422a0e612c19b6ad6bb2dd457b',
+ 'scripts/compare_sustained_reports.py':'90df1ebbb26a40d7288fb230ec9ddc484e3ece2414c691b6d993936bd17862c3'}
+SOURCE_NAMES={'report.json':'report.json','controller.json':'controller-journal.json','runtime-proof.json':'runtime-proof.json',
+ 'output-collection.json':'output-collection.json','response-audit.json':'response-audit.json'}
+
+class Refusal(ValueError):pass
+def require(condition,code):
+ if not condition:raise Refusal(code)
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def encoded(value):return (json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode()
+def load(raw):
+ def unique(pairs):
+  value={}
+  for key,item in pairs:require(key not in value,'duplicate_metadata_key');value[key]=item
+  return value
+ def invalid(_):raise Refusal('nonfinite_metadata')
+ return json.loads(raw.decode('utf-8'),object_pairs_hook=unique,parse_constant=invalid)
+def directory(path,fresh=False):
+ require(path.is_absolute() and path.resolve()==path and path.is_relative_to(ROOT/'.runtime'),'private_runtime_directory_required')
+ if fresh:path.mkdir(mode=0o700)
+ info=path.lstat();require(stat.S_ISDIR(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o077,'private_runtime_directory_required')
+def sync(parent):
+ fd=os.open(parent,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+ try:os.fsync(fd)
+ finally:os.close(fd)
+@contextmanager
+def locked(path,name='operation.lock'):
+ fd=os.open(path/name,os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW|os.O_NONBLOCK,0o600)
+ try:
+  info=os.fstat(fd)
+  require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid() and stat.S_IMODE(info.st_mode)==0o600 and info.st_nlink==1,'unsafe_metadata_export_lock')
+  fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+  yield
+ finally:os.close(fd)
+
+def read(path,maximum=16*1024**2):
+ require(path.is_absolute() and path.resolve()==path and path.is_relative_to(ROOT/'.runtime'),'private_runtime_file_required')
+ fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+ try:
+  before=os.fstat(fd);require(stat.S_ISREG(before.st_mode) and before.st_uid==os.geteuid() and not before.st_mode&0o077 and 0<before.st_size<=maximum,'unsafe_private_metadata')
+  with os.fdopen(fd,'rb',closefd=False) as handle:raw=handle.read(maximum+1)
+  after=os.fstat(fd);require(len(raw)==before.st_size and all(getattr(before,k)==getattr(after,k) for k in ('st_dev','st_ino','st_size','st_mtime_ns','st_ctime_ns')),'metadata_changed')
+  return raw
+ finally:os.close(fd)
+def write(path,raw,exclusive=True):
+ directory(path.parent)
+ temporary=path if exclusive else path.with_name(path.name+'.'+os.urandom(8).hex()+'.tmp')
+ fd=os.open(temporary,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+ try:
+  with os.fdopen(fd,'wb') as handle:handle.write(raw);handle.flush();os.fsync(handle.fileno())
+  if not exclusive:os.replace(temporary,path)
+  sync(path.parent)
+ finally:
+  if not exclusive:temporary.unlink(missing_ok=True)
+def source_guard(expected=None):
+ values={name:sha((ROOT/name).read_bytes()) for name in PINS}
+ require(values==PINS,'frozen_source_changed')
+ values['operator_source_sha256']=sha(SELF.read_bytes())
+ require(expected is None or values==expected,'operator_or_frozen_source_changed')
+ return values
+
+def tools():
+ source_guard()
+ path=ROOT/'.runtime/verify_matched_v11_receipt.py';spec=importlib.util.spec_from_file_location('metadata_export_receiver',path)
+ receiver=importlib.util.module_from_spec(spec);spec.loader.exec_module(receiver)
+ schema_tools=receiver.load_pair_export_tools() # stdlib frozen exporter only; no Mac plot dependency
+ path=ROOT/'scripts/compare_sustained_reports.py';spec=importlib.util.spec_from_file_location('metadata_export_comparer',path)
+ comparer=importlib.util.module_from_spec(spec);spec.loader.exec_module(comparer)
+ return receiver,schema_tools,comparer
+
+def run_child(argv):
+ """Bound both pipes; never save or print stderr plaintext."""
+ process=subprocess.Popen(argv,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=ROOT)
+ selector=selectors.DefaultSelector();buffers={'stdout':bytearray(),'stderr':bytearray()};deadline=time.monotonic()+120
+ try:
+  for name,pipe in [('stdout',process.stdout),('stderr',process.stderr)]:os.set_blocking(pipe.fileno(),False);selector.register(pipe,selectors.EVENT_READ,name)
+  while selector.get_map():
+   require(time.monotonic()<deadline,'child_timeout_unknown_export_outcome')
+   for key,_ in selector.select(.2):
+    chunk=os.read(key.fileobj.fileno(),8192)
+    if not chunk:selector.unregister(key.fileobj);continue
+    buffers[key.data].extend(chunk);require(len(buffers[key.data])<=65536,'child_output_bound_unknown_export_outcome')
+  code=process.wait(timeout=5)
+  return {'returncode':code,'stdout':bytes(buffers['stdout']),'stderr_sha256':sha(buffers['stderr']),'stderr_bytes':len(buffers['stderr'])}
+ finally:
+  selector.close()
+  if process.poll() is None:
+   process.terminate()
+   try:process.wait(timeout=2)
+   except subprocess.TimeoutExpired:process.kill();process.wait(timeout=2)
+  for pipe in (process.stdout,process.stderr):pipe.close()
+
+
+def receipt(raw,label,written,schema):
+ job=JOBS[label];schema.validate_schema(load(raw),{'validated':schema.B,'job_id':schema.S,'schema_version':schema.I,'completed_tasks':schema.I,
+  'full_plan_passed':schema.B,'report_sha256':schema.H,'source_inputs_sha256':{name:schema.H for name in SOURCE_NAMES},
+  'raw_outputs_exported':schema.B,'business_state_modified':schema.B,
+  'metadata_files_written':{job+'-'+name:schema.H for name in SOURCE_NAMES} if written else {}})
+ value=load(raw);require(value['validated'] is True and value['job_id']==job and value['schema_version']==11
+  and value['raw_outputs_exported'] is False and value['business_state_modified'] is False and value['completed_tasks']>0,'exporter_receipt_not_successful')
+ require(value['report_sha256']==value['source_inputs_sha256']['report.json'],'exporter_receipt_report_sha_differs')
+ if written:require(value['metadata_files_written']=={job+'-'+k:v for k,v in value['source_inputs_sha256'].items()},'exporter_written_sha_map_differs')
+ return value
+
+def context(previews,loaded):
+ receiver,schema_tools,comparer=loaded;schema=schema_tools[0]
+ pair_raw=read(PAIR/'controller-journal.json');pair=receiver.validate_pair(pair_raw,sha(pair_raw),schema_tools)
+ comparison_raw=read(PAIR/'comparison.json');require(sha(comparison_raw)==pair['comparison_sha256'],'terminal_pair_comparison_sha_differs')
+ reports={};proofs={};hashes={};artifact_hashes={}
+ for label,job in JOBS.items():
+  values={};actual={}
+  for name,source in SOURCE_NAMES.items():
+   raw=read(RUNS/job/source);actual[name]=sha(raw);values[name]=schema.validate_artifact(name,raw)
+  require(actual==previews[label]['source_inputs_sha256'],'source_artifacts_differ_from_preview_receipt')
+  reports[label]=values['report.json'];proofs[label]=values['runtime-proof.json'];artifact_hashes[label]=actual
+  require(pair['rounds'][label]['report_sha256']==actual['report.json'] and pair[label+'_full_plan_passed'] is reports[label]['passed']
+   and previews[label]['full_plan_passed'] is reports[label]['passed'] and previews[label]['completed_tasks']==reports[label]['completed_tasks'],'pair_or_receipt_report_binding_differs')
+  hashes.update({label+'_report':actual['report.json'],label+'_runtime_proof':actual['runtime-proof.json']})
+ expected=comparer.compare(reports['baseline'],reports['candidate'],proofs['baseline'],proofs['candidate'],
+  before_sha=hashes['baseline_report'],after_sha=hashes['candidate_report'],input_shas=hashes)
+ require(encoded(load(comparison_raw))==encoded(expected),'terminal_comparison_not_frozen_recompute')
+ return {'pair_sha256':sha(pair_raw),'comparison_sha256':sha(comparison_raw),'artifact_sha256':artifact_hashes,
+  'full_plan_passed':{label:report['passed'] for label,report in reports.items()}},pair_raw,comparison_raw
+
+
+class Operator:
+ def __init__(self,label,runner=run_child):
+  require(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,63}',label) is not None,'invalid_export_operation')
+  self.label=label;self.runner=runner;self.loaded=tools();self.root=PAIR/'metadata-export-operators'/label
+  self.journal_path=self.root/'journal.json';self.plan_path=self.root/'plan.json';self.journal=None;self.armed=False
+ def save(self):write(self.journal_path,encoded(self.journal),exclusive=False)
+ def pending(self,stage,label=None):
+  self.journal['pending_action']={'stage':stage,**({'round':label} if label else {})};self.save()
+ def confirmed(self,stage,checksum,label=None):
+  self.journal.setdefault('confirmed_metadata',[]).append({'stage':stage,'sha256':checksum,**({'round':label} if label else {})})
+  self.journal.pop('pending_action',None);self.save()
+ def invoke(self,label,write_export,stage):
+  self.pending(stage,label);source_guard(self.journal['source_sha256'])
+  argv=[sys.executable,str(ROOT/'.runtime/export_sustained_v11_metadata.py'),'--operation',OPERATION,'--round',label,'--prepared-sha256',PLAN_SHA]
+  if write_export:argv.append('--write')
+  result=self.runner(argv);require(result['returncode']==0,'exporter_nonzero_unknown_or_failed_outcome')
+  require(type(result['stdout']) is bytes and 0<len(result['stdout'])<=65536,'invalid_exporter_stdout')
+  value=receipt(result['stdout'],label,write_export,self.loaded[1][0])
+  filename=label+'-export-receipt.json' if write_export else label+'-'+stage+'-receipt.json'
+  destination=self.root/('receipts' if write_export else 'validation-receipts')/filename
+  write(destination,result['stdout'])
+  if not write_export:self.confirmed(stage,sha(result['stdout']),label)
+  return value
+ def fail(self,error):
+  if self.journal is not None and self.armed:
+
+   self.journal.update(phase='manual_recovery_required',failure_code=str(error) if isinstance(error,Refusal) else type(error).__name__,automatic_replay=False)
+   try:self.save()
+   except Exception:pass # Preserve the already-fsynced pending intent if storage failed.
+ def prepare(self):
+  directory(PAIR)
+  # All labels share PAIR/exports, so hold this before any prepare checks.
+  with locked(PAIR,'metadata-export.lock'):return self._prepare_pair_locked()
+ def _prepare_pair_locked(self):
+  # Check terminal metadata before creating even the operator directory.
+  pair_raw=read(PAIR/'controller-journal.json');self.loaded[0].validate_pair(pair_raw,sha(pair_raw),self.loaded[1])
+  require(not (PAIR/'exports').exists() and not (PAIR/'exports').is_symlink(),'existing_exports_require_manual_review')
+  parent=self.root.parent
+  if not parent.exists():parent.mkdir(mode=0o700);sync(parent.parent)
+  directory(parent);directory(self.root,fresh=True)
+  with locked(self.root):
+   try:return self._prepare_locked()
+   except Exception as error:self.fail(error);raise
+ def _prepare_locked(self):
+  for name in ('receipts','validation-receipts','payload'):directory(self.root/name,fresh=True)
+  self.journal={'version':1,'phase':'preparing','operation':OPERATION,'export_operation':self.label,'prepared_pair_sha256':PLAN_SHA,
+   'source_sha256':source_guard(),'automatic_replay':False,'business_state_modified':False}
+  write(self.journal_path,encoded(self.journal));self.armed=True
+  previews={label:self.invoke(label,False,'prepare_validate') for label in JOBS}
+  binding,_,_=context(previews,self.loaded)
+  plan={'version':1,'phase':'prepared','operation':OPERATION,'export_operation':self.label,'prepared_pair_sha256':PLAN_SHA,
+   'source_sha256':self.journal['source_sha256'],'binding':binding,'exports_root':str(PAIR/'exports'),
+   'operator_directory':str(self.root),'interpreter':str(Path(sys.executable).resolve()),'automatic_replay':False}
+  write(self.plan_path,encoded(plan));self.journal.update(phase='prepared',operator_prepared_sha256=sha(read(self.plan_path)));self.save()
+  return {'phase':'prepared','operator_prepared_sha256':sha(read(self.plan_path)),'exports_created':False,'private_plan_journal_created':True}
+ def execute(self,expected_sha):
+  self.armed=False;self.journal=None
+  directory(PAIR)
+  with locked(PAIR,'metadata-export.lock'):
+   directory(self.root)
+   with locked(self.root):
+    try:return self._execute_locked(expected_sha)
+    except Exception as error:self.fail(error);raise
+ def _execute_locked(self,expected_sha):
+  raw=read(self.plan_path);require(re.fullmatch(r'[0-9a-f]{64}',expected_sha or '') is not None and sha(raw)==expected_sha,'exact_operator_prepared_sha_required')
+  plan=load(raw);self.journal=load(read(self.journal_path))
+  require(plan['phase']=='prepared' and plan['operation']==OPERATION and plan['export_operation']==self.label and plan['prepared_pair_sha256']==PLAN_SHA
+   and plan['operator_directory']==str(self.root) and plan['exports_root']==str(PAIR/'exports') and plan['interpreter']==str(Path(sys.executable).resolve()),'prepared_operator_configuration_differs')
+  source_guard(plan['source_sha256'])
+  require(self.journal['phase']=='prepared' and not self.journal.get('pending_action') and self.journal['operator_prepared_sha256']==expected_sha,'operator_not_clean_prepared')
+  require(not (PAIR/'exports').exists() and not (PAIR/'exports').is_symlink(),'existing_exports_require_manual_review')
+  self.armed=True;self.pending('execute_intent')
+  write(self.root/'execution-marker.json',encoded({'phase':'execute_intent','operator_prepared_sha256':expected_sha}))
+  self.journal['phase']='execute_validating';self.save()
+  previews={label:self.invoke(label,False,'execute_validate') for label in JOBS}
+  binding,pair_raw,comparison_raw=context(previews,self.loaded);require(binding==plan['binding'],'terminal_inputs_changed_since_prepare')
+  for label in JOBS:
+   require(not (PAIR/'exports'/label).exists() and not (PAIR/'exports'/label).is_symlink(),'existing_round_exports_require_manual_review')
+   value=self.invoke(label,True,'export_write')
+   require(value['source_inputs_sha256']==binding['artifact_sha256'][label],'written_export_differs_from_prepared_inputs')
+   directory(PAIR/'exports'/label)
+   require({p.name for p in (PAIR/'exports'/label).iterdir()}=={JOBS[label]+'-'+n for n in SOURCE_NAMES},'export_directory_not_exact_five_files')
+   require(all(sha(read(PAIR/'exports'/label/(JOBS[label]+'-'+n)))==h for n,h in binding['artifact_sha256'][label].items()),'written_export_actual_bytes_differs')
+   self.confirmed('export_write',sha(read(self.root/'receipts'/(label+'-export-receipt.json'))),label)
+  source_guard(plan['source_sha256']);current,_,_=context(previews,self.loaded);require(current==binding,'terminal_inputs_changed_during_export')
+  # Strict schema-only receiver validates again immediately before exact copy.
+  self.pending('pair_journal_export');self.loaded[0].validate_pair(pair_raw,binding['pair_sha256'],self.loaded[1])
+  self.loaded[0].write_private(self.root/'payload/pair-controller-journal.json',pair_raw);self.confirmed('pair_journal_export',sha(pair_raw))
+  self.pending('comparison_export');require(sha(comparison_raw)==binding['comparison_sha256'],'comparison_copy_sha_differs')
+  write(self.root/'payload/comparison.json',comparison_raw);self.confirmed('comparison_export',sha(comparison_raw))
+  files=[]
+  for label,job in JOBS.items():
+   for name in SOURCE_NAMES:files.append({'relative_path':label+'/'+job+'-'+name,'source_path':str(PAIR/'exports'/label/(job+'-'+name))})
+   files.append({'relative_path':label+'-export-receipt.json','source_path':str(self.root/'receipts'/(label+'-export-receipt.json'))})
+  for name in ('comparison.json','pair-controller-journal.json'):files.append({'relative_path':name,'source_path':str(self.root/'payload'/name)})
+  require(len(files)==len({x['relative_path'] for x in files})==14,'transport_manifest_not_exact_fourteen')
+  for item in files:body=read(Path(item['source_path']));item.update(sha256=sha(body),bytes=len(body))
+  manifest={'version':1,'phase':'metadata_export_complete','operation':OPERATION,'prepared_pair_sha256':PLAN_SHA,
+   'export_operation':self.label,'operator_prepared_sha256':expected_sha,'operator_source_sha256':plan['source_sha256']['operator_source_sha256'],
+   'original_pair_journal_sha256':binding['pair_sha256'],'comparison_sha256':binding['comparison_sha256'],
+   'files':files,'raw_outputs_or_env_or_dump_included':False,'business_state_modified':False,
+   'trust_scope':'Hashes anchor exact metadata transport through the trusted operator channel; not digital signatures or an independent production observation'}
+  body=encoded(manifest);self.pending('transport_manifest_write');write(self.root/'transport-manifest.json',body)
+  self.confirmed('transport_manifest_write',sha(body));self.journal.update(phase='complete',transport_manifest_sha256=sha(body),transport_file_count=14);self.save()
+  return {'phase':'complete','transport_manifest_sha256':sha(body),'transport_manifest_path':str(self.root/'transport-manifest.json'),
+   'transport_file_count':14,'export_receipts_sha256':{label:sha(read(self.root/'receipts'/(label+'-export-receipt.json'))) for label in JOBS},
+   'original_pair_journal_sha256':binding['pair_sha256'],'comparison_sha256':binding['comparison_sha256'],'full_plan_passed':binding['full_plan_passed']}
+
+def main(argv=None):
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--export-operation',default='metadata-export-v1');parser.add_argument('--execute',action='store_true');parser.add_argument('--prepared-sha256');args=parser.parse_args(argv)
+ os.umask(0o077);operator=None
+ try:
+  operator=Operator(args.export_operation)
+  result=operator.execute(args.prepared_sha256) if args.execute else operator.prepare()
+  print(json.dumps(result,sort_keys=True));return 0
+ except Exception as error:
+  print(json.dumps({'phase':'refused','reason_code':str(error) if isinstance(error,Refusal) else type(error).__name__,'automatic_replay':False}));return 1
+if __name__=='__main__':raise SystemExit(main())

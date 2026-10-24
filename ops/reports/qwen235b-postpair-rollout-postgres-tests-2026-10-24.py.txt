@@ -1,0 +1,87 @@
+"""A new Unix-only local PG16 cluster; never accepts an external database URL."""
+from __future__ import annotations
+from io import BytesIO
+import json
+from pathlib import Path
+import runpy
+import subprocess
+import tempfile
+import unittest
+import psycopg
+from psycopg.types.json import Jsonb
+
+ROOT=Path(__file__).resolve().parents[1]
+PURE=runpy.run_path(str(ROOT/'.runtime/test_deploy_postpair_sources.py'),run_name='isolated_fixture_only')
+M=PURE['M']
+
+class IsolatedPostgresTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from pgserver._commands import POSTGRES_BIN_PATH
+        from backend.migrate import MIGRATIONS
+        cls.tmp=tempfile.TemporaryDirectory(prefix='bf-postpair-private-pg-',dir='/private/tmp')
+        cls.base=Path(cls.tmp.name);cls.data=cls.base/'data';cls.socket=cls.base/'socket';cls.socket.mkdir(mode=0o700)
+        cls.binary=Path(POSTGRES_BIN_PATH);cls.running=False
+        def command(args):
+            result=subprocess.run([str(x) for x in args],stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=30)
+            if result.returncode:raise RuntimeError('isolated_local_postgres_command_failed')
+        cls.command=staticmethod(command)
+        try:
+            command([cls.binary/'initdb','-D',cls.data,'-U','batchforge','-A','trust','--no-locale','-E','UTF8'])
+            command([cls.binary/'pg_ctl','-D',cls.data,'-l',cls.base/'postgres.log','-o',f"-h '' -k {cls.socket} -p 55437",'-w','start']);cls.running=True
+            cls.admin=f'host={cls.socket} port=55437 user=batchforge dbname=postgres'
+            with psycopg.connect(cls.admin,autocommit=True) as c:c.execute('CREATE DATABASE batchforge');c.execute('CREATE ROLE bf_runtime LOGIN')
+            cls.owner=f'host={cls.socket} port=55437 user=batchforge dbname=batchforge'
+            cls.runtime=f'host={cls.socket} port=55437 user=bf_runtime dbname=batchforge'
+            with psycopg.connect(cls.owner,autocommit=True) as c:
+                for _,statement,_ in MIGRATIONS:c.execute(statement)
+                c.execute('CREATE TABLE batchforge_schema_migrations(version integer PRIMARY KEY,checksum text NOT NULL)')
+                for v,_,h in MIGRATIONS:c.execute('INSERT INTO batchforge_schema_migrations VALUES(%s,%s)',(v,h))
+                c.execute('GRANT SELECT ON batchforge_schema_migrations,tasks,workers TO bf_runtime')
+        except BaseException:
+            cls.tearDownClass();raise
+    @classmethod
+    def tearDownClass(cls):
+        if cls.running:
+            cls.command([cls.binary/'pg_ctl','-D',cls.data,'-m','fast','-w','stop']);cls.running=False
+        cls.tmp.cleanup()
+    def setUp(self):
+        self.local=tempfile.TemporaryDirectory(prefix='postpair-sql-fixture-')
+        self.job,self.controller,_=PURE['PostpairTests']().setup(self.local.name)
+        api=self.job.api['env_file'];self.job.env[api]+=('DATABASE_URL='+self.runtime+'\n').encode()
+    def tearDown(self):self.local.cleanup()
+    def test_actual_readonly_global_drain_requires_exact_schema_and_no_live_tasks(self):
+        self.job._drained()
+        with psycopg.connect(self.owner,autocommit=True) as c:
+            c.execute("INSERT INTO tenants(id,name) VALUES('postpair-local-only','Synthetic local only')")
+            c.execute("INSERT INTO files(id,tenant_id,filename,kind,content,bytes) VALUES('local-input','postpair-local-only','local','input',%s,1)",(b'x',))
+            c.execute("INSERT INTO batches(id,tenant_id,input_file_id,model,status,total_count,pending_count,runtime_compatibility_scope) VALUES('local-batch','postpair-local-only','local-input',%s,'in_progress',1,1,'legacy_unverified')",(M['MODEL'],))
+            c.execute("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts) VALUES('local-task','postpair-local-only','local-batch','local',%s,%s,'pending',3)",(M['MODEL'],Jsonb({'model':M['MODEL']})))
+        with self.assertRaisesRegex(RuntimeError,'global_drain_required'):self.job._drained()
+    def test_actual_registration_checks_profile_budget_and_never_updates_worker(self):
+        profile={'profile_id':'local-projected','runtime_fingerprint':'sha256:'+'1'*64,
+            'prefill_tokens_per_second':1000,'decode_tokens_per_second':10,'hourly_cost_usd':1.00625,
+            'calibration_label':'SYNTHETIC LOCAL ONLY','cost_source':'SYNTHETIC LOCAL ONLY'}
+        self.job.profile_value=profile
+        kv={'protocol':'vllm-0.10.2-qwen-chat','budget':298384,'block_size':16,'single_worker_single_engine':True,'paused':False}
+        metadata={'scheduling_profile':profile,'ready_engine_count':1,'kv_admission':kv}
+        with psycopg.connect(self.owner,autocommit=True) as c:
+            c.execute('INSERT INTO workers(id,name,model,concurrency,metadata,scheduler_profile_id,runtime_fingerprint,prefill_tokens_per_second,decode_tokens_per_second,hourly_cost_usd) VALUES(%s,%s,%s,64,%s,%s,%s,%s,%s,%s)',
+                ('owned-worker','local',M['MODEL'],Jsonb(metadata),profile['profile_id'],profile['runtime_fingerprint'],1000,10,1.00625))
+            before=c.execute("SELECT last_seen_at,metadata FROM workers WHERE id='owned-worker'").fetchone()
+        metrics=('batchforge_worker_capacity 64\nbatchforge_worker_ready_engines 1\n'
+            'batchforge_worker_adaptive_kv_budget_tokens 298384\nbatchforge_worker_adaptive_kv_paused 0\n'
+            'batchforge_worker_adaptive_kv_waiting 0\nbatchforge_worker_inflight 0\nbatchforge_worker_reserved_context_tokens 0\n').encode()
+        class Response(BytesIO):status=200
+        class HTTP:
+            def open(inner,url,timeout):
+                self.assertEqual(url,'http://127.0.0.1:9105/metrics');return Response(metrics)
+        self.controller.http=HTTP()
+        self.assertTrue(self.job._profile()['registration_verified'])
+        with psycopg.connect(self.owner,autocommit=True) as c:
+            self.assertEqual(c.execute("SELECT last_seen_at,metadata FROM workers WHERE id='owned-worker'").fetchone(),before)
+            metadata['kv_admission']['budget']=16
+            c.execute("UPDATE workers SET metadata=%s WHERE id='owned-worker'",(Jsonb(metadata),))
+        with self.assertRaisesRegex(RuntimeError,'worker_registration_profile_kv_differs'):self.job._profile()
+
+if __name__=='__main__':unittest.main()

@@ -1,0 +1,182 @@
+"""Read-only worker stage snapshot; no inference, SQL, process env or secrets.
+
+On-disk source hashes are operator bindings, not loaded-code attestation. Use
+the separate reviewed deployment/activation proof. Histograms are process-life
+aggregate observations, not durable per-attempt traces, TTFT or GPU kernel time.
+"""
+from __future__ import annotations
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import re
+import stat
+import sys
+from urllib.request import HTTPRedirectHandler, ProxyHandler, build_opener
+
+SELF=Path(__file__).resolve();ROOT=SELF.parents[1]
+EXPECTED_ROOT=Path('/root/batchforge-runtime/app')
+ANALYZER_SHA='0a0385d0c154d9efb232b49ad2769cc549f261cbf9d78b9a36f3c595ccf01d5a'
+SOURCES={
+ 'worker/runtime.py':'56be1af6502a617540cdabf8c65e0662a833909dd2b8746df0910f3fd96eb04d',
+ 'worker/metrics.py':'f9119336068200ffc8fa994924b93d15a824493c8502d86e237678ebfb0a5196',
+ 'worker/config.py':'e6f70e8ab7ef47059a74a09a4f105e6de8c57bcca2b990d7fd7e6a53bc9d24e4',
+ 'worker/kv_admission.py':'e26dff615204edde0ffdeba44271dc84ced4b6d26477f90b6df874fd6a270d6e'}
+FAMILY='batchforge_worker_stage_seconds';PREFIX=FAMILY+'_'
+NAMES={PREFIX+x for x in ('bucket','sum','count')}
+BUCKETS={.001,.005,.01,.025,.05,.1,.25,.5,1.,2.,5.,10.,20.,40.,80.,160.,320.,640.,1280.,2560.,4096.,math.inf}
+METRICS_LIMIT=1024**2
+sys.dont_write_bytecode=True
+if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
+
+class Refusal(ValueError):pass
+def require(value,code):
+    if not value:raise Refusal(code)
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def encoded(value):return (json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode()
+def strict(raw):
+    def unique(pairs):
+        result={}
+        for k,v in pairs:require(k not in result,'duplicate_json_key');result[k]=v
+        return result
+    def invalid(_):raise Refusal('nonfinite_json')
+    return json.loads(raw.decode('utf-8'),object_pairs_hook=unique,parse_constant=invalid)
+def file_bytes(path,limit,*,private):
+    require(path.is_absolute() and path.resolve()==path,'canonical_file_required')
+    fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    try:
+        before=os.fstat(fd)
+        require(stat.S_ISREG(before.st_mode) and before.st_uid==os.geteuid() and before.st_nlink==1
+            and not before.st_mode&(0o077 if private else 0o022) and 0<before.st_size<=limit,'owned_bounded_file_required')
+        with os.fdopen(fd,'rb',closefd=False) as stream:raw=stream.read(limit+1)
+        after=os.fstat(fd);keys=('st_dev','st_ino','st_size','st_mtime_ns','st_ctime_ns')
+        require(len(raw)==before.st_size and all(getattr(before,k)==getattr(after,k) for k in keys),'file_changed_during_read')
+        return raw,{k:getattr(after,k) for k in keys}
+    finally:os.close(fd)
+def analyzer():
+    path=ROOT/'.runtime/analyze_worker_stage_deltas.py';raw,_=file_bytes(path,128*1024,private=True)
+    require(sha(raw)==ANALYZER_SHA,'reviewed_analyzer_source_differs')
+    # Execute the bytes just hashed, never reopen a mutable path for import.
+    namespace={'__name__':'stage_snapshot_reviewed_schema','__file__':str(path)}
+    exec(compile(raw,str(path),'exec'),namespace)
+    return namespace
+
+def manifest_worker(root,manifest):
+    require(manifest.parent==root/'.runtime' and manifest.suffix=='.json','app_runtime_manifest_required')
+    raw,state=file_bytes(manifest,128*1024,private=True);document=strict(raw)
+    require(isinstance(document,dict) and set(document)=={'services'} and isinstance(document['services'],list)
+        and 1<=len(document['services'])<=64,'manifest_schema_differs')
+    workers=[];identities=set()
+    for service in document['services']:
+        require(isinstance(service,dict) and set(service)<={'role','name','env_file','python','port','gpu'}
+            and isinstance(service.get('role'),str) and isinstance(service.get('name'),str),'manifest_service_schema_differs')
+        key=(service['role'],service['name']);require(key not in identities,'duplicate_manifest_service');identities.add(key)
+        if service['role']=='worker':workers.append(service)
+    require(len(workers)==1 and workers[0]['name']=='qwen235b' and type(workers[0].get('port')) is int
+        and workers[0]['port']==9105,'exact_unique_worker9105_required')
+    worker=workers[0];env=Path(worker['env_file'])
+    require(env.is_absolute() and env.resolve()==env and (env.is_relative_to(root) or
+        env.parent==root.parent and env.suffix=='.env'),'app_worker_environment_required')
+    return worker,raw,state,env
+
+def actual_record(root):
+    from ops.manage import owned_record
+    path=root/'.runtime/worker-qwen235b.json';raw,_=file_bytes(path,64*1024,private=True)
+    record=owned_record(path)
+    require(record is not None and record==strict(raw),'owned_record_changed_or_missing')
+    return record
+
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self,*args,**kwargs):raise Refusal('loopback_redirect_refused')
+
+def http_get(opener,path,limit):
+    with opener.open('http://127.0.0.1:9105'+path,timeout=3) as response:
+        require(response.status==200,'worker_http_not_ready')
+        raw=response.read(limit+1)
+        require(len(raw)<=limit,'worker_http_body_truncated')
+        return raw
+
+def observations(raw,schema):
+    from prometheus_client.parser import text_string_to_metric_families
+    require(len(raw)<=METRICS_LIMIT and raw.endswith(b'\n'),'metrics_truncated_or_unterminated')
+    text=raw.decode('utf-8');selected=[];help_count=type_count=0
+    for line in text.splitlines():
+        if line.startswith('# HELP '+FAMILY+' '):help_count+=1
+        elif line.startswith('# TYPE '+FAMILY+' '):
+            require(line=='# TYPE '+FAMILY+' histogram','stage_histogram_type_differs');type_count+=1
+        elif line.startswith(PREFIX):
+            name=re.split(r'[\s{]',line,maxsplit=1)[0]
+            if name==PREFIX+'created':continue
+            require(name in NAMES,'unexpected_stage_metric');selected.append(line)
+    require(help_count==type_count==1,'stage_histogram_family_missing_or_duplicate')
+    samples=[]
+    for family in text_string_to_metric_families('# TYPE '+FAMILY+' histogram\n'+'\n'.join(selected)+'\n'):
+        for sample in family.samples:
+            require(sample.name in NAMES,'unexpected_stage_sample')
+            samples.append(dict(name=sample.name,labels=sample.labels,value=sample.value))
+            require(len(samples)<=512,'bounded_stage_metrics_required')
+    samples.sort(key=lambda x:(x['name'],sorted(x['labels'].items())))
+    # Lazy labelled histogram children may legitimately be absent before any
+    # task. Preserve that empty baseline; never synthesize zero observations.
+    probe=dict(version=1,observed_at=datetime.now(timezone.utc).isoformat(),
+        worker_identity=dict(pid=2,start_ticks='1',cwd=str(EXPECTED_ROOT)),source_sha256=SOURCES,
+        worker_configuration_sha256='0'*64,metrics=samples)
+    body=encoded(probe);_,_,groups=schema['load'](body,sha(body))
+    require(all(set(group['buckets'])==BUCKETS for group in groups.values()),'incomplete_release_bucket_schema')
+    return samples
+
+def collect(root,manifest,*,record_reader=actual_record,opener=None,schema=None):
+    schema=schema or analyzer();opener=opener or build_opener(ProxyHandler({}),NoRedirect())
+    def capture():
+        worker,mraw,mstate,env=manifest_worker(root,manifest)
+        record=record_reader(root)
+        require(isinstance(record,dict) and all(k in record for k in ('pid','start_ticks','cwd')),'owned_worker_identity_required')
+        safe={k:record[k] for k in ('pid','start_ticks','cwd')}
+        require(type(safe['pid']) is int and safe['pid']>1 and isinstance(safe['start_ticks'],str)
+            and re.fullmatch('[0-9]+',safe['start_ticks']) and safe['cwd']==str(EXPECTED_ROOT),'owned_worker_identity_required')
+        sources={};states={}
+        for name,digest in SOURCES.items():
+            source,state=file_bytes(root/name,512*1024,private=False)
+            require(sha(source)==digest,'release693_worker_source_required');sources[name]=digest;states[name]=state
+        eraw,estate=file_bytes(env,256*1024,private=True)
+        return dict(record=record,identity=safe,manifest_sha256=sha(mraw),manifest_state=mstate,
+            source_sha256=sources,source_states=states,worker_configuration_sha256=sha(eraw),environment_state=estate)
+    before=capture()
+    require(http_get(opener,'/readyz',1024)==b'ready\n','worker_not_ready')
+    metrics=observations(http_get(opener,'/metrics',METRICS_LIMIT),schema)
+    require(http_get(opener,'/readyz',1024)==b'ready\n','worker_not_ready')
+    after=capture();require(before==after,'worker_identity_source_manifest_or_environment_drift')
+    result=dict(version=1,observed_at=datetime.now(timezone.utc).isoformat(),worker_identity=before['identity'],
+        source_sha256=before['source_sha256'],worker_configuration_sha256=before['worker_configuration_sha256'],metrics=metrics)
+    body=encoded(result);schema['load'](body,sha(body));return body
+
+def write_snapshot(path,raw):
+    require(path.is_absolute() and path.resolve()==path and path.is_relative_to(ROOT/'.runtime'),'private_app_runtime_snapshot_required')
+    parent=path.parent;info=parent.lstat()
+    require(parent.resolve()==parent and stat.S_ISDIR(info.st_mode) and info.st_uid==os.geteuid()
+        and not info.st_mode&0o077,'private_snapshot_directory_required')
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'wb') as stream:stream.write(raw);stream.flush();os.fsync(stream.fileno())
+    fd=os.open(parent,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+    try:os.fsync(fd)
+    finally:os.close(fd)
+
+def main(argv=None):
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--manifest',type=Path,default=ROOT/'.runtime/services-primary.json')
+    p.add_argument('--output',type=Path,required=True);a=p.parse_args(argv);os.umask(0o077)
+    try:
+        require(ROOT==EXPECTED_ROOT and sys.platform=='linux','same_pod_app_only')
+        body=collect(ROOT,a.manifest);write_snapshot(a.output,body)
+        print(json.dumps(dict(collected=True,snapshot_sha256=sha(body),snapshot_bytes=len(body),
+            on_disk_source_binding_only=True,inference_requested=False)));return 0
+    except Exception as error:
+        # Provider/HTTP/parser exceptions can contain arbitrary endpoint/body
+        # strings. Only our fixed ValueError codes or exception type may leave.
+        print(json.dumps(dict(collected=False,reason_code=str(error) if type(error) is Refusal
+            else type(error).__name__,inference_requested=False)));return 1
+
+if __name__=='__main__':raise SystemExit(main())

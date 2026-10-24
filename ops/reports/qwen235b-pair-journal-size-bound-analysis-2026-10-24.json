@@ -1,0 +1,62 @@
+{
+  "actual_production_reads": false,
+  "analysis_version": 1,
+  "cleanup_calls": 3,
+  "conclusion": "Old64KiB reader fails closed for legal accumulated metadata. Fixed explicit2MiB bound covers these finite synthetic fixtures; oversized input still refuses. No silent truncation or actual data-loss claim.",
+  "finite_observation_bound_used": 273,
+  "fixed_backup_source_sha256": "ce1299466dcdc262ce142dfd6bfc84426622c40a95fce16ed79c095c9f930c82",
+  "observation_encoded_bytes": 579,
+  "old_backup_source_sha256": "ab6287120d51f2ad5ba78c31432549a74037cfc6b7c129d1485bb7fd15cb2cbc",
+  "poll_seconds": 10,
+  "samples": [
+    {
+      "encoded_bytes": 2025,
+      "observations": 1,
+      "read_outcomes": {
+        "2097152": true,
+        "65536": true
+      }
+    },
+    {
+      "encoded_bytes": 17079,
+      "observations": 27,
+      "read_outcomes": {
+        "2097152": true,
+        "65536": true
+      }
+    },
+    {
+      "encoded_bytes": 66294,
+      "observations": 112,
+      "read_outcomes": {
+        "2097152": true,
+        "65536": {
+          "refused_error_type": "ConfigError"
+        }
+      }
+    },
+    {
+      "encoded_bytes": 66873,
+      "observations": 113,
+      "read_outcomes": {
+        "2097152": true,
+        "65536": {
+          "refused_error_type": "ConfigError"
+        }
+      }
+    },
+    {
+      "encoded_bytes": 159513,
+      "observations": 273,
+      "read_outcomes": {
+        "2097152": true,
+        "65536": {
+          "refused_error_type": "ConfigError"
+        }
+      }
+    }
+  ],
+  "scope": "SYNTHETIC valid metadata shape only; no actual production journal size observed",
+  "source_pair_controller_sha256": "6c5e5895d3cc8ef1826ae75752143ced24f127422a0e612c19b6ad6bb2dd457b",
+  "timeout_seconds_each": 900
+}

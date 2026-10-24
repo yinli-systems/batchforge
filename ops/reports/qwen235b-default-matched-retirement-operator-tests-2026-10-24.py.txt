@@ -1,0 +1,428 @@
+"""Independent synthetic/local-PG tests; never production access."""
+import asyncio
+import copy
+from datetime import datetime, timedelta, timezone
+import importlib.util
+import json
+import os
+from pathlib import Path
+import secrets
+from types import SimpleNamespace
+
+import pytest
+import psycopg
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
+from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
+from psycopg_pool import AsyncConnectionPool
+from backend.blob_storage import LocalBlobStore
+from backend.result_archival import ResultArchiver
+from backend.migrate import MIGRATIONS
+
+ROOT=Path(__file__).resolve().parents[1]
+def load_module():
+    spec=importlib.util.spec_from_file_location('default_matched_owner_test',ROOT/'.runtime/default_matched_history_retirement.py')
+    m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+M=load_module()
+
+def item(index):
+    return dict(batch_id=f'batch-{index}',job_id='qwen235b-soak30m-v11-response1m-v1',output_file_id=f'output-{index}',
+        output_sha256='a'*64,output_bytes=100,tasks=20,prompt_tokens=100,completion_tokens=60,task_ids=[f'task-{index}-{n}' for n in range(20)])
+def snapshot(batches,retired=(),policy=None):
+    return dict(protection={'outside':{'sha256':'a'*64,'rows':100}},legacy={'tasks':27903,'charged':205935962},
+        selected=[dict(batch_id=b['batch_id'],tasks=0 if b['batch_id'] in retired else 20,charged_bytes=0 if b['batch_id'] in retired else 7,
+            attempts=0 if b['batch_id'] in retired else 20) for b in batches],
+        usage={'retained_tasks':27903+20*(len(batches)-len(retired)),'charged_payload_bytes':205935962+7*(len(batches)-len(retired))},
+        policy=policy,invariants={'history_rollup_mismatches':0})
+class MemoryJournal:
+    def __init__(self,fail=None):self.events=[];self.values=[];self.fail=fail
+    def append(self,event,**values):
+        if self.fail==('append',event,values.get('stage')):raise OSError('synthetic fsync failure')
+        self.events.append((event,copy.deepcopy(values)))
+    def save(self,value):
+        if self.fail==('save',value['phase']):raise OSError('synthetic fsync failure')
+        self.values.append(copy.deepcopy(value))
+class FakeContext:
+    def __init__(self,batches=None):
+        self.batches=batches or [item(0),item(1)];self.current_policy=None;self.retired=[];self.calls=[];self.failure=None
+        self.clock=0.;self.before=snapshot(self.batches)
+    def guard(self):
+        if self.failure=='guard':raise M.Refusal('changed_source')
+    async def snapshot(self,retired):
+        self.calls.append(('snapshot',tuple(retired)))
+        result=snapshot(self.batches,retired,self.current_policy)
+        if self.failure=='final_outside' and retired:result['protection']['outside']['sha256']='b'*64
+        return result
+    async def progress(self,before,retired):
+        result=await self.snapshot(retired);refund=M.compare_snapshots(before,result,retired)
+        return dict(policy=self.current_policy,measured_refund=refund)
+    async def archive(self,item,expected=None):
+        self.calls.append(('archive',item['batch_id'],expected is not None))
+        if self.failure=='archive':raise M.Refusal('corrupt_synthetic_archive')
+        return dict(archive_id='archive-'+item['batch_id'],manifest_sha256='b'*64)
+    def policy(self,previous,enabled):
+        self.calls.append(('policy',enabled));assert previous==self.current_policy
+        self.current_policy=M.target_policy(previous,enabled)
+        if self.failure==('policy',enabled):raise OSError('unknown commit acknowledgement')
+        return copy.deepcopy(self.current_policy)
+    async def preview(self,item):
+        self.calls.append(('preview',item['batch_id']))
+        return dict(eligible=self.failure!='preview',apply=False,tasks=20,attempts=20,remaining_tasks=20,
+            archive_id='archive-'+item['batch_id'],manifest_sha256='b'*64)
+    async def page(self,item):
+        self.calls.append(('page',item['batch_id'],self.clock));self.retired.append(item['batch_id'])
+        if self.failure=='page':raise OSError('unknown committed page')
+        return dict(eligible=True,apply=True,tasks=20,attempts=20,remaining_tasks=0,
+            archive_id='archive-'+item['batch_id'],manifest_sha256='b'*64)
+    def verified_bytes(self):return 600
+    async def sleep(self,seconds):assert seconds>=0;self.clock+=seconds
+
+def driver(context,journal=None,stop=lambda:False):
+    journal=journal or MemoryJournal();prepared=dict(phase='prepared',before_snapshot=context.before,pending_action=None)
+    return M.Driver(context,journal,prepared,clock=lambda:context.clock,sleep=context.sleep,stop=stop)
+
+@pytest.mark.asyncio
+async def test_exact_pages_all_previews_before_any_delete_and_ten_second_spacing():
+    c=FakeContext();j=MemoryJournal();d=driver(c,j);report=await d.run()
+    assert report['passed'] and report['phase']=='complete' and report['pending_action'] is None
+    assert report['measured_refund']==dict(refunded_tasks=40,refunded_payload_bytes=14,retired_attempts=40)
+    pages=[v for v in c.calls if v[0]=='page'];assert [v[1] for v in pages]==['batch-0','batch-1'] and pages[1][2]-pages[0][2]>=10
+    assert max(i for i,x in enumerate(c.calls) if x[0]=='preview')<min(i for i,x in enumerate(c.calls) if x[0]=='page')
+    assert [v for v in c.calls if v[0]=='policy']==[('policy',True),('policy',False)]
+    assert sum(e=='intent' for e,_ in j.events)==4
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('failure',[('policy',True),'page',('policy',False),'preview','final_outside'])
+async def test_unknown_or_failed_work_never_replays_or_blindly_disables(failure):
+    c=FakeContext();c.failure=failure;d=driver(c)
+    with pytest.raises((OSError,M.Refusal)):await d.run()
+    assert d.report['phase']=='manual_recovery_required' and not d.report['passed']
+    assert len([x for x in c.calls if x[0]=='page'])<=len(c.batches)
+    policies=[x for x in c.calls if x[0]=='policy']
+    assert policies==([('policy',True),('policy',False)] if failure==('policy',False) else [('policy',True)])
+    if failure in [('policy',True),'page',('policy',False)]:assert d.report['pending_action']
+
+@pytest.mark.asyncio
+async def test_archive_corruption_before_enable_issues_no_owner_write():
+    c=FakeContext();c.failure='archive';d=driver(c)
+    with pytest.raises(M.Refusal):await d.run()
+    assert not [x for x in c.calls if x[0] in ('policy','page')]
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('failure',[('save','policy_enable_intent'),('append','intent','policy_enable')])
+async def test_precommit_durable_intent_failure_cannot_issue_action(failure):
+    c=FakeContext();j=MemoryJournal(failure);d=driver(c,j)
+    with pytest.raises(OSError):await d.run()
+    assert not [x for x in c.calls if x[0] in ('policy','page')]
+
+@pytest.mark.asyncio
+async def test_confirm_receipt_fsync_failure_preserves_pending_no_compensation():
+    c=FakeContext();j=MemoryJournal(('save','policy_enable_confirmed'));d=driver(c,j)
+    with pytest.raises(OSError):await d.run()
+    assert c.current_policy['enabled'] is True and d.report['pending_action']['stage']=='policy_enable'
+    assert [x for x in c.calls if x[0]=='policy']==[('policy',True)]
+
+@pytest.mark.asyncio
+async def test_stop_after_enable_does_not_start_page_or_auto_disable():
+    c=FakeContext();d=driver(c,stop=lambda:c.current_policy is not None)
+    with pytest.raises(M.Refusal):await d.run()
+    assert [x for x in c.calls if x[0]=='policy']==[('policy',True)]
+    assert not [x for x in c.calls if x[0]=='page']
+
+def test_execution_claim_is_durable_and_rejects_double_execute(tmp_path):
+    M.claim(tmp_path,'a'*64)
+    with pytest.raises(FileExistsError):M.claim(tmp_path,'a'*64)
+    assert (tmp_path/'execution.claim').stat().st_mode&0o777==0o600
+
+def test_measured_refund_uses_original_retained_bytes_and_protects_nonallowlist():
+    batches=[item(0)];before=snapshot(batches);after=snapshot(batches,['batch-0'])
+    assert M.compare_snapshots(before,after,['batch-0'])['refunded_payload_bytes']==7
+    after['protection']['outside']['rows']+=1
+    with pytest.raises(M.Refusal,match='outside'):M.compare_snapshots(before,after,['batch-0'])
+
+def test_no_generic_maintainer_or_key_delete_path():
+    source=Path(M.SELF).read_text()
+    assert 'Maintainer(' not in source and 'idempotency_page(' not in source
+    assert 'DELETE FROM' not in source and 'archive_batch(' not in source
+    assert M.PAGE==20 and M.MAX_PAGES==72 and M.BYTE_LIMIT==8*1024**2
+
+# Actual isolated PostgreSQL covers same-TX CAS, immutable floor and generation+20-row retirement.
+SOURCE=os.environ.get('TEST_DATABASE_URL')
+@pytest.fixture
+def isolated_database():
+    if not SOURCE:pytest.skip('Requires explicit isolated local PostgreSQL')
+    name='bf_default_owner_'+secrets.token_hex(6)
+    with psycopg.connect(SOURCE,autocommit=True) as conn:conn.execute(sql.SQL('CREATE DATABASE {} TEMPLATE template0').format(sql.Identifier(name)))
+    dsn=make_conninfo(SOURCE,dbname=name)
+    try:
+        with psycopg.connect(dsn) as conn:
+            conn.execute((ROOT/'backend/schema.sql').read_text())
+            for n in range(2,12):conn.execute(next((ROOT/'backend/migrations').glob(f'{n:04d}_*.sql')).read_text())
+            conn.execute("INSERT INTO tenants(id,name) VALUES('default','Synthetic default')")
+            conn.execute('ALTER TABLE files VALIDATE CONSTRAINT files_result_has_batch')
+            conn.execute('CREATE TABLE batchforge_schema_migrations(version integer PRIMARY KEY,checksum text NOT NULL,applied_at timestamptz NOT NULL DEFAULT clock_timestamp())')
+            for version,_,checksum in MIGRATIONS:conn.execute('INSERT INTO batchforge_schema_migrations(version,checksum) VALUES(%s,%s)',(version,checksum))
+        yield dsn
+    finally:
+        with psycopg.connect(SOURCE,autocommit=True) as conn:conn.execute(sql.SQL('DROP DATABASE {} WITH(FORCE)').format(sql.Identifier(name)))
+
+
+def test_actual_policy_cas_rejects_rr_default_and_preserves_floor(isolated_database):
+    # Existing owner session defaults can be RR; policy CAS explicitly chooses RC only in its transaction.
+    with psycopg.connect(isolated_database,autocommit=True) as conn:
+        conn.execute("SET default_transaction_isolation='repeatable read'")
+        conn.execute("SET TimeZone='Asia/Dubai'")
+        assert M.policy(conn) is None
+        enabled=M.policy_cas(conn,None,True)
+        assert enabled['enabled'] is True and enabled['replay_floor']==0
+        assert conn.execute('SHOW default_transaction_isolation').fetchone()==('repeatable read',)
+        with pytest.raises(M.Refusal,match='prior_state'):M.policy_cas(conn,None,True)
+        disabled=M.policy_cas(conn,enabled,False)
+        assert disabled['enabled'] is False and disabled['eligible_created_after']==M.CUTOFF and disabled['replay_ttl_seconds']==86400
+        with conn.transaction():
+            conn.execute("SELECT set_config('batchforge.replay_floor_tenant','default',true)")
+            conn.execute("UPDATE tenant_history_retirement_policy SET replay_floor=100 WHERE tenant_id='default'")
+        with pytest.raises(M.Refusal,match='prior_state'):M.policy_cas(conn,disabled,True)
+        assert M.policy(conn)['replay_floor']==100
+
+
+def test_actual_digest_hashes_body_and_keys_without_returning_raw(isolated_database):
+    with psycopg.connect(isolated_database,autocommit=True) as conn:
+        with conn.transaction():
+            conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
+            a=M.digest_query(conn,"SELECT 'SYNTHETIC_PRIVATE_BODY'::text AS body")
+            b=M.digest_query(conn,"SELECT 'SYNTHETIC_CHANGED_BODY'::text AS body")
+        assert a!=b and a['rows']==1 and len(a['sha256'])==64 and 'PRIVATE' not in repr(a)
+
+@pytest.mark.asyncio
+async def test_actual_archive_three_pass_budget_and_exact_page_preserve_bytes(isolated_database,tmp_path,monkeypatch):
+    from backend.history_retirement import history_page
+    async with AsyncConnectionPool(isolated_database,min_size=1,max_size=3,
+        kwargs={'autocommit':True,'row_factory':dict_row,'options':'-c statement_timeout=10000 -c lock_timeout=1000'},open=False) as pool:
+        adapter=LocalBlobStore(tmp_path/'objects');archive=ResultArchiver(pool,adapter,max_archived_bytes_per_tenant=10000000)
+        async with pool.connection() as conn,conn.transaction():
+            await conn.execute("INSERT INTO workers(id,name,model,concurrency) VALUES('owner-test-worker','test',%s,64)",(M.MODEL,))
+            await conn.execute("INSERT INTO files(id,tenant_id,filename,kind) VALUES('owner-input','default','input','input')")
+            await conn.execute("""INSERT INTO batches(id,tenant_id,input_file_id,model,status,total_count,completed_count,prompt_tokens,completion_tokens,created_at,completed_at)
+                VALUES('owner-batch','default','owner-input',%s,'completed',20,20,100,60,clock_timestamp()-interval '3 hours',clock_timestamp()-interval '2 hours')""",(M.MODEL,))
+            await conn.execute("INSERT INTO files(id,tenant_id,filename,kind,batch_id) VALUES('owner-output','default','output','output','owner-batch')")
+            await conn.execute("UPDATE batches SET output_file_id='owner-output' WHERE id='owner-batch'")
+            for i in range(20):
+                tid='owner-task-'+str(i);body={'model':M.MODEL,'choices':[{'message':{'content':'synthetic answer'}}]}
+                await conn.execute("""INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts,attempts,response,prompt_tokens,completion_tokens,finished_at)
+                    VALUES(%s,'default','owner-batch',%s,%s,'{}','completed',3,%s,%s,5,3,clock_timestamp()-interval '2 hours')""",(tid,str(i),M.MODEL,2 if i==0 else 1,Jsonb(body)))
+                await conn.execute("""INSERT INTO attempts(token,task_id,batch_id,tenant_id,worker_id,number,status,prompt_tokens,completion_tokens,started_at,finished_at)
+                    VALUES(%s,%s,'owner-batch','default','owner-test-worker',%s,'completed',5,3,clock_timestamp()-interval '2 hours 1 minute',clock_timestamp()-interval '2 hours')""",('owner-token-'+str(i),tid,2 if i==0 else 1))
+            await conn.execute("""INSERT INTO attempts(token,task_id,batch_id,tenant_id,worker_id,number,status,prompt_tokens,completion_tokens,started_at,finished_at)
+                VALUES('failed-prior-token','owner-task-0','owner-batch','default','owner-test-worker',1,'failed',0,0,
+                    clock_timestamp()-interval '2 hours 2 minutes',clock_timestamp()-interval '2 hours 1 minute')""")
+        assert (await archive.archive_batch('default','owner-batch'))['purged']
+        async with pool.connection() as conn:r,files,chunks=await archive._ready(conn,'default','owner-batch')
+        selected=item(0);selected.update(batch_id='owner-batch',output_file_id='owner-output',output_bytes=files[0]['bytes'],output_sha256=files[0]['sha256'])
+        meter=M.MeteredArchive(adapter,M.BYTE_LIMIT)
+        evidence=await M.verify_archive(pool,meter,selected)
+        with psycopg.connect(isolated_database,autocommit=True) as c:
+            # Fixed production cutoff is intentionally not weakened; test seed is older than it, so first prove rejection.
+            enabled=M.policy_cas(c,None,True)
+            assert (await history_page(pool,'default','owner-batch',limit=20,apply=False))['eligible'] is False
+            disabled=M.policy_cas(c,enabled,False)
+            # TEST-ONLY small legacy cohort/cutoff, never exposed as driver flags.
+            monkeypatch.setattr(M,'CUTOFF',(datetime.now(timezone.utc)-timedelta(hours=4)).isoformat())
+            monkeypatch.setattr(M,'LEGACY_TASKS',0);monkeypatch.setattr(M,'LEGACY_BYTES',0)
+            M.policy_cas(c,disabled,True)
+            c.execute("UPDATE batches SET metadata=%s WHERE id='owner-batch'",(Jsonb({'sustained_job':selected['job_id']}),))
+            c.execute("INSERT INTO tenants(id,name) VALUES('protected-other','Other')")
+            c.execute("INSERT INTO files(id,tenant_id,filename,kind) VALUES('protected-input','protected-other','input','input')")
+            c.execute("""INSERT INTO batches(id,tenant_id,input_file_id,model,status,total_count,failed_count,failed_at)
+                VALUES('protected-batch','protected-other','protected-input','protected-model','failed',1,1,clock_timestamp()-interval '2 hours')""")
+            c.execute("""INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts,finished_at)
+                VALUES('protected-task','protected-other','protected-batch','protected-custom','protected-model','{}','failed',3,clock_timestamp()-interval '2 hours')""")
+            selected['task_ids']=['owner-task-'+str(i) for i in range(20)]
+            expected={t:[t,'owner-batch',str(i),5,3] for i,t in enumerate(selected['task_ids'])}
+            # Every candidate must already meet the fixed3600s age before owner writes.
+            c.execute("UPDATE batches SET completed_at=clock_timestamp() WHERE id='owner-batch'")
+            with pytest.raises(M.Refusal,match='minimum_age'):M.database_snapshot(c,[selected],expected)
+            c.execute("UPDATE batches SET completed_at=clock_timestamp()-interval '2 hours' WHERE id='owner-batch'")
+            before_snapshot=M.database_snapshot(c,[selected],expected)
+            before=c.execute('SELECT * FROM batchforge_attempt_hourly').fetchall()
+        verifier=ResultArchiver(pool,meter,max_archived_bytes_per_tenant=1)
+        outcome=await history_page(pool,'default','owner-batch',limit=20,apply=True,archiver=verifier)
+        assert outcome['tasks']==20 and outcome['remaining_tasks']==0
+        assert await M.verify_archive(pool,meter,selected,evidence)==evidence
+        assert meter.bytes==meter.verified_bytes==3*selected['output_bytes']<=M.BYTE_LIMIT
+        with psycopg.connect(isolated_database,autocommit=True) as c:
+            assert c.execute('SELECT count(*) FROM tasks').fetchone()==(1,)
+            after_snapshot=M.database_snapshot(c,[selected],expected,['owner-batch'])
+            assert M.compare_snapshots(before_snapshot,after_snapshot,['owner-batch'])==dict(refunded_tasks=20,refunded_payload_bytes=0,retired_attempts=21)
+            assert sorted(c.execute('SELECT * FROM batchforge_attempt_hourly').fetchall())==sorted(before)
+            assert c.execute('SELECT count(*) FROM files').fetchone()==(3,)
+            assert c.execute('SELECT count(*) FROM result_archive_runs').fetchone()==(1,)
+
+@pytest.mark.asyncio
+async def test_same_driver_instance_cannot_execute_twice():
+    c=FakeContext();d=driver(c);await d.run();calls=copy.deepcopy(c.calls)
+    with pytest.raises(M.Refusal,match='already_started'):await d.run()
+    assert c.calls==calls
+
+@pytest.mark.parametrize('batches',[[item(0)]*2,[item(i) for i in range(73)],[dict(item(0),tasks=19)]])
+def test_bad_population_is_rejected_before_any_callback(batches):
+    c=FakeContext(batches)
+    with pytest.raises(M.Refusal,match='bounded_unique'):driver(c)
+    assert not c.calls
+
+class ReadyPool:
+    def __init__(self):self.value=None
+    def connection(self):
+        class C:
+            async def __aenter__(self):return None
+            async def __aexit__(self,*a):pass
+        return C()
+
+@pytest.mark.asyncio
+async def test_archive_budget_and_manifest_mismatch_refuse_before_any_object_read(monkeypatch):
+    from contextlib import contextmanager
+    calls=[]
+    class Adapter:
+        backend='local'
+        @contextmanager
+        def open_verified(self,ref):
+            calls.append(ref);raise AssertionError('must refuse before fetch');yield
+    selected=item(0)
+    async def ready(_self,_conn,_tenant,_bid):
+        return ({'id':'archive','purged_at':True,'writer_token':None,'lease_expires_at':None,'manifest_sha256':'b'*64},
+            [{'file_id':selected['output_file_id'],'kind':'output','bytes':selected['output_bytes'],'sha256':selected['output_sha256'],'line_count':20,'expected_count':20}],
+            [{'bytes':selected['output_bytes']}])
+    monkeypatch.setattr(M.ResultArchiver,'_ready',ready)
+    selected['output_bytes']=M.BYTE_LIMIT//3+1
+    with pytest.raises(M.Refusal,match='budget'):await M.verify_archive(ReadyPool(),M.MeteredArchive(Adapter(),M.BYTE_LIMIT),selected)
+    assert not calls
+    selected['output_bytes']=100
+    with pytest.raises(M.Refusal,match='generation'):await M.verify_archive(ReadyPool(),M.MeteredArchive(Adapter(),M.BYTE_LIMIT),selected,{'wrong':'generation'})
+    assert not calls
+
+@pytest.fixture
+def metadata_fixture():
+    # Uses the separately reviewed synthetic receipt schema fixture, never real outputs.
+    spec=importlib.util.spec_from_file_location('owner_external_receipt_fixture',ROOT/'.runtime/test_matched_v11_receipt.py')
+    fixture_module=importlib.util.module_from_spec(spec);spec.loader.exec_module(fixture_module)
+    f=fixture_module.Fixture()
+    f.pair['legacy_charged_payload_baseline_bytes']=M.LEGACY_BYTES
+    for u in [f.pair['initial_clean_usage'],*f.pair['cleanup_observations']]:
+        u.update(charged_payload_bytes=M.LEGACY_BYTES,legacy_charged_payload_bytes=M.LEGACY_BYTES,payload_headroom_bytes=335544320-M.LEGACY_BYTES)
+    f.save_pair()
+    try:yield f,fixture_module
+    finally:f.close()
+
+def make_owner_metadata(f):
+    batches=[]
+    for label,values in f.values.items():
+        tasks=values['report.json']['tasks'];collection=values['output-collection.json']
+        for b in collection['binding']['batch_files']:
+            file=collection['files'][str(b['index'])];members=[t for t in tasks if t['batch_id']==b['batch_id']]
+            batches.append(dict(job_id=values['report.json']['job_id'],
+                batch_id=b['batch_id'],output_file_id=b['file_id'],output_sha256=file['sha256'],output_bytes=file['bytes'],tasks=20,
+                prompt_tokens=file['prompt_tokens'],completion_tokens=file['completion_tokens'],task_ids=sorted(t['id'] for t in members)))
+    preparer=ROOT/'.runtime/prepare_default_matched_retirement.py';preparer_sha=M.sha(preparer.read_bytes())
+    allow=dict(phase='offline_prepared_NOT_authorization_to_delete',tenant='default',operation=M.OPERATION,created_after=M.CUTOFF,publisher_cutoff=M.PUBLISHER,
+        min_age_seconds=3600,replay_ttl_seconds=86400,retire_keys=False,task_page_limit=20,archive_byte_limit_per_page=M.BYTE_LIMIT,
+        protected_legacy_retained_tasks=M.LEGACY_TASKS,protected_legacy_charged_payload_bytes=M.LEGACY_BYTES,owner_changes_issued=False,database_http_gpu_access=False,
+        preparer_sha256=preparer_sha,max_pages=len(batches),batch_allowlist=batches,
+        input_proofs=dict(prepared_sha256=f.manifest['prepared_plan_sha256'],pair_journal_sha256=f.manifest['pair_journal']['sha256'],comparison_sha256=f.manifest['comparison']['sha256']))
+    allowpath=f.root/'owner-allowlist.json';allowsha=f.write(allowpath,allow)
+    manifest=f.root/'owner-manifest.json';manifestsha=f.write(manifest,f.manifest)
+    return SimpleNamespace(receipt_manifest=manifest,receipt_manifest_sha256=manifestsha,allowlist=allowpath,allowlist_sha256=allowsha,preparer_sha256=preparer_sha),allow
+
+
+def test_metadata_requires_externally_anchored_controller_bytes(metadata_fixture):
+    f,_=metadata_fixture;args,_=make_owner_metadata(f)
+    allow,expected,inputs=M.metadata_inputs(args)
+    assert len(allow['batch_allowlist'])==3 and len(expected)==60 and len(inputs)==16
+    path=Path(f.manifest['candidate']['directory'])/(f.values['candidate']['report.json']['job_id']+'-controller.json')
+    value=json.loads(path.read_bytes());value['output_collection_sha256']='0'*64;f.write(path,value)
+    with pytest.raises(Exception):M.metadata_inputs(args)
+
+
+def test_allowlist_cannot_change_batch_file_sha_even_if_locally_rehashed(metadata_fixture):
+    f,_=metadata_fixture;args,allow=make_owner_metadata(f)
+    allow['batch_allowlist'][0]['output_sha256']='0'*64;args.allowlist_sha256=f.write(args.allowlist,allow)
+    with pytest.raises(M.Refusal,match='allowlist_not_exact'):M.metadata_inputs(args)
+
+
+def test_unknown_custom_id_rejected_even_with_export_receipt_rebound(metadata_fixture,monkeypatch):
+    f,fixture_module=metadata_fixture;args,_=make_owner_metadata(f)
+    previous=json.loads(Path(f.manifest['comparison']['path']).read_bytes())
+    f.values['baseline']['report.json']['tasks'][0]['custom_id']='foreign-00000000'
+    with monkeypatch.context() as mp:
+        mp.setattr(fixture_module.COMPARE,'compare',lambda *a,**kw:previous)
+        f.persist()
+    # The synthetic attack rebound every local SHA, but strict validate_report still rejects the foreign job ID.
+    args.receipt_manifest_sha256=f.write(args.receipt_manifest,f.manifest)
+    with pytest.raises(Exception):M.metadata_inputs(args)
+
+@pytest.fixture
+def synthetic_backup(tmp_path,monkeypatch):
+    # Metadata-only proof fixture. It must never be represented as a real restore.
+    root=tmp_path.resolve();runtime=root/'.runtime';runtime.mkdir(mode=0o700)
+    directory=runtime/'schema11-pre-fault';directory.mkdir(mode=0o700)
+    backups=runtime/'backups';backups.mkdir(mode=0o700)
+    helper=root/'ops/ha/local_pg17_restore.py';helper.parent.mkdir(parents=True);helper.write_bytes(b'# SYNTHETIC TEST SOURCE ONLY\n')
+    monkeypatch.setattr(M,'ROOT',root)
+    def put(path,value):
+        path.write_bytes(M.encode(value));path.chmod(0o600);return M.sha(path.read_bytes())
+    dump=backups/'SYNTHETIC-NOT-A-REAL-SNAPSHOT.dump';dump.write_bytes(b'SYNTHETIC PRIVATE TEST BYTES');dump.chmod(0o600)
+    inputs={str(runtime/'sustained-matched'/M.OPERATION/'exports'/label/(label+'-'+str(i)+'.json')):'a'*64 for label in ('baseline','candidate') for i in range(5)}
+    raw=dict(observed_at=datetime.now(timezone.utc).isoformat(),archive_list_verified=True,server_major=17,database_modified=False,
+        snapshot_path=str(dump),snapshot_sha256=M.sha(dump.read_bytes()),snapshot_bytes=dump.stat().st_size)
+    restore=dict(passed=True,schema_version=11,unix_socket_only=True,temporary_cluster_stopped=True,temporary_cluster_removed=True,
+        live_database_modified=False,server_version='17.11',source_sha256=M.sha(helper.read_bytes()),snapshot_sha256=raw['snapshot_sha256'],
+        snapshot_bytes=raw['snapshot_bytes'],migration_checksums={str(v):checksum for v,_,checksum in MIGRATIONS})
+    put(directory/'fresh-backup-raw.json',raw);restoresha=put(directory/'restore.json',restore)
+    doc=dict(phase='complete',passed=True,schema_version=11,services_and_configuration_unchanged=True,off_pod_copy_verified=False,
+        source_sha256='ce1299466dcdc262ce142dfd6bfc84426622c40a95fce16ed79c095c9f930c82',matched_operation=M.OPERATION,
+        matched_plan_sha256='8d1b3745c9dfb9a12f11394fcc3d57af7150d33c3a46414646f13c2b02f7a45e',restore_report_sha256=restoresha,
+        snapshot_sha256=raw['snapshot_sha256'],snapshot_bytes=raw['snapshot_bytes'],
+        matched_export_sha256={label+'/'+Path(p).name:h for label in ('baseline','candidate') for p,h in inputs.items() if '/exports/'+label+'/' in p})
+    path=directory/'journal.json';digest=put(path,doc)
+    return dict(path=path,digest=digest,doc=doc,raw=raw,restore=restore,directory=directory,inputs=inputs,dump=dump,put=put)
+
+def test_backup_binds_same_private_snapshot_five_exports_restore_and_stat(synthetic_backup):
+    f=synthetic_backup;value=M.backup_proof(f['path'],f['digest'],f['inputs'])
+    assert value['snapshot_sha256']==f['raw']['snapshot_sha256'] and value['off_pod_copy_verified'] is False
+    assert len(value['proof_files'])==3 and value['snapshot_stat']['st_size']==f['raw']['snapshot_bytes']
+
+@pytest.mark.parametrize('problem',['old','restore16','not_removed','snapshot_changed','missing_export'])
+def test_untrusted_or_stale_backup_cannot_authorize_mutation(synthetic_backup,problem):
+    f=synthetic_backup
+    if problem=='old':
+        f['raw']['observed_at']=(datetime.now(timezone.utc)-timedelta(hours=2)).isoformat();f['put'](f['directory']/'fresh-backup-raw.json',f['raw'])
+    elif problem in ('restore16','not_removed'):
+        if problem=='restore16':f['restore']['server_version']='16.2'
+        else:f['restore']['temporary_cluster_removed']=False
+        f['doc']['restore_report_sha256']=f['put'](f['directory']/'restore.json',f['restore']);f['digest']=f['put'](f['path'],f['doc'])
+    elif problem=='snapshot_changed':f['dump'].write_bytes(b'SYNTHETIC PRIVATE TEST XXXXX')
+    else:f['doc']['matched_export_sha256'].pop(next(iter(f['doc']['matched_export_sha256'])));f['digest']=f['put'](f['path'],f['doc'])
+    with pytest.raises(M.Refusal):M.backup_proof(f['path'],f['digest'],f['inputs'])
+
+
+def test_actual_explicit_read_committed_connection_options(isolated_database):
+    options='-c statement_timeout=15000 -c lock_timeout=1000 -c default_transaction_isolation=read\\ committed'
+    with psycopg.connect(isolated_database,autocommit=True,options=options) as conn:
+        assert conn.execute('SHOW default_transaction_isolation').fetchone()==('read committed',)
+
+@pytest.mark.parametrize('change',[{'attempts':True},{'raw_output':'SYNTHETIC_PRIVATE_TEXT'},{'remaining_tasks':1},{'attempts':61}])
+def test_unknown_or_ambiguous_page_payload_never_clears_intent(change):
+    expected=dict(archive_id='archive',manifest_sha256='b'*64)
+    value=dict(eligible=True,apply=True,tasks=20,attempts=20,remaining_tasks=0,**expected);value.update(change)
+    with pytest.raises(M.Refusal,match='exact_page'):M.exact_page(value,expected,20,True)
+
+
+def test_immutable_prepared_spec_cannot_be_overwritten(tmp_path,monkeypatch):
+    # Spec bytes live separately from the mutable execution summary.
+    root=tmp_path.resolve();directory=root/'.runtime/operation';directory.mkdir(parents=True,mode=0o700)
+    monkeypatch.setattr(M,'ROOT',root)
+    spec={'phase':'prepared','operation':'SYNTHETIC','pending_action':None}
+    digest=M.write_prepared(directory,spec)
+    journal=M.Journal(directory);journal.save(spec);journal.save({**spec,'phase':'policy_enable_intent','pending_action':'policy_enable'})
+    assert M.sha((directory/'prepared.json').read_bytes())==digest
+    with pytest.raises(FileExistsError):M.write_prepared(directory,spec)
