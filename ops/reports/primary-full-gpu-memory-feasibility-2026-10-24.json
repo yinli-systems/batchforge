@@ -1,0 +1,38 @@
+{
+  "scope": "Planning arithmetic only; neither candidate has been activated by this agent. Fresh startup KV capacity and per-rank memory gate are required.",
+  "model_sources": [
+    "https://huggingface.co/Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "https://docs.vllm.ai/en/v0.10.2/models/supported_models.html"
+  ],
+  "gptoss120": {
+    "observed_prior_startup_kv_GiB_per_rank": 1.79,
+    "observed_prior_full18440_context_concurrency": 10.63,
+    "estimated64_context_kv_GiB_per_rank": 10.777046095954844,
+    "estimated32_context_kv_GiB_per_rank": 5.388523047977422,
+    "target_fraction": 0.85,
+    "prior_fraction": 0.26,
+    "nominal_fraction_increase_GiB_per_rank": 46.992001953125,
+    "additional_activation_and_runtime_overhead_not_assumed_zero": true
+  },
+  "qwen235b": {
+    "revision": "e156cb4efae43fbee1a1ab073f946a1377e6b969",
+    "weights_bytes": 236426193880,
+    "weight_GiB_divided_by_TP4_is_lower_bound": 55.04726289771497,
+    "layers": 94,
+    "KV_heads_total": 4,
+    "TP": 4,
+    "head_dimension": 128,
+    "KV_element_bytes": 2,
+    "KV_bytes_per_token_per_rank": 48128,
+    "context18440_KV_GiB_per_rank": 0.8265304565429688,
+    "eight_full_contexts_KV_GiB_per_rank": 6.61224365234375,
+    "target_fraction": 0.9,
+    "quantization": "Official fine-grained FP8 block128 weight checkpoint and dynamic activation scheme; requested runtime dtype BF16; no KV quantization requested, two-byte KV arithmetic must be confirmed at startup.",
+    "weight_runtime_replication_and_temporary_buffers_additional": true,
+    "native_context": 262144,
+    "configured_context_candidate": 18440,
+    "official_total_parameters_billions": 235,
+    "official_active_parameters_billions": 22
+  },
+  "official_file_manifest_sha256": "24a7fd0c173b3fc500b3cee727f0849032cf3bf6823367559eeb1199a9f8f684"
+}

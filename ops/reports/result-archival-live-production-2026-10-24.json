@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "batch_id": "batch_a1678e67c4ecc8ddbc4d5eb548a4044d",
+  "scope": "production, one selected existing real-inference batch",
+  "started_at": "2026-10-24T01:56:54.243570+00:00",
+  "backup_sha256": "9e7785956991298dabd9efebf35bb695c37155ee56d00a266b8c37adb9508ce3",
+  "restore_verified_before_purge": true,
+  "download_bytes": 52200,
+  "output_sha256": "465183fe7d734297a6a7d66b3a42ce8b7d0369e2e9360d88368602fdefb6671f",
+  "steps": [
+    {
+      "archive_id": "archive_437f3534a8f8ddda26e11cca9e61d13f",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 5
+    },
+    {
+      "archive_id": "archive_437f3534a8f8ddda26e11cca9e61d13f",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 10
+    },
+    {
+      "archive_id": "archive_437f3534a8f8ddda26e11cca9e61d13f",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 15
+    },
+    {
+      "archive_id": "archive_437f3534a8f8ddda26e11cca9e61d13f",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": true,
+      "rows_purged": 20
+    }
+  ],
+  "byte_identical_on_ports": [
+    8080,
+    8082,
+    8083
+  ],
+  "output_file_id": "file_00bfcb086e9b48b78eabc8df59d0b06a",
+  "task_payloads_cleared": 20,
+  "logical_task_payload_bytes_before": 578410,
+  "logical_task_payload_bytes_after": 40,
+  "attempt_counts_and_usage_unchanged": true,
+  "batch_counters_and_identity_unchanged": true,
+  "physical_relation_shrink_claimed": false,
+  "archive_publication_still_disabled": true,
+  "finished_at": "2026-10-24T01:56:58.244753+00:00"
+}

@@ -1,0 +1,602 @@
+{
+  "schema_version": 1,
+  "experiment": "same public 20-cell mixed-token workload repeated5,5batches,100fixed-cap durable tasks,serial FAIR then COST",
+  "model": "openai/gpt-oss-120b",
+  "raw_source_sha256": "ffe741d9c87bd52ecf571f4b5c6a8ae5c5eac3d46f997399f49b2ff4dcc3f634",
+  "fixed_length_source_sha256_before_run_ids": "7bf65e9221663bc2651ab5d159e1635523e0b1a603fddeec0e1fbd6fc006a787",
+  "hardware": {
+    "physical": "4xH100 one Pod",
+    "runtime": "vLLM0.10.2 TP4",
+    "engine_max_num_seqs": 64,
+    "worker_max_inflight": 64,
+    "worker_token_budget": 1180160,
+    "gpu_memory_utilization": 0.85,
+    "context": 18440,
+    "max_num_batched_tokens": 4096,
+    "prefix_caching": false,
+    "chunked_prefill": true,
+    "result_readers_enabled": true,
+    "result_archive_enabled": false
+  },
+  "fair64": {
+    "run_id": "bench-cda1decc99ce",
+    "measurement_started_at": "2026-10-24T01:37:34.435936+00:00",
+    "terminal_observation_ended_at": "2026-10-24T01:38:30.854451+00:00",
+    "database_schema_version": 8,
+    "passed": true,
+    "completed": 100,
+    "failed": 0,
+    "cancelled": 0,
+    "elapsed_seconds": 56.41849,
+    "completed_tasks_per_second": 1.772469,
+    "observed_prompt_tokens": 545280,
+    "observed_completion_tokens": 68000,
+    "observed_prompt_tokens_per_second": 9664.916590288043,
+    "observed_completion_tokens_per_second": 1205.2786240822822,
+    "task_completion_seconds": {
+      "samples": 100,
+      "p50": 18.462872,
+      "p95": 53.000382,
+      "p99": 53.339588,
+      "max": 53.985968,
+      "mean": 24.619821
+    },
+    "task_first_queue_seconds": {
+      "samples": 100,
+      "p50": 2.454072,
+      "p95": 12.192858,
+      "p99": 12.958699,
+      "max": 13.006573,
+      "mean": 5.141871
+    },
+    "accepted_exactly_once": true,
+    "all_output_lengths_exact": true,
+    "gpu_observation": {
+      "samples": 53,
+      "measurement_seconds_including_validation": 57.714484023978,
+      "engine_maxima": {
+        "vllm:num_requests_running": 63.0,
+        "vllm:num_requests_waiting": 60.0,
+        "vllm:gpu_cache_usage_perc": 0.06560803536660786,
+        "vllm:kv_cache_usage_perc": 0.06560803536660786
+      },
+      "physical_device_utilization": {
+        "0": {
+          "samples": 53,
+          "p50": 91.0,
+          "p95": 98.0,
+          "p99": 98.48,
+          "max": 99.0,
+          "mean": 82.811321
+        },
+        "1": {
+          "samples": 53,
+          "p50": 90.0,
+          "p95": 98.0,
+          "p99": 98.48,
+          "max": 99.0,
+          "mean": 79.735849
+        },
+        "2": {
+          "samples": 53,
+          "p50": 78.0,
+          "p95": 97.4,
+          "p99": 98.0,
+          "max": 98.0,
+          "mean": 70.45283
+        },
+        "3": {
+          "samples": 53,
+          "p50": 54.0,
+          "p95": 98.0,
+          "p99": 98.48,
+          "max": 99.0,
+          "mean": 57.0
+        }
+      }
+    },
+    "cost": {
+      "assumed_whole_pod_usd_per_hour": 16.1,
+      "basis": "operator supplied whole-Pod allocation scenario; not current invoice or marginal inference cost",
+      "run_allocation_usd": 0.25231602472222225,
+      "usd_per_million_durable_completions": 2523.1602472222226
+    },
+    "by_class": {
+      "decode_heavy": {
+        "tasks": 50,
+        "completion_seconds": {
+          "samples": 50,
+          "p50": 22.694771,
+          "p95": 53.001409,
+          "p99": 53.524978,
+          "max": 53.985968,
+          "mean": 31.374815
+        },
+        "prompt_tokens": 71680,
+        "completion_tokens": 50080
+      },
+      "prefill_heavy": {
+        "tasks": 45,
+        "completion_seconds": {
+          "samples": 45,
+          "p50": 12.937778,
+          "p95": 23.227884,
+          "p99": 23.912932,
+          "max": 24.09278,
+          "mean": 13.997518
+        },
+        "prompt_tokens": 391680,
+        "completion_tokens": 7680
+      },
+      "balanced": {
+        "tasks": 5,
+        "completion_seconds": {
+          "samples": 5,
+          "p50": 52.682921,
+          "p95": 53.284499,
+          "p99": 53.323347,
+          "max": 53.333059,
+          "mean": 52.670603
+        },
+        "prompt_tokens": 81920,
+        "completion_tokens": 10240
+      }
+    }
+  },
+  "cost64": {
+    "run_id": "bench-a9acaaaf8d02",
+    "measurement_started_at": "2026-10-24T01:39:50.718726+00:00",
+    "terminal_observation_ended_at": "2026-10-24T01:40:45.138657+00:00",
+    "database_schema_version": 8,
+    "passed": true,
+    "completed": 100,
+    "failed": 0,
+    "cancelled": 0,
+    "elapsed_seconds": 54.419908,
+    "completed_tasks_per_second": 1.837563,
+    "observed_prompt_tokens": 545280,
+    "observed_completion_tokens": 68000,
+    "observed_prompt_tokens_per_second": 10019.862584111683,
+    "observed_completion_tokens_per_second": 1249.5427224904533,
+    "task_completion_seconds": {
+      "samples": 100,
+      "p50": 17.216289,
+      "p95": 51.69528,
+      "p99": 52.352007,
+      "max": 52.463338,
+      "mean": 23.112124
+    },
+    "task_first_queue_seconds": {
+      "samples": 100,
+      "p50": 1.691046,
+      "p95": 11.279053,
+      "p99": 12.079503,
+      "max": 12.325181,
+      "mean": 4.122356
+    },
+    "accepted_exactly_once": true,
+    "all_output_lengths_exact": true,
+    "gpu_observation": {
+      "samples": 51,
+      "measurement_seconds_including_validation": 55.839274120982736,
+      "engine_maxima": {
+        "vllm:num_requests_waiting": 49.0,
+        "vllm:num_requests_running": 64.0,
+        "vllm:kv_cache_usage_perc": 0.06320292278443318,
+        "vllm:gpu_cache_usage_perc": 0.06320292278443318
+      },
+      "physical_device_utilization": {
+        "0": {
+          "samples": 51,
+          "p50": 90.0,
+          "p95": 98.0,
+          "p99": 98.5,
+          "max": 99.0,
+          "mean": 84.078431
+        },
+        "1": {
+          "samples": 51,
+          "p50": 82.0,
+          "p95": 98.0,
+          "p99": 98.0,
+          "max": 98.0,
+          "mean": 75.72549
+        },
+        "2": {
+          "samples": 51,
+          "p50": 53.0,
+          "p95": 97.0,
+          "p99": 98.0,
+          "max": 98.0,
+          "mean": 56.137255
+        },
+        "3": {
+          "samples": 51,
+          "p50": 82.0,
+          "p95": 97.5,
+          "p99": 98.0,
+          "max": 98.0,
+          "mean": 74.960784
+        }
+      }
+    },
+    "cost": {
+      "assumed_whole_pod_usd_per_hour": 16.1,
+      "basis": "operator supplied whole-Pod allocation scenario; not current invoice or marginal inference cost",
+      "run_allocation_usd": 0.2433779218888889,
+      "usd_per_million_durable_completions": 2433.779218888889
+    },
+    "by_class": {
+      "decode_heavy": {
+        "tasks": 50,
+        "completion_seconds": {
+          "samples": 50,
+          "p50": 21.110796,
+          "p95": 51.922236,
+          "p99": 52.323723,
+          "max": 52.350882,
+          "mean": 29.926314
+        },
+        "prompt_tokens": 71680,
+        "completion_tokens": 50080
+      },
+      "prefill_heavy": {
+        "tasks": 45,
+        "completion_seconds": {
+          "samples": 45,
+          "p50": 11.605273,
+          "p95": 21.317309,
+          "p99": 22.280114,
+          "max": 22.365025,
+          "mean": 12.441904
+        },
+        "prompt_tokens": 391680,
+        "completion_tokens": 7680
+      },
+      "balanced": {
+        "tasks": 5,
+        "completion_seconds": {
+          "samples": 5,
+          "p50": 50.739993,
+          "p95": 52.307353,
+          "p99": 52.432141,
+          "max": 52.463338,
+          "mean": 51.002195
+        },
+        "prompt_tokens": 81920,
+        "completion_tokens": 10240
+      }
+    }
+  },
+  "cost_relative_to_fair": {
+    "elapsed_change_percent": -3.542423769228842,
+    "throughput_change_percent": 3.6725199902947203,
+    "completion_percentile_change_percent": {
+      "p50": -6.751836875649686,
+      "p95": -2.4624388556293897,
+      "p99": -1.851497240661104
+    }
+  },
+  "prior_seq8": {
+    "fair": {
+      "run_id": "bench-f8adcb394f19",
+      "measurement_started_at": "2026-10-24T01:19:57.320910+00:00",
+      "terminal_observation_ended_at": "2026-10-24T01:23:15.518401+00:00",
+      "database_schema_version": 7,
+      "passed": true,
+      "completed": 100,
+      "failed": 0,
+      "cancelled": 0,
+      "elapsed_seconds": 198.197474,
+      "completed_tasks_per_second": 0.504547,
+      "observed_prompt_tokens": 545280,
+      "observed_completion_tokens": 68000,
+      "observed_prompt_tokens_per_second": 2751.195507163729,
+      "observed_completion_tokens_per_second": 343.09216271848146,
+      "task_completion_seconds": {
+        "samples": 100,
+        "p50": 89.462731,
+        "p95": 162.042405,
+        "p99": 187.966966,
+        "max": 195.741975,
+        "mean": 88.634223
+      },
+      "task_first_queue_seconds": {
+        "samples": 100,
+        "p50": 67.798404,
+        "p95": 148.268838,
+        "p99": 154.893323,
+        "max": 156.087579,
+        "mean": 74.824902
+      },
+      "accepted_exactly_once": true,
+      "all_output_lengths_exact": true,
+      "gpu_observation": {
+        "samples": 182,
+        "measurement_seconds_including_validation": 198.69751593202818,
+        "engine_maxima": {
+          "vllm:num_requests_waiting": 1.0,
+          "vllm:gpu_cache_usage_perc": 0.3934300406784864,
+          "vllm:kv_cache_usage_perc": 0.3934300406784864,
+          "vllm:num_requests_running": 8.0
+        },
+        "physical_device_utilization": {
+          "0": {
+            "samples": 182,
+            "p50": 84.0,
+            "p95": 94.0,
+            "p99": 96.0,
+            "max": 96.0,
+            "mean": 78.049451
+          },
+          "1": {
+            "samples": 182,
+            "p50": 40.0,
+            "p95": 95.0,
+            "p99": 96.0,
+            "max": 96.0,
+            "mean": 47.703297
+          },
+          "2": {
+            "samples": 182,
+            "p50": 93.0,
+            "p95": 96.0,
+            "p99": 97.0,
+            "max": 97.0,
+            "mean": 90.225275
+          },
+          "3": {
+            "samples": 182,
+            "p50": 83.0,
+            "p95": 95.0,
+            "p99": 96.0,
+            "max": 96.0,
+            "mean": 78.197802
+          }
+        }
+      },
+      "cost": {
+        "assumed_whole_pod_usd_per_hour": 16.1,
+        "basis": "operator supplied whole-Pod allocation scenario; not current invoice or marginal inference cost",
+        "run_allocation_usd": 0.8863831476111113,
+        "usd_per_million_durable_completions": 8863.831476111112
+      },
+      "by_class": {
+        "decode_heavy": {
+          "tasks": 50,
+          "completion_seconds": {
+            "samples": 50,
+            "p50": 98.255594,
+            "p95": 176.523589,
+            "p99": 191.893738,
+            "max": 195.741975,
+            "mean": 94.935335
+          },
+          "prompt_tokens": 71680,
+          "completion_tokens": 50080
+        },
+        "prefill_heavy": {
+          "tasks": 45,
+          "completion_seconds": {
+            "samples": 45,
+            "p50": 68.202699,
+            "p95": 150.733369,
+            "p99": 155.54265,
+            "max": 156.073554,
+            "mean": 78.834618
+          },
+          "prompt_tokens": 391680,
+          "completion_tokens": 7680
+        },
+        "balanced": {
+          "tasks": 5,
+          "completion_seconds": {
+            "samples": 5,
+            "p50": 118.04738,
+            "p95": 167.665743,
+            "p99": 172.226091,
+            "max": 173.366178,
+            "mean": 113.819554
+          },
+          "prompt_tokens": 81920,
+          "completion_tokens": 10240
+        }
+      }
+    },
+    "cost": {
+      "run_id": "bench-005480c724a8",
+      "measurement_started_at": "2026-10-24T01:23:56.744036+00:00",
+      "terminal_observation_ended_at": "2026-10-24T01:27:27.703663+00:00",
+      "database_schema_version": 7,
+      "passed": true,
+      "completed": 100,
+      "failed": 0,
+      "cancelled": 0,
+      "elapsed_seconds": 210.959606,
+      "completed_tasks_per_second": 0.474024,
+      "observed_prompt_tokens": 545280,
+      "observed_completion_tokens": 68000,
+      "observed_prompt_tokens_per_second": 2584.76023130229,
+      "observed_completion_tokens_per_second": 322.3365898777797,
+      "task_completion_seconds": {
+        "samples": 100,
+        "p50": 22.162883,
+        "p95": 171.587937,
+        "p99": 179.734662,
+        "max": 208.323926,
+        "mean": 47.654757
+      },
+      "task_first_queue_seconds": {
+        "samples": 100,
+        "p50": 14.710344,
+        "p95": 130.932338,
+        "p99": 139.273023,
+        "max": 169.382486,
+        "mean": 33.516494
+      },
+      "accepted_exactly_once": true,
+      "all_output_lengths_exact": true,
+      "gpu_observation": {
+        "samples": 193,
+        "measurement_seconds_including_validation": 211.5006823129952,
+        "engine_maxima": {
+          "vllm:kv_cache_usage_perc": 0.49397497889323816,
+          "vllm:num_requests_running": 8.0,
+          "vllm:gpu_cache_usage_perc": 0.49397497889323816,
+          "vllm:num_requests_waiting": 5.0
+        },
+        "physical_device_utilization": {
+          "0": {
+            "samples": 193,
+            "p50": 86.0,
+            "p95": 94.4,
+            "p99": 96.0,
+            "max": 96.0,
+            "mean": 80.393782
+          },
+          "1": {
+            "samples": 193,
+            "p50": 37.0,
+            "p95": 95.4,
+            "p99": 96.0,
+            "max": 97.0,
+            "mean": 45.414508
+          },
+          "2": {
+            "samples": 193,
+            "p50": 93.0,
+            "p95": 96.0,
+            "p99": 97.0,
+            "max": 97.0,
+            "mean": 91.108808
+          },
+          "3": {
+            "samples": 193,
+            "p50": 82.0,
+            "p95": 96.0,
+            "p99": 97.0,
+            "max": 97.0,
+            "mean": 79.632124
+          }
+        }
+      },
+      "cost": {
+        "assumed_whole_pod_usd_per_hour": 16.1,
+        "basis": "operator supplied whole-Pod allocation scenario; not current invoice or marginal inference cost",
+        "run_allocation_usd": 0.9434582379444445,
+        "usd_per_million_durable_completions": 9434.582379444446
+      },
+      "by_class": {
+        "decode_heavy": {
+          "tasks": 50,
+          "completion_seconds": {
+            "samples": 50,
+            "p50": 36.74778,
+            "p95": 171.678035,
+            "p99": 175.697507,
+            "max": 179.445882,
+            "mean": 62.976362
+          },
+          "prompt_tokens": 71680,
+          "completion_tokens": 50080
+        },
+        "prefill_heavy": {
+          "tasks": 45,
+          "completion_seconds": {
+            "samples": 45,
+            "p50": 13.240491,
+            "p95": 50.656589,
+            "p99": 54.75577,
+            "max": 57.650268,
+            "mean": 17.820871
+          },
+          "prompt_tokens": 391680,
+          "completion_tokens": 7680
+        },
+        "balanced": {
+          "tasks": 5,
+          "completion_seconds": {
+            "samples": 5,
+            "p50": 170.407798,
+            "p95": 201.149105,
+            "p99": 206.888962,
+            "max": 208.323926,
+            "mean": 162.943667
+          },
+          "prompt_tokens": 81920,
+          "completion_tokens": 10240
+        }
+      }
+    },
+    "configuration": {
+      "engine_max_num_seqs": 8,
+      "gpu_memory_utilization": 0.26,
+      "context": 18440,
+      "max_num_batched_tokens": 1024,
+      "prefix_caching": false,
+      "chunked_prefill": true
+    },
+    "fair64_throughput_ratio": 3.51298792293094,
+    "cost64_throughput_ratio": 3.8765153002463735
+  },
+  "decision": "Recommend cost_aware for the next bounded400-task capacity run; parent authorization remains required before submission.",
+  "operator_incident": {
+    "fair_gpu_run_passed": true,
+    "fair_submitted_once": true,
+    "original_controller_failed_after_fair": "ConfigError because176741-byte report exceeded config-oriented64KiB private_read limit",
+    "original_failure_journal_preserved": true,
+    "recovery": "parent authorized COST-only continuation using bounded16MiB report read; FAIR revalidated without resubmission"
+  },
+  "limitations": [
+    "Only one serial policy pair; no independent repeated runs or confidence interval. Five source repetitions are tasks within one run, not five independent benchmark replications.",
+    "One homogeneous TP4 worker/pool; this does not establish heterogeneous hardware cost savings. Projected cost profile rates were not recalibrated for64 slots.",
+    "Cost is an operator supplied whole-Pod allocation scenario at16.10USD/hour, not invoice, marginal inference cost, or a production price promise.",
+    "Physical nvidia-smi utilization includes any other processes; samples include submission, validation and idle edges and are not CUDA kernel utilization or per-model SM attribution.",
+    "Fixed completion lengths measure controlled capacity. Natural task quality, final answer correctness and latency at unbounded arrival rates were not tested.",
+    "The8-to64 comparison also changes GPU memory fraction(.26to.85), batched token limit(1024to4096), schema7to8 and result-reader code. It is an end-to-end configuration comparison, not an isolated concurrency effect.",
+    "Engine prefill/decode histogram deltas were not captured before the100-task runs; no per-policy prefill/decode histogram claim is made.",
+    "Sustained daily capacity and production SLA are not established by these ~1minute bursts."
+  ],
+  "evidence": [
+    {
+      "path": "ops/reports/primary-scheduler-seq64-fair-fixed100-2026-10-24.json",
+      "sha256": "8eb1a83170d3204b5d407c54eae6951195b7141137c694d8d06e9e81985d75c9"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-cost-fixed100-2026-10-24.json",
+      "sha256": "a5ebd95011973ce36017e60799eeaca77eca4f390bfe4289cd6d5bc19db81d68"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-fair-policy-2026-10-24.json",
+      "sha256": "f8c5dcf3ec5231ff9eb79872f92ca5b6ab83f51609ea59c97e2d1055803cee5b"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-cost-policy-2026-10-24.json",
+      "sha256": "26f6c87679b94bb8d0b6b460dea0ef3b49ee00ecebf9192aa4338a75fcf5f3a1"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-fair-observations-2026-10-24.json",
+      "sha256": "6d7830e78edbe1dd6bce77f6cdfd2493311a4d7b849f5d646f557f6c6cb4a28c"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-cost-observations-2026-10-24.json",
+      "sha256": "41308f17083154ed86a478172694be614de7d392ceed6bb808552cf9f85a2a7f"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-original-controller-2026-10-24.json",
+      "sha256": "451dd7a197c409b3f4126421d8138ea63eb85f6b6c594c167d521ce114eea9f4"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-cost-continuation-2026-10-24.json",
+      "sha256": "6589d1935e47e42c21d5926ab7f22a65324c2808b52d6686af490685ac43e1f0"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq8-fair-fixed100-2026-10-24.json",
+      "sha256": "99d869d4463fac4da21c56e8d5827ab5db37d7b9f8c85c85a5e1191233544e9e"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq8-cost-fixed100-2026-10-24.json",
+      "sha256": "d826aed68659b090eaf87a1e4d03979354706a4f49f2bad4bf0fb778f090a290"
+    }
+  ]
+}

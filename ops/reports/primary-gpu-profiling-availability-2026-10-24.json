@@ -1,0 +1,72 @@
+{
+  "observed_at": "2026-10-24T01:33:28.603042+00:00",
+  "scope": "read-only availability; no profiling, no installation, no kernel capture",
+  "tools": {
+    "nsys": {
+      "path": null
+    },
+    "ncu": {
+      "path": "/usr/local/cuda/bin/ncu",
+      "version_exit_code": 0,
+      "version_output": "NVIDIA (R) Nsight Compute Command Line Profiler\nCopyright (c) 2018-2025 NVIDIA Corporation\nVersion 2025.1.1.0 (build 35528883) (public-release)\n"
+    },
+    "nvprof": {
+      "path": null
+    },
+    "dcgmi": {
+      "path": null
+    },
+    "nv-hostengine": {
+      "path": null
+    },
+    "nvidia-smi": {
+      "path": "/usr/bin/nvidia-smi"
+    }
+  },
+  "gpu_utilization_caveat": "NVML GPU-utilization and memory allocation do not establish GEMM utilization; NCCL communication or spin kernels can keep GPU activity high.",
+  "instrumentation_libraries": [
+    "/root/batchforge-runtime/engine-venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
+    "/usr/local/cuda-12.8/lib64/libcupti.so",
+    "/usr/local/cuda-12.8/lib64/libcupti.so.12",
+    "/usr/local/cuda-12.8/lib64/libcupti.so.2025.1.1",
+    "/usr/local/cuda-12.8/targets/x86_64-linux/lib/libcupti.so",
+    "/usr/local/cuda-12.8/targets/x86_64-linux/lib/libcupti.so.12",
+    "/usr/local/cuda-12.8/targets/x86_64-linux/lib/libcupti.so.2025.1.1",
+    "/usr/local/cuda-12/lib64/libcupti.so",
+    "/usr/local/cuda-12/lib64/libcupti.so.12",
+    "/usr/local/cuda-12/lib64/libcupti.so.2025.1.1",
+    "/usr/local/cuda-12/targets/x86_64-linux/lib/libcupti.so",
+    "/usr/local/cuda-12/targets/x86_64-linux/lib/libcupti.so.12",
+    "/usr/local/cuda-12/targets/x86_64-linux/lib/libcupti.so.2025.1.1",
+    "/usr/local/cuda/lib64/libcupti.so",
+    "/usr/local/cuda/lib64/libcupti.so.12",
+    "/usr/local/cuda/lib64/libcupti.so.2025.1.1",
+    "/usr/local/cuda/targets/x86_64-linux/lib/libcupti.so",
+    "/usr/local/cuda/targets/x86_64-linux/lib/libcupti.so.12",
+    "/usr/local/cuda/targets/x86_64-linux/lib/libcupti.so.2025.1.1"
+  ],
+  "perf_event_paranoid": "4",
+  "kptr_restrict": "1",
+  "nvidia_profiling_settings": [
+    "RmProfilingAdminOnly: 1"
+  ],
+  "process_capabilities": [
+    "CapEff:\t00000000a80425fb",
+    "NoNewPrivs:\t0"
+  ],
+  "gpu_driver_inventory": "0, NVIDIA H100 80GB HBM3, 595.91.07\n1, NVIDIA H100 80GB HBM3, 595.91.07\n2, NVIDIA H100 80GB HBM3, 595.91.07\n3, NVIDIA H100 80GB HBM3, 595.91.07\n",
+  "python_instrumentation_packages": {
+    "torch": "2.8.0",
+    "nvidia-cuda-cupti-cu12": "12.8.90"
+  },
+  "capability_interpretation": {
+    "CAP_SYS_ADMIN": false,
+    "CAP_PERFMON": false,
+    "hardware_counters": "Expected restricted under observed driver setting; no access probe executed",
+    "activity_tracing": "CUPTI/PyTorch available; permission not yet exercised"
+  },
+  "sources": [
+    "https://developer.nvidia.com/nvidia-development-tools-solutions-err_nvgpuctrperm-permission-issue-performance-counters",
+    "https://docs.vllm.ai/en/v0.10.2/contributing/profiling.html"
+  ]
+}

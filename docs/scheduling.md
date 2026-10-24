@@ -4,7 +4,8 @@ BatchForge's v6 scheduler makes dispatch decisions inside PostgreSQL. It keeps
 the durable lease/attempt transaction and adds explicit work estimates,
 operator-calibrated execution profiles, runtime compatibility and a selectable
 cost-aware policy. A logical profile in a test is not a physical GPU measurement.
-The current deployment has one four-H100 120B engine; heterogeneous policy
+The current deployment has one four-H100 TP4 engine, now serving the pinned
+Qwen235B checkpoint after the 120B baseline; heterogeneous policy
 correctness is tested with logical profiles against real PostgreSQL.
 
 ## Policies

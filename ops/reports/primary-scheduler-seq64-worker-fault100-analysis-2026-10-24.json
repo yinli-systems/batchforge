@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "scope": "functional100-task worker-capacityfault,recovery andexactly-onceacceptance; NOTisolatedthroughputcomparison",
+  "run_id": "bench-805755e2ba53",
+  "measurement_started_at": "2026-10-24T01:54:13.932729+00:00",
+  "terminal_observation_ended_at": "2026-10-24T01:56:43.694305+00:00",
+  "elapsed_seconds": 149.761545,
+  "completed": 100,
+  "failed": 0,
+  "cancelled": 0,
+  "accepted_exactly_once": true,
+  "all_output_lengths_exact": true,
+  "observed_prompt_tokens": 545280,
+  "observed_completion_tokens": 68000,
+  "attempt_status_counts": {
+    "expired": 64,
+    "completed": 100
+  },
+  "attempts_per_task_distribution": {
+    "2": 64,
+    "1": 36
+  },
+  "source_sha256": "ffe741d9c87bd52ecf571f4b5c6a8ae5c5eac3d46f997399f49b2ff4dcc3f634",
+  "worker_capacity_sequence": [
+    64,
+    2,
+    64
+  ],
+  "service_actions_owned_by": "separate reviewed single_pod_fault_probe controller; workloadrunnerperformedno serviceactions",
+  "counterpart_fault_evidence": {
+    "path": "ops/reports/single-pod-worker-fault100-2026-10-24.json",
+    "sha256": "06cdea1804695b5a5b6820ff0e467d5bc10d2fe5927a1139d36a68ddfac0f774"
+  },
+  "limitations": [
+    "CPU-only isolatedPG17restore andmanualarchival ofold20rows mayoverlap; timings andGPUutilizations arefunctional evidence, notisolatedpolicyorcapacitycomparisons.",
+    "Fixedminoutputcaps do notprove semanticanswerquality.",
+    "100acceptedattempts plus64expired attempts areexpectedfailurerecovery; no claim thattasks executed once atGPU, onlydurablecompletionaccepted exactlyonce.",
+    "Original100AB andisolated400tests were notresubmitted."
+  ],
+  "evidence": [
+    {
+      "path": "ops/reports/primary-scheduler-seq64-worker-fault100-2026-10-24.json",
+      "sha256": "9285a898c4fa816acc6b9192fe8eb8dba37e9aa0abdc2f20d4be01b2b5e0ee69"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-worker-fault100-observations-2026-10-24.json",
+      "sha256": "33c7f2186e451a3e9bce514ef1348d1b6f01679af91fbbdd787736652a63520d"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-worker-fault100-journal-2026-10-24.json",
+      "sha256": "4f8eab2bc5c2f7bd8a6a4f668ec71e8fbc67a0b2a9c011b1badd5298a2730dc7"
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "observed_at": "2026-10-24T01:11:39.066522+00:00",
+  "source_sha256": "08c9f32b3b12c39b170667b9f07fea604f2859d93b09d57e7218d137c561ebf6",
+  "candidates": [
+    {
+      "candidate": "gptoss120-full-seq64-batch4096",
+      "engine_env": "/root/batchforge-runtime/app/.runtime/qwen235b-v1/candidates/gptoss120-full-seq64-batch4096.env",
+      "env_sha256": "12f10aa047773e2605d5203a9ec916d97849d674c15fd0dfd4e33c51a172891c",
+      "manifest_draft": "/root/batchforge-runtime/app/.runtime/qwen235b-v1/candidates/gptoss120-full-seq64-batch4096.manifest-draft.json",
+      "changes": {
+        "ENGINE_TENSOR_PARALLEL_SIZE": "4",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "18440",
+        "ENGINE_ENABLE_CHUNKED_PREFILL": "1",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GPU_MEMORY_MARGIN_MIB": "2048",
+        "ENGINE_MAX_NUM_SEQS": "64",
+        "ENGINE_GPU_MEMORY_UTILIZATION": ".85",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096"
+      },
+      "worker_required_slots": 64,
+      "worker_required_token_budget": 1180160,
+      "activated": false
+    },
+    {
+      "candidate": "gptoss120-full-seq32-batch4096",
+      "engine_env": "/root/batchforge-runtime/app/.runtime/qwen235b-v1/candidates/gptoss120-full-seq32-batch4096.env",
+      "env_sha256": "622678dcffa649312d9d5b8bdf354403d489a62915158e641f9be0c41c62c444",
+      "manifest_draft": "/root/batchforge-runtime/app/.runtime/qwen235b-v1/candidates/gptoss120-full-seq32-batch4096.manifest-draft.json",
+      "changes": {
+        "ENGINE_TENSOR_PARALLEL_SIZE": "4",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "18440",
+        "ENGINE_ENABLE_CHUNKED_PREFILL": "1",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GPU_MEMORY_MARGIN_MIB": "2048",
+        "ENGINE_MAX_NUM_SEQS": "32",
+        "ENGINE_GPU_MEMORY_UTILIZATION": ".85",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096"
+      },
+      "worker_required_slots": 32,
+      "worker_required_token_budget": 590080,
+      "activated": false
+    },
+    {
+      "candidate": "gptoss120-full-seq64-batch8192",
+      "engine_env": "/root/batchforge-runtime/app/.runtime/qwen235b-v1/candidates/gptoss120-full-seq64-batch8192.env",
+      "env_sha256": "9a9e9c1d9b0664025640abc189c1bb80912a9083a1135c36f46139dfcb27f159",
+      "manifest_draft": "/root/batchforge-runtime/app/.runtime/qwen235b-v1/candidates/gptoss120-full-seq64-batch8192.manifest-draft.json",
+      "changes": {
+        "ENGINE_TENSOR_PARALLEL_SIZE": "4",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "18440",
+        "ENGINE_ENABLE_CHUNKED_PREFILL": "1",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GPU_MEMORY_MARGIN_MIB": "2048",
+        "ENGINE_MAX_NUM_SEQS": "64",
+        "ENGINE_GPU_MEMORY_UTILIZATION": ".85",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "8192"
+      },
+      "worker_required_slots": 64,
+      "worker_required_token_budget": 1180160,
+      "activated": false
+    },
+    {
+      "candidate": "qwen235b-fp8-tp4-seq8",
+      "engine_env": "/root/batchforge-runtime/app/.runtime/qwen235b-v1/candidates/qwen235b-fp8-tp4-seq8.env",
+      "env_sha256": "f160b706eecb151fc2bac511d4f729a1abfb060fea70fc32695515f760c4571f",
+      "manifest_draft": "/root/batchforge-runtime/app/.runtime/qwen235b-v1/candidates/qwen235b-fp8-tp4-seq8.manifest-draft.json",
+      "changes": {
+        "ENGINE_TENSOR_PARALLEL_SIZE": "4",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "18440",
+        "ENGINE_ENABLE_CHUNKED_PREFILL": "1",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GPU_MEMORY_MARGIN_MIB": "2048",
+        "MODEL_NAME": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+        "ENGINE_MODEL_PATH": "/root/batchforge-runtime/models/qwen3-235b-fp8",
+        "ENGINE_REVISION": "e156cb4efae43fbee1a1ab073f946a1377e6b969",
+        "ENGINE_MAX_NUM_SEQS": "8",
+        "ENGINE_GPU_MEMORY_UTILIZATION": ".90",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+        "ENGINE_GENERATION_CONFIG": "vllm"
+      },
+      "worker_required_slots": 8,
+      "worker_required_token_budget": 147520,
+      "activated": false
+    },
+    {
+      "candidate": "qwen235b-fp8-tp4-seq4",
+      "engine_env": "/root/batchforge-runtime/app/.runtime/qwen235b-v1/candidates/qwen235b-fp8-tp4-seq4.env",
+      "env_sha256": "a9418529e8f04e5e2c046535c6b06027fdb45fc2d57aad8dff693e0961a19b37",
+      "manifest_draft": "/root/batchforge-runtime/app/.runtime/qwen235b-v1/candidates/qwen235b-fp8-tp4-seq4.manifest-draft.json",
+      "changes": {
+        "ENGINE_TENSOR_PARALLEL_SIZE": "4",
+        "ENGINE_DTYPE": "bfloat16",
+        "ENGINE_MAX_MODEL_LEN": "18440",
+        "ENGINE_ENABLE_CHUNKED_PREFILL": "1",
+        "ENGINE_ENABLE_PREFIX_CACHING": "0",
+        "ENGINE_GPU_MEMORY_MARGIN_MIB": "2048",
+        "MODEL_NAME": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+        "ENGINE_MODEL_PATH": "/root/batchforge-runtime/models/qwen3-235b-fp8",
+        "ENGINE_REVISION": "e156cb4efae43fbee1a1ab073f946a1377e6b969",
+        "ENGINE_MAX_NUM_SEQS": "4",
+        "ENGINE_GPU_MEMORY_UTILIZATION": ".90",
+        "ENGINE_MAX_NUM_BATCHED_TOKENS": "2048",
+        "ENGINE_GENERATION_CONFIG": "vllm"
+      },
+      "worker_required_slots": 4,
+      "worker_required_token_budget": 73760,
+      "activated": false
+    }
+  ],
+  "requires": "Root coordination, zero in-flight, engine stop, fresh per-rank start gate, fresh KV capacity >= worker slots, worker model/profile update; draft manifests intentionally retain original worker env and cannot be deployed as-is."
+}

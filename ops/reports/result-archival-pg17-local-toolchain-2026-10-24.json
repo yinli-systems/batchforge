@@ -1,0 +1,48 @@
+{
+  "server_package": {
+    "Package": "postgresql-17",
+    "Version": "17.11-1.pgdg24.04+2",
+    "Architecture": "amd64",
+    "Filename": "pool/main/p/postgresql-17/postgresql-17_17.11-1.pgdg24.04+2_amd64.deb",
+    "SHA256": "d5b58058a82a3f344f832aea2cc54badc4f6265c25c960752cb1f5df5d2180ee",
+    "Size": "16949784",
+    "download_url": "https://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-17/postgresql-17_17.11-1.pgdg24.04+2_amd64.deb"
+  },
+  "signed_index_verified": true,
+  "app_owned_install_root": "/root/batchforge-runtime/postgres-server-17",
+  "global_package_manager_modified": false,
+  "cluster_started": false,
+  "binaries": {
+    "postgres": {
+      "missing_libraries": [],
+      "version_returncode": 0,
+      "version": "postgres (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)"
+    },
+    "initdb": {
+      "missing_libraries": [],
+      "version_returncode": 0,
+      "version": "initdb (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)"
+    },
+    "pg_ctl": {
+      "missing_libraries": [],
+      "version_returncode": 0,
+      "version": "pg_ctl (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)"
+    }
+  },
+  "verified_at": "2026-10-24T02:02:08.259789+00:00",
+  "verification": {
+    "repository": "https://apt.postgresql.org/pub/repos/apt/",
+    "suite": "noble-pgdg",
+    "key_url": "https://www.postgresql.org/media/keys/ACCC4CF8.asc",
+    "signing_fingerprint": "B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8",
+    "inrelease_sha256": "66187f1d56c9fef804f9f6849a8018c8c1194c9f83c3620c645006e9c7345f28",
+    "server_index_path": "main/binary-amd64/Packages.gz",
+    "server_index_sha256": "567400bd0ce087b65f37d32e4ae6ae548ea7d70191af6f896acfea59439fb340",
+    "method": "Re-ran gpgv against retained PGDG keyring/InRelease; matched signed SHA256+size of main index, then exact server package SHA256+size from that verified index."
+  },
+  "limitations": [
+    "Core postgres/initdb/pg_ctl ldd/version only; not a test of every optional extension/JIT dependency.",
+    "The restore cluster disabled JIT and loaded no optional extensions; no libLLVM19 or global package install was needed.",
+    "This provenance is separate from the later passed local restore report; package extraction alone is not recovery proof."
+  ]
+}

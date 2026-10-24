@@ -1,0 +1,411 @@
+"""Prepare, then explicitly apply a guarded 120B -> pinned 235B TP4 switch.
+
+The worker is registered only after fresh KV admission and a complete direct
+20-request calibration. A failed switch restores the exact original manifest.
+This command never changes API/catalog configuration or creates model downloads.
+"""
+from __future__ import annotations
+
+import argparse
+import asyncio
+import copy
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import re
+import subprocess
+import time
+
+import httpx
+import psycopg
+
+from backend.scheduling import runtime_fingerprint, validate_profile
+from ops.ha.retune_full_gpu import file_env, logged_capacity, write_env
+from ops.supervise import Manager, ROOT, load_manifest, private_read, private_write
+from scripts import engine_matrix
+
+MODEL = 'Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+REVISION = 'e156cb4efae43fbee1a1ab073f946a1377e6b969'
+OLD_MODEL = 'openai/gpt-oss-120b'
+CONTEXT = 18440
+SLOTS = 8
+WORKLOAD20_SHA256 = '52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f'
+WORKER_KEYS = frozenset({
+    'BATCHFORGE_WORKER_TOKEN', 'CONTROL_PLANE_URL', 'CONTROL_PLANE_URLS',
+    'INFERENCE_BASE_URLS', 'INFERENCE_API_KEY', 'INFERENCE_TIMEOUT_SECONDS',
+    'WORKER_POLL_SECONDS', 'WORKER_SHUTDOWN_SECONDS', 'WORKER_REPORT_RETRY_SECONDS',
+    'WORKER_METRICS_HOST', 'WORKER_METRICS_PORT',
+})
+ENGINE_KEYS = frozenset({
+    'ENGINE_BACKEND', 'ENGINE_DTYPE', 'ENGINE_MAX_MODEL_LEN', 'ENGINE_MAX_NUM_SEQS',
+    'ENGINE_GPU_MEMORY_UTILIZATION', 'ENGINE_GPU_MEMORY_MARGIN_MIB',
+    'ENGINE_TENSOR_PARALLEL_SIZE', 'ENGINE_ENABLE_CHUNKED_PREFILL',
+    'ENGINE_ENABLE_PREFIX_CACHING', 'ENGINE_MAX_NUM_BATCHED_TOKENS',
+    'ENGINE_GENERATION_CONFIG', 'VLLM_USE_V1', 'VLLM_LOGGING_LEVEL',
+    'OMP_NUM_THREADS', 'TOKENIZERS_PARALLELISM', 'HF_HUB_OFFLINE',
+    'TRANSFORMERS_OFFLINE',
+})
+
+
+def utc_now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def digest(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def worker_candidate(source, profile=None):
+    """Copy only known worker settings: never tenant, DB or storage secrets."""
+    value = {key: val for key, val in source.items() if key in WORKER_KEYS}
+    if not value.get('BATCHFORGE_WORKER_TOKEN') or not value.get('INFERENCE_BASE_URLS'):
+        raise ValueError('Existing worker credentials and inference URLs required')
+    value.update(MODEL_NAME=MODEL, WORKER_ID='primary-qwen235b-tp4',
+                 WORKER_NAME='primary-qwen235b-tp4', WORKER_MAX_INFLIGHT=str(SLOTS),
+                 WORKER_TOKEN_BUDGET=str(SLOTS * CONTEXT), ENGINE_MAX_MODEL_LEN=str(CONTEXT))
+    if profile is not None:
+        value['SCHEDULER_PROFILE_JSON'] = json.dumps(validate_profile(profile), separators=(',', ':'))
+    return value
+
+
+def engine_candidate(source, model_path):
+    value = {key: val for key, val in source.items() if key in ENGINE_KEYS}
+    value.update(MODEL_NAME=MODEL, ENGINE_MODEL_PATH=str(model_path), ENGINE_REVISION=REVISION,
+                 ENGINE_BACKEND='vllm', ENGINE_TENSOR_PARALLEL_SIZE='4', ENGINE_DTYPE='bfloat16',
+                 ENGINE_MAX_MODEL_LEN=str(CONTEXT), ENGINE_MAX_NUM_SEQS=str(SLOTS),
+                 ENGINE_GPU_MEMORY_UTILIZATION='.90', ENGINE_GPU_MEMORY_MARGIN_MIB='2048',
+                 ENGINE_MAX_NUM_BATCHED_TOKENS='4096', ENGINE_ENABLE_CHUNKED_PREFILL='1',
+                 ENGINE_ENABLE_PREFIX_CACHING='0', ENGINE_GENERATION_CONFIG='vllm')
+    return value
+
+
+def phase_calibration(records):
+    """Separate one-coefficient NNLS fits on observed HTTP phase proxies.
+
+    First visible text includes HTTP/engine queueing plus the first decoded
+    token. Stream span is a transport proxy, not a kernel timer. The rates are
+    explicitly scoped to this offered burst and concurrency, not peak hardware.
+    """
+    prefill, decode = [], []
+    for row in records:
+        if row.get('status') != 'completed':
+            raise ValueError('Calibration requires every request to complete')
+        prompt, output = row.get('prompt_tokens'), row.get('completion_tokens')
+        first = row.get('ttft_seconds')
+        span_proxy = row.get('stream_span_per_reported_output_token_proxy_seconds')
+        if (type(prompt) is not int or prompt <= 0 or type(output) is not int or output <= 1
+                or not isinstance(first, (int, float)) or not math.isfinite(first) or first <= 0
+                or not isinstance(span_proxy, (int, float)) or not math.isfinite(span_proxy) or span_proxy <= 0):
+            raise ValueError('Calibration requires positive finite token counts and phase observations')
+        if output != row['output_token_cap'] or prompt != row['rendered_prompt_tokens']:
+            raise ValueError('Calibration requires exact fixed work and pinned prompt counts')
+        prefill.append((prompt, first))
+        decode.append((output - 1, span_proxy * (output - 1)))
+    if len(records) != 20:
+        raise ValueError('Calibration requires the complete 20-cell token matrix')
+    if {(r['prompt_tokens'], r['completion_tokens']) for r in records} != {
+            (prompt, output) for prompt in (128, 512, 2048, 8192, 16384) for output in (32, 128, 512, 2048)}:
+        raise ValueError('Calibration must cover every input/output matrix cell exactly once')
+
+    def fit(points):
+        slope = max(0.0, sum(x * y for x, y in points) / sum(x * x for x, _ in points))
+        if not math.isfinite(slope) or slope <= 0:
+            raise ValueError('Degenerate phase calibration')
+        errors = [y - slope * x for x, y in points]
+        return {'seconds_per_token': slope, 'tokens_per_second': 1 / slope,
+                'rmse_seconds': math.sqrt(sum(e * e for e in errors) / len(errors)),
+                'samples': len(points)}
+    return {'method': 'separate one-variable nonnegative least squares through origin',
+            'concurrency': SLOTS, 'prefill_http_first_text_proxy': fit(prefill),
+            'decode_http_stream_span_proxy': fit(decode),
+            'limitations': ['HTTP first-text latency includes engine queueing, transport and one decode token',
+                            'Stream spans are affected by transport buffering; these are not kernel phase timings',
+                            'One 20-cell offered burst at concurrency8; rates are not a sustained or cross-hardware result']}
+
+
+def scheduling_profile(calibration, descriptor, allocation_hourly, report_sha):
+    return validate_profile({
+        'profile_id': 'primary-h100-tp4-qwen235b-fp8-seq8',
+        'runtime_fingerprint': runtime_fingerprint(descriptor),
+        'prefill_tokens_per_second': calibration['prefill_http_first_text_proxy']['tokens_per_second'],
+        'decode_tokens_per_second': calibration['decode_http_stream_span_proxy']['tokens_per_second'],
+        'hourly_cost_usd': allocation_hourly / SLOTS,
+        'calibration_label': f'actual-qwen235b-fixed20-c8-http-phase-NNLS:{report_sha[:16]}',
+        'cost_source': f'operator-allocation-{allocation_hourly:g}-USD-hour-divided-by-8-slots;assumes-full-occupancy',
+    })
+
+
+def verify_assets(model_path, downloaded):
+    if downloaded.get('phase') != 'complete' or downloaded.get('repo') != MODEL or downloaded.get('revision') != REVISION:
+        raise ValueError('Pinned download must be complete')
+    files = downloaded['verified_files']
+    if len(files) != 34 or sum(f['name'].endswith('.safetensors') for f in files) != 24:
+        raise ValueError('Unexpected pinned artifact inventory')
+    for entry in files:
+        path = model_path / entry['name']
+        if not path.is_file() or path.stat().st_size != entry['size']:
+            raise ValueError('Pinned artifact size changed after verified download')
+        if path.suffix == '.safetensors' and entry.get('lfs_hash_verified') is not True:
+            raise ValueError('Weight hash not verified at download completion')
+        if path.suffix != '.safetensors' and digest(path) != entry['sha256']:
+            raise ValueError('Pinned config/tokenizer hash changed')
+    config = json.loads((model_path / 'config.json').read_text())
+    quant = config['quantization_config']
+    if config.get('model_type') != 'qwen3_moe' or quant.get('quant_method') != 'fp8' or quant.get('activation_scheme') != 'dynamic' or quant.get('weight_block_size') != [128, 128]:
+        raise ValueError('Unexpected pinned Qwen numerical format')
+    return {'model': MODEL, 'revision': REVISION,
+            'config_sha256': digest(model_path / 'config.json'),
+            'tokenizer_sha256': digest(model_path / 'tokenizer.json'),
+            'tokenizer_config_sha256': digest(model_path / 'tokenizer_config.json'),
+            'quantization': quant, 'compute_dtype': 'bfloat16',
+            'kv_cache_dtype': 'auto-inherits-bfloat16', 'tensor_parallel_size': 4,
+            'max_model_len': CONTEXT, 'generation_config': 'vllm',
+            'enforce_eager': True, 'prefix_caching': False}
+
+
+class Switch:
+    def __init__(self, *, root, run, manager, manifest_path, original, candidate,
+                 old_engine, old_worker, new_engine, new_worker, watchdog, protected_services,
+                 original_env_hashes):
+        self.root, self.run, self.manager = root, run, manager
+        self.manifest_path, self.original, self.candidate = manifest_path, original, candidate
+        self.old_engine, self.old_worker = old_engine, old_worker
+        self.new_engine, self.new_worker, self.watchdog = new_engine, new_worker, watchdog
+        self.protected_services, self.original_env_hashes = protected_services, original_env_hashes
+        self.report = {'phase': 'prepared', 'created_at': utc_now(), 'model': MODEL, 'revision': REVISION,
+                       'slots': SLOTS, 'context_limit': CONTEXT, 'fraction': .9, 'events': []}
+
+    def save(self):
+        private_write(self.run / 'report.json', self.report)
+
+    def invoke(self, service, action):
+        result, error = self.manager.invoke(service, action)
+        if error:
+            raise RuntimeError(f'{service["role"]}-{service["name"]}:{action}:{error}')
+        self.report['events'].append({'service': service['role'] + '-' + service['name'], 'action': action, 'result': result})
+        self.save()
+        return result
+
+    def ready(self, service, seconds):
+        until = time.monotonic() + seconds
+        while time.monotonic() < until:
+            if self.manager.readiness(service):
+                return
+            status, error = self.manager.invoke(service, 'status')
+            if error or not status['running']:
+                raise RuntimeError('owned_service_exited_during_start')
+            time.sleep(2)
+        raise RuntimeError('owned_service_readiness_timeout')
+
+    def identities(self):
+        return {s['role'] + '-' + s['name']: self.invoke(s, 'status')['pid'] for s in self.protected_services}
+
+    def apply(self, *, assert_drained, calibration_and_profile):
+        protected = self.identities()
+        assert_drained()
+        log = self.root / '.runtime/engine-qwen235b.log'
+        offset = log.stat().st_size if log.exists() else 0
+        stopped = False
+        try:
+            self.report['phase'] = 'applying'; self.save()
+            self.invoke(self.watchdog, 'stop')
+            self.invoke(self.old_worker, 'stop')
+            stopped = True
+            assert_drained()
+            self.invoke(self.old_engine, 'stop')
+            allowed, reason = self.manager.start_gate(self.new_engine)
+            self.report['fresh_start_gate'] = {'allowed': allowed, 'reason': reason}; self.save()
+            if not allowed:
+                raise RuntimeError('fresh_gpu_memory_gate_failed')
+            # If an operator resumes the watchdog during calibration, its live
+            # manifest still cannot launch an unprofiled candidate worker.
+            engine_only = copy.deepcopy(self.candidate)
+            engine_only['services'] = [s for s in engine_only['services']
+                                      if (s['role'], s['name']) != ('worker', 'qwen235b')]
+            private_write(self.manifest_path, engine_only)
+            self.invoke(self.new_engine, 'start')
+            self.ready(self.new_engine, 1200)
+            with log.open('rb') as handle:
+                handle.seek(offset); new_log = handle.read().decode(errors='replace')
+            capacity = logged_capacity(new_log)
+            self.report['measured_full_context_capacity'] = capacity
+            self.report['startup_evidence_lines'] = [re.sub(r'\x1b\[[0-9;]*m', '', line) for line in new_log.splitlines()
+                if any(part in line for part in ('Model loading took', 'Available KV cache memory',
+                       'GPU KV cache size', 'Maximum concurrency for', 'Using Flash', 'attention backend'))]
+            self.save()
+            if capacity is None or capacity < SLOTS:
+                raise RuntimeError('insufficient_fresh_full_context_KV_capacity')
+            self.report['phase'] = 'calibrating'; self.save()
+            profile = calibration_and_profile(new_log)
+            # No candidate worker has been started before this point.
+            env = worker_candidate(file_env(self.old_worker['env_file']), profile)
+            write_env(Path(self.new_worker['env_file']), env)
+            self.report.update(profile=profile, phase='starting_profiled_worker'); self.save()
+            private_write(self.manifest_path, self.candidate)
+            self.invoke(self.new_worker, 'start')
+            self.ready(self.new_worker, 60)
+            self.invoke(self.watchdog, 'start')
+            if self.identities() != protected:
+                raise RuntimeError('protected_service_identity_changed')
+            self.report.update(phase='complete', protected_pids_unchanged=True, finished_at=utc_now())
+            self.save()
+        except BaseException as exc:
+            self.report.update(phase='rolling_back', failure_type=type(exc).__name__)
+            if type(exc) is RuntimeError:
+                self.report['failure_reason'] = str(exc)
+            self.save()
+            try:
+                self.invoke(self.watchdog, 'stop')
+                if stopped:
+                    self.invoke(self.new_worker, 'stop')
+                    self.invoke(self.new_engine, 'stop')
+                    if any(digest(path) != checksum for path, checksum in self.original_env_hashes.items()):
+                        raise RuntimeError('original_environment_changed_during_switch')
+                    private_write(self.manifest_path, self.original)
+                    status, error = self.manager.invoke(self.old_engine, 'status')
+                    if error:
+                        raise RuntimeError('original_engine_status_unknown')
+                    if not status['running']:
+                        allowed, reason = self.manager.start_gate(self.old_engine)
+                        self.report['rollback_gate'] = {'allowed': allowed, 'reason': reason}; self.save()
+                        if not allowed:
+                            raise RuntimeError('rollback_gpu_memory_gate_failed')
+                        self.invoke(self.old_engine, 'start')
+                    self.ready(self.old_engine, 600)
+                    self.invoke(self.old_worker, 'start')
+                    self.ready(self.old_worker, 60)
+                self.invoke(self.watchdog, 'start')
+                self.report.update(phase='rolled_back', rollback_finished_at=utc_now())
+                self.save()
+            except BaseException as rollback:
+                self.report.update(phase='rollback_blocked', rollback_failure_type=type(rollback).__name__)
+                if type(rollback) is RuntimeError:
+                    self.report['rollback_failure_reason'] = str(rollback)
+                self.save()
+                raise RuntimeError('Switch failed and rollback needs operator intervention') from None
+            raise
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--apply', action='store_true')
+    parser.add_argument('--allocation-hourly', type=float, default=16.10)
+    parser.add_argument('--access-env', type=Path, default=ROOT.parent / 'access.env')
+    args = parser.parse_args()
+    if not math.isfinite(args.allocation_hourly) or args.allocation_hourly < 0:
+        parser.error('Allocation cost must be finite and nonnegative')
+    os.umask(0o077)
+    run = ROOT / '.runtime/qwen235b-switch-v1'
+    run.mkdir(mode=0o700, exist_ok=True)
+    lock = (run / 'controller.lock').open('a')
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    if (run / 'report.json').exists():
+        phase = json.loads((run / 'report.json').read_text())['phase']
+        if phase != 'prepared':
+            raise RuntimeError('Existing switch is not prepared; inspect its stable report instead of resubmitting')
+    manifest_path, services, _ = load_manifest(ROOT / '.runtime/services-primary.json')
+    original = json.loads(private_read(manifest_path))
+    old_engine = next(s for s in services if (s['role'], s['name']) == ('engine', 'gptoss120'))
+    old_worker = next(s for s in services if (s['role'], s['name']) == ('worker', 'gptoss120'))
+    original_engine, original_worker = file_env(old_engine['env_file']), file_env(old_worker['env_file'])
+    if original_engine.get('MODEL_NAME') != OLD_MODEL or original_engine.get('ENGINE_MAX_NUM_SEQS') != '64':
+        raise ValueError('Expected the verified 120B seq64 deployment as rollback target')
+    assets = ROOT / '.runtime/qwen235b-v1'
+    if digest(assets / 'workload-20.jsonl') != WORKLOAD20_SHA256:
+        raise ValueError('Frozen public calibration workload changed')
+    token_manifest = json.loads((assets / 'workload-20-manifest.json').read_text())
+    if token_manifest.get('model') != MODEL or token_manifest.get('tokenizer_revision') != REVISION:
+        raise ValueError('Calibration tokenizer/model revision differs from pinned runtime')
+    model_path = ROOT.parent / 'models/qwen3-235b-fp8'
+    descriptor = verify_assets(model_path, json.loads((assets / 'download-state.json').read_text()))
+    versions = json.loads(subprocess.check_output([old_engine['python'], '-c',
+        'import importlib.metadata,json; print(json.dumps({k:importlib.metadata.version(k) for k in ["vllm","transformers","torch"]}))'], text=True))
+    if versions['vllm'] != '0.10.2':
+        raise ValueError('This switch was prepared for the verified vLLM0.10.2 runtime')
+    descriptor['runtime_packages'] = versions
+    descriptor['attention_backend_request'] = 'vLLM automatic selection'
+    new_engine_env = engine_candidate(original_engine, model_path)
+    write_env(run / 'engine.env', new_engine_env)
+    write_env(run / 'worker.env', worker_candidate(original_worker))
+    write_env(run / 'original-engine.env', original_engine)
+    write_env(run / 'original-worker.env', original_worker)
+    private_write(run / 'original-manifest.json', original)
+    candidate = copy.deepcopy(original)
+    for service in candidate['services']:
+        if (service['role'], service['name']) in {('engine', 'gptoss120'), ('worker', 'gptoss120')}:
+            service['name'] = 'qwen235b'
+            service['env_file'] = str(run / (service['role'] + '.env'))
+    candidate_path = ROOT / '.runtime/qwen235b-switch-v1-candidate.json'
+    private_write(candidate_path, candidate)
+    _, candidates, _ = load_manifest(candidate_path)
+    new_engine = next(s for s in candidates if (s['role'], s['name']) == ('engine', 'qwen235b'))
+    new_worker = next(s for s in candidates if (s['role'], s['name']) == ('worker', 'qwen235b'))
+    watchdog = {'role': 'supervisor', 'name': 'primary', 'env_file': str(ROOT.parent / 'supervisor.env'),
+                'python': str(ROOT.parent / 'venv/bin/python')}
+    switch = Switch(root=ROOT, run=run, manager=Manager(timeout=300), manifest_path=manifest_path,
+        original=original, candidate=candidate, old_engine=old_engine, old_worker=old_worker,
+        new_engine=new_engine, new_worker=new_worker, watchdog=watchdog,
+        protected_services=[s for s in services if s['role'] in {'api', 'gateway'}],
+        original_env_hashes={s['env_file']: digest(s['env_file']) for s in (old_engine, old_worker)})
+    switch.report.update(runtime_descriptor=descriptor, controller_sha256=digest(__file__),
+        original_manifest_sha256=digest(manifest_path), candidate_manifest=str(candidate_path),
+        candidate_worker_profile_absent=True, asset_verification_scope='download-time full hashes; switch-time sizes and config/tokenizer hashes')
+    switch.save()
+    if not args.apply:
+        print(json.dumps({'prepared_report': str(run / 'report.json'), 'activated': False}))
+        return
+    # Catalog readiness is checked before any service mutation. Its tenant key
+    # is read locally for this check only and is never copied to worker configs.
+    access = file_env(args.access_env)
+    with httpx.Client(trust_env=False, timeout=10, headers={'Authorization': 'Bearer ' + access['BATCHFORGE_API_KEY']}) as client:
+        for api in (s for s in services if s['role'] == 'api'):
+            response = client.get(f'http://127.0.0.1:{api["port"]}/v1/models')
+            response.raise_for_status()
+            if MODEL not in {entry['id'] for entry in response.json()['data']}:
+                raise RuntimeError('Root must add the Qwen catalog to every API before this switch')
+    api_env = file_env(next(s for s in services if s['role'] == 'api')['env_file'])
+    def assert_drained():
+        with psycopg.connect(api_env['DATABASE_URL'], connect_timeout=10) as conn:
+            count = conn.execute("SELECT count(*) FROM tasks WHERE model=%s AND status IN ('pending','running')", (OLD_MODEL,)).fetchone()[0]
+        if count:
+            raise RuntimeError('Current120B work must drain before model switch')
+
+    def calibrate(startup_log):
+        runtime = dict(descriptor)
+        backend_lines = [re.sub(r'\x1b\[[0-9;]*m', '', line).split('] ', 1)[-1] for line in startup_log.splitlines()
+                         if 'Using Flash' in line or 'attention backend' in line]
+        runtime['observed_attention_backend_lines'] = sorted(set(backend_lines))
+        params = argparse.Namespace(url=f'http://127.0.0.1:{new_engine["port"]}',
+            workload=assets / 'workload-20.jsonl', manifest=assets / 'workload-20-manifest.json',
+            engine_label='qwen235b-fp8-tp4-seq8-calibration', policy='fifo', concurrency=SLOTS,
+            context_limit=CONTEXT, request_timeout=1200, hourly_cost=args.allocation_hourly, force_length=True)
+        previous_key = os.environ.get('INFERENCE_API_KEY')
+        os.environ['INFERENCE_API_KEY'] = original_worker.get('INFERENCE_API_KEY', '')
+        try:
+            result = asyncio.run(engine_matrix.run(params))
+        finally:
+            if previous_key is None:
+                os.environ.pop('INFERENCE_API_KEY', None)
+            else:
+                os.environ['INFERENCE_API_KEY'] = previous_key
+        private_write(run / 'direct-calibration.json', result)
+        if result.get('passed') is not True or result['summary']['completed'] != 20:
+            raise RuntimeError('Direct235B calibration did not complete all20 requests')
+        fit = phase_calibration(result['records'])
+        private_write(run / 'calibration-fit.json', fit)
+        profile = scheduling_profile(fit, runtime, args.allocation_hourly, digest(run / 'direct-calibration.json'))
+        switch.report.update(runtime_descriptor=runtime, calibration=fit,
+            direct_calibration_sha256=digest(run / 'direct-calibration.json'),
+            candidate_worker_profile_absent=False)
+        switch.save()
+        return profile
+    switch.apply(assert_drained=assert_drained, calibration_and_profile=calibrate)
+    print(json.dumps({'report': str(run / 'report.json'), 'phase': switch.report['phase']}))
+
+
+if __name__ == '__main__':
+    main()

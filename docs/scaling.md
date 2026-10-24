@@ -1,5 +1,9 @@
 # Capacity and the ten-million-task target
 
+The multi-Pod 7B and 120B configurations below are historical. The current run
+has one four-H100 Pod; see [single-Pod validation](single-pod-validation-2026-10-24.md)
+for the latest equal-work policy comparison and larger-token capacity scenario.
+
 Ten million completed tasks per day means **115.74 accepted completions/second
 for a full day**. With a 70% average utilization target, provisioned sustainable
 capacity would need to exceed **165.34 tasks/second**. These are arithmetic

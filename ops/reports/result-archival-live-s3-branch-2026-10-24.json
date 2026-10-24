@@ -1,0 +1,94 @@
+{
+  "passed": true,
+  "scope": "Isolated Neon branch + live private S3 service + least-privilege bf_runtime; existing real inference outputs",
+  "branch": "br-wild-sunset-ba1t69ks",
+  "batch_id": "batch_a1678e67c4ecc8ddbc4d5eb548a4044d",
+  "file_id": "file_00bfcb086e9b48b78eabc8df59d0b06a",
+  "bytes": 52200,
+  "before_after_sha256": "465183fe7d734297a6a7d66b3a42ce8b7d0369e2e9360d88368602fdefb6671f",
+  "completed_payloads_cleared": 20,
+  "attempts_and_usage_unchanged": true,
+  "purge_page_limit": 2,
+  "steps": [
+    {
+      "archive_id": "archive_d2d8837c5ca6d9c0f846fa08bc9a5159",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 2
+    },
+    {
+      "archive_id": "archive_d2d8837c5ca6d9c0f846fa08bc9a5159",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 4
+    },
+    {
+      "archive_id": "archive_d2d8837c5ca6d9c0f846fa08bc9a5159",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 6
+    },
+    {
+      "archive_id": "archive_d2d8837c5ca6d9c0f846fa08bc9a5159",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 8
+    },
+    {
+      "archive_id": "archive_d2d8837c5ca6d9c0f846fa08bc9a5159",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 10
+    },
+    {
+      "archive_id": "archive_d2d8837c5ca6d9c0f846fa08bc9a5159",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 12
+    },
+    {
+      "archive_id": "archive_d2d8837c5ca6d9c0f846fa08bc9a5159",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 14
+    },
+    {
+      "archive_id": "archive_d2d8837c5ca6d9c0f846fa08bc9a5159",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 16
+    },
+    {
+      "archive_id": "archive_d2d8837c5ca6d9c0f846fa08bc9a5159",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": false,
+      "rows_purged": 18
+    },
+    {
+      "archive_id": "archive_d2d8837c5ca6d9c0f846fa08bc9a5159",
+      "state": "ready",
+      "bytes": 52200,
+      "files": 1,
+      "purged": true,
+      "rows_purged": 20
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-10-24T01:49:42.038358+00:00",
+  "phase": "preflight_only",
+  "real_fault_executed": false,
+  "host": "primary-one-Pod",
+  "test_command": "/root/batchforge-runtime/venv/bin/python -m pytest -q tests/test_single_pod_fault_probe.py",
+  "linux_tests": {
+    "passed": 12,
+    "skipped": 0,
+    "elapsed_seconds": 1.0,
+    "scope": "Only isolated test-owned CPU subprocesses. Each actual child is waited in finally; no live worker, engine, API, model or DB mutation."
+  },
+  "source_package": {
+    "path": ".runtime/single-pod-worker-fault-source-v2.tar.gz",
+    "sha256": "221091931a2dc09b2a7346fa5d521c78de6ccca968833672955dd46bc7f0038d"
+  },
+  "copied_source_sha256": {
+    "ops/ha/single_pod_fault_probe.py": "e325aa1f83a5e043bacf8bb00a3511c54375253eb195d35028b57725d8a1185b",
+    "tests/test_single_pod_fault_probe.py": "38f02632ea511d3fa24c567f09709e5dcaa84fc64c32a014a433b6f05879d59e"
+  },
+  "dry_run": {
+    "status": "dry_run",
+    "only_hard_fault": "worker-gptoss120",
+    "engine_kept_alive": "engine-gptoss120",
+    "watchdog_paused_on_execute": true,
+    "temporary_worker_capacity": 2,
+    "configuration_sha256": "9555ce0dcd5d03ffbb63ff0393d11ca7fc4a304805afc6d0397db80adc188edf",
+    "requires_execute": true
+  },
+  "measurement_bounds": [
+    "No inference/fault/recovery/capacity assertion is established by this preflight.",
+    "Fault execution remains held until parent release after the independent400-task workload.",
+    "Process cleanup evidence is test assertions plus finally/wait; no broad system process inventory was performed."
+  ]
+}

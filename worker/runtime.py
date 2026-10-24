@@ -16,6 +16,9 @@ import uvicorn
 
 from worker.config import Settings
 from worker.metrics import Metrics
+from worker.kv_admission import (AdmissionPaused, PROTOCOL as KV_PROTOCOL,
+    TokenizerProtocolError, WeightedLimiter, engine_quiescent, reservation,
+    token_count, tokenizer_body)
 
 log = logging.getLogger("batchforge.worker")
 
@@ -76,6 +79,11 @@ class Worker:
         self._control_origin_epoch = 0
         self.active: set[asyncio.Task] = set()
         self.engines = [Engine(url) for url in settings.inference_urls]
+        self._adaptive_validated = False
+        self.kv_admission = (WeightedLimiter(settings.token_budget, self._kv_metrics)
+                             if settings.adaptive_kv_enabled else None)
+        if self.kv_admission:
+            self.metrics.kv_budget.set(settings.token_budget)
         self.lease_seconds = 90.0
         self.heartbeat_seconds = 10.0
         self.control = httpx.AsyncClient(
@@ -96,6 +104,19 @@ class Worker:
     async def close(self) -> None:
         await self.control.aclose()
         await self.inference.aclose()
+
+    def _kv_metrics(self, used, waiting, peak, paused):
+        self.metrics.tokens.set(used)
+        self.metrics.kv_waiting.set(waiting)
+        self.metrics.kv_peak.set(peak)
+        self.metrics.kv_paused.set(int(paused))
+
+    def _pause_kv_admissions(self):
+        if self.kv_admission:
+            self.kv_admission.pause()
+            for engine in self.engines:
+                engine.ready = False
+            self._engine_metrics()
 
     async def _post(self, path: str, body: dict) -> dict:
         operation = path.rsplit("/", 1)[-1]
@@ -142,9 +163,14 @@ class Worker:
                     self._control_origin_index)
 
     async def register(self) -> None:
+        if self.kv_admission and not self._adaptive_validated:
+            raise ValueError('Adaptive tokenizer protocol has not passed startup validation')
         ready_engine_count = self._ready_engine_count
         scheduling_metadata = ({"scheduling_profile": self.config.scheduling_profile}
                                if self.config.scheduling_profile is not None else {})
+        if self.kv_admission:
+            scheduling_metadata['kv_admission'] = {'protocol': KV_PROTOCOL, 'budget': self.config.token_budget,
+                'block_size': 16, 'single_worker_single_engine': True, 'paused': self.kv_admission.paused}
         result = await self._post("/internal/workers/register", {
             "worker_id": self.config.worker_id,
             "name": self.config.name,
@@ -166,19 +192,62 @@ class Worker:
 
     async def probe_engines(self) -> None:
         async def probe(engine: Engine) -> None:
+            if self.kv_admission and self.kv_admission.paused:
+                # An uncertain remote invocation is not proof of freed GPU KV.
+                # No automatic reset on a merely successful health probe.
+                engine.ready = False
+                self._engine_metrics()
+                return
             if time.monotonic() < engine.available_after:
                 return
             try:
                 result = await asyncio.wait_for(self.inference.get(engine.url + "/v1/models", timeout=5), timeout=5)
                 result.raise_for_status()
                 engine.ready = any(item.get("id") == self.config.model for item in result.json()["data"])
+                if engine.ready and self.kv_admission and not self._adaptive_validated:
+                    if {item.get('id') for item in result.json()['data']} != {self.config.model}:
+                        raise ValueError('Adaptive engine must advertise only its exact Qwen model')
+                    await self._validate_adaptive_engine(engine)
                 if not engine.ready:
                     self._engine_unavailable(engine)
-            except (httpx.HTTPError, ValueError, KeyError, TypeError, asyncio.TimeoutError):
+            except (httpx.HTTPError, ValueError, KeyError, TypeError, asyncio.TimeoutError, InferenceError):
                 self._engine_unavailable(engine)
             self._engine_metrics()
         await asyncio.gather(*(probe(engine) for engine in self.engines))
         self._engine_metrics()
+
+    async def _validate_adaptive_engine(self, engine):
+        version = await self.inference.get(engine.url + '/version', timeout=5)
+        version.raise_for_status()
+        version_data = version.json()
+        if not isinstance(version_data, dict) or version_data.get('version') != '0.10.2':
+            raise ValueError('Adaptive tokenizer protocol requires vLLM0.10.2')
+        await self._exact_prompt_count({'model': self.config.model,
+            'messages': [{'role':'user','content':'BatchForge tokenizer protocol check.'}]}, engine)
+        metrics = await self.inference.get(engine.url + '/metrics', timeout=5)
+        metrics.raise_for_status()
+        if len(metrics.content) > 2*1024*1024 or not engine_quiescent(metrics.text):
+            raise ValueError('Adaptive startup requires quiescent private engine')
+        self._adaptive_validated = True
+
+    async def _exact_prompt_count(self, body, engine):
+        try:
+            payload = tokenizer_body(body, self.config.model)
+        except TokenizerProtocolError as exc:
+            raise InferenceError('unsupported_tokenizer_request', 'Adaptive tokenizer supports only the validated text-chat shape', False) from exc
+        try:
+            response = await self.inference.post(engine.url + '/tokenize', json=payload, timeout=10)
+            response.raise_for_status()
+            if len(response.content) > 2*1024*1024:
+                raise TokenizerProtocolError('Tokenizer response exceeds bound')
+            return token_count(response.json(), self.config.max_model_len)
+        except httpx.HTTPStatusError as exc:
+            retryable = exc.response.status_code >= 500 or exc.response.status_code in {408,425,429}
+            if retryable:self._pause_kv_admissions()
+            raise InferenceError('tokenizer_http_error', 'Exact tokenizer request was rejected', retryable) from exc
+        except (httpx.HTTPError, ValueError, TypeError) as exc:
+            self._pause_kv_admissions()
+            raise InferenceError('tokenizer_unavailable', 'Exact tokenizer protocol could not be verified') from exc
 
     async def _probe_loop(self) -> None:
         while True:
@@ -238,7 +307,7 @@ class Worker:
                 delay = min(delay * 2, 5)
         raise StaleAttempt("Lease renewal could not be confirmed")
 
-    async def _invoke(self, task: dict, engine: Engine) -> dict:
+    def _inference_body(self, task):
         body = dict(task["body"])
         # A task can only select the registered model, never an HTTP destination,
         # SDK tool, or executable code. Streaming is disabled for durable results.
@@ -257,6 +326,10 @@ class Worker:
             raise InferenceError("context_limit", "max_tokens exceeds the configured context bound", False)
         if 'min_tokens' in body and (type(body['min_tokens']) is not int or not 0 <= body['min_tokens'] <= body['max_tokens']):
             raise InferenceError('unsupported_parameter', 'min_tokens must fit the output limit', False)
+        return body
+
+    async def _invoke(self, task: dict, engine: Engine, *, expected_prompt_tokens=None) -> dict:
+        body = self._inference_body(task)
         started = time.monotonic()
         try:
             response = await self.inference.post(engine.url + "/v1/chat/completions", json=body)
@@ -289,6 +362,9 @@ class Worker:
                 raise ValueError('engine did not respect requested output token bounds')
         except (KeyError, TypeError, ValueError) as exc:
             raise InferenceError("invalid_engine_response", "Engine did not return valid choices and token usage", False) from exc
+        if expected_prompt_tokens is not None:
+            if value.get('model') != self.config.model or usage['prompt_tokens'] != expected_prompt_tokens:
+                raise InferenceError('tokenizer_mismatch', 'Inference model or prompt usage differs from exact tokenizer preflight', False)
         engine.failures = 0
         if task["body"].get("response_format") == {"type": "json_object"}:
             try:
@@ -305,14 +381,46 @@ class Worker:
                 raise InferenceError("invalid_json_output", "Model output did not satisfy the requested JSON object format") from None
         return value
 
+    async def _invoke_adaptive(self, task, engine):
+        if not self._adaptive_validated or self.kv_admission.paused:
+            raise InferenceError('kv_admission_paused', 'Exact-token admission needs operator validation')
+        remote_started = False
+        try:
+            async with asyncio.timeout(self.config.request_timeout):
+                body = self._inference_body(task)
+                prompt = await self._exact_prompt_count(body, engine)
+                try:weight = reservation(prompt, body['max_tokens'], self.config.max_model_len)
+                except ValueError as exc:
+                    raise InferenceError('context_limit', 'Exact prompt plus requested output exceeds configured context', False) from exc
+                async with self.kv_admission.reserve(weight):
+                    remote_started = True
+                    return await self._invoke(task, engine, expected_prompt_tokens=prompt)
+        except AdmissionPaused as exc:
+            raise InferenceError('kv_admission_paused', 'Exact-token admission needs operator intervention') from exc
+        except asyncio.CancelledError:
+            if remote_started:self._pause_kv_admissions()
+            raise
+        except TimeoutError as exc:
+            if remote_started:self._pause_kv_admissions()
+            raise InferenceError('kv_admission_timeout', 'Exact-token admission or invocation exceeded its bounded wait') from exc
+        except InferenceError as exc:
+            if remote_started and (exc.code in {'inference_timeout','engine_unavailable','invalid_engine_response','tokenizer_mismatch'}
+                    or exc.code.startswith('engine_http_') and exc.retryable):
+                self._pause_kv_admissions()
+            raise
+
     async def _invoke_available(self, task: dict) -> dict:
         deadline = time.monotonic() + self.config.request_timeout
         while True:
+            if self.kv_admission and self.kv_admission.paused:
+                raise InferenceError('kv_admission_paused', 'Exact-token admission needs operator intervention')
             ready = [engine for engine in self.engines if engine.ready]
             if ready:
                 engine = min(ready, key=lambda item: item.inflight)
                 engine.inflight += 1
                 try:
+                    if self.kv_admission:
+                        return await self._invoke_adaptive(task, engine)
                     return await self._invoke(task, engine)
                 finally:
                     engine.inflight -= 1
@@ -324,7 +432,7 @@ class Worker:
 
     async def execute(self, task: dict) -> None:
         self.metrics.active.inc()
-        self.metrics.tokens.inc(self.config.max_model_len)
+        if not self.kv_admission:self.metrics.tokens.inc(self.config.max_model_len)
         lost = asyncio.Event()
         heartbeat = asyncio.create_task(self._heartbeat(task, lost))
         invocation = asyncio.create_task(self._invoke_available(task))
@@ -359,7 +467,7 @@ class Worker:
                 child.cancel()
             await asyncio.gather(heartbeat, invocation, lease_lost, return_exceptions=True)
             self.metrics.active.dec()
-            self.metrics.tokens.dec(self.config.max_model_len)
+            if not self.kv_admission:self.metrics.tokens.dec(self.config.max_model_len)
 
     async def _pause(self, seconds: float) -> None:
         with contextlib.suppress(asyncio.TimeoutError):

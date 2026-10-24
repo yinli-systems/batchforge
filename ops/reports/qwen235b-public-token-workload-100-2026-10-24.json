@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "tokenizer_revision": "e156cb4efae43fbee1a1ab073f946a1377e6b969",
+  "dataset": "SQuAD 1.1 development",
+  "license": "CC BY-SA 4.0",
+  "source_url": "https://rajpurkar.github.io/SQuAD-explorer/",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "workload_sha256": "f00b473ccafc446208719e9ebf0b1f6ec894a5eb8b435ea93bab5600053c351c",
+  "seed": 20261024,
+  "context_limit": 18440,
+  "input_sizes": [
+    128,
+    512,
+    2048,
+    8192,
+    16384
+  ],
+  "output_caps": [
+    32,
+    128,
+    512,
+    2048
+  ],
+  "repeats": 5,
+  "tasks": 100,
+  "prompt_tolerance_tokens": 8,
+  "chat_template_sha256": "64f85b198065d0fba2a81f37e10ed68161ce2c19a754c7100e67e0ca2ee9c326",
+  "prompt_counter": {
+    "type": "huggingface-chat-template",
+    "chat_template_sha256": "64f85b198065d0fba2a81f37e10ed68161ce2c19a754c7100e67e0ca2ee9c326"
+  },
+  "limitations": [
+    "Real public text, not customer traffic or a quality evaluation",
+    "Output values are maximum lengths; actual generated tokens must come from engine usage",
+    "Input counts include rendered chat template and generation prefix; server usage must agree",
+    "Prefill/decode labels use requested input and output cap, not separate hardware timing"
+  ],
+  "rendered_prompt_min": 128,
+  "rendered_prompt_max": 16384,
+  "maximum_target_delta": 0
+}

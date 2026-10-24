@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-24T01:08:27.293489+00:00",
+  "server_version": "17.11 (11592b3)",
+  "server_major": 17,
+  "pg_dump_version": "pg_dump (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+  "pg_dump_major": 17,
+  "pg_restore_version": "pg_restore (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+  "ssl_in_use": true,
+  "configured_sslmode": "verify-full",
+  "compatible": true,
+  "snapshot_path": "/root/batchforge-runtime/app/.runtime/backups/batchforge-20261024T010804Z-df658df5.dump",
+  "snapshot_sha256": "0f0ee96d0d0ba80b47750fa655cbd9154e93730f9d4fb91a200f7be80f75a8d1",
+  "snapshot_bytes": 108121581,
+  "snapshot_mode": "0o600",
+  "archive_format": "custom",
+  "archive_list_verified": true,
+  "archive_toc_entries": 74,
+  "restore_verified": false,
+  "database_modified": false,
+  "credentials_in_argv": false,
+  "password_delivery": "temporary mode-0600 pgpass file when URI contains a password",
+  "limitations": [
+    "Archive listing is not a restore test",
+    "Cluster-global roles and external infrastructure require separate backup policies"
+  ]
+}

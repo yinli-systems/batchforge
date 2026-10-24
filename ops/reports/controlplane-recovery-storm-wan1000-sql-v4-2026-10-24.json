@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "synthetic_state_machine_only": true,
+  "physical_inference_performed": false,
+  "http_throughput_measured": false,
+  "tasks_per_mode": 1000,
+  "preaccepted_results_per_mode": 16,
+  "batches": 16,
+  "tenants": 4,
+  "concurrent_sweepers": 4,
+  "sql_global_task_limit": 100,
+  "sql_batch_limit": 8,
+  "legacy_budget": "100 lease candidates then up to100 tasks per candidate batch; no global transition cap",
+  "max_attempts": 1,
+  "transport": "tcp",
+  "source_sha256": {
+    "backend/schema.sql": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219",
+    "backend/migrations/0002_sql_completion.sql": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b",
+    "backend/migrations/0003_sql_claim.sql": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003",
+    "backend/migrations/0004_sql_failure_recovery.sql": "5c401e019eaec4491b281169522febe94878cb2c465242820d88d761eeb83fb0",
+    "backend/store.py": "af1611ca9e402cd9a86dbc817a2472ee7a2cf41381441af1937d50a1818d2db0",
+    "backend/config.py": "d9ec2f32fefa48405984fcf57fedbbce1f36b0f32bda47a80c5b1e1b3d6607cd",
+    "ops/ha/recovery_storm_benchmark.py": "58eb2e3ff0ee85982747e35d69e3f24b209595f137152af7e4fe01ed8a5fcbca"
+  },
+  "modes": [
+    {
+      "mode": "sql_v4",
+      "created_database": "bf_recovery_bench_602fc3c17ac74bc3a1c36ca8c8a33896",
+      "database_removed": true,
+      "passed": true,
+      "before": {
+        "tasks": {
+          "total": 1016,
+          "running": 1000,
+          "failed": 0,
+          "completed": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "attempts": {
+          "total": 1016,
+          "exhausted_expired": 0,
+          "accepted": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batches": {
+          "total": 16,
+          "terminal": 0,
+          "output_metadata": 0,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batch_counter_mismatches": 0,
+        "queue_counter_mismatches": 0,
+        "duplicate_accepted_tasks": 0,
+        "accepted_rows_sha256": "8dd1d4dd7726061be947d4ab715eb7fc154ae5417048fdfe39ceb49594814c85"
+      },
+      "started_at": "2026-10-24T01:19:45.281048+00:00",
+      "finished_at": "2026-10-24T01:19:45.612745+00:00",
+      "elapsed_seconds": 0.32648403296479955,
+      "expired_attempts_recovered": 1000,
+      "synthetic_recoveries_per_second": 3062.9369250281734,
+      "recovery_calls": 49,
+      "call_latency_seconds": {
+        "samples": 49,
+        "p50": 0.015891,
+        "p95": 0.10626,
+        "p99": 0.115092,
+        "max": 0.116832,
+        "mean": 0.024054
+      },
+      "after": {
+        "tasks": {
+          "total": 1016,
+          "running": 0,
+          "failed": 1000,
+          "completed": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "attempts": {
+          "total": 1016,
+          "exhausted_expired": 1000,
+          "accepted": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batches": {
+          "total": 16,
+          "terminal": 16,
+          "output_metadata": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batch_counter_mismatches": 0,
+        "queue_counter_mismatches": 0,
+        "duplicate_accepted_tasks": 0,
+        "accepted_rows_sha256": "8dd1d4dd7726061be947d4ab715eb7fc154ae5417048fdfe39ceb49594814c85"
+      },
+      "accepted_results_and_usage_unchanged": true
+    }
+  ],
+  "limitations": [
+    "Synthetic expired attempts, not inference tasks or accepted AI completions",
+    "Sequential modes share server compute; local Unix-socket results do not predict WAN performance",
+    "Administrative database connection is identical for both modes; this is not a privilege-recovery test",
+    "Setup, seeding, invariant verification and database cleanup are outside the recovery timer",
+    "Expired attempts are exhausted; retry-jitter distribution is separately tested, not measured here",
+    "Only newly created uniquely named databases are mutated; no existing table is truncated"
+  ],
+  "source_changed_during_run": false,
+  "passed": true
+}

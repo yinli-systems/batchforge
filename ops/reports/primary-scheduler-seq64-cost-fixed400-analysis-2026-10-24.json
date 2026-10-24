@@ -1,0 +1,505 @@
+{
+  "schema_version": 1,
+  "experiment": "isolated400 fixed-cap durable mixed-token tasks in5batches; cost_aware64slots; archivepublisherOFF and no manualarchive duringmeasurement",
+  "result": {
+    "run_id": "bench-ca7f1604ea04",
+    "measurement_started_at": "2026-10-24T01:49:33.283692+00:00",
+    "terminal_observation_ended_at": "2026-10-24T01:51:56.549840+00:00",
+    "elapsed_seconds": 143.26612,
+    "completed": 400,
+    "failed": 0,
+    "cancelled": 0,
+    "completed_tasks_per_second": 2.792007,
+    "observed_prompt_tokens": 2181120,
+    "observed_completion_tokens": 272000,
+    "observed_prompt_tokens_per_second": 15224.255392691586,
+    "observed_completion_tokens_per_second": 1898.5647129970434,
+    "task_completion_seconds": {
+      "samples": 400,
+      "p50": 40.4172,
+      "p95": 116.145882,
+      "p99": 139.851518,
+      "max": 140.222789,
+      "mean": 49.887645
+    },
+    "task_first_queue_seconds": {
+      "samples": 400,
+      "p50": 25.422305,
+      "p95": 72.366784,
+      "p99": 99.326992,
+      "max": 100.577508,
+      "mean": 30.899356
+    },
+    "by_class": {
+      "decode_heavy": {
+        "tasks": 200,
+        "completion_seconds": {
+          "samples": 200,
+          "p50": 49.387147,
+          "p95": 137.612563,
+          "p99": 139.11624,
+          "max": 139.850748,
+          "mean": 62.052956
+        },
+        "prompt_tokens": 286720,
+        "completion_tokens": 200320
+      },
+      "prefill_heavy": {
+        "tasks": 180,
+        "completion_seconds": {
+          "samples": 180,
+          "p50": 25.613048,
+          "p95": 56.420096,
+          "p99": 65.336618,
+          "max": 65.782885,
+          "mean": 29.258609
+        },
+        "prompt_tokens": 1566720,
+        "completion_tokens": 30720
+      },
+      "balanced": {
+        "tasks": 20,
+        "completion_seconds": {
+          "samples": 20,
+          "p50": 115.943734,
+          "p95": 140.086183,
+          "p99": 140.195468,
+          "max": 140.222789,
+          "mean": 113.895842
+        },
+        "prompt_tokens": 327680,
+        "completion_tokens": 40960
+      }
+    },
+    "prompt_tokens_per_task": {
+      "samples": 400,
+      "p50": 2048.0,
+      "p95": 16384.0,
+      "p99": 16384.0,
+      "max": 16384,
+      "mean": 5452.8
+    },
+    "completion_tokens_per_task": {
+      "samples": 400,
+      "p50": 320.0,
+      "p95": 2048.0,
+      "p99": 2048.0,
+      "max": 2048,
+      "mean": 680.0
+    },
+    "output_finish_reasons": {
+      "length": 400
+    },
+    "cost": {
+      "assumed_whole_pod_usd_per_hour": 16.1,
+      "basis": "operator supplied whole-Pod allocation scenario; not current invoice or marginal inference cost",
+      "run_allocation_usd": 0.6407179255555556,
+      "usd_per_million_durable_completions": 1601.7948138888892
+    },
+    "gpu_observation": {
+      "samples": 133,
+      "measurement_seconds_including_validation": 145.64343476702925,
+      "engine_maxima": {
+        "vllm:num_requests_waiting": 52.0,
+        "vllm:num_requests_running": 64.0,
+        "vllm:kv_cache_usage_perc": 0.09566335295599793,
+        "vllm:gpu_cache_usage_perc": 0.09566335295599793
+      },
+      "physical_device_utilization": {
+        "0": {
+          "samples": 133,
+          "p50": 91.0,
+          "p95": 98.0,
+          "p99": 98.0,
+          "max": 98.0,
+          "mean": 88.473684
+        },
+        "1": {
+          "samples": 133,
+          "p50": 88.0,
+          "p95": 98.0,
+          "p99": 98.0,
+          "max": 98.0,
+          "mean": 85.368421
+        },
+        "2": {
+          "samples": 133,
+          "p50": 76.0,
+          "p95": 98.0,
+          "p99": 98.0,
+          "max": 98.0,
+          "mean": 74.744361
+        },
+        "3": {
+          "samples": 133,
+          "p50": 76.0,
+          "p95": 98.0,
+          "p99": 98.0,
+          "max": 98.0,
+          "mean": 75.488722
+        }
+      }
+    }
+  },
+  "hardware": {
+    "model": "openai/gpt-oss-120b",
+    "physical": "4xH100 one Pod",
+    "runtime": "vLLM0.10.2 TP4",
+    "engine_max_num_seqs": 64,
+    "worker_max_inflight": 64,
+    "worker_token_budget": 1180160,
+    "gpu_memory_utilization": 0.85,
+    "context": 18440,
+    "max_num_batched_tokens": 4096,
+    "prefix_caching": false,
+    "chunked_prefill": true
+  },
+  "validation": {
+    "passed": true,
+    "completed400": true,
+    "failed0": true,
+    "exact_outputs": true,
+    "accepted_once": true,
+    "prompt_total": true,
+    "output_total": true,
+    "policy": true,
+    "single_attempt": true
+  },
+  "all_service_identities_environments_and_manifest_unchanged": true,
+  "source_sha256": "ffe741d9c87bd52ecf571f4b5c6a8ae5c5eac3d46f997399f49b2ff4dcc3f634",
+  "fixed_source_sha256_before_run_ids": "adc7c7f48b8ebfc3b171bfeedc4fbd0ac5ca71edaaec4714af624c6c8922ec4f",
+  "repetitions": 20,
+  "batches": 5,
+  "global_queue_drained_after_run": true,
+  "engine_wall_time_stages": {
+    "before_at": "2026-10-24T01:49:32.651405+00:00",
+    "after_at": "2026-10-24T01:51:58.817655+00:00",
+    "histograms": {
+      "vllm:e2e_request_latency_seconds": {
+        "count": 400.0,
+        "sum_seconds": 7503.356285333633,
+        "mean_seconds": 18.758390713334084,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 15.0,
+          "0.95": 50.0,
+          "0.99": 120.0
+        },
+        "delta_buckets": {
+          "0.3": 0.0,
+          "0.5": 0.0,
+          "0.8": 13.0,
+          "1.0": 15.0,
+          "1.5": 31.0,
+          "2.0": 45.0,
+          "2.5": 63.0,
+          "5.0": 127.0,
+          "10.0": 195.0,
+          "15.0": 221.0,
+          "20.0": 280.0,
+          "30.0": 300.0,
+          "40.0": 301.0,
+          "50.0": 381.0,
+          "60.0": 381.0,
+          "120.0": 400.0,
+          "240.0": 400.0,
+          "480.0": 400.0,
+          "960.0": 400.0,
+          "1920.0": 400.0,
+          "7680.0": 400.0,
+          "inf": 400.0
+        }
+      },
+      "vllm:request_decode_time_seconds": {
+        "count": 400.0,
+        "sum_seconds": 7073.196467594244,
+        "mean_seconds": 17.68299116898561,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 10.0,
+          "0.95": 50.0,
+          "0.99": 120.0
+        },
+        "delta_buckets": {
+          "0.3": 0.0,
+          "0.5": 0.0,
+          "0.8": 23.0,
+          "1.0": 44.0,
+          "1.5": 66.0,
+          "2.0": 82.0,
+          "2.5": 100.0,
+          "5.0": 171.0,
+          "10.0": 200.0,
+          "15.0": 221.0,
+          "20.0": 284.0,
+          "30.0": 300.0,
+          "40.0": 304.0,
+          "50.0": 381.0,
+          "60.0": 381.0,
+          "120.0": 400.0,
+          "240.0": 400.0,
+          "480.0": 400.0,
+          "960.0": 400.0,
+          "1920.0": 400.0,
+          "7680.0": 400.0,
+          "inf": 400.0
+        }
+      },
+      "vllm:request_inference_time_seconds": {
+        "count": 400.0,
+        "sum_seconds": 7138.645724809903,
+        "mean_seconds": 17.84661431202476,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 10.0,
+          "0.95": 50.0,
+          "0.99": 120.0
+        },
+        "delta_buckets": {
+          "0.3": 0.0,
+          "0.5": 0.0,
+          "0.8": 16.0,
+          "1.0": 24.0,
+          "1.5": 60.0,
+          "2.0": 73.0,
+          "2.5": 91.0,
+          "5.0": 169.0,
+          "10.0": 200.0,
+          "15.0": 221.0,
+          "20.0": 284.0,
+          "30.0": 300.0,
+          "40.0": 302.0,
+          "50.0": 381.0,
+          "60.0": 381.0,
+          "120.0": 400.0,
+          "240.0": 400.0,
+          "480.0": 400.0,
+          "960.0": 400.0,
+          "1920.0": 400.0,
+          "7680.0": 400.0,
+          "inf": 400.0
+        }
+      },
+      "vllm:request_prefill_time_seconds": {
+        "count": 400.0,
+        "sum_seconds": 65.4492572156596,
+        "mean_seconds": 0.163623143039149,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 0.3,
+          "0.95": 0.5,
+          "0.99": 0.5
+        },
+        "delta_buckets": {
+          "0.3": 320.0,
+          "0.5": 400.0,
+          "0.8": 400.0,
+          "1.0": 400.0,
+          "1.5": 400.0,
+          "2.0": 400.0,
+          "2.5": 400.0,
+          "5.0": 400.0,
+          "10.0": 400.0,
+          "15.0": 400.0,
+          "20.0": 400.0,
+          "30.0": 400.0,
+          "40.0": 400.0,
+          "50.0": 400.0,
+          "60.0": 400.0,
+          "120.0": 400.0,
+          "240.0": 400.0,
+          "480.0": 400.0,
+          "960.0": 400.0,
+          "1920.0": 400.0,
+          "7680.0": 400.0,
+          "inf": 400.0
+        }
+      },
+      "vllm:request_queue_time_seconds": {
+        "count": 400.0,
+        "sum_seconds": 352.22513572865864,
+        "mean_seconds": 0.8805628393216466,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 0.3,
+          "0.95": 5.0,
+          "0.99": 10.0
+        },
+        "delta_buckets": {
+          "0.3": 212.0,
+          "0.5": 248.0,
+          "0.8": 275.0,
+          "1.0": 302.0,
+          "1.5": 336.0,
+          "2.0": 348.0,
+          "2.5": 351.0,
+          "5.0": 382.0,
+          "10.0": 400.0,
+          "15.0": 400.0,
+          "20.0": 400.0,
+          "30.0": 400.0,
+          "40.0": 400.0,
+          "50.0": 400.0,
+          "60.0": 400.0,
+          "120.0": 400.0,
+          "240.0": 400.0,
+          "480.0": 400.0,
+          "960.0": 400.0,
+          "1920.0": 400.0,
+          "7680.0": 400.0,
+          "inf": 400.0
+        }
+      },
+      "vllm:time_per_output_token_seconds": {
+        "count": 271600.0,
+        "sum_seconds": 7073.196467594244,
+        "mean_seconds": 0.026042696861539923,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 0.025,
+          "0.95": 0.1,
+          "0.99": 0.1
+        },
+        "delta_buckets": {
+          "0.01": 0.0,
+          "0.025": 238673.0,
+          "0.05": 242007.0,
+          "0.075": 244867.0,
+          "0.1": 271600.0,
+          "0.15": 271600.0,
+          "0.2": 271600.0,
+          "0.3": 271600.0,
+          "0.4": 271600.0,
+          "0.5": 271600.0,
+          "0.75": 271600.0,
+          "1.0": 271600.0,
+          "2.5": 271600.0,
+          "5.0": 271600.0,
+          "7.5": 271600.0,
+          "10.0": 271600.0,
+          "20.0": 271600.0,
+          "40.0": 271600.0,
+          "80.0": 271600.0,
+          "inf": 271600.0
+        }
+      },
+      "vllm:time_to_first_token_seconds": {
+        "count": 400.0,
+        "sum_seconds": 433.00147795677185,
+        "mean_seconds": 1.0825036948919295,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 0.75,
+          "0.95": 5.0,
+          "0.99": 7.5
+        },
+        "delta_buckets": {
+          "0.001": 0.0,
+          "0.005": 0.0,
+          "0.01": 0.0,
+          "0.02": 0.0,
+          "0.04": 33.0,
+          "0.06": 65.0,
+          "0.08": 92.0,
+          "0.1": 94.0,
+          "0.25": 135.0,
+          "0.5": 192.0,
+          "0.75": 240.0,
+          "1.0": 278.0,
+          "2.5": 349.0,
+          "5.0": 381.0,
+          "7.5": 400.0,
+          "10.0": 400.0,
+          "20.0": 400.0,
+          "40.0": 400.0,
+          "80.0": 400.0,
+          "160.0": 400.0,
+          "640.0": 400.0,
+          "2560.0": 400.0,
+          "inf": 400.0
+        }
+      }
+    },
+    "percentile_method": "first cumulative bucket whose delta count >= quantile*delta_count; bucket upper bounds, not interpolated exact percentiles",
+    "limitations": [
+      "Prefill/decode means are engine wall-time stages under continuous batching, not CUDA kernel time.",
+      "Snapshot interval brackets workload submission and output validation. Exactly400 request observations and unchanged engine identity are required."
+    ]
+  },
+  "physical_gpu_power": {
+    "observation_first_at": "2026-10-24T01:49:33.357515+00:00",
+    "observation_last_at": "2026-10-24T01:51:58.423257+00:00",
+    "sampled_power": {
+      "0": {
+        "samples": 133,
+        "sample_arithmetic_mean_watts": 380.6648120300753,
+        "max_watts": 585.65
+      },
+      "1": {
+        "samples": 133,
+        "sample_arithmetic_mean_watts": 387.64511278195465,
+        "max_watts": 595.23
+      },
+      "2": {
+        "samples": 133,
+        "sample_arithmetic_mean_watts": 379.52736842105264,
+        "max_watts": 586.53
+      },
+      "3": {
+        "samples": 133,
+        "sample_arithmetic_mean_watts": 374.957518796992,
+        "max_watts": 576.88
+      }
+    },
+    "approximate_trapezoidal_gpu_energy_wh": {
+      "0": 15.42037719253195,
+      "1": 15.702932309294455,
+      "2": 15.37515995917361,
+      "3": 15.189608502445834
+    },
+    "approximate_total_gpu_energy_wh": 61.68807796344585,
+    "scope": "whole physicalGPU sampled power; includes submission/validation/idle edges and possibleotherprocesses; excludes CPU,hostandfacilityenergy; notinvoice"
+  },
+  "operator_incident": {
+    "preflight_failed_before_submission": true,
+    "reason": "strict metric label allowlist omitted vLLM engine=0; verifiedofficial Prometheus parser data then allowed onlyengine0 andexactmodel",
+    "original_failure_journal_preserved": true,
+    "original_benchmark_child_created": false,
+    "continuation_verified_no_child_intent_input_or_report": true,
+    "actual_workload_submitted_once": true,
+    "preparation_idle_time_and_instrumentation_correction_excluded_from_reported_run_cost": true
+  },
+  "limitations": [
+    "400tasks form one finite burst-and-drain run lasting143.27seconds, not proof of sustained dailycapacity or a productionSLA.",
+    "Fixed completion caps measure controlled work, not naturalanswer correctness or quality.",
+    "Task firstqueue is lease-start minusbatch creation; enginequeue andTTFT areseparate later-stage metrics.",
+    "Histogram percentile values are bucketupperbounds; means areexactcounterdeltas perobservation; wall-time stages are notCUDAkernel timings.",
+    "Physical nvidia-smi values are deviceaggregate, notexclusive modelSMutilization; power integration is approximate sampledphysicalGPUenergy.",
+    "Allocation scenario16.10USD/hour excludes idle/preparation/modeldownload andis neitherinvoice nor marginalinferencecost.",
+    "All request-phase histograms count exactly400,TPOT counts271600=272000generatedtokens minus400firsttokens; noenginecounterreset.",
+    "No FAIR400 wasrun; throughputdifference fromCOST100 also changesfinitecohort andperbatch size andis not anisolatedpolicycomparison."
+  ],
+  "evidence": [
+    {
+      "path": "ops/reports/primary-scheduler-seq64-cost-fixed400-2026-10-24.json",
+      "sha256": "028116d66cf7361d50ee288494f38aa370bfa3632701e01c61052788e95dd3f9"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-cost-fixed400-observations-2026-10-24.json",
+      "sha256": "0684a2ed277da79aa56ff8db08d8671e58a6e207e3efe083d9e494ba7970d18c"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-cost-fixed400-phase-before-2026-10-24.json",
+      "sha256": "9ce1d027a430e33e201d43d8064ca5096087dc33b775436b22a31cdc9adcbc75"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-cost-fixed400-phase-after-2026-10-24.json",
+      "sha256": "8bd8be4afbb51cb1a8e865a2083b42c073fa4713117502ce251f67a9c0938871"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-cost-fixed400-phases-2026-10-24.json",
+      "sha256": "03a9a7033f98f6593116b912f05bdf8c5ce41d5dc7de09b4db00b70d6260240c"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-cost-fixed400-preflight-failure-2026-10-24.json",
+      "sha256": "235731e12334c437cd8df6b38892476f9037d5368cb7016708fe52c68f31a07a"
+    },
+    {
+      "path": "ops/reports/primary-scheduler-seq64-cost-fixed400-controller-2026-10-24.json",
+      "sha256": "a3d18abd16e9fec918522e1f5edcbd1bbbbdc836d7accfece0be362dd4542d8b"
+    }
+  ]
+}

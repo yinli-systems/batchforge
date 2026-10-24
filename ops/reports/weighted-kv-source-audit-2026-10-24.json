@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-24T02:14:25.373177+00:00",
+  "status": "implemented_not_deployed",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "protocol": "vllm-0.10.2-qwen-chat",
+  "default_enabled": false,
+  "installed_source_read_only": true,
+  "source_observation_no_import_no_GPU_no_HTTP": true,
+  "installed_source_sha256": {
+    "serving_chat.py": "aff95a0c5dff9fdd87d8cd531c81f471de3c42f36ddd63bc65a0b7d05ff53beb",
+    "serving_tokenization.py": "4816ba83803d8acdc5f9413fbc395478d42c9e85c92d2299525214bd483f893c",
+    "serving_engine.py": "afe442cbd5140060a05b719404e02ef161eaff3c5663bd0187771d9bdc37cf0e",
+    "protocol.py": "2aeb7b0f48ada6f30babc056bdcaafe190d63f221b6ca29aa7df925abc90cd97",
+    "api_server.py": "40b1245fcfa5a18f215a232fc25c99293f16c37dac9c4bf0238d49a1614d7563"
+  },
+  "installed_source_locations": {
+    "chat_preprocess_call": 227,
+    "tokenize_preprocess_call": 78,
+    "shared_preprocess_definition": 740
+  },
+  "source_findings": [
+    "Both ordinary chat and TokenizeChatRequest call the same inherited _preprocess_chat with identical generation/template defaults for the supported plain-text shape.",
+    "ChatCompletion documents/tool_parser arguments are absent/None for the supported no-tools requests.",
+    "TokenizeResponse has count, tokens, max_model_len, optional token_strs, and no model field; request model checking and owned-engine model/version gates are required.",
+    "GPT-OSS bypasses ordinary chat preprocessing for Harmony and is unsupported by this feature."
+  ],
+  "official_sources": [
+    "https://github.com/vllm-project/vllm/blob/v0.10.2/vllm/entrypoints/openai/serving_chat.py",
+    "https://github.com/vllm-project/vllm/blob/v0.10.2/vllm/entrypoints/openai/serving_tokenization.py",
+    "https://github.com/vllm-project/vllm/blob/v0.10.2/vllm/entrypoints/openai/serving_engine.py",
+    "https://github.com/vllm-project/vllm/blob/v0.10.2/vllm/entrypoints/openai/protocol.py"
+  ],
+  "tests": {
+    "new_adaptive_cases": 30,
+    "existing_worker_cases": 39,
+    "passed": 69,
+    "elapsed_seconds": 0.95,
+    "real_gpu_run": false,
+    "test_scope": "Async scheduling/cancellation and HTTP protocol mocks; existing real PostgreSQL state-machine tests are separate."
+  },
+  "feature_source_sha256": {
+    "worker/kv_admission.py": "e26dff615204edde0ffdeba44271dc84ced4b6d26477f90b6df874fd6a270d6e",
+    "worker/config.py": "e6f70e8ab7ef47059a74a09a4f105e6de8c57bcca2b990d7fd7e6a53bc9d24e4",
+    "worker/runtime.py": "7f9356671ba03e2ce04316942e016cfbd15fb2b0624d865d67785fa8670507c7",
+    "worker/metrics.py": "cf6ce403e758ba2275fd9a5d5ac0002f02c5f3b7d605fa194416d219be3abf04",
+    "worker/tests/test_kv_admission.py": "602ef19c1a684d7dc877ebd86cd80421608b891eb6748395d92e07cff008a6d0",
+    "docs/adaptive-kv-admission.md": "1ad43f592d51245ea1eff0fe359e859f5500a7b3f3272adfa3ec1e5f8ed22bb3"
+  },
+  "archive": {
+    "path": ".runtime/weighted-kv-admission-v1.tar.gz",
+    "sha256": "8004c3f4639b5bb955cc5690496b1a26bd04c6de2840ec1b0ad653718ad623ca",
+    "members": [
+      "worker/kv_admission.py",
+      "worker/config.py",
+      "worker/runtime.py",
+      "worker/metrics.py",
+      "worker/tests/test_kv_admission.py",
+      "docs/adaptive-kv-admission.md"
+    ]
+  },
+  "limitations": [
+    "No adaptive real-engine/GPU benchmark or deployment yet.",
+    "Budget is single-worker admission accounting, not distributed or physical KV allocation proof.",
+    "Uncertain invocation/cancellation latches pause and readiness false; no health-only automatic resume.",
+    "Throughput, profile calibration, costs and useful answer quality require separately labelled actual experiments."
+  ]
+}

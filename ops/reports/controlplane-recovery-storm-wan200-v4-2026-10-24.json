@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "synthetic_state_machine_only": true,
+  "physical_inference_performed": false,
+  "http_throughput_measured": false,
+  "tasks_per_mode": 200,
+  "preaccepted_results_per_mode": 16,
+  "batches": 16,
+  "tenants": 4,
+  "concurrent_sweepers": 4,
+  "sql_global_task_limit": 100,
+  "sql_batch_limit": 8,
+  "legacy_budget": "100 lease candidates then up to100 tasks per candidate batch; no global transition cap",
+  "max_attempts": 1,
+  "transport": "tcp",
+  "source_sha256": {
+    "backend/schema.sql": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219",
+    "backend/migrations/0002_sql_completion.sql": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b",
+    "backend/migrations/0003_sql_claim.sql": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003",
+    "backend/migrations/0004_sql_failure_recovery.sql": "5c401e019eaec4491b281169522febe94878cb2c465242820d88d761eeb83fb0",
+    "backend/store.py": "af1611ca9e402cd9a86dbc817a2472ee7a2cf41381441af1937d50a1818d2db0",
+    "backend/config.py": "d9ec2f32fefa48405984fcf57fedbbce1f36b0f32bda47a80c5b1e1b3d6607cd",
+    "ops/ha/recovery_storm_benchmark.py": "58eb2e3ff0ee85982747e35d69e3f24b209595f137152af7e4fe01ed8a5fcbca"
+  },
+  "modes": [
+    {
+      "mode": "python_legacy",
+      "created_database": "bf_recovery_bench_1b00f8a77b3f461f9e0dd058ef6c3161",
+      "database_removed": true,
+      "passed": true,
+      "before": {
+        "tasks": {
+          "total": 216,
+          "running": 200,
+          "failed": 0,
+          "completed": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "attempts": {
+          "total": 216,
+          "exhausted_expired": 0,
+          "accepted": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batches": {
+          "total": 16,
+          "terminal": 0,
+          "output_metadata": 0,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batch_counter_mismatches": 0,
+        "queue_counter_mismatches": 0,
+        "duplicate_accepted_tasks": 0,
+        "accepted_rows_sha256": "0af55d07ef6fd3acf9c22930efd32769f463d5084dca76c6ecace99050504a4a"
+      },
+      "started_at": "2026-10-24T01:19:38.575574+00:00",
+      "finished_at": "2026-10-24T01:19:41.216023+00:00",
+      "elapsed_seconds": 2.634509679977782,
+      "expired_attempts_recovered": 200,
+      "synthetic_recoveries_per_second": 75.91545459862827,
+      "recovery_calls": 21,
+      "call_latency_seconds": {
+        "samples": 21,
+        "p50": 0.059564,
+        "p95": 1.298123,
+        "p99": 1.381466,
+        "max": 1.402301,
+        "mean": 0.494214
+      },
+      "after": {
+        "tasks": {
+          "total": 216,
+          "running": 0,
+          "failed": 200,
+          "completed": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "attempts": {
+          "total": 216,
+          "exhausted_expired": 200,
+          "accepted": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batches": {
+          "total": 16,
+          "terminal": 16,
+          "output_metadata": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batch_counter_mismatches": 0,
+        "queue_counter_mismatches": 0,
+        "duplicate_accepted_tasks": 0,
+        "accepted_rows_sha256": "0af55d07ef6fd3acf9c22930efd32769f463d5084dca76c6ecace99050504a4a"
+      },
+      "accepted_results_and_usage_unchanged": true
+    },
+    {
+      "mode": "sql_v4",
+      "created_database": "bf_recovery_bench_e68f6370012e44d0ad0aec32ffcaa0e5",
+      "database_removed": true,
+      "passed": true,
+      "before": {
+        "tasks": {
+          "total": 216,
+          "running": 200,
+          "failed": 0,
+          "completed": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "attempts": {
+          "total": 216,
+          "exhausted_expired": 0,
+          "accepted": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batches": {
+          "total": 16,
+          "terminal": 0,
+          "output_metadata": 0,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batch_counter_mismatches": 0,
+        "queue_counter_mismatches": 0,
+        "duplicate_accepted_tasks": 0,
+        "accepted_rows_sha256": "0af55d07ef6fd3acf9c22930efd32769f463d5084dca76c6ecace99050504a4a"
+      },
+      "started_at": "2026-10-24T01:19:42.915503+00:00",
+      "finished_at": "2026-10-24T01:19:43.093386+00:00",
+      "elapsed_seconds": 0.17423166701337323,
+      "expired_attempts_recovered": 200,
+      "synthetic_recoveries_per_second": 1147.8969548322632,
+      "recovery_calls": 15,
+      "call_latency_seconds": {
+        "samples": 15,
+        "p50": 0.016685,
+        "p95": 0.117857,
+        "p99": 0.119908,
+        "max": 0.12042,
+        "mean": 0.043101
+      },
+      "after": {
+        "tasks": {
+          "total": 216,
+          "running": 0,
+          "failed": 200,
+          "completed": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "attempts": {
+          "total": 216,
+          "exhausted_expired": 200,
+          "accepted": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batches": {
+          "total": 16,
+          "terminal": 16,
+          "output_metadata": 16,
+          "prompt_tokens": 112,
+          "completion_tokens": 32
+        },
+        "batch_counter_mismatches": 0,
+        "queue_counter_mismatches": 0,
+        "duplicate_accepted_tasks": 0,
+        "accepted_rows_sha256": "0af55d07ef6fd3acf9c22930efd32769f463d5084dca76c6ecace99050504a4a"
+      },
+      "accepted_results_and_usage_unchanged": true
+    }
+  ],
+  "limitations": [
+    "Synthetic expired attempts, not inference tasks or accepted AI completions",
+    "Sequential modes share server compute; local Unix-socket results do not predict WAN performance",
+    "Administrative database connection is identical for both modes; this is not a privilege-recovery test",
+    "Setup, seeding, invariant verification and database cleanup are outside the recovery timer",
+    "Expired attempts are exhausted; retry-jitter distribution is separately tested, not measured here",
+    "Only newly created uniquely named databases are mutated; no existing table is truncated"
+  ],
+  "source_changed_during_run": false,
+  "passed": true,
+  "observed_sql_to_python_rate_ratio": 15.120728195613081
+}

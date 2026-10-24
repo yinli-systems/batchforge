@@ -1,0 +1,37 @@
+{
+  "dataset": "SQuAD 1.1 development",
+  "source_url": "https://rajpurkar.github.io/SQuAD-explorer/",
+  "license": "CC BY-SA 4.0",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "workload_sha256": "3ae56bc3d0a4f9646eb50c7f7f27a0b39b9f484e92c70ccea9bfc4b864bbc3e8",
+  "profile": "answer",
+  "seed": 20261024,
+  "tasks": 20,
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "target_context_words": 700,
+  "response_format": {
+    "type": "json_object"
+  },
+  "limitations": [
+    "Public benchmark may appear in model training data",
+    "Not customer traffic",
+    "Analysis quality has no human reference",
+    "Actual tokens must be measured from engine usage"
+  ],
+  "state": "prepared_not_submitted",
+  "source_script": "scripts/public_workload.py",
+  "source_script_sha256": "982dbb03062d118a75971b707eff4fbdeebf919ce0dde873f03c7e582824fe8c",
+  "manifest_sha256": "4a7dfc048753801468313a169524029e4d6b7f4e9e07db42de23cab97b404e91",
+  "max_tokens": 96,
+  "forced_length": false,
+  "quality_population": "20distinct publicdocument question-answer examples; finite probe, notgeneralranking",
+  "intended_metrics": [
+    "durable accepted_once",
+    "requiredanswer-string strictJSONsyntax rate",
+    "normalized best-gold exactmatch",
+    "normalizedtokenF1;missingorinvalidscorezero",
+    "wholePodrunallocation/correctEMcount;undefinedifzero"
+  ],
+  "execution_gate": "AFTERfinal235optimizedtimedruns androotAPIpublisher/defaultmodelroll explicitGO",
+  "output_handling": "modeloutputsremainprivate;publishonlyscores,counts,hashes,tokenusageandcontext/capmetadata"
+}

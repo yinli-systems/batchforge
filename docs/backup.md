@@ -2,9 +2,62 @@
 
 The managed database runs PostgreSQL 17. A PostgreSQL 16 `pg_dump` cannot back it up. `devtools/backup_postgres.py` now checks the server and both client versions before creating a file. Select a compatible toolchain with `--bin-dir` or `PG_BIN_DIR`; the command-line option takes precedence. Without either, the development `pgserver` client remains the fallback, subject to the same check.
 
-## Latest schema v3 recovery proof
+## Latest schema v8 recovery proof
 
-The latest drill ran on **2026-10-23 at 23:25:37–23:26:26 UTC**, after both
+On **2026-10-24 at 01:52:17 UTC**, after the isolated 400-task inference run,
+the operator created a fresh custom-format snapshot before enabling the first
+selected production result purge. The [backup and off-Pod copy report](../ops/reports/result-archival-pre-purge-backup-2026-10-24.json)
+records **121,441,717 bytes**, 157 table-of-contents entries, SHA256
+`9e7785956991298dabd9efebf35bb695c37155ee56d00a266b8c37adb9508ce3`,
+PostgreSQL/client 17.11 and TLS `verify-full`. The workstation copy matched
+that SHA and used file mode `0600`. The archive manifest correctly retains
+`restore_verified:false`; the separate restore report supplies recovery proof.
+
+The [actual restore](../ops/reports/result-archival-pre-purge-restore-2026-10-24.json)
+ran at **01:56:19.787388–01:56:34.538073 UTC** in a new private local PostgreSQL
+17.11 cluster. Its OS user was `nobody` (UID 65534), its random directory and
+Unix socket were private, and `listen_addresses=''` was verified. The source
+archive and its temporary copy both matched the exact snapshot SHA. No source
+database, production service, production cluster role or system package was changed.
+The cluster was stopped and removed in `finally`.
+
+The restored snapshot contained **387 batches, 26,283 tasks and 26,847 attempts**.
+All eight immutable migration checksums matched. Per-batch task/state/usage
+counters, accepted-attempt uniqueness and usage, tenant queue counts and
+constraint validation had zero mismatches. Restored task usage was 30,958,031
+prompt tokens and 5,053,323 generated tokens. Ten application SQL functions were
+present as SECURITY INVOKER with configured search paths. All **19 public
+tables** have deterministic row digests. These hash the restored archive; they
+do not claim equality against the subsequently changing live database.
+
+Pure restore took **9.595 seconds**; staging, restore, checks and cleanup took
+**14.750 seconds**. CPU-only restoration overlapped the separately labelled
+worker fault drill. These are observed functional recovery durations, not an
+isolated performance comparison or a recovery-time guarantee.
+
+The [server toolchain provenance](../ops/reports/result-archival-pg17-local-toolchain-2026-10-24.json)
+records a freshly verified official PGDG `postgresql-17` package,
+`17.11-1.pgdg24.04+2`, 16,949,784 bytes, SHA256
+`d5b58058a82a3f344f832aea2cc54badc4f6265c25c960752cb1f5df5d2180ee`.
+The retained InRelease signature, signed package-index hash and package hash
+were checked before extraction into an application-owned directory. Core
+`postgres`, `initdb` and `pg_ctl` had no missing dynamic libraries. JIT was
+disabled; optional extensions and LLVM dependencies were not validated. No
+global `apt` installation or operating-system service was used.
+
+`ops/ha/local_pg17_restore.py` is the reusable local verifier. It accepts a
+hash-pinned backup manifest and already verified extracted server/client roots;
+it accepts no destination DSN and reads no live credentials. Because restore
+uses `--no-owner --no-acl`, this does **not** restore `bf_runtime` permissions,
+cluster roles or credentials. External input/result objects are also outside
+the SQL archive. The [subsequent selected 20-result production purge](../ops/reports/result-archival-live-production-2026-10-24.json)
+was gated on this successful restore; it is separate evidence from backup
+recovery. Scheduled encrypted retention, object-store recovery and whole-provider
+or region-loss recovery remain unproven.
+
+## Historical schema v3 recovery proof
+
+The earlier drill ran on **2026-10-23 at 23:25:37–23:26:26 UTC**, after both
 Pods' timed inference experiments and before the engine-loss workload. The
 application stayed online. The [workflow report](../ops/reports/managed-backup-schema3-workflow-2026-10-24.json)
 records a fresh capacity check, one consistent custom-format dump, one restore

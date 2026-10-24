@@ -3,26 +3,32 @@
 Durable AI batch processing with a PostgreSQL control plane, fenced GPU workers,
 an OpenAI-shaped batch API, and an operations console backed by live data.
 
-The current deployment serves **GPT-OSS-120B (116.83B total parameters)** on both
-existing Pods: TP4 across four shared H100s, and a pinned llama.cpp CPU-expert
-lane on one Blackwell MIG. The second Pod also retains fourteen short-context
-Qwen2.5-7B BF16 engines and one 18K-context 7B engine. These are sixteen MIG
-slices across six physical GPUs, not sixteen full GPUs. Each Pod has two
-independent API processes and a private replica router, backed by managed Neon
-PostgreSQL 17. Workers use their own local API; inference no longer depends on
-an operator laptop or the other GPU Pod. An app-owned watchdog restarts crashed
-processes with identity checks, bounded backoff and GPU memory gates.
-Fault tests cover API/worker death, lost acknowledgements, stale attempts,
-read-only database rejection and transactional usage. A real 121.85-second
-primary engine/worker outage moved all seven captured unfinished 120B tasks
-to the second Pod, with one accepted result per task and guarded primary
-restoration. This exercised application loss and task re-execution; physical
-GPU reset, whole-Pod replacement and live KV migration remain untested.
-See [100B validation](docs/100b-validation.md) for real inference and workload
-evidence, and [earlier validation](docs/validation.md) for the 7B baselines.
-The final snapshot found 17 ready workers and no unfinished tasks. The
-[evidence index](ops/reports/100b-release-evidence-2026-10-24.json) records report
-hashes, actual deployed source versions and the limits of these measurements.
+The current experiment uses **one Pod with four dedicated H100 80GB GPUs**.
+The official FP8 Qwen3-235B-A22B-Instruct-2507 checkpoint (235B total, 22B active
+parameters) is running with TP4 across all four GPUs. Its initial eight-slot
+direct calibration completed the 20-cell real-token matrix; platform tuning is
+recorded separately. The preceding GPT-OSS-120B (116.83B total) 64-slot
+isolated 400-task mixed-length run completed every task in 143.27 seconds
+(2.79 tasks/s), with exactly 2,181,120 input and 272,000 generated tokens.
+This is a finite burst, not daily capacity. See the
+[single-Pod validation](docs/single-pod-validation-2026-10-24.md) for policy A/B,
+Prefill/Decode observations, failure and storage evidence, costs and limitations.
+
+Two API replicas and a private gateway use managed Neon PostgreSQL 17 and
+verified private S3 artifacts. Workers use the local API; inference does not
+depend on an operator laptop relay. An app-owned watchdog uses process identity
+checks, bounded restart backoff and per-rank GPU memory gates. The transaction
+state machine includes cost-aware scheduling, bounded SQL lease recovery and
+runtime-fenced retries. Leased result downloads permit verified, bounded
+archival and completed-payload purge.
+
+The earlier two-Pod 7B/120B deployment, 17-worker snapshot and cross-Pod
+re-execution experiment are historical; the second Pod is unavailable for this
+run. Those measurements remain in [100B validation](docs/100b-validation.md),
+[earlier validation](docs/validation.md) and its
+[evidence index](ops/reports/100b-release-evidence-2026-10-24.json).
+The current single Pod has no whole-Pod compute failover. Physical GPU reset,
+whole-Pod replacement and live KV migration remain untested.
 The managed database is currently on its free plan, without a production SLA.
 Public paid ingress was prepared and deferred by the operator; access remains
 private. See [availability](docs/ha.md), [ingress](docs/ingress.md), and
@@ -46,6 +52,10 @@ throughput measurement. [View all five screenshots](docs/screenshots/README.md).
 - Run multiple GPU workers against independent OpenAI-compatible engines.
 - Route each batch by its requested model ID or explicit long-context alias.
 - Recover expired leases and reject stale results after retry or cancellation.
+- Rank work using calibrated Prefill/Decode cost profiles, with tenant rotation,
+  aging, deadline overrides and numerical-runtime compatibility fencing.
+- Reserve input artifact quotas before I/O, checksum private objects and archive
+  terminal outputs with reader leases and resumable bounded payload purge.
 - Gate restarts on per-rank GPU memory and CPU-expert cgroup headroom; clean up
   previously observed engine descendants using verified Linux process identities.
 - Validate explicitly requested JSON objects before accepting results, with

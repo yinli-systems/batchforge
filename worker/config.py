@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import socket
 import uuid
@@ -9,6 +10,7 @@ from dataclasses import dataclass
 from urllib.parse import urlsplit
 
 from backend.scheduling import validate_profile
+from worker.kv_admission import MODEL as ADAPTIVE_MODEL
 
 
 def _int(name: str, default: int) -> int:
@@ -16,6 +18,13 @@ def _int(name: str, default: int) -> int:
     if value <= 0:
         raise ValueError(f"{name} must be positive")
     return value
+
+
+def _bool(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name, str(default)).lower()
+    if value not in {'true', 'false', '1', '0'}:
+        raise ValueError(f'{name} must be true or false')
+    return value in {'true', '1'}
 
 
 def _url(value: str, name: str) -> str:
@@ -47,6 +56,22 @@ class Settings:
     metrics_port: int = 9101
     inference_api_key: str = ""
     scheduling_profile: dict | None = None
+    adaptive_kv_enabled: bool = False
+
+    def __post_init__(self):
+        if type(self.adaptive_kv_enabled) is not bool:
+            raise ValueError('Adaptive KV admission requires a boolean operator flag')
+        if self.adaptive_kv_enabled:
+            if self.model != ADAPTIVE_MODEL or len(self.inference_urls) != 1:
+                raise ValueError('Adaptive KV admission supports one exact Qwen235B engine only')
+            if type(self.max_model_len) is not int or self.max_model_len < 1:
+                raise ValueError('Adaptive context must be a positive integer')
+            if not math.isfinite(self.request_timeout) or not 0 < self.request_timeout <= 3600:
+                raise ValueError('Adaptive wait/inference timeout must fit 1 hour')
+            minimum = ((self.max_model_len + 15) // 16) * 16
+            if (type(self.token_budget) is not int or self.token_budget < minimum
+                    or type(self.max_inflight) is not int or not 1 <= self.max_inflight <= 4096):
+                raise ValueError('Adaptive budget must fit one block-rounded full context')
 
     @property
     def control_origins(self) -> tuple[str, ...]:
@@ -54,6 +79,8 @@ class Settings:
 
     @property
     def slots(self) -> int:
+        if self.adaptive_kv_enabled:
+            return self.max_inflight
         # Reserve an entire engine context per sequence: a safe bound independent
         # of tokenizer, language, or user-supplied token estimates. The engine's
         # --max-model-len MUST match this configuration.
@@ -99,6 +126,7 @@ class Settings:
             inference_api_key=os.environ.get("INFERENCE_API_KEY", ""),
             scheduling_profile=(validate_profile(json.loads(os.environ["SCHEDULER_PROFILE_JSON"]))
                                 if os.environ.get("SCHEDULER_PROFILE_JSON", "").strip() else None),
+            adaptive_kv_enabled=_bool('WORKER_ADAPTIVE_KV_ENABLED'),
         )
         if settings.slots < 1:
             raise ValueError("WORKER_TOKEN_BUDGET must fit at least one ENGINE_MAX_MODEL_LEN")

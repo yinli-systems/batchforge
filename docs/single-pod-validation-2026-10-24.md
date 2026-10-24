@@ -1,0 +1,171 @@
+# Single-Pod validation, 24 October 2026
+
+This deployment has one Pod with four H100 80GB GPUs. The two unrelated service
+families were stopped with the owner's explicit permission. GPU memory reclaimed
+was 220,436 MiB. The API replicas, private gateway and worker remain on that one
+Pod; Neon PostgreSQL and private S3 provide separate data fault domains. Two API
+processes on the same Pod do not provide whole-Pod compute failover.
+
+## Equal-work scheduling comparison
+
+The public SQuAD-text matrix covers all combinations of 128, 512, 2,048, 8,192,
+16,384 input tokens and 32, 128, 512, 2,048 output tokens. Prefix caching is off.
+Each 100-task fixed-length run generates exactly 68,000 output tokens from
+545,280 input tokens. Completion percentiles measure database batch creation to
+accepted durable task completion, including queueing. They are not engine-only
+service latencies. Model output correctness is a separate evaluation.
+
+| GPT-OSS-120B configuration | Tasks | Wall seconds | Tasks/s | P50 seconds | P95 seconds | P99 seconds |
+|---|---:|---:|---:|---:|---:|---:|
+| FAIR, 8 slots | 100 | 198.197474 | 0.504547 | 89.462731 | 162.042405 | 187.966966 |
+| Cost aware, 8 slots | 100 | 210.959606 | 0.474024 | 22.162883 | 171.587937 | 179.734662 |
+| FAIR, 64 slots | 100 | 56.418490 | 1.772469 | 18.462872 | 53.000382 | 53.339588 |
+| Cost aware, 64 slots | 100 | 54.419908 | 1.837563 | 17.216289 | 51.695280 | 52.352007 |
+| Cost aware, 64 slots | 400 | 143.266120 | 2.792007 | 40.417200 | 116.145882 | 139.851518 |
+
+All five runs accepted every task once, with no failures or cancellations. The
+400-task cohort has 2,181,120 input and 272,000 output tokens. Its greater
+throughput reflects a longer, fuller queue; it is not an equal-size policy A/B.
+Its pre/post engine histogram counters contain exactly 400 observations and no
+counter reset. Protected service identities, environment hashes and the live
+manifest remained unchanged during this isolated run.
+
+For that 400-task run the engine histogram stage means were 0.163623 seconds
+prefill, 17.682991 decode, 0.880563 engine queue, 1.082504 time to first token
+and 18.758391 end to end. The P95 histogram bucket upper bounds were 0.5, 50,
+5 and 50 seconds for prefill, decode, time to first token and end to end,
+respectively. These stages are wall times under batching, not
+CUDA kernel timings, and bucket bounds are not exact percentiles. Platform
+first-queue mean was separately 30.899 seconds. The 271,600 inter-token
+observations averaged 0.026043 seconds per output-token interval.
+
+The 64-slot retune also increased the GPU memory fraction from 0.26 to 0.85 and
+the batched-token limit from 1,024 to 4,096, and deployed schema 8 leased result
+readers. The 3.51x FAIR and 3.88x cost-aware throughput ratios over the 8-slot
+runs describe complete configuration changes. They do not isolate concurrency,
+SQL changes or GPU kernels. The serial 64-slot policy pair favors cost aware by
+3.67% throughput, but has no independent repetitions or confidence interval.
+At 8 slots cost aware improved the median but reduced total throughput. The
+implementation does not assume that its policy always wins.
+
+The scheduler's actual heterogeneous-profile routing, cheaper fresh-peer
+deferral, aging/deadline overrides and runtime fencing have real PostgreSQL
+tests. These measurements have only one physical GPU type and one TP4 worker;
+they do not establish heterogeneous-device cost savings.
+
+## Failure recovery and storage
+
+The WAN expired-lease experiment runs against independent disposable databases
+on the actual managed Neon service from the Pod. For 200 expired tasks, the old
+path took 2.634510 seconds and the SQL path took 0.174232 seconds, a 15.12x
+ratio. A separate 1,000-task SQL run took 0.326484 seconds. Sixteen accepted
+results, their usage and queue counters remained consistent. These measure
+bounded state transitions, not AI inference throughput or GPU repair time.
+
+A separate real 100-task worker-fault cohort captured 64 valid leases, killed
+the owned worker, and observed all 64 expire and return to pending after
+90.6218 seconds. The probe restarted a two-slot worker, observed three legal
+capacity samples, gracefully drained two captured in-flight requests, and
+restored the original 64-slot worker while 97 tasks were still pending. Running
+work subsequently reached 64. All 100 tasks completed with exactly one accepted
+attempt each; 64 had an expired earlier attempt. For one of those same reclaimed
+tasks, both its old heartbeat and a valid old completion returned 409 without
+changing accepted state or usage.
+
+This was an operator-controlled worker crash and restart-time capacity change;
+the APIs automatically reclaimed expired leases. It did not hot-shrink active
+GPU work, reset a GPU, kill the engine, migrate KV state or test whole-Pod loss.
+Engine and API process identities remained unchanged. The functional cohort
+overlapped CPU-only backup restoration and is not an isolated throughput A/B.
+Physical inference can repeat after a lost lease despite one durable acceptance.
+
+Input artifacts use private verified S3 objects, generation-fenced keys,
+tenant reservations before I/O, read leases and bounded garbage collection.
+Result archival uses immutable chunk manifests, complete checksums, leased
+downloads and bounded completed-payload purge. An isolated Neon-branch/S3 proof
+archived 20 existing inference results and cleared their completed SQL payloads;
+all 52,200 output bytes remained identical and attempt/usage counts unchanged.
+The production proof subsequently did the same for one existing 20-task batch:
+all bytes matched through the gateway and both API replicas; completed task
+payload bytes fell from 578,410 to 40 while every batch counter, identity,
+attempt and usage total remained unchanged. It used four bounded five-row
+purge pages. Publication for other batches remained off during timed testing.
+
+Before that purge, a fresh 121,441,717-byte schema-8 snapshot was copied off
+the Pod and its SHA-256 verified. It was restored with PostgreSQL 17.11 into a
+new unprivileged Unix-socket-only temporary local cluster. Schema, counters,
+usage, accepted attempts and queue invariants passed; the cluster was stopped
+and removed. This validates that snapshot's SQL recovery, not object-store,
+role/ACL, region-loss or whole-provider recovery.
+
+Archival does not delete task/attempt history or failed-task retry bodies.
+Allocated PostgreSQL disk size need not shrink after logical payload cleanup.
+Ready output expiry, history/index compaction, global physical quotas and an
+admission policy when result archival is blocked remain separate work. Archive
+quota exhaustion retains SQL data rather than silently discarding results.
+
+## Larger model activation
+
+The official `Qwen/Qwen3-235B-A22B-Instruct-2507-FP8` checkpoint is pinned to
+`e156cb4efae43fbee1a1ab073f946a1377e6b969`. All 24 weight shards were verified
+against their official LFS hashes before activation. It has 235B total and 22B
+active parameters, so its compute demand should not be inferred from total
+parameter count alone. It uses the same four physical H100 GPUs, TP4, FP8
+weights/dynamic activations and BF16 compute/KV.
+
+The guarded switch preserved API/gateway identities, measured fresh memory
+headroom, and withheld its worker until direct calibration passed. Startup
+reported 55.1856 GiB of weights and 14.17 GiB KV memory per rank, 316,144 cache
+tokens and 17.14 full 18,440-token contexts. The initial configuration has eight
+slots, 4,096 batched tokens, eager execution and prefix caching disabled.
+All 20 exact-length public-text cells passed: 109,056 input and 13,600 output
+tokens in 199.0767 seconds. This is an engine calibration rather than an
+end-to-end durable platform benchmark or natural-answer quality result.
+The observed FlashAttention backend message refers to the vLLM V1 engine;
+it does not establish a FlashAttention algorithm version.
+
+The Qwen scheduling profile uses new HTTP phase calibration from these actual
+requests, with positive-rate fits and residual errors. Its first-text proxy
+includes queueing and one decode token; stream duration is affected by transport
+buffering. Neither is an isolated kernel rate, and 120B measurements are not
+reused as Qwen measurements. Subsequent platform/concurrency measurements are
+recorded independently.
+
+## Distance to ten million tasks per day
+
+Ten million completions per day require 115.740741 completions/s. Extrapolating
+the 400-task 120B burst gives about 241,229 tasks/day per four-GPU Pod at 100%
+duty, or 192,984 at 80%. Ideal linear arithmetic therefore gives 42 Pods (168
+GPUs) or 52 Pods (208 GPUs), respectively. This is a planning scenario, not a
+measured multi-Pod result, 24-hour capacity guarantee or purchase recommendation.
+Model, token distribution, batching and useful-answer rate change this estimate.
+
+Using the historical whole-Pod allocation scenario of $16.10/hour gives about
+$0.640718 for the 400-task run, or $1,601.795 per million durable completions.
+At 52 constantly billed Pods this would be $20,092.80/day before database,
+storage, networking and operational overhead. The $16.10 figure is not a current
+invoice, marginal inference cost or sales price. A measured duty cycle and an
+actual provider quote are needed before making a spend commitment.
+
+The next scalability requirements are independently deployed compute and entry
+points, multiple calibrated GPU pools, per-tenant admission and retention,
+database capacity planning under sustained traffic, object recovery, fault
+domain placement and long-duration arrival-driven tests. GPU activity includes
+communication/spin kernels; NVML percentages and memory occupancy alone do not
+establish Tensor Core saturation.
+
+## Reproducibility
+
+See `ops/reports/primary-scheduler-seq64-ab-analysis-2026-10-24.json` for the
+source hashes, exact run IDs, raw evidence hashes, policy decisions, per-class
+latencies and all confounds. The original metrics-preflight and report-size
+controller failures are preserved; neither caused duplicate workload submission.
+Secret-bearing environments, raw model outputs and database snapshots remain
+outside Git. Core result archival was pushed as `f1d45b7`.
+
+Local checks, including real isolated PostgreSQL and all HA helper tests, passed
+517 tests with 5 platform skips; subsequent focused publication/microbenchmark
+guards passed 29 tests, and Python compilation also passed. The Linux
+fault-probe tests separately passed all 12 tests. GitHub-hosted checks for the
+earlier implementation did not start because of the account's payment/spending
+limit; a local pass must not be represented as a hosted CI pass.

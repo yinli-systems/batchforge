@@ -1,0 +1,39 @@
+{
+  "phase": "compat",
+  "started_at": "2026-10-24T01:16:35.633769+00:00",
+  "passed": true,
+  "operations": [
+    {
+      "name": "supervisor-primary",
+      "status": "stopped"
+    },
+    {
+      "name": "api-a",
+      "status": "stopped"
+    },
+    {
+      "name": "api-a",
+      "status": "started",
+      "pid": 162046,
+      "log": "/root/batchforge-runtime/app/.runtime/api-a.log"
+    },
+    {
+      "name": "api-b",
+      "status": "stopped"
+    },
+    {
+      "name": "api-b",
+      "status": "started",
+      "pid": 162053,
+      "log": "/root/batchforge-runtime/app/.runtime/api-b.log"
+    },
+    {
+      "name": "supervisor-primary",
+      "status": "started",
+      "pid": 162059,
+      "log": "/root/batchforge-runtime/app/.runtime/supervisor-primary.log"
+    }
+  ],
+  "release_sha256": "1f4c318232302e5ecd6abcddc3968edb3cd93ae0f3b55250a10e5a633500671f",
+  "finished_at": "2026-10-24T01:16:38.806947+00:00"
+}

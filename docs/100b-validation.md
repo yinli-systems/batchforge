@@ -1,6 +1,10 @@
 # Real 100B deployment and workload evidence
 
-Both existing Pods now execute GPT-OSS-120B, whose checkpoint contains
+This records the earlier two-Pod deployment. The second Pod is unavailable in
+the subsequent one-Pod experiment; see [current validation](single-pod-validation-2026-10-24.md).
+The worker counts and cross-Pod recovery below are historical observations.
+
+Both Pods executed GPT-OSS-120B, whose checkpoint contains
 116,829,156,672 total parameters (about 5.1B active per token). The primary runs
 native MXFP4 experts with BF16 remaining tensors through vLLM 0.10.2 / Marlin on
 four shared H100s. The secondary runs the runtime-maintained GGUF conversion
