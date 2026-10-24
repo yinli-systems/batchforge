@@ -51,3 +51,30 @@ IDs, or tenant IDs. Accepted prompt/completion metrics increment only after a
 completion acknowledgement. Rejection counters are process-lifetime observations,
 reset on restart, and cannot account for GPU work whose usage response was lost;
 they are not a durable billing ledger.
+
+## Worker stage durations
+
+`batchforge_worker_stage_seconds` is a process-lifetime Prometheus histogram
+using a monotonic clock. It has four fixed stage labels and three fixed outcome
+labels (`ok`, `error`, `cancelled`), with no task, tenant, model, prompt, response,
+credential or error-text labels.
+
+| Stage | Interval |
+| --- | --- |
+| `engine_ready_wait` | Selecting a ready engine, including readiness polling before selection. |
+| `tokenize` | The adaptive per-invocation exact-tokenizer request and validation; excludes startup protocol checks. |
+| `kv_admission_wait` | Entering the shared reservation, ending at grant or rejection/cancellation; excludes inference after the grant. |
+| `report_ack` | One logical completion/failure report through acknowledgement, including its same-token HTTP retries and backoff. |
+
+`ok` means that stage returned normally. A fenced report is an `error`; a timeout
+implemented by cancelling a wait can appear as `cancelled`. These labels do not
+classify the eventual durable task outcome. The existing inference histogram
+measures the complete nonstreaming HTTP request, including engine queue and
+network time; it does not measure TTFT, individual decode steps or GPU kernels.
+
+Collect counter/bucket deltas with process identity and scrape coverage. Metrics
+reset on restart, overlapping task intervals cannot be added to obtain wall
+time, and histogram quantiles are bucket estimates. These aggregate metrics do
+not provide per-attempt durable traces or independently calibrate a scheduling
+profile. Exact accepted outcomes and token usage remain in the fenced database
+ledger. A worker crash can lose unsampled stage observations.

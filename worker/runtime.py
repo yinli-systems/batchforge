@@ -289,23 +289,24 @@ class Worker:
                     return
 
     async def _report(self, task: dict, operation: str, payload: dict, lost: asyncio.Event) -> None:
-        # Keep the same token on retries. An ambiguous completion response must
-        # never cause another model invocation; accepted completion is replayable.
-        deadline = time.monotonic() + self.config.report_retry_seconds
-        delay = .25
-        body = {"worker_id": self.config.worker_id, "attempt_token": task["attempt_token"], **payload}
-        while not lost.is_set():
-            try:
-                await self._post(f"/internal/tasks/{task['id']}/{operation}", body)
-                return
-            except StaleAttempt:
-                raise
-            except (httpx.HTTPError, ValueError):
-                if time.monotonic() >= deadline:
+        with self.metrics.time_stage('report_ack'):
+            # Keep the same token on retries. An ambiguous completion response must
+            # never cause another model invocation; accepted completion is replayable.
+            deadline = time.monotonic() + self.config.report_retry_seconds
+            delay = .25
+            body = {"worker_id": self.config.worker_id, "attempt_token": task["attempt_token"], **payload}
+            while not lost.is_set():
+                try:
+                    await self._post(f"/internal/tasks/{task['id']}/{operation}", body)
+                    return
+                except StaleAttempt:
                     raise
-                await asyncio.sleep(delay + random.random() * delay * .2)
-                delay = min(delay * 2, 5)
-        raise StaleAttempt("Lease renewal could not be confirmed")
+                except (httpx.HTTPError, ValueError):
+                    if time.monotonic() >= deadline:
+                        raise
+                    await asyncio.sleep(delay + random.random() * delay * .2)
+                    delay = min(delay * 2, 5)
+            raise StaleAttempt("Lease renewal could not be confirmed")
 
     def _inference_body(self, task):
         body = dict(task["body"])
@@ -388,11 +389,14 @@ class Worker:
         try:
             async with asyncio.timeout(self.config.request_timeout):
                 body = self._inference_body(task)
-                prompt = await self._exact_prompt_count(body, engine)
+                with self.metrics.time_stage('tokenize'):
+                    prompt = await self._exact_prompt_count(body, engine)
                 try:weight = reservation(prompt, body['max_tokens'], self.config.max_model_len)
                 except ValueError as exc:
                     raise InferenceError('context_limit', 'Exact prompt plus requested output exceeds configured context', False) from exc
-                async with self.kv_admission.reserve(weight):
+                async with contextlib.AsyncExitStack() as stack:
+                    with self.metrics.time_stage('kv_admission_wait'):
+                        await stack.enter_async_context(self.kv_admission.reserve(weight))
                     remote_started = True
                     return await self._invoke(task, engine, expected_prompt_tokens=prompt)
         except AdmissionPaused as exc:
@@ -409,26 +413,30 @@ class Worker:
                 self._pause_kv_admissions()
             raise
 
-    async def _invoke_available(self, task: dict) -> dict:
+    async def _select_engine(self) -> Engine:
         deadline = time.monotonic() + self.config.request_timeout
-        while True:
-            if self.kv_admission and self.kv_admission.paused:
-                raise InferenceError('kv_admission_paused', 'Exact-token admission needs operator intervention')
-            ready = [engine for engine in self.engines if engine.ready]
-            if ready:
-                engine = min(ready, key=lambda item: item.inflight)
-                engine.inflight += 1
-                try:
-                    if self.kv_admission:
-                        return await self._invoke_adaptive(task, engine)
-                    return await self._invoke(task, engine)
-                finally:
-                    engine.inflight -= 1
-            if time.monotonic() >= deadline:
-                raise InferenceError("engine_unavailable", "No healthy inference engine became available")
-            # Engine probes in the claim loop restore eligibility. Heartbeats
-            # keep an already received claim valid while endpoints recover.
-            await asyncio.sleep(.25)
+        with self.metrics.time_stage('engine_ready_wait'):
+            while True:
+                if self.kv_admission and self.kv_admission.paused:
+                    raise InferenceError('kv_admission_paused', 'Exact-token admission needs operator intervention')
+                ready = [engine for engine in self.engines if engine.ready]
+                if ready:
+                    engine = min(ready, key=lambda item: item.inflight)
+                    engine.inflight += 1
+                    return engine
+                if time.monotonic() >= deadline:
+                    raise InferenceError("engine_unavailable", "No healthy inference engine became available")
+                # Engine probes restore eligibility. Heartbeats preserve claims.
+                await asyncio.sleep(.25)
+
+    async def _invoke_available(self, task: dict) -> dict:
+        engine = await self._select_engine()
+        try:
+            if self.kv_admission:
+                return await self._invoke_adaptive(task, engine)
+            return await self._invoke(task, engine)
+        finally:
+            engine.inflight -= 1
 
     async def execute(self, task: dict) -> None:
         self.metrics.active.inc()

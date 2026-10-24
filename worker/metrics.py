@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+from contextlib import contextmanager
 import time
 
 from fastapi import FastAPI, Response
@@ -22,6 +24,13 @@ class Metrics:
         self.control_failovers = Counter("batchforge_worker_control_failovers", "Control origin changes for subsequent requests", registry=self.registry)
         self.control_origin = Gauge("batchforge_worker_control_origin_index", "Index of the selected configured control origin", registry=self.registry)
         self.latency = Histogram("batchforge_worker_inference_seconds", "Complete model request duration", buckets=(.1,.25,.5,1,2,5,10,20,40,80,160,320), registry=self.registry)
+        self.stage_seconds = Histogram(
+            "batchforge_worker_stage_seconds",
+            "Worker monotonic stage duration; includes waits and is not GPU kernel time",
+            ["stage", "outcome"],
+            buckets=(.001,.005,.01,.025,.05,.1,.25,.5,1,2,5,10,20,40,80,160,320,640,1280,2560,4096),
+            registry=self.registry,
+        )
         self.prompt = Counter("batchforge_worker_prompt_tokens", "Reported model prompt tokens", registry=self.registry)
         self.completion = Counter("batchforge_worker_completion_tokens", "Reported model completion tokens", registry=self.registry)
         self.invalid_outputs = Counter("batchforge_worker_invalid_outputs", "Observed engine responses rejected for invalid JSON-object output", registry=self.registry)
@@ -31,6 +40,23 @@ class Metrics:
         self.registered = False
         self.stopping = False
         self.engine_ready = False
+
+    @contextmanager
+    def time_stage(self, stage):
+        # No task, tenant, model, error text, or caller-controlled labels.
+        if stage not in {"engine_ready_wait", "tokenize", "kv_admission_wait", "report_ack"}:
+            raise ValueError("Unknown worker timing stage")
+        started = time.monotonic()
+        outcome = "error"
+        try:
+            yield
+        except asyncio.CancelledError:
+            outcome = "cancelled"
+            raise
+        else:
+            outcome = "ok"
+        finally:
+            self.stage_seconds.labels(stage, outcome).observe(time.monotonic() - started)
 
     def app(self) -> FastAPI:
         app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
