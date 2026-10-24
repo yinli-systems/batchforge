@@ -1,0 +1,251 @@
+"""Read-only local audit of recorded projected-static16 scheduling predictions.
+
+Uses only committed metadata and unchanged source semantics. Writes aggregate
+JSON/Markdown plus exact analysis source under docs/benchmarks with --write.
+No calibration fit, production request, database access or profile update.
+"""
+from __future__ import annotations
+from collections import defaultdict
+import argparse
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import sys
+
+SELF=Path(__file__).resolve();ROOT=SELF.parent.parent
+sys.path.insert(0,str(ROOT))
+from scripts.plot_sustained_comparison import read_metadata
+
+FILES={
+ 'mixed_final_adaptive100':'ops/reports/primary-qwen235b-final-source-fixed100-2026-10-24.json',
+ 'prefill100':'ops/reports/qwen235b-prefill100-report-2026-10-24.json',
+ 'decode100':'ops/reports/qwen235b-decode100-report-2026-10-24.json',
+ 'mixed_guard_journal':'ops/reports/primary-qwen235b-final-source-journal-2026-10-24.json',
+ 'regime_original_guard_journal':'ops/reports/qwen235b-prefill100-original-controller-journal-2026-10-24.json',
+ 'regime_reconciliation':'ops/reports/qwen235b-regime100-reconciliation-2026-10-24.json'}
+EXPECTED={
+ 'mixed_final_adaptive100':'c3e5c54980dfc18e5a2e9d7672b92a375239adfaef3da22a5a164697dda63d55',
+ 'prefill100':'9b56475ed30d9e70188486b2213272a00fe5f9807b1d9c484fc30c0f3124f061',
+ 'decode100':'a6659a1dd28e6ed05adeb51089d3edcc2adcb8555a85454938ac33c183db6e87',
+ 'mixed_guard_journal':'24dc13b6d5862012f0f6666c7466c833068abfeac4e19bf43e65131496b1bb25',
+ 'regime_original_guard_journal':'6980bad830c5b0ed8884401cee927bae850eee9b2a76bd12355ca262389a7d0b',
+ 'regime_reconciliation':'118230f4e37ac0f08107b9bf0486983bc83b9b65bf50e7b64409f4f5c81c0d02'}
+DEPENDENCIES={'scripts/plot_sustained_comparison.py':'3a71d665e9d9d3c3569911530da748e7be141c0b6fdbc03378a9bb91cdbad1ff',
+ 'scripts/compare_sustained_reports.py':'90df1ebbb26a40d7288fb230ec9ddc484e3ece2414c691b6d993936bd17862c3'}
+SEMANTICS=('backend/scheduling.py','backend/schema.sql','backend/migrations/0002_sql_completion.sql',
+ 'backend/migrations/0006_cost_scheduler.sql','worker/runtime.py','worker/kv_admission.py','scripts/scheduler_benchmark.py')
+PROFILE_FIELDS=('profile_id','runtime_fingerprint','prefill_tokens_per_second','decode_tokens_per_second','hourly_cost_usd','calibration_label','cost_source')
+PREFIX=ROOT/'docs/benchmarks/qwen235b-prediction-error-2026-10-24'
+DEFINITIONS={
+ 'input_estimate':'ceil(compact UTF8 JSON(messages) bytes /4), not tokenizer count or KV reservation',
+ 'input_estimated_over_actual_ratio':'estimated_input_tokens / accepted task prompt_tokens; >1 means overestimate',
+ 'input_absolute_percentage_error':'100 * abs(estimated_input_tokens - actual prompt_tokens) / actual prompt_tokens',
+ 'service_prediction':'estimated_input/profile_prefill_rate + requested_output_cap/profile_decode_rate',
+ 'observed_attempt_seconds':'attempt.finished_at - attempt.started_at (DB timestamps); attempt started_at defaults to transaction-start now(), not worker/engine start',
+ 'observed_attempt_scope':'claim transaction/dispatch, worker engine availability, exact-tokenizer call, KV reservation wait, engine queue/computation/response validation, and completion report path through its accepted SQL update before COMMIT/ACK; phase durations unavailable',
+ 'attempt_exclusions':'excludes pre-attempt DB queue and client upload/admission; DB acceptance timestamp excludes later commit/HTTP ack and post-acceptance duplicate report retry delays',
+ 'db_created_to_finished_seconds':'task.finished_at - batch.created_at; includes pre-claim DB queue and post-claim work',
+ 'first_queue_seconds':'min(attempt.started_at) - batch.created_at; for these one-attempt tasks, excludes later worker/KV/engine queues',
+ 'timing_join_residual_seconds':'task completion - first queue - observed attempt; small signed negative residual is preserved because task and attempt finish timestamps are separate SQL clock calls',
+ 'observed_attempt_over_predicted_service_ratio':'observed DB attempt duration / recorded predicted service seconds; >1 means longer observed attempt, not isolated GPU slowdown',
+ 'service_signed_percentage_error':'100 * (predicted - observed DB attempt) / observed DB attempt',
+ 'service_absolute_percentage_error':'absolute service signed percentage error',
+ 'diagnostic_actual_input_service_seconds':'actual prompt_tokens / unchanged profile_prefill_rate + unchanged requested_output_cap/profile_decode_rate; arithmetic sensitivity only, not fitted calibration',
+ 'predicted_prefill_component_shift_from_heuristic_seconds':'recorded prefill prediction minus diagnostic prefill using actual prompt count; positive means token heuristic makes prediction longer',
+ 'cost_proxy':'sum(recorded predicted_service_seconds * profile hourly_cost_usd /3600), where hourly_cost_usd=16.10/16; ranking proxy, not observed billing',
+ 'whole_pod_allocation':'cohort client-observed wall * assumed 16.10 USD/hour; excludes output validation and gaps outside cohort wall; not invoice or marginal cost',
+ 'observed_attempt_price_proxy':'sum(DB attempt duration) * unchanged projected slot-hour price /3600; overlapping claims/KV waits make this a diagnostic arithmetic proxy, not allocated GPU-hours',
+ 'percentiles':'linear interpolation at (n-1)*p, rounded6 decimals; rows are repeated tasks within one cohort, not independent experiment replications',
+ 'classes':'actual prompt_tokens / requested output cap >=16 prefill_heavy, <=4 decode_heavy, otherwise balanced'}
+LIMITATIONS=[
+ 'Three serial descriptive cohorts, N=1 each, different workloads/batch counts/start times; no randomized A/B or confidence intervals',
+ 'All 300 tasks are fixed length-capped completions, not natural-EOS or answer-quality evaluation',
+ 'Attempt intervals contain unmeasured claim/dispatch, tokenization, reservation, engine queue and report portions; no stage latency or isolated per-stream prefill/decode rate is identified',
+ 'Task repeats share one engine and continuous batching; within-cell quantiles are correlated descriptive observations; mixed 20-cell n=5 tails are especially weak',
+ 'Only one four-H100 TP4 runtime; no heterogeneous-hardware cross-validation, transfer calibration or fleet-scale claim',
+ 'Accepted successful single-attempt tasks only; no failed/retried/uncertain execution cost population is present',
+ 'No live DB/HTTP/GPU read and no profile, price, rate or scheduler policy was modified',
+ 'Aggregate cohort token throughput is never substituted for per-stream scheduling profile rates',
+ 'The static16-derived rates remain explicitly projected and uncalibrated for adaptive64; claim concurrency 64 does not create 64 priced execution slots']
+CONTRACT={
+ 'status':'proposal_only_no_production_calibration',
+ 'binding':[
+  'model repository+revision+quantization, tokenizer/chat-template hashes and max context',
+  'GPU model/count/memory, TP/PP topology, CPU/driver/CUDA/vLLM versions and collective configuration',
+  'engine flags including eager/graph/capture sizes, prefix cache/chunked prefill, max seqs/batched tokens and physical KV capacity',
+  'worker shared KV budget/block size/claim cap, profile source and raw stage-instrumentation version',
+  'explicit price scope whole-Pod allocation versus marginal provider price; no implicit division by claim capacity'],
+ 'telemetry':[
+  'durable custom-id/attempt-number linkage with safe metadata only; no prompt/response bodies or credentials',
+  'separate pre-claim DB queue, claim transaction+dispatch, worker receipt/tokenize, KV reservation wait, engine request/response, report-send/durable-accept/ack timers',
+  'worker monotonic durations and bounded trace IDs; preserve DB timestamps separately instead of treating distributed clocks as identical',
+  'engine queue/prefill/TTFT/decode stage evidence if instrumented; full-response wall alone must not be labeled TTFT or kernel time',
+  'concurrent active streams/engine queue/KV used+reserved and workload mix over each interval; explicit sampling coverage/gaps',
+  'actual tokenizer prompt count, requested output cap, actual generated count, status/retries/rejected work and accepted usage'],
+ 'experimental_matrix':[
+  'separate workload cells across prompt 128/512/2048/8192/16384 and output 32/128/512/2048, plus natural-EOS multilingual/structured/long-tail holdouts',
+  'stratify measured admitted execution by real active-stream bins 1/2/4/8/16/32/64 when feasible, offered load and KV pressure; distinguish 64 claims from 64 executing streams',
+  'cold/warm prefix-cache and eager/graph settings as separate runtime bindings; never mix into one profile',
+  'repeat independent serial cohorts, randomize workload/config order and block by time; keep task/profile/runtime hashes fixed',
+  'repeat the same contract on each actual hardware/topology class before enabling heterogeneous cost routing'],
+ 'fit_and_validation':[
+  'use stage-specific service estimates conditional on actual tokens, output behavior, concurrency and KV pressure; model reservation/queue separately',
+  'split training/validation/holdout by run/time and prompt-template family so repeated fixture rows cannot leak across splits',
+  'report signed bias, MAE, percentage error, observed/predicted factors and P50/P95/P99 residuals per cell/class/concurrency, with independent-run uncertainty',
+  'choose numeric error/coverage and routing-regret acceptance thresholds before collecting holdout; publish full failed/retried cost scope',
+  'validate ranking and deadline behavior in a shadow scheduler against the unchanged projected baseline before any production promotion',
+  'keep compatibility/runtime fingerprint separate from hardware calibration identity; require expiry/drift monitoring, explicit promotion and exact rollback'],
+ 'proposed_release_gates':[
+  'Planning targets, not achieved results: per hardware/runtime stratum start with 3 independent training runs, 1 validation run and 3 untouched holdout runs; preserve time/prompt-family splits',
+  'Cover at least 30 heldout tasks per populated workload-cell/concurrency bin spread across 3 holdout runs; leave uncovered bins projected rather than extrapolating calibrated status',
+  'Proposed heldout service gates per supported class/concurrency stratum: median absolute percentage error<=25%, P95 absolute percentage error<=60%, median signed percentage bias within plus/minus 15%; evaluate engine-service and reservation/queue predictors separately',
+  'A nominal 90% prediction interval should have heldout empirical coverage 85% to 95% in supported strata; report independent-run uncertainty and withhold promotion if evidence is insufficient',
+  'Exact-tokenizer accounting must match accepted prompt usage; any fallback UTF8 heuristic remains explicitly tagged and must not reserve KV or impersonate exact tokens',
+  'Shadow-routing promotion also requires predeclared deadline/fairness nonregression and measured hardware-window cost/ranking utility; a service-error pass alone cannot establish cheaper heterogeneous routing'],
+ 'cost_validation':[
+  'score whole-Pod allocation with measured occupied wall and all rejected/retried/idle work; report utilization/occupancy independently',
+  'test proxy ranking against actual hardware-window allocation across queues and workloads; proxy/allocation ratios are diagnostics, not invoices',
+  'preserve published projected-static16 defaults until independently reviewed holdout measurements justify a new versioned profile']}
+
+
+def require(value,code):
+ if not value:raise ValueError(code)
+def numeric(value):require(type(value) in (int,float) and math.isfinite(value),'nonfinite_numeric_metric');return value
+def close(a,b):require(math.isclose(numeric(a),numeric(b),rel_tol=1e-10,abs_tol=1e-6),'recorded_prediction_arithmetic_differs')
+def distribution(values):
+ values=sorted(numeric(v) for v in values);require(bool(values),'empty_distribution')
+ def q(p):
+  n=(len(values)-1)*p;lo=math.floor(n);hi=math.ceil(n)
+  return round(values[lo]+(values[hi]-values[lo])*(n-lo),6)
+ return dict(samples=len(values),min=round(values[0],6),p50=q(.5),p95=q(.95),p99=q(.99),max=round(values[-1],6),mean=round(sum(values)/len(values),6))
+def group(rows):return {'tasks':len(rows),'metrics':{k:distribution([r[k] for r in rows]) for k in rows[0]}}
+
+
+def analyze():
+ inputs={};shas={}
+ require(all(hashlib.sha256((ROOT/k).read_bytes()).hexdigest()==v for k,v in DEPENDENCIES.items()),'analysis_dependency_source_differs')
+ for key,path in FILES.items():inputs[key],shas[key]=read_metadata(ROOT/path)
+ require(shas==EXPECTED,'source_input_sha_differs')
+ journal=inputs['mixed_guard_journal'];old=inputs['regime_original_guard_journal'];recon=inputs['regime_reconciliation']
+ require(journal['all_service_identities_environments_unchanged'] is True and journal['protected_sources_unchanged'] is True,'mixed_runtime_guard_failed')
+ job=next(j for j in journal['jobs'] if j['run_id']==inputs['mixed_final_adaptive100']['run_id'])
+ require(job['state']=='complete' and job['report_sha256']==shas['mixed_final_adaptive100'] and all(job['validation'].values()),'mixed_report_guard_differs')
+ require(recon['phase']=='complete' and recon['passed'] is True and recon['performance_ab_comparison'] is False and recon['services_and_sources_unchanged'] is True
+  and recon['original_journal_sha256']==shas['regime_original_guard_journal'] and recon['prefill_report_sha256']==shas['prefill100'] and recon['decode_report_sha256']==shas['decode100'],'regime_source_guard_failed')
+ semantic_shas={name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in SEMANTICS}
+ require(all(journal['protected_source_sha256'][k]==v==old['source_sha256'][k] for k,v in semantic_shas.items()),'observed_code_semantics_changed')
+ profile=journal['runtime_profile'];require(profile['hourly_cost_usd']==16.10/16 and profile['calibration_label'].startswith('projected-from-static16;'),'profile_not_projected_static16')
+ cohorts={}
+ for key in ('mixed_final_adaptive100','prefill100','decode100'):
+  report=inputs[key];tasks=report['tasks'];attempts=report['attempt_decisions'];byid={t['id']:t for t in tasks}
+  require(report['passed'] is True and report['database_schema_version']==10 and report['accepted_exactly_once'] is True and report['all_output_lengths_exact'] is True
+   and report['test_fixture_detected'] is False and report['completed']==len(tasks)==len(attempts)==len(byid)==100 and report['failed']==report['cancelled']==0,'not_real_complete_cohort')
+  require(len({a['task_id'] for a in attempts})==100 and {a['task_id'] for a in attempts}==set(byid),'task_attempt_join_not_one_to_one')
+  require(len({t['custom_id'] for t in tasks})==100,'duplicate_custom_id')
+  rows=[];classes=defaultdict(list);cells=defaultdict(list);cost_sum=0;observed_sum=0;predicted_sum=0
+  for attempt in attempts:
+   task=byid[attempt['task_id']];decision=attempt['scheduling_decision']
+   require(task['status']==attempt['status']=='completed' and task['attempts']==task['accepted_attempts']==attempt['number']==1,'non_single_accepted_attempt')
+   require({k:decision[k] for k in PROFILE_FIELDS}==profile and decision['policy']=='cost_aware'
+    and decision['estimate_source']=='utf8_json_bytes_div4_and_output_cap_v1' and decision['runtime_compatibility_scope']=='first_dispatch','mixed_or_unknown_profile_decision')
+   actual=numeric(task['prompt_tokens']);estimated=numeric(decision['estimated_input_tokens']);cap=numeric(task['output_cap']);generated=numeric(task['completion_tokens'])
+   require(actual>0 and estimated>0 and cap>0 and generated==cap==decision['estimated_output_tokens'],'fixed_cap_or_input_invalid')
+   observed=numeric(attempt['observed_attempt_seconds']);predicted=numeric(decision['predicted_service_seconds']);require(observed>0 and predicted>0,'invalid_attempt_duration')
+   pf=estimated/profile['prefill_tokens_per_second'];dec=cap/profile['decode_tokens_per_second']
+   close(decision['predicted_prefill_seconds'],pf);close(decision['predicted_decode_seconds'],dec);close(predicted,pf+dec)
+   close(decision['predicted_cost_usd'],predicted*profile['hourly_cost_usd']/3600)
+   row=dict(input_estimated_tokens=estimated,input_actual_tokens=actual,input_estimated_minus_actual_tokens=estimated-actual,input_absolute_error_tokens=abs(estimated-actual),
+    input_estimated_over_actual_ratio=estimated/actual,input_absolute_percentage_error=abs(estimated-actual)/actual*100,
+    output_requested_cap_tokens=cap,actual_generated_tokens=generated,predicted_prefill_seconds=pf,predicted_decode_seconds=dec,
+    predicted_service_seconds=predicted,predicted_cost_proxy_usd=decision['predicted_cost_usd'],observed_attempt_seconds=observed,observed_attempt_over_predicted_service_ratio=observed/predicted,
+    predicted_minus_observed_attempt_seconds=predicted-observed,service_absolute_error_seconds=abs(predicted-observed),service_signed_percentage_error=(predicted-observed)/observed*100,
+    service_absolute_percentage_error=abs(predicted-observed)/observed*100,first_queue_seconds=task['first_queue_seconds'],
+    db_created_to_finished_seconds=task['completion_seconds'],timing_join_residual_seconds=task['completion_seconds']-task['first_queue_seconds']-observed,
+    diagnostic_actual_input_service_seconds=actual/profile['prefill_tokens_per_second']+dec,
+    predicted_prefill_component_shift_from_heuristic_seconds=(estimated-actual)/profile['prefill_tokens_per_second'])
+   ratio=actual/cap;label='prefill_heavy' if ratio>=16 else 'decode_heavy' if ratio<=4 else 'balanced'
+   rows.append(row);classes[label].append(row);cells[f'input={int(actual)};output={int(cap)}'].append(row)
+   cost_sum+=decision['predicted_cost_usd'];observed_sum+=observed;predicted_sum+=predicted
+  require(sum(t['prompt_tokens'] for t in tasks)==report['observed_prompt_tokens'] and sum(t['completion_tokens'] for t in tasks)==report['observed_completion_tokens'],'accepted_usage_totals_differs')
+  elapsed=report['elapsed_seconds'];allocation=report['cost']['run_allocation_usd'];close(allocation,elapsed*16.10/3600)
+  cohorts[key]={'run_id':report['run_id'],'engine_label':report['engine_label'],'started_at':report['measurement_started_at'],
+   'finished_observation_at':report['terminal_observation_ended_at'],'batches':report['batches'],'completed_tasks':100,'independent_runs':1,
+   'report_passed':report['passed'],'elapsed_seconds_client_submission_to_terminal':elapsed,'prompt_tokens':report['observed_prompt_tokens'],
+   'completion_tokens':report['observed_completion_tokens'],'all':group(rows),'per_class':{k:group(v) for k,v in sorted(classes.items())},
+   'per_cell':{k:group(v) for k,v in sorted(cells.items())},
+   'cost_scope_comparison':{'recorded_predicted_cost_proxy_sum_usd':cost_sum,'assumed_whole_pod_allocation_usd':allocation,
+    'proxy_sum_divided_by_whole_pod_allocation_not_accuracy':cost_sum/allocation,'sum_predicted_service_seconds':predicted_sum,
+    'sum_observed_attempt_seconds':observed_sum,'sum_attempt_seconds_divided_by_cohort_wall_not_execution_occupancy':observed_sum/elapsed,
+    'observed_attempt_price_proxy_usd_not_gpu_cost':observed_sum*profile['hourly_cost_usd']/3600,
+    'projected_slot_hour_price_usd':profile['hourly_cost_usd'],'whole_pod_assumed_hour_price_usd':16.10,'original_priced_slot_divisor':16,
+    'claim_limit_not_new_priced_slots':64,'invoice_or_cost_accuracy_evaluated':False}}
+ return {'analysis_version':1,'source_inputs_sha256':shas,'source_paths':FILES,'code_semantics_sha256':semantic_shas,'analysis_dependency_sha256':DEPENDENCIES,
+  'analysis_source_sha256':hashlib.sha256(SELF.read_bytes()).hexdigest(),'model':'Qwen/Qwen3-235B-A22B-Instruct-2507-FP8',
+  'unchanged_projected_profile':profile,'profile_changed':False,'production_calibration_generated':False,'raw_model_text_included':False,
+  'database_or_http_or_gpu_access':False,'joined_tasks_and_single_attempts':300,'definitions':DEFINITIONS,'cohorts':cohorts,
+  'limitations':LIMITATIONS,'next_calibration_contract':CONTRACT}
+
+
+def markdown(audit):
+ lines=['# Qwen235B projected-profile prediction error — 2026-10-24','',
+  'This is a read-only audit of 300 recorded single-attempt completions in three different serial cohorts. The production profile remains projected from static16 and is unchanged. These data do not identify isolated GPU service rates or calibrate heterogeneous hardware.','',
+  'The same profile appears in every decision: prefill **5,573.560942** tokens/s, decode **11.775314** tokens/s and **$1.00625/slot-hour = $16.10/16**. Adaptive64 is a claim limit; it does not create 64 priced execution slots.','',
+  '| Cohort | Batches / tasks | Input estimate / actual P50 | Observed attempt / predicted service P50 / P95 / P99 | Service absolute error P50 | Predicted cost proxy sum | Whole-Pod allocation scenario |',
+  '| --- | --- | --- | --- | --- | --- | --- |']
+ for key,value in audit['cohorts'].items():
+  m=value['all']['metrics'];r=m['observed_attempt_over_predicted_service_ratio'];c=value['cost_scope_comparison']
+  lines.append(f"| {key} | {value['batches']} / 100 | {m['input_estimated_over_actual_ratio']['p50']:.3f}x | {r['p50']:.3f}x / {r['p95']:.3f}x / {r['p99']:.3f}x | {m['service_absolute_percentage_error']['p50']:.1f}% | ${c['recorded_predicted_cost_proxy_sum_usd']:.4f} | ${c['assumed_whole_pod_allocation_usd']:.4f} |")
+ lines += ['',
+  'The UTF8/4 heuristic overestimates prompt tokens on these fixtures. It adds positive prefill prediction time; it cannot explain the much longer prefill-heavy observed attempt intervals. Replacing its input count with the actual count would shorten the arithmetic prediction further. The JSON includes that sensitivity calculation with unchanged coefficients; it is not a fitted or production calibration.',
+  '', 'The decode-heavy median happens to lie near 1x. That is one correlated, fixed-output cohort, not a holdout result. Inspect its per-cell tails and queue context before drawing conclusions. The mixed cohort has only five repeated rows in each of 20 cells; its P95/P99 cell estimates are descriptive interpolations over five rows.',
+  '', '## What the time intervals measure','',
+  '`observed_attempt_seconds` is the database attempt finish minus start. Start defaults to transaction-start `now()`, before worker execution; the interval can include claim/dispatch, engine availability, `/tokenize`, shared-KV reservation waiting, engine queue/execution, response validation and completion reporting through the accepted SQL update before COMMIT/ACK. It is not engine GPU time. The recorded metadata cannot separate those stages.',
+  '', 'Pre-attempt database queue and client upload/admission are excluded from that attempt interval. Task completion time includes pre-attempt database queue. The accepted DB finish timestamp excludes later COMMIT/HTTP acknowledgement and post-acceptance duplicate report retry delays. Separate task/attempt clock calls produce small negative timing-join residuals; they are retained without clamping.',
+  '', '## Class and cell evidence','',
+  'Each row below shows distributions within one cohort; they are not independent run replications. Ratios above 1 mean the observed attempt took longer than the recorded service prediction.',
+  '', '| Cohort / class | n | Input ratio P50 | Attempt / prediction P50 | P95 | P99 |', '| --- | --- | --- | --- | --- | --- |']
+ for key,value in audit['cohorts'].items():
+  for label,group_ in value['per_class'].items():
+   m=group_['metrics'];r=m['observed_attempt_over_predicted_service_ratio']
+   lines.append(f"| {key} / {label} | {group_['tasks']} | {m['input_estimated_over_actual_ratio']['p50']:.3f}x | {r['p50']:.3f}x | {r['p95']:.3f}x | {r['p99']:.3f}x |")
+ lines+=['','| Cohort / cell (input → output tokens) | n | Input ratio P50 | Attempt / prediction P50 | P95 | P99 |','| --- | --- | --- | --- | --- | --- |']
+ for key,value in audit['cohorts'].items():
+  for label,group_ in value['per_cell'].items():
+   m=group_['metrics'];r=m['observed_attempt_over_predicted_service_ratio'];cell=label.replace('input=','').replace(';output=',' → ')
+   lines.append(f"| {key} / {cell} | {group_['tasks']} | {m['input_estimated_over_actual_ratio']['p50']:.3f}x | {r['p50']:.3f}x | {r['p95']:.3f}x | {r['p99']:.3f}x |")
+ lines+=['','The JSON preserves P50/P95/P99/min/max/mean for input bias, absolute token error, absolute percentage error, predicted prefill/decode/service components, observed attempt, signed and absolute service error (including MAE via mean absolute-error seconds), first queue, DB completion, timing residual and actual-input sensitivity in every cohort/class/cell.','',
+  '## Cost scope','',
+  'The two cost columns are different arithmetic scopes. The prediction sum multiplies per-task service estimates by the projected static16 slot price. Whole-Pod allocation multiplies one cohort wall interval by $16.10/hour, so overlapping tasks are not charged repeatedly. The JSON reports their ratios as scope diagnostics, not billing error or measured cost savings.',
+  '', 'Likewise, summing observed attempt durations counts overlapping claims and their reservation/queue/report intervals. Dividing that sum by cohort wall is not measured executing-stream occupancy, and multiplying it by the slot price is not observed GPU cost. These reports exclude validation and inter-cohort time from the stated allocation; they contain no invoice or rejected/retried work population.',
+  '', '## Next calibration contract','']
+ for category in ('binding','telemetry','experimental_matrix','fit_and_validation','proposed_release_gates','cost_validation'):
+  lines.append('**'+category.replace('_',' ').capitalize()+'**');lines.append('')
+  lines.extend('- '+item+'.' for item in CONTRACT[category]);lines.append('')
+ lines += ['The contract is a proposal. No new profile coefficients, production calibration, source changes or aggregate-throughput-to-per-stream conversion are produced here.','', '## Evidence and reproducibility','',
+  'Adjacent `.json` contains exact report/journal, code-semantics and analysis-dependency SHA256 values plus all aggregate distributions. Adjacent `.analysis-source.py.txt` is the exact local analysis source. To reproduce, place that source at `.runtime/analyze_prediction_error.py` in this repository and run Python without `--write` for validation. `--write` exclusively creates a new result set; existing evidence is never overwritten.','']
+ for key,sha in audit['source_inputs_sha256'].items():lines.append(f'- `{key}`: `{sha}`')
+ lines += ['',f"Analysis source SHA256: `{audit['analysis_source_sha256']}`.",'']
+ return '\n'.join(lines)
+
+
+def main():
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--write',action='store_true');args=parser.parse_args();audit=analyze()
+ written={}
+ if args.write:
+  files={PREFIX.with_suffix('.json'):(json.dumps(audit,indent=2,sort_keys=True,allow_nan=False)+'\n').encode(),
+   PREFIX.with_suffix('.md'):markdown(audit).encode(),PREFIX.with_suffix('.analysis-source.py.txt'):SELF.read_bytes()}
+  require(all(not p.exists() and not p.is_symlink() for p in files),'analysis_output_exists')
+  PREFIX.parent.mkdir(parents=True,exist_ok=True)
+  for path,raw in files.items():
+   fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o644)
+   with os.fdopen(fd,'wb') as out:out.write(raw);out.flush();os.fsync(out.fileno())
+   written[path.name]=hashlib.sha256(raw).hexdigest()
+  fd=os.open(PREFIX.parent,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+  try:os.fsync(fd)
+  finally:os.close(fd)
+ print(json.dumps({'validated':True,'joined_tasks':audit['joined_tasks_and_single_attempts'],'profile_changed':False,'artifacts_written':written},sort_keys=True))
+if __name__=='__main__':
+ try:main()
+ except Exception as error:print(json.dumps({'validated':False,'reason_code':str(error) if type(error) is ValueError else type(error).__name__}));raise SystemExit(1) from None
