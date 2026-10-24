@@ -1,0 +1,40 @@
+"""One actual public-answer100 quality cohort; private raw outputs stay on Pod."""
+from pathlib import Path
+from datetime import datetime,timezone
+import os,sys,json,hashlib,subprocess
+ROOT=Path('/root/batchforge-runtime/app');RUN=ROOT/'.runtime/qwen235b-public-answer100-v1'
+sys.path.insert(0,str(ROOT));os.umask(0o077)
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def main():
+ import psycopg
+ from ops.supervise import private_read,private_write,load_manifest
+ from ops.ha.finalize_api_policy import values
+ from ops.ha.set_scheduler_policy import owned_identity
+ from scripts.public_workload import build,evaluate
+ journal=RUN/'journal.json'
+ if journal.exists():raise RuntimeError('existing_job_no_resubmit')
+ manifest,services,_=load_manifest(ROOT/'.runtime/services-primary.json');watch=dict(role='supervisor',name='primary',env_file=str(ROOT.parent/'supervisor.env'))
+ services=[*services,watch];ids={s['role']+'-'+s['name']:owned_identity(ROOT,s) for s in services};configs={str(p):sha(p) for p in [manifest,*[Path(s['env_file']) for s in services]]}
+ sources={str(p.relative_to(ROOT)):sha(p) for d in ['backend','worker'] for p in (ROOT/d).rglob('*') if p.is_file() and p.suffix in ('.py','.sql')}
+ for name in ['scripts/benchmark.py','scripts/public_workload.py','scripts/scheduler_benchmark.py','ops/manage.py','ops/supervise.py']:sources[name]=sha(ROOT/name)
+ env=values(private_read(ROOT/'.runtime/scheduler-v6/benchmark.env'))
+ with psycopg.connect(env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=10000') as c:
+  if c.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]:raise RuntimeError('global_drain_required')
+ metadata=build(ROOT/'.runtime/public-data/dev-v1.1.json',RUN/'workload.jsonl',RUN/'manifest.json',tasks=100,model='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8',profile='answer',seed=20261025,words=700)
+ for p in [RUN/'workload.jsonl',RUN/'manifest.json']:p.chmod(0o600)
+ doc=dict(job_id='qwen235b-public-answer100-v1',phase='running',started_at=datetime.now(timezone.utc).isoformat(),workload_metadata=metadata,services_before=ids,configuration_sha256=configs,source_sha256=sources,source_controller_sha256=sha(Path(__file__)),performance_ab_comparison=False,private_api_a_entry=True)
+ private_write(journal,doc)
+ label='qwen235b-public-answer100-v1'
+ argv=[sys.executable,'-m','scripts.scheduler_benchmark','--env-file',str(ROOT/'.runtime/scheduler-v6/benchmark.env'),'--workload',str(RUN/'workload.jsonl'),'--report',str(RUN/'report.json'),'--label',label,'--repeats','1','--batches','1','--url','http://127.0.0.1:8082','--hourly-cost','16.10']
+ with (RUN/'runner.log').open('xb') as out:p=subprocess.Popen(argv,cwd=ROOT,stdin=subprocess.DEVNULL,stdout=out,stderr=subprocess.STDOUT)
+ doc['runner_pid']=p.pid;private_write(journal,doc);code=p.wait()
+ if {s['role']+'-'+s['name']:owned_identity(ROOT,s) for s in services}!=ids or any(sha(Path(p))!=v for p,v in configs.items()) or any(sha(ROOT/p)!=v for p,v in sources.items()):raise RuntimeError('protected_runtime_changed')
+ report=json.loads(private_read(RUN/'report.json',16*1024**2))
+ quality=evaluate(json.loads((RUN/'manifest.json').read_text()),RUN/(label+'-outputs'))
+ # The evaluator returns aggregate metadata only, never individual answers.
+ private_write(RUN/'quality.json',quality)
+ doc.update(phase='complete' if code==0 and report['passed'] else 'failed',finished_at=datetime.now(timezone.utc).isoformat(),child_returncode=code,services_and_sources_unchanged=True,report_sha256=sha(RUN/'report.json'),quality_sha256=sha(RUN/'quality.json'))
+ private_write(journal,doc);print(json.dumps({'phase':doc['phase'],'report_sha256':doc['report_sha256'],'quality_sha256':doc['quality_sha256']}),flush=True)
+if __name__=='__main__':
+ try:main()
+ except BaseException as e:print(json.dumps({'error_type':type(e).__name__}),flush=True);raise SystemExit(1) from None

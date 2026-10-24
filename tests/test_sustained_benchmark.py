@@ -173,7 +173,217 @@ async def test_upload_uncertainty_is_not_automatically_retried_on_resume(tmp_pat
         with pytest.raises(soak.SafetyError, match="uncertain"):
             await soak.submit(client, journal, item, configuration(), time.time() + 10)
     assert len(requests) == 1
+    assert journal.state["batches"]["0"]["safe_error"]["reason_code"] == "upload_resume_outcome_uncertain"
     journal.close()
+
+
+def not_forwarded(request):
+    return httpx.Response(503, headers={"X-BatchForge-Outcome": "not-forwarded",
+        "X-BatchForge-Outcome-Version": "1", "X-BatchForge-Upload-Attempt": request.headers["X-BatchForge-Upload-Attempt"]},
+        json={"error": {"code": "gateway_not_forwarded", "stage": "select_upstream", "reason": "no_ready_upstream"}})
+
+
+@pytest.mark.asyncio
+async def test_trusted_pre_forward_upload_rejection_retries_same_item_and_journals_every_attempt(tmp_path, monkeypatch):
+    journal = soak.Journal(tmp_path, configuration())
+    item = soak.make_plan(configuration(), fixture_rows())[0]
+    uploads, creates, published_files = [], [], []
+
+    async def handler(request):
+        if request.url.path == "/v1/files":
+            state = journal.state["batches"]["0"]
+            assert state["stage"] == "uploading" and state["upload_requests"] == len(uploads) + 1
+            assert state["upload_attempt"] == request.headers["X-BatchForge-Upload-Attempt"]
+            assert item["data"] in request.content
+            uploads.append(request)
+            if len(uploads) == 1:
+                return not_forwarded(request)
+            published_files.append("file-only-once")
+            return httpx.Response(200, json={"id": published_files[-1]})
+        creates.append(request)
+        return httpx.Response(200, json=batch_value())
+
+    monkeypatch.setattr(soak, "backoff_seconds", lambda *args, **kwargs: 0)
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8080", transport=httpx.MockTransport(handler)) as client:
+        await soak.submit(client, journal, item, configuration(), time.time() + 10)
+    state = journal.state["batches"]["0"]
+    assert state["upload_requests"] == 2 and state["upload_not_forwarded"] == 1
+    assert len(published_files) == len(creates) == 1 and state["file_id"] == "file-only-once"
+    assert len({request.headers["X-BatchForge-Upload-Attempt"] for request in uploads}) == 2
+    assert json.loads(creates[0].content)["input_file_id"] == "file-only-once"
+    assert state["batch_id"] == "batch-real" and "safe_error" not in state
+    report = soak.summarize(journal, [], [], 1)
+    assert report["http_rejections"]["upload_not_forwarded"] == 1 and report["failed_tasks"] == 0
+    assert b"private prompt" not in (tmp_path / "journal.jsonl").read_bytes()
+    journal.close()
+
+
+@pytest.mark.asyncio
+async def test_durable_known_not_forwarded_state_can_resume_without_replacing_identity(tmp_path, monkeypatch):
+    config = configuration()
+    journal = soak.Journal(tmp_path, config)
+    item = soak.make_plan(config, fixture_rows())[0]
+    requests = []
+
+    async def declined(request):
+        requests.append(request)
+        return not_forwarded(request)
+
+    async def interrupted(_seconds):
+        raise asyncio.CancelledError()
+
+    with monkeypatch.context() as patch:
+        patch.setattr(soak.asyncio, "sleep", interrupted)
+        async with httpx.AsyncClient(base_url="http://127.0.0.1:8080", transport=httpx.MockTransport(declined)) as client:
+            with pytest.raises(asyncio.CancelledError):
+                await soak.submit(client, journal, item, config, time.time() + 10)
+    before = dict(journal.state["batches"]["0"])
+    assert before["stage"] == "upload_not_forwarded" and not before.get("file_id")
+    journal.close()
+    resumed = soak.Journal(tmp_path, config)
+
+    async def accepted(request):
+        requests.append(request)
+        if request.url.path == "/v1/files": return httpx.Response(200, json={"id": "file-resumed"})
+        assert request.headers["Idempotency-Key"] == before["idempotency_key"]
+        return httpx.Response(200, json=batch_value())
+
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8080", transport=httpx.MockTransport(accepted)) as client:
+        await soak.submit(client, resumed, item, config, time.time() + 10)
+    assert len(requests) == 3 and resumed.state["batches"]["0"]["upload_not_forwarded"] == 1
+    resumed.close()
+
+
+@pytest.mark.asyncio
+async def test_earlier_safe_rejection_does_not_make_later_uncertain_upload_replayable(tmp_path, monkeypatch):
+    journal = soak.Journal(tmp_path, configuration())
+    item = soak.make_plan(configuration(), fixture_rows())[0]
+    requests = []
+    async def handler(request):
+        requests.append(request)
+        if len(requests) == 1: return not_forwarded(request)
+        assert journal.state["batches"]["0"]["stage"] == "uploading"
+        assert "last_upload_response" not in journal.state["batches"]["0"]
+        raise httpx.ReadTimeout("REMOTE-SECRET", request=request)
+    monkeypatch.setattr(soak, "backoff_seconds", lambda *args, **kwargs: 0)
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8080", transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(soak.SafetyError, match="uncertain"):
+            await soak.submit(client, journal, item, configuration(), time.time() + 10)
+        with pytest.raises(soak.SafetyError, match="uncertain"):
+            await soak.submit(client, journal, item, configuration(), time.time() + 10)
+    assert len(requests) == 2
+    state = journal.state["batches"]["0"]
+    assert state["upload_not_forwarded"] == 1 and state["stage"] == "uploading" and not state.get("file_id")
+    assert b"REMOTE-SECRET" not in (tmp_path / "journal.jsonl").read_bytes()
+    journal.close()
+
+
+@pytest.mark.parametrize("mutation", ["missing", "nonce", "version", "code", "stage", "reason", "origin", "duplicate", "body_duplicate", "oversize"])
+@pytest.mark.asyncio
+async def test_untrusted_gateway_proofs_fail_closed_and_cannot_reupload_on_resume(tmp_path, mutation):
+    journal = soak.Journal(tmp_path, configuration())
+    item = soak.make_plan(configuration(), fixture_rows())[0]
+    requests = []
+
+    async def handler(request):
+        requests.append(request)
+        response = not_forwarded(request)
+        body = response.json()
+        headers = dict(response.headers)
+        if mutation == "missing": headers.pop("x-batchforge-outcome")
+        elif mutation == "nonce": headers["x-batchforge-upload-attempt"] = "0" * 32
+        elif mutation == "version": headers["x-batchforge-outcome-version"] = "2"
+        elif mutation in {"code", "stage", "reason"}: body["error"][mutation] = "UNTRUSTED-REMOTE-SECRET"
+        elif mutation == "duplicate":
+            return httpx.Response(503, headers=[*headers.items(), ("X-BatchForge-Outcome", "not-forwarded")], json=body)
+        elif mutation == "body_duplicate":
+            return httpx.Response(503, headers=headers, content=b'{"error":{},"error":{"code":"gateway_not_forwarded","stage":"select_upstream","reason":"no_ready_upstream"}}')
+        elif mutation == "oversize": body["message"] = "x" * 5000
+        return httpx.Response(503, headers=headers, json=body)
+
+    origin = "http://127.0.0.1:8082" if mutation == "origin" else "http://127.0.0.1:8080"
+    async with httpx.AsyncClient(base_url=origin, transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(soak.SafetyError) as caught:
+            await soak.submit(client, journal, item, configuration(), time.time() + 10)
+        error = soak.safe_error(caught.value)
+        assert error["reason_code"] == "upload_server_outcome_uncertain" and error["http_status"] == 503 and error["stage"] == "upload"
+        with pytest.raises(soak.SafetyError, match="uncertain"):
+            await soak.submit(client, journal, item, configuration(), time.time() + 10)
+    assert len(requests) == 1 and journal.state["batches"]["0"].get("upload_not_forwarded", 0) == 0
+    assert b"UNTRUSTED-REMOTE-SECRET" not in (tmp_path / "journal.jsonl").read_bytes()
+    journal.close()
+
+
+@pytest.mark.parametrize("status,body,reason", [(503, {"error": "REMOTE-SECRET"}, "upload_server_outcome_uncertain"),
+    (413, {"error": "REMOTE-SECRET"}, "upload_http_rejected"), (200, {"id": "INVALID SECRET!"}, "upload_acknowledgement_invalid")])
+@pytest.mark.asyncio
+async def test_upload_failure_persists_status_stage_and_fixed_reason_without_remote_text(tmp_path, status, body, reason):
+    journal = soak.Journal(tmp_path, configuration())
+    item = soak.make_plan(configuration(), fixture_rows())[0]
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8080", transport=httpx.MockTransport(
+            lambda request: httpx.Response(status, json=body))) as client:
+        with pytest.raises(soak.SafetyError) as caught:
+            await soak.submit(client, journal, item, configuration(), time.time() + 10)
+    state = journal.state["batches"]["0"]
+    assert state["safe_error"] == soak.safe_error(caught.value)
+    assert state["safe_error"]["reason_code"] == reason and state["safe_error"]["http_status"] == status
+    assert state["last_upload_response"]["stage"] == "upload"
+    assert b"REMOTE-SECRET" not in (tmp_path / "journal.jsonl").read_bytes()
+    journal.close()
+
+
+@pytest.mark.asyncio
+async def test_not_forwarded_backoff_stops_at_persisted_admission_deadline(tmp_path, monkeypatch):
+    journal = soak.Journal(tmp_path, configuration())
+    item = soak.make_plan(configuration(), fixture_rows())[0]
+    clock = [1000.0]
+    requests, sleeps = [], []
+    monkeypatch.setattr(soak.time, "time", lambda: clock[0])
+    monkeypatch.setattr(soak, "backoff_seconds", lambda *args, **kwargs: 30)
+    async def sleep(delay): sleeps.append(delay); clock[0] += delay
+    monkeypatch.setattr(soak.asyncio, "sleep", sleep)
+    async def handler(request): requests.append(request); return not_forwarded(request)
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8080", transport=httpx.MockTransport(handler)) as client:
+        await soak.submit(client, journal, item, configuration(), 1000.25)
+    assert len(requests) == 1 and sleeps == [.25]
+    assert journal.state["batches"]["0"]["stage"] == "upload_not_forwarded"
+    journal.close()
+
+
+def test_safe_failure_diagnostic_never_serializes_exception_message_or_unknown_sqlstate():
+    error = soak.SafetyError("REMOTE-SECRET-MESSAGE", stage="REMOTE-SECRET", http_status="REMOTE-SECRET")
+    error.sqlstate = "REMOTE-SECRET"
+    assert soak.safe_error(error) == {"type": "SafetyError", "sqlstate": None,
+        "reason_code": "safety_check_failed", "stage": None, "http_status": None}
+
+
+@pytest.mark.asyncio
+async def test_controller_failure_event_retains_fixed_upload_reason_and_http_status(tmp_path, monkeypatch):
+    root = tmp_path / ".runtime"; root.mkdir(mode=0o700)
+    fixture = root / "input.jsonl"
+    fixture.write_bytes(soak.render(fixture_rows()[0]) + b"\n")
+    env = root / "private.env"
+    env.write_text("DATABASE_URL=unused-private-dsn\nBATCHFORGE_API_KEY=unit-test-only\n"); env.chmod(0o600)
+    args = soak.validate_args(soak.parser().parse_args(["--job-id", "failed-observer", "--env-file", str(env),
+        "--input-jsonl", str(fixture), "--model", "test-model", "--hourly-cost", "16.1", "--tasks", "1",
+        "--tasks-per-batch", "1", "--duration-seconds", "1", "--drain-seconds", "1", "--max-inflight-tasks", "1",
+        "--poll-seconds", ".1", "--state-dir", str(root / "state")]))
+    class Database:
+        def batches(self): return []
+        def sample(self): return {}
+        def close(self): pass
+    async def handler(request):
+        if request.url.path == "/metrics": return httpx.Response(200, text="vllm:num_requests_running 0\n")
+        return httpx.Response(503, json={"error": "REMOTE-SECRET-NOT-LOGGED"})
+    monkeypatch.setattr(soak.Sampler, "gpu", lambda: {"devices": []})
+    with pytest.raises(soak.SafetyError):
+        await soak.run(args, transport=httpx.MockTransport(handler), database=Database())
+    checkpoint = json.loads((root / "state/checkpoint.json").read_bytes())
+    event = checkpoint["events"][-1]
+    assert event["kind"] == "failed" and event["value"]["reason_code"] == "upload_server_outcome_uncertain"
+    assert event["value"]["http_status"] == 503 and event["value"]["stage"] == "upload"
+    assert b"REMOTE-SECRET" not in (root / "state/journal.jsonl").read_bytes()
+    assert not (root / "state/report.json").exists()
 
 
 def server_row(plan, index=0):

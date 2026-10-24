@@ -34,8 +34,51 @@ from scripts.benchmark import checked_batch, distribution
 from scripts.observe_runtime import Sampler, summarize as summarize_runtime
 
 
+SAFETY_REASONS = {
+    "Nonfinite telemetry refused": "nonfinite_telemetry",
+    "Configuration and state files must be owner-only regular files": "unsafe_private_file",
+    "State directory must be owner-only and must not be a symlink": "unsafe_state_directory",
+    "This job already has a live controller": "controller_already_running",
+    "Torn journal; preserve files for operator inspection": "journal_torn",
+    "Journal sequence mismatch": "journal_sequence_mismatch",
+    "Invalid journal; preserve files for operator inspection": "journal_invalid",
+    "Resume requires identical job, source, and immutable configuration": "resume_configuration_changed",
+    "Unknown journal event": "journal_unknown_event",
+    "Only local HTTP service endpoints are supported": "endpoint_not_local",
+    "Fixture exceeds 32 MiB bound": "fixture_size_exceeded",
+    "Fixture row count out of bounds": "fixture_row_count_invalid",
+    "Fixture must contain bounded chat tasks for the selected model": "fixture_invalid",
+    "API key is not active in the selected database": "api_key_not_active",
+    "Unexpected server batch in this job": "unexpected_server_batch",
+    "Duplicate batch or immutable workload identity mismatch": "batch_workload_identity_mismatch",
+    "Durable batch/file identity changed": "batch_file_identity_changed",
+    "Previously accepted batch missing from durable database": "accepted_batch_missing",
+    "Upload outcome uncertain; inspect journal and recover file ID before resuming": "upload_resume_outcome_uncertain",
+    "Upload outcome uncertain; no automatic re-upload": "upload_transport_outcome_uncertain",
+    "Upload server outcome uncertain; no automatic re-upload": "upload_server_outcome_uncertain",
+    "Upload rejected; remote response text withheld": "upload_http_rejected",
+    "Upload response invalid; no automatic re-upload": "upload_acknowledgement_invalid",
+    "Unconfirmed create exceeds 24-hour recovery horizon; inspect durable state": "create_recovery_horizon_exceeded",
+    "Create rejected; remote response text withheld": "create_http_rejected",
+    "Invalid create acknowledgement; resume reconciles durable metadata": "create_acknowledgement_invalid",
+    "Private environment must supply database and tenant API credentials": "credentials_missing",
+    "Engine metrics exceed bound": "engine_metrics_size_exceeded",
+    "Observation file reached 64 MiB bound": "observation_size_exceeded",
+    "Job ID must be 1-64 alphanumeric, underscore or hyphen characters": "job_id_invalid",
+    "Task, cohort, in-flight or submission bound invalid": "submission_bounds_invalid",
+    "Nonfinite or out-of-range bounded configuration": "numeric_bounds_invalid",
+    "State must be under an ignored .runtime directory": "state_not_private_runtime",
+    "Invalid metrics endpoint list": "metrics_endpoints_invalid",
+}
+
+
 class SafetyError(RuntimeError):
-    """Safe fixed diagnostic; never constructed from remote response text."""
+    """Public diagnostics are fixed codes, never arbitrary exception text."""
+    def __init__(self, message, *, stage=None, http_status=None):
+        super().__init__(message)
+        self.reason_code = SAFETY_REASONS.get(message, "safety_check_failed")
+        self.stage = stage if stage in {"upload", "create"} else None
+        self.http_status = http_status if type(http_status) is int and 100 <= http_status <= 599 else None
 
 
 def timestamp():
@@ -43,7 +86,11 @@ def timestamp():
 
 
 def safe_error(exc):
-    return {"type": type(exc).__name__, "sqlstate": getattr(exc, "sqlstate", None)}
+    sqlstate = getattr(exc, "sqlstate", None)
+    output = {"type": type(exc).__name__, "sqlstate": sqlstate if isinstance(sqlstate, str) and re.fullmatch(r"[A-Z0-9]{5}", sqlstate) else None}
+    if isinstance(exc, SafetyError):
+        output.update(reason_code=exc.reason_code, stage=exc.stage, http_status=exc.http_status)
+    return output
 
 
 def normalize(value):
@@ -336,6 +383,49 @@ def inflight_reservations(journal, plan, found, pending):
     return active, sum(plan[index]["tasks"] for index in outside_snapshot)
 
 
+def trusted_upload_not_forwarded(response, attempt):
+    """Only the bound loopback edge can prove it never sent this request.
+
+    The released gateway strips these reserved headers from every upstream
+    response. A generic 503, transport exception or unknown nonce is ambiguous.
+    """
+    if (response.request.url != httpx.URL("http://127.0.0.1:8080/v1/files")
+            or response.request.method != "POST" or response.status_code != 503
+            or not re.fullmatch(r"[0-9a-f]{32}", attempt)
+            or response.request.headers.get_list("X-BatchForge-Upload-Attempt") != [attempt]
+            or response.headers.get_list("X-BatchForge-Outcome") != ["not-forwarded"]
+            or response.headers.get_list("X-BatchForge-Outcome-Version") != ["1"]
+            or response.headers.get_list("X-BatchForge-Upload-Attempt") != [attempt]
+            or len(response.content) > 4096):
+        return False
+    try:
+        def unique(pairs):
+            value = {}
+            for key, item in pairs:
+                if key in value:
+                    raise ValueError()
+                value[key] = item
+            return value
+        def nonfinite(_):
+            raise ValueError()
+        value = json.loads(response.content.decode("utf-8"), object_pairs_hook=unique, parse_constant=nonfinite)
+        error = value.get("error", {}) if isinstance(value, dict) else {}
+        return (isinstance(error, dict) and error.get("code") == "gateway_not_forwarded"
+                and error.get("stage") == "select_upstream" and error.get("reason") == "no_ready_upstream")
+    except (ValueError, UnicodeError, RecursionError):
+        return False
+
+
+def submission_failure(journal, index, state, message, *, stage, http_status=None):
+    error = SafetyError(message, stage=stage, http_status=http_status)
+    state["safe_error"] = safe_error(error)
+    if http_status is not None:
+        state["last_" + stage + "_response"] = {"http_status": http_status, "stage": stage,
+            "reason_code": error.reason_code, "request_number": state.get(stage + "_requests", 0)}
+    journal.commit("batch", index=index, value=dict(state))
+    return error
+
+
 async def submit(client, journal, item, configuration, admission_deadline):
     index = item["index"]
     existing = dict(journal.state["batches"].get(str(index), {}))
@@ -343,7 +433,8 @@ async def submit(client, journal, item, configuration, admission_deadline):
     if state.get("batch_id"):
         return
     if state["stage"] == "uploading":
-        raise SafetyError("Upload outcome uncertain; inspect journal and recover file ID before resuming")
+        raise submission_failure(journal, index, state,
+            "Upload outcome uncertain; inspect journal and recover file ID before resuming", stage="upload")
     state.setdefault("first_submission_epoch", time.time())
     key_hash = hashlib.sha256(f"{configuration['job_id']}:{index}:{item['input_sha256']}".encode()).hexdigest()[:32]
     state.setdefault("idempotency_key", f"bf1.{int(journal.state['started_epoch']):010d}.{key_hash}")
@@ -351,31 +442,49 @@ async def submit(client, journal, item, configuration, admission_deadline):
     if not state.get("file_id"):
         while time.time() < admission_deadline:
             state["stage"] = "uploading"
+            state["upload_requests"] = state.get("upload_requests", 0) + 1
+            attempt = state["upload_attempt"] = secrets.token_hex(16)
+            state.pop("last_upload_response", None)
             journal.commit("batch", index=index, value=dict(state))
             try:
                 response = await client.post("/v1/files", data={"purpose": "batch"}, files={"file":
-                    (f"{configuration['job_id']}-{index:06d}.jsonl", item["data"], "application/jsonl")})
+                    (f"{configuration['job_id']}-{index:06d}.jsonl", item["data"], "application/jsonl")},
+                    headers={"X-BatchForge-Upload-Attempt": attempt})
             except httpx.HTTPError as exc:
-                state["safe_error"] = safe_error(exc)
+                state["upload_transport_error"] = safe_error(exc)
+                raise submission_failure(journal, index, state,
+                    "Upload outcome uncertain; no automatic re-upload", stage="upload") from None
+            state["last_upload_response"] = {"http_status": response.status_code, "stage": "upload",
+                "reason_code": "upload_http_response", "request_number": state["upload_requests"]}
+            if trusted_upload_not_forwarded(response, attempt):
+                state["stage"] = "upload_not_forwarded"
+                state["upload_not_forwarded"] = state.get("upload_not_forwarded", 0) + 1
+                state["last_upload_response"]["reason_code"] = "gateway_not_forwarded"
                 journal.commit("batch", index=index, value=dict(state))
-                raise SafetyError("Upload outcome uncertain; no automatic re-upload") from None
+                await asyncio.sleep(min(max(0, admission_deadline - time.time()), backoff_seconds(
+                    state["upload_requests"], configuration["seed"] + index, retry_after=response.headers.get("Retry-After"))))
+                continue
             if response.status_code == 429:
                 state["stage"] = "upload_rejected"
                 state["upload_429"] = state.get("upload_429", 0) + 1
+                state["last_upload_response"]["reason_code"] = "upload_rate_limited"
                 journal.commit("batch", index=index, value=dict(state))
                 await asyncio.sleep(backoff_seconds(state["upload_429"], configuration["seed"] + index,
                                                    retry_after=response.headers.get("Retry-After")))
                 continue
             if response.status_code >= 500:
-                raise SafetyError("Upload server outcome uncertain; no automatic re-upload")
+                raise submission_failure(journal, index, state,
+                    "Upload server outcome uncertain; no automatic re-upload", stage="upload", http_status=response.status_code)
             if not 200 <= response.status_code < 300:
-                raise SafetyError("Upload rejected; remote response text withheld")
+                raise submission_failure(journal, index, state,
+                    "Upload rejected; remote response text withheld", stage="upload", http_status=response.status_code)
             try:
                 file_id = response.json()["id"]
                 if not isinstance(file_id, str) or not re.fullmatch(r"[a-zA-Z0-9_-]{1,100}", file_id):
                     raise ValueError()
             except (ValueError, KeyError, TypeError):
-                raise SafetyError("Upload response invalid; no automatic re-upload") from None
+                raise submission_failure(journal, index, state,
+                    "Upload response invalid; no automatic re-upload", stage="upload", http_status=response.status_code) from None
             state.update(file_id=file_id, stage="uploaded")
             journal.commit("batch", index=index, value=dict(state))
             break
@@ -383,7 +492,8 @@ async def submit(client, journal, item, configuration, admission_deadline):
         return
     key = state["idempotency_key"]
     if time.time() - journal.state["started_epoch"] >= 86400:
-        raise SafetyError("Unconfirmed create exceeds 24-hour recovery horizon; inspect durable state")
+        raise submission_failure(journal, index, state,
+            "Unconfirmed create exceeds 24-hour recovery horizon; inspect durable state", stage="create")
     while time.time() < admission_deadline:
         state["stage"] = "creating"
         state["create_requests"] = state.get("create_requests", 0) + 1
@@ -394,7 +504,8 @@ async def submit(client, journal, item, configuration, admission_deadline):
         try:
             response = await client.post("/v1/batches", json=body, headers={"Idempotency-Key": key})
         except httpx.HTTPError as exc:
-            state["safe_error"] = safe_error(exc)
+            state["safe_error"] = {**safe_error(exc), "reason_code": "create_transport_outcome_uncertain",
+                "stage": "create", "http_status": None}
             state["uncertain_create_responses"] = state.get("uncertain_create_responses", 0) + 1
             journal.commit("batch", index=index, value=dict(state))
             await asyncio.sleep(backoff_seconds(state["create_requests"], configuration["seed"] + index))
@@ -402,16 +513,21 @@ async def submit(client, journal, item, configuration, admission_deadline):
         if response.status_code == 429 or response.status_code >= 500:
             field = "create_429" if response.status_code == 429 else "uncertain_create_responses"
             state[field] = state.get(field, 0) + 1
+            state["last_create_response"] = {"http_status": response.status_code, "stage": "create",
+                "reason_code": "create_rate_limited" if response.status_code == 429 else "create_server_outcome_uncertain",
+                "request_number": state["create_requests"]}
             journal.commit("batch", index=index, value=dict(state))
             await asyncio.sleep(backoff_seconds(state["create_requests"], configuration["seed"] + index,
                                                retry_after=response.headers.get("Retry-After")))
             continue
         if not 200 <= response.status_code < 300:
-            raise SafetyError("Create rejected; remote response text withheld")
+            raise submission_failure(journal, index, state,
+                "Create rejected; remote response text withheld", stage="create", http_status=response.status_code)
         try:
             batch = checked_batch(response.json())
         except (ValueError, KeyError, TypeError):
-            raise SafetyError("Invalid create acknowledgement; resume reconciles durable metadata") from None
+            raise submission_failure(journal, index, state,
+                "Invalid create acknowledgement; resume reconciles durable metadata", stage="create", http_status=response.status_code) from None
         state.update(batch_id=batch["id"], status=batch["status"], stage="accepted", acknowledged_at=timestamp())
         journal.commit("batch", index=index, value=dict(state))
         return
@@ -494,7 +610,8 @@ def summarize(journal, tasks, observations, elapsed, runtime_apis=None, plan=Non
         "cost": {"assumed_whole_pod_usd_per_hour": config["hourly_cost"], "allocation_usd": allocation,
                  "usd_per_million_completed_tasks": allocation / len(completed) * 1e6 if completed else None,
                  "basis": "operator supplied whole-Pod allocation; includes idle, backoff, drain, validation and disconnect wall time; not invoice or marginal cost"},
-        "http_rejections": {field: sum(row.get(field, 0) for row in states) for field in ("upload_429", "create_429", "uncertain_create_responses")},
+        "http_rejections": {field: sum(row.get(field, 0) for row in states) for field in
+            ("upload_429", "upload_not_forwarded", "create_429", "uncertain_create_responses")},
         "gpu_utilization_percent": {key: distribution(values) for key, values in sorted(gpu.items())},
         "observation_samples": len(observations), "observation_errors": sum("error" in sample for sample in observations),
         "sampling_coverage": {"first_sample_at": observations[0]["at"] if observations else None,

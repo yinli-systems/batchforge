@@ -19,6 +19,22 @@ from ops.manage import process_identity
 from backend.validation import validate_usage
 
 
+@pytest.mark.parametrize("flag", ["true", "1"])
+def test_adaptive_reduced_capacity_restores_claim_slots_and_block_rounds_budget(flag):
+    raw = ("ENGINE_MAX_MODEL_LEN=18440\nWORKER_MAX_INFLIGHT=64\n"
+           "WORKER_TOKEN_BUDGET=298384\nWORKER_ADAPTIVE_KV_ENABLED=" + flag + "\n").encode()
+    reduced, original = reduced_worker_env(raw, 2)
+    assert original == 64  # Full-context static division would incorrectly say16.
+    assert b"WORKER_MAX_INFLIGHT=2\n" in reduced
+    assert b"WORKER_TOKEN_BUDGET=36896\n" in reduced
+    assert ("WORKER_ADAPTIVE_KV_ENABLED=" + flag).encode() in reduced
+
+
+def test_reduced_capacity_rejects_unknown_adaptive_mode():
+    with pytest.raises(ProbeFailure, match="invalid_adaptive_capacity_flag"):
+        reduced_worker_env(b"WORKER_ADAPTIVE_KV_ENABLED=maybe\n", 2)
+
+
 class Clock:
     value = 0.0
 
@@ -37,6 +53,10 @@ class Controller:
         self.events, self.capacity, self.next_pid = [], 64, 100
         self.restarts, self.partial_start_error, self.stop_error = 0, False, False
         self.drained = False
+        self.engine_idle_at = 0
+        self.quiescence_errors = []
+        self.adaptive_startup_requires_idle = False
+        self.worker_start_times = []
 
     def key(self, row):
         return row["role"] + "-" + row["name"]
@@ -45,7 +65,15 @@ class Controller:
         return self.records.get(self.key(row))
 
     def responding(self, row, ready=False):
+        if ready and row['role']=='worker' and self.adaptive_startup_requires_idle:
+            return self.record(row) is not None and self.clock()>=self.engine_idle_at
         return self.record(row) is not None
+
+    def engine_quiescence(self, row):
+        assert row['role']=='engine'
+        if self.quiescence_errors:
+            return {'quiescent':False,'error':self.quiescence_errors.pop(0)}
+        return {'quiescent':self.clock()>=self.engine_idle_at,'error':None}
 
     def invoke(self, row, action):
         name = self.key(row)
@@ -59,6 +87,7 @@ class Controller:
             self.next_pid += 1
             self.records[name] = {"pid": self.next_pid, "start_ticks": str(self.next_pid * 10), "cwd": "/owned-app"}
             if row["role"] == "worker":
+                self.worker_start_times.append(self.clock())
                 self.restarts += 1
                 self.capacity = 2 if "singlepod-fault-" in row["env_file"] else 64
                 if self.partial_start_error and self.capacity == 2:
@@ -157,12 +186,14 @@ class Progress:
         return {"id": tid, "status": "completed", "accepted_count": 1, "prompt_tokens": 128, "completion_tokens": 64}
 
 
-def setup(tmp_path, **extra):
+def setup(tmp_path, adaptive=False, **extra):
     root = tmp_path.resolve()
     manifest = root / "services.json"
     manifest.write_text('{"services":[]}')
     worker_env, watch_env = root / "worker.env", root / "watch.env"
     worker_env.write_text("WORKER_ID=owned-worker\nENGINE_MAX_MODEL_LEN=18440\nWORKER_MAX_INFLIGHT=64\nWORKER_TOKEN_BUDGET=1180160\nBATCHFORGE_WORKER_TOKEN='private-worker-token'\n")
+    if adaptive:
+        worker_env.write_text(worker_env.read_text().replace("WORKER_TOKEN_BUDGET=1180160", "WORKER_TOKEN_BUDGET=298384")+"WORKER_ADAPTIVE_KV_ENABLED=true\n")
     watch_env.write_text("SUPERVISOR_MANIFEST=" + str(manifest) + "\n")
     for path in (manifest, worker_env, watch_env):
         path.chmod(0o600)
@@ -172,6 +203,8 @@ def setup(tmp_path, **extra):
                                          ("worker", "inference", 9105)]]
     supervisor = {"role": "supervisor", "name": "primary", "env_file": str(watch_env), "python": sys.executable}
     controller, clock = Controller(services, supervisor), Clock()
+    controller.clock = clock
+    controller.adaptive_startup_requires_idle = adaptive
     progress = Progress(clock, controller)
     probe = SinglePodProbe(services=services, worker=services[-1], engine=services[-2], api=services[0],
         supervisor=supervisor, manifest=manifest, original=manifest.read_bytes(), progress=progress,
@@ -368,3 +401,75 @@ while True: time.sleep(.05)
         if ignoring.poll() is None:
             ignoring.kill()
         ignoring.wait(timeout=5)
+
+
+def test_adaptive_probe_waits_for_engine_idle_and_retries_metrics_before_any_worker_restart(tmp_path):
+    probe,_,controller=setup(tmp_path,adaptive=True,engine_quiescence_timeout=10)
+    controller.engine_idle_at=4
+    controller.quiescence_errors=['metrics_http_error','metrics_unavailable']
+    result=probe.run()
+    assert result['status']=='passed' and not result.get('final_restore_failed')
+    gate=result['engine_quiescence_gates'][0]
+    assert gate['status']=='passed' and gate['wait_seconds']>=3
+    assert gate['errors']=={'metrics_http_error':1,'metrics_unavailable':1}
+    assert gate['busy_observations']>0 and gate['observations'][-1]['quiescent'] is True
+    assert controller.worker_start_times and min(controller.worker_start_times)>=controller.engine_idle_at
+    assert result['original_configured_slots']==result['restored_server_capacity']==64
+    assert result['adaptive_engine_startup_requires_quiescence']
+    assert not any(name.startswith(('api-','engine-','gateway-')) for name,_ in controller.events)
+
+
+@pytest.mark.parametrize('eventual_idle',[20,1000])
+def test_adaptive_quiescence_timeout_reports_failed_probe_and_honest_restore_state(tmp_path,eventual_idle):
+    probe,_,controller=setup(tmp_path,adaptive=True,engine_quiescence_timeout=10)
+    controller.engine_idle_at=eventual_idle
+    result=probe.run()
+    assert result['status']=='failed'
+    assert result['error']=='adaptive_engine_not_quiescent_before_worker_restart'
+    gate=result['engine_quiescence_gates'][0]
+    assert gate['status']=='failed' and gate['wait_seconds']>=10
+    # The reduced configuration never starts. Finally may start the original
+    # worker, whose own admission fence still requires an idle engine.
+    assert not result.get('restarted_worker_pid')
+    assert result.get('final_restore_failed',False)==(eventual_idle==1000)
+    assert controller.capacity==64 and controller.record(probe.supervisor)
+    assert not any(name.startswith(('api-','engine-','gateway-')) for name,_ in controller.events)
+
+
+@pytest.mark.parametrize('payload,expected',[
+    (b'vllm:num_requests_running{model_name="qwen"} 0\nvllm:num_requests_waiting 0\n',True),
+    (b'vllm:num_requests_running 1\nvllm:num_requests_waiting 0\n',False),
+    (b'vllm:num_requests_running 0\n',False),
+    (b'vllm:num_requests_running NaN\nvllm:num_requests_waiting 0\n',False)])
+def test_private_engine_quiescence_get_uses_same_fail_closed_worker_protocol(payload,expected):
+    calls=[]
+    class Response(BytesIO):status=200
+    class Opener:
+        def open(self,url,timeout):calls.append((url,timeout));return Response(payload)
+    controller=WorkerController();controller.http=Opener()
+    result=controller.engine_quiescence({'role':'engine','port':8300})
+    assert result=={'quiescent':expected,'error':None}
+    assert calls==[('http://127.0.0.1:8300/metrics',3)]
+
+
+def test_private_engine_quiescence_transient_http_error_is_not_idle():
+    class Opener:
+        def open(self,url,timeout):raise HTTPError(url,503,'Unavailable',{},BytesIO(b'private diagnostics never recorded'))
+    controller=WorkerController();controller.http=Opener()
+    assert controller.engine_quiescence({'role':'engine','port':8300})=={
+        'quiescent':False,'error':'metrics_http_error','http_status':503}
+
+
+@pytest.mark.parametrize('timeout',[9,901])
+def test_adaptive_quiescence_timeout_bounds_are_checked_before_fault(tmp_path,timeout):
+    with pytest.raises(ProbeFailure,match='invalid_engine_quiescence_timeout'):
+        setup(tmp_path,adaptive=True,engine_quiescence_timeout=timeout)
+
+
+@pytest.mark.parametrize('payload,error',[(b'x'*(2*1024*1024+1),'metrics_too_large'),(b'\xff','metrics_invalid_utf8')])
+def test_private_engine_quiescence_rejects_oversized_or_undecodable_metrics(payload,error):
+    class Response(BytesIO):status=200
+    class Opener:
+        def open(self,url,timeout):return Response(payload)
+    controller=WorkerController();controller.http=Opener()
+    assert controller.engine_quiescence({'role':'engine','port':8300})=={'quiescent':False,'error':error}

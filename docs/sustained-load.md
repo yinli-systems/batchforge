@@ -75,6 +75,37 @@ file-ID journaling has an uncertain non-idempotent outcome. That condition
 fails closed and preserves the journal for operator inspection; it never
 blindly uploads another copy. A confirmed 429 upload rejection can be retried.
 
+There is one narrower additional safe retry: the released loopback gateway at
+exactly `http://127.0.0.1:8080` can prove it rejected an upload **before selecting
+or sending to any upstream**. Before every attempt the runner fsyncs a fresh
+32-hex upload nonce and request count, then sends the nonce in
+`X-BatchForge-Upload-Attempt`. It retries only a 503 with all of:
+
+- `X-BatchForge-Outcome: not-forwarded`;
+- `X-BatchForge-Outcome-Version: 1`;
+- exactly one `X-BatchForge-Upload-Attempt` matching that journaled nonce;
+- JSON error code `gateway_not_forwarded`, stage `select_upstream`, and reason
+  `no_ready_upstream`.
+
+The gateway emits this proof only for an empty ready-upstream set before any
+send, and strips these reserved proof headers from every forwarded response.
+Direct API origins, missing/duplicate proof fields, a different nonce/version,
+upstream 503s, and transport failures do not establish non-forwarding. A timeout
+or crash while `stage=uploading` still refuses automatic replay on resume,
+including when an earlier attempt had a valid non-forwarding proof. A received
+and durably recorded `upload_not_forwarded` stage can resume; each retry keeps
+the same item, filename and eventual batch idempotency key. Its backoff is
+bounded by the original persisted admission deadline.
+
+`http_rejections.upload_not_forwarded` counts these proven routing rejections
+separately from upload/create 429s and uncertain creates. Private journal events
+and CLI failure metadata include an allowlisted reason code, stage and HTTP
+status when available. Server bodies and arbitrary exception text are never
+copied into diagnostics. A failed upload observer does not cancel accepted
+tasks or turn them into failed tasks. Preserve that failed experiment; source
+changes require fresh matched comparison runs rather than relabeling it as a
+completed 30-minute candidate.
+
 `max-inflight-tasks` counts accepted pending/running work plus local submissions
 not yet observed in the database. The separate submission-concurrency bound
 also covers creates waiting in backoff. Arrival times are cohort release times,
@@ -92,7 +123,7 @@ files do not prevent recovery; each atomic update uses a new exclusive name.
 
 All state is under ignored `.runtime`, with a 0700 directory and 0600 files.
 The runner records metadata, IDs, hashes, token counts, status counts and safe
-error types only. It writes neither original prompts nor response text, and
+error types, fixed reason codes and bounded HTTP status metadata only. It writes neither original prompts nor response text, and
 never prints remote diagnostics, database connection strings, or tokens.
 Raw fixtures remain private and are not copied into reports. Preserve the
 journal, observations, checkpoint and versioned reports after a failure.
@@ -137,6 +168,9 @@ balanced deterministic plans, actual output-length verification, HTTP 429 and
 ambiguous-create replay identity, uncertain-upload refusal, durable journal
 replay/locking, torn journal preservation, stale checkpoint recovery,
 credential-safe telemetry, latency decomposition and missing-sample accounting.
+Proof tests cover the bound gateway origin, exact nonce/version/error shape,
+duplicates and unknown proofs, durable safe-rejection recovery, interruption
+with an uncertain current attempt, and the persisted admission deadline.
 An additional real PostgreSQL test creates a disposable schema10 database,
 executes all observer queries and verifies the connection refuses writes.
 

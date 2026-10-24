@@ -234,8 +234,8 @@ def test_bundle_is_exact_regular_hashed_and_never_extracts_unknown_paths(tmp_pat
         with pytest.raises(ValueError): deploy.archive_sources(path, sha)
 
 
-@pytest.fixture
-def proof_spec(tmp_path):
+def synthetic_proof_spec(tmp_path):
+    """Self-contained validator metadata; never a deployed production proof."""
     snapshot = tmp_path/'same-pod.dump'
     atomic_bytes(snapshot, b'fixture PostgreSQL archive')
     sha, size = deploy.digest(snapshot.read_bytes()), snapshot.stat().st_size
@@ -248,7 +248,23 @@ def proof_spec(tmp_path):
             'snapshot_sha256': sha, 'snapshot_bytes': size, 'live_database_modified': False,
             'temporary_cluster_stopped': True, 'temporary_cluster_removed': True,
             'migration_checksums': {str(n): checksum for n, _, checksum in MIGRATIONS if n <= 10}, **zero},
-        'production': json.loads((ROOT/'ops/reports/primary-qwen235b-final-answer20-automatic-archive-2026-10-24.json').read_bytes())}
+        'production': {
+            'synthetic_test_fixture': True,
+            'phase': 'passed',
+            'checks': {name: True for name in (
+                'cohort_completed', 'accepted_once', 'accepted_usage_matches',
+                'archive_published', 'archive_checksum_verified', 'payloads_cleared',
+                'api_a_download_verified', 'api_b_download_verified',
+                'gateway_download_verified', 'downloads_byte_identical')},
+            'after': {'batch': {'total_count': 20, 'completed_count': 20,
+                                'output_file_id': 'synthetic-qa20-output'},
+                      'tasks': {'payload_cleared': 20}},
+            'original_output_sha256': deploy.digest(b'synthetic archived QA20 output fixture'),
+            'original_output_bytes': len(b'synthetic archived QA20 output fixture'),
+            'downloads': [{'port': port,
+                           'sha256': deploy.digest(b'synthetic archived QA20 output fixture'),
+                           'bytes': len(b'synthetic archived QA20 output fixture'),
+                           'byte_identical': True} for port in (8080, 8082, 8083)]}}
     spec = {}
     def write():
         for name, record in records.items():
@@ -259,7 +275,24 @@ def proof_spec(tmp_path):
     return records, write, snapshot
 
 
+@pytest.fixture
+def proof_spec(tmp_path):
+    return synthetic_proof_spec(tmp_path)
+
+
 def actual_migrations(): return [(n, statement.encode()) for n, statement, _ in MIGRATIONS]
+
+
+def test_proof_fixture_is_self_contained_in_code_only_checkout(tmp_path, monkeypatch):
+    code_only = tmp_path/'code-only'
+    code_only.mkdir()
+    monkeypatch.setitem(globals(), 'ROOT', code_only)
+    records, write, snapshot = synthetic_proof_spec(tmp_path)
+    assert not (code_only/'ops/reports').exists()
+    assert records['production']['synthetic_test_fixture'] is True
+    result = deploy.proofs(write(), actual_migrations())
+    assert result['output_file_id'] == 'synthetic-qa20-output'
+    assert result['output_sha256'] == records['production']['original_output_sha256']
 
 
 def test_fresh_same_pod_backup_and_actual_restore_do_not_require_or_claim_export(proof_spec):

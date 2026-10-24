@@ -20,7 +20,7 @@ import select
 import sys
 import threading
 import time
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -30,9 +30,30 @@ from ops import manage
 from ops.ha.controlplane_outage_probe import ProbeFailure, require, timestamp
 from ops.ha.engine_outage_probe import EngineController, EngineProgress, selected_pair
 from ops.supervise import ConfigError, load_manifest, private_read, private_write
+from worker.kv_admission import engine_quiescent
 
 
 class WorkerController(EngineController):
+    def engine_quiescence(self, service):
+        require(service.get('role')=='engine' and type(service.get('port')) is int
+                and 1<=service['port']<=65535, 'invalid_private_engine_metrics_target')
+        try:
+            with self.http.open(f"http://127.0.0.1:{service['port']}/metrics", timeout=3) as response:
+                if response.status!=200:
+                    return {'quiescent':False,'error':'metrics_http_error','http_status':response.status}
+                raw=response.read(2*1024*1024+1)
+            if len(raw)>2*1024*1024:
+                return {'quiescent':False,'error':'metrics_too_large'}
+            try:metrics=raw.decode('utf-8')
+            except UnicodeDecodeError:return {'quiescent':False,'error':'metrics_invalid_utf8'}
+            return {'quiescent':engine_quiescent(metrics),'error':None}
+        except HTTPError as error:
+            code=error.code
+            error.close()
+            return {'quiescent':False,'error':'metrics_http_error','http_status':code}
+        except (URLError, TimeoutError, OSError):
+            return {'quiescent':False,'error':'metrics_unavailable'}
+
     def graceful_stop(self, service, expected, grace, check):
         # Share manage.py's exact service lock. A PID cannot be replaced by a
         # concurrent managed start between validation and the TERM operation.
@@ -124,7 +145,7 @@ class WorkerProgress(EngineProgress):
         return self.connection.execute("SELECT t.id,t.status,t.worker_id,t.attempts,t.prompt_tokens,t.completion_tokens,md5(t.response::text) AS response_digest,(SELECT count(*) FROM attempts a WHERE a.task_id=t.id AND a.status='completed') AS accepted_count FROM tasks t WHERE t.id=%s", (tid,)).fetchone()
 
 
-def reduced_worker_env(content, capacity):
+def worker_env_values(content):
     values = {}
     for line in content.decode().splitlines():
         text = line.strip()
@@ -133,11 +154,31 @@ def reduced_worker_env(content, capacity):
         key, separator, value = text.partition("=")
         if separator:
             values[key] = " ".join(shlex.split(value, comments=True))
+    return values
+
+
+def worker_adaptive_enabled(content):
+    flag=worker_env_values(content).get("WORKER_ADAPTIVE_KV_ENABLED", "false").lower()
+    require(flag in {"true", "false", "1", "0"}, "invalid_adaptive_capacity_flag")
+    return flag in {"true", "1"}
+
+
+def reduced_worker_env(content, capacity):
+    values=worker_env_values(content)
     maximum = int(values.get("ENGINE_MAX_MODEL_LEN", "2048"))
     require(maximum > 0, "invalid_worker_context")
-    original = min(int(values.get("WORKER_MAX_INFLIGHT", "8")), int(values.get("WORKER_TOKEN_BUDGET", "16384")) // maximum)
+    adaptive = values.get("WORKER_ADAPTIVE_KV_ENABLED", "false").lower()
+    require(adaptive in {"true", "false", "1", "0"}, "invalid_adaptive_capacity_flag")
+    inflight = int(values.get("WORKER_MAX_INFLIGHT", "8"))
+    token_budget = int(values.get("WORKER_TOKEN_BUDGET", "16384"))
+    # Match worker.config.Settings.slots: adaptive admission advertises claim
+    # slots separately from its exact-token KV budget. Dividing that budget by
+    # full context would incorrectly restore the released64 worker as16 slots.
+    original = inflight if adaptive in {"true", "1"} else min(inflight, token_budget // maximum)
     require(1 <= capacity < original and maximum > 0, "reduced_capacity_must_be_below_original_slots")
-    changes = {"WORKER_MAX_INFLIGHT": str(capacity), "WORKER_TOKEN_BUDGET": str(capacity * maximum)}
+    reserved_context = ((maximum + 15) // 16) * 16 if adaptive in {"true", "1"} else maximum
+    require(token_budget >= reserved_context, "original_budget_cannot_fit_context")
+    changes = {"WORKER_MAX_INFLIGHT": str(capacity), "WORKER_TOKEN_BUDGET": str(capacity * reserved_context)}
     lines = []
     for line in content.decode().splitlines():
         key = line.strip().removeprefix("export ").partition("=")[0]
@@ -150,7 +191,7 @@ def reduced_worker_env(content, capacity):
 class SinglePodProbe:
     def __init__(self, *, services, worker, engine, api, supervisor, manifest, original,
                  progress, controller, token, expected, minimum_running=8, capacity=2,
-                 expiry_timeout=240, terminal_timeout=1800, drain_seconds=180, stop=None, clock=time.monotonic,
+                 expiry_timeout=240, terminal_timeout=1800, drain_seconds=180, engine_quiescence_timeout=600, stop=None, clock=time.monotonic,
                  sleep=time.sleep):
         self.services, self.worker, self.engine, self.api, self.supervisor = services, worker, engine, api, supervisor
         self.manifest, self.original, self.progress, self.controller = manifest, original, progress, controller
@@ -160,17 +201,23 @@ class SinglePodProbe:
         self.stop, self.clock, self.sleep = stop or threading.Event(), clock, sleep
         self.protected = [row for row in services if row != worker]
         self.worker_bytes = private_read(Path(worker["env_file"]))
+        self.adaptive_kv=worker_adaptive_enabled(self.worker_bytes)
+        self.engine_quiescence_timeout=engine_quiescence_timeout
+        if self.adaptive_kv:
+            require(type(engine_quiescence_timeout) is int and 10<=engine_quiescence_timeout<=900, "invalid_engine_quiescence_timeout")
         self.watch_hash = hashlib.sha256(private_read(Path(supervisor["env_file"]))).hexdigest()
         self.reduced, self.reduced_record, self.restored_record = None, None, None
         self.report = {"schema_version": 1, "status": "running", "started_at": timestamp(),
             "run_id": progress.run_id, "model": progress.model, "expected_tasks": expected,
             "scope": "One exact application worker SIGKILL; inference engine/API/database remain alive",
             "samples": [], "http_poll_errors": {}, "restore_attempts": [],
+            "adaptive_engine_startup_requires_quiescence": self.adaptive_kv, "engine_quiescence_gates": [],
             "measurement_bounds": ["Real workload is submitted by the separately identified existing benchmark",
                 "No GPU reset, engine stop, whole-Pod failure or database failover",
                 "Expired tokens stay only in RAM; final report contains task IDs and accepted usage only",
                 "API recovery is observed periodically; sampled deltas do not establish per-call SQL budgets",
                 "Inference may execute more than once; accepted results and usage must remain unique",
+                "Recovered pending leases do not prove the still-live engine has released orphaned inference/KV",
                 "Capacity2 uses a temporary worker-only config; original engine/KV settings stay unchanged"]}
 
     def wait(self, predicate, timeout, reason, *, interruptible=True):
@@ -194,6 +241,29 @@ class SinglePodProbe:
                 errors = self.report["http_poll_errors"]
                 errors[name] = errors.get(name, 0) + 1
                 raise ProbeFailure("unreleased_service_not_ready")
+
+    def await_engine_quiescence(self, phase="before_worker_restart"):
+        if not self.adaptive_kv:return
+        began=self.clock()
+        gate={'phase':phase,'started_at':timestamp(),'timeout_seconds':self.engine_quiescence_timeout,
+              'status':'waiting','observations':[],'errors':{},'busy_observations':0}
+        self.report['engine_quiescence_gates'].append(gate)
+        passed=False
+        def idle():
+            require(not self.stop.is_set(), 'interrupted')
+            self.preserve()
+            value=self.controller.engine_quiescence(self.engine)
+            gate['observations'].append({'at':timestamp(),**value})
+            if value.get('error'):
+                error=value['error'];gate['errors'][error]=gate['errors'].get(error,0)+1
+            elif not value['quiescent']:
+                gate['busy_observations']+=1
+            return value['quiescent']
+        try:
+            self.wait(idle,self.engine_quiescence_timeout,'adaptive_engine_not_quiescent_before_worker_restart')
+            passed=True
+        finally:
+            gate.update(status='passed' if passed else 'failed',finished_at=timestamp(),wait_seconds=self.clock()-began)
 
     def restore(self):
         errors = []
@@ -300,6 +370,7 @@ class SinglePodProbe:
                 selected = self.reduced
                 self.report.update(original_configured_slots=original_slots, reduced_configured_slots=self.capacity,
                                    reduced_worker_env_sha256=hashlib.sha256(data).hexdigest())
+            self.await_engine_quiescence("after_lease_recovery_before_worker_restart")
             try:
                 self.controller.invoke(selected, "start")
             finally:
@@ -403,6 +474,7 @@ def main():
     parser.add_argument("--expiry-timeout", type=int, default=240)
     parser.add_argument("--terminal-timeout", type=int, default=1800)
     parser.add_argument("--drain-seconds", type=int, default=180)
+    parser.add_argument("--engine-quiescence-timeout", type=int, default=600)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
@@ -432,6 +504,8 @@ def main():
         wid = worker_env.get("WORKER_ID", "")
         require(bool(wid), "worker_id_missing")
         require(worker_env.get("INFERENCE_BASE_URLS") == f"http://127.0.0.1:{engine['port']}", "worker_must_use_released_local_engine_only")
+        if worker_adaptive_enabled(private_read(Path(worker["env_file"]))):
+            require(10<=args.engine_quiescence_timeout<=900,"invalid_engine_quiescence_timeout")
         if args.reduced_capacity:
             reduced_worker_env(private_read(Path(worker["env_file"])), args.reduced_capacity)
         supervisor = {"role": "supervisor", "name": args.supervisor_name, "env_file": str(args.supervisor_env), "python": apis[0]["python"]}
@@ -461,7 +535,7 @@ def main():
                     manifest=manifest, original=original, progress=progress, controller=WorkerController(),
                     token=env["BATCHFORGE_WORKER_TOKEN"], expected=args.expected_tasks, minimum_running=args.minimum_running,
                     capacity=args.reduced_capacity, expiry_timeout=args.expiry_timeout, terminal_timeout=args.terminal_timeout,
-                    drain_seconds=args.drain_seconds, stop=stop).run()
+                    drain_seconds=args.drain_seconds, engine_quiescence_timeout=args.engine_quiescence_timeout, stop=stop).run()
                 report["executed_source_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
                 report["dependency_sha256"] = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in
                     ("ops/ha/engine_outage_probe.py", "ops/ha/controlplane_outage_probe.py", "ops/manage.py", "ops/supervise.py")}

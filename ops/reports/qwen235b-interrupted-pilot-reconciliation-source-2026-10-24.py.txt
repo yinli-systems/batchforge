@@ -1,0 +1,44 @@
+from pathlib import Path
+import os,json,hashlib,httpx,psycopg
+from psycopg.rows import dict_row
+from ops.supervise import private_read,private_write,load_manifest
+from ops.ha.finalize_api_policy import values
+from ops.ha.set_scheduler_policy import owned_identity
+from scripts.sustained_benchmark import load_fixture,make_plan
+from scripts.audit_response_reservation import audit,unique_object,reject_number
+ROOT=Path('/root/batchforge-runtime/app');RUN=ROOT/'.runtime/sustained/qwen235b-soak30m-response64k-v1';OUT=RUN/'interrupted-reconciliation'
+os.umask(0o077)
+if OUT.exists():raise RuntimeError('existing_pilot_reconciliation_no_overwrite')
+j=json.loads(private_read(RUN/'controller-journal.json',2*1024**2));cp=json.loads(private_read(RUN/'checkpoint.json',2*1024**2))
+if j.get('child_returncode')!=1 or cp['events'][-1]['kind']!='failed':raise RuntimeError('expected_failed_pilot_required')
+manifest,services,_=load_manifest(ROOT/'.runtime/services-primary.json');watch=dict(role='supervisor',name='primary',env_file=str(ROOT.parent/'supervisor.env'))
+if {s['role']+'-'+s['name']:owned_identity(ROOT,s) for s in [*services,watch]}!=j['service_identities_before']:raise RuntimeError('original_service_identity_drift')
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+if any(sha(Path(p))!=v for p,v in j['configuration_sha256'].items()) or any(sha(ROOT/p)!=v for p,v in j['source_sha256'].items()):raise RuntimeError('original_source_or_configuration_drift')
+env=values(private_read(RUN/'benchmark.env'));_,fixture=load_fixture(ROOT/'.runtime/qwen235b-v1/workload-20.jsonl',cp['configuration']['model']);plan=make_plan(cp['configuration'],fixture)
+with psycopg.connect(env['DATABASE_URL'],row_factory=dict_row,connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=10000') as c:
+ batches=c.execute("SELECT id,output_file_id,total_count,completed_count,failed_count,pending_count,running_count,cancelled_count,prompt_tokens,completion_tokens,metadata FROM batches WHERE tenant_id='default' AND metadata->>'sustained_job'=%s ORDER BY created_at,id",(cp['configuration']['job_id'],)).fetchall()
+ tasks=c.execute("SELECT t.custom_id,t.batch_id,t.status,t.prompt_tokens,t.completion_tokens,t.retention_response_limit,t.retention_payload_cleared,count(a.token) FILTER(WHERE a.status='completed') AS accepted,sum(a.prompt_tokens) FILTER(WHERE a.status='completed') AS ap,sum(a.completion_tokens) FILTER(WHERE a.status='completed') AS ac FROM tasks t JOIN batches b ON b.id=t.batch_id LEFT JOIN attempts a ON a.task_id=t.id WHERE b.tenant_id='default' AND b.metadata->>'sustained_job'=%s GROUP BY t.id ORDER BY t.custom_id",(cp['configuration']['job_id'],)).fetchall()
+ if len(batches)!=3 or len(tasks)!=60 or any(t['status']!='completed' or t['accepted']!=1 or t['prompt_tokens']!=t['ap'] or t['completion_tokens']!=t['ac'] or t['retention_response_limit']!=65536 for t in tasks):raise RuntimeError('accepted_pilot_not_completed_exactly_once')
+ if c.execute("SELECT count(*) AS n FROM tasks WHERE status IN ('pending','running')").fetchone()['n']:raise RuntimeError('global_drain_required')
+ item=plan[3]
+ unresolved={name:c.execute(query,(item['input_sha256'],)).fetchone()['n'] for name,query in {'matching_files':"SELECT count(*) AS n FROM files f JOIN blob_objects o ON o.id=f.blob_id WHERE f.tenant_id='default' AND o.sha256=%s",'matching_reservations':"SELECT count(*) AS n FROM blob_upload_reservations WHERE tenant_id='default' AND sha256=%s",'matching_generations':"SELECT count(*) AS n FROM blob_objects WHERE tenant_id='default' AND sha256=%s"}.items()}
+OUT.mkdir(mode=0o700);lookup={t['custom_id']:t for t in tasks};observed=set();files=[]
+with httpx.Client(base_url='http://127.0.0.1:8082',headers={'Authorization':'Bearer '+env['BATCHFORGE_API_KEY']},timeout=30,trust_env=False,follow_redirects=False) as client:
+ for b in batches:
+  index=int(b['metadata']['sustained_index'])
+  if b['metadata']['sustained_input_sha256']!=plan[index]['input_sha256']:raise RuntimeError('accepted_fixture_sha_differs')
+  reply=client.get('/v1/files/'+b['output_file_id']+'/content');reply.raise_for_status();raw=reply.content
+  if len(raw)>16*1024**2:raise RuntimeError('output_bound_exceeded')
+  for line in raw.decode('utf-8').split('\n'):
+   if not line:continue
+   row=json.loads(line,parse_float=reject_number,parse_constant=reject_number,object_pairs_hook=unique_object);cid=row['custom_id'];body=row['response']['body'];t=lookup.get(cid)
+   if not t or cid in observed or t['batch_id']!=b['id'] or row.get('error') is not None or row['response']['status_code']!=200 or body.get('model')!=cp['configuration']['model'] or body.get('batchforge_test_only') or body.get('usage',{}).get('prompt_tokens')!=t['prompt_tokens'] or body.get('usage',{}).get('completion_tokens')!=t['completion_tokens']:raise RuntimeError('real_output_identity_or_usage_mismatch')
+   observed.add(cid)
+  p=OUT/('batch-'+str(index).zfill(6)+'-output.jsonl')
+  with p.open('xb') as f:f.write(raw)
+  p.chmod(0o600);files.append(p)
+if len(observed)!=60:raise RuntimeError('output_population_mismatch')
+a=audit(files,expected_count=60,run_id=cp['configuration']['job_id'],expected_output_caps=[32,128,512,2048]);private_write(OUT/'response-audit.json',a)
+doc={'phase':'interrupted_client_accepted_tasks_reconciled','observed_at':__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),'job_id':cp['configuration']['job_id'],'planned_tasks':720,'accepted_tasks':60,'completed_tasks':60,'failed_tasks':0,'accepted_exactly_once':True,'accepted_usage_matches':True,'all_outputs_verified_real_identity_model_usage':True,'prompt_tokens':sum(t['prompt_tokens'] for t in tasks),'completion_tokens':sum(t['completion_tokens'] for t in tasks),'original_journal_preserved':True,'full_30_minute_comparison_valid':False,'source_and_services_unchanged_before_new_deployment':True,'original_checkpoint_sha256':sha(RUN/'checkpoint.json'),'original_controller_sha256':sha(RUN/'controller-journal.json'),'unknown_upload_index':3,'unknown_upload_expected_sha256':plan[3]['input_sha256'],'unknown_upload_state_observed':unresolved,'response_audit_sha256':sha(OUT/'response-audit.json'),'limitations':['Exact fourth upload HTTP response was not recorded; no definitive root cause is claimed','No original upload or workload is resubmitted; raw results remain on the same Pod','This interrupted attempt is excluded from matched30 minute performance comparison']}
+private_write(OUT/'evidence.json',doc);print(json.dumps(doc))

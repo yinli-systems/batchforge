@@ -1,0 +1,18 @@
+{
+  "alternative_verification": "Separate exact-source validation on the existing Pod using isolated Unix-only PostgreSQL17.11; report pending, not claimed passed here.",
+  "billing_changed": false,
+  "commit": "07a801e27b4f35dee5a456a3294de35badc0d364",
+  "conclusion": "failure",
+  "failure_category": "account_billing_or_spending_limit",
+  "failure_reason": "GitHub did not start the job because account payment failed or the account spending limit must be increased. No test step ran.",
+  "job_completed_at": "2026-10-24T07:36:35Z",
+  "job_id": 120815789686,
+  "job_started_at": "2026-10-24T07:36:33Z",
+  "observed_at": "2026-10-24T07:38:56.269943+00:00",
+  "repository": "yinli-systems/batchforge",
+  "source": "Read-only GitHub Actions job and check-run annotations API",
+  "status": "completed",
+  "steps_started": 0,
+  "workflow_run_id": 40074812733,
+  "workflow_url": "https://github.com/yinli-systems/batchforge/actions/runs/40074812733"
+}
