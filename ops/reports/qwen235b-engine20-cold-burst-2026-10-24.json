@@ -1,0 +1,148 @@
+{
+  "automatic_replay": false,
+  "concurrency": 16,
+  "controller_source_sha256": "f7d064f0a500844c86af8e680a9ca3c3e9fa04bda77ab30edd04d0469381cf25",
+  "database_queries": false,
+  "ended_at_unix": 1792844773.1598804,
+  "engine_counter_deltas": {
+    "vllm:generation_tokens_total": 13600.0,
+    "vllm:prompt_tokens_total": 109056.0,
+    "vllm:request_success_total": 20.0
+  },
+  "engine_metrics_after": {
+    "vllm:generation_tokens_total": 13600.0,
+    "vllm:kv_cache_usage_perc": 0.0,
+    "vllm:num_requests_running": 0.0,
+    "vllm:num_requests_waiting": 0.0,
+    "vllm:prompt_tokens_total": 109056.0,
+    "vllm:request_success_total": 20.0
+  },
+  "engine_metrics_before": {
+    "vllm:generation_tokens_total": 0.0,
+    "vllm:kv_cache_usage_perc": 0.0,
+    "vllm:num_requests_running": 0.0,
+    "vllm:num_requests_waiting": 0.0,
+    "vllm:prompt_tokens_total": 0.0,
+    "vllm:request_success_total": 0.0
+  },
+  "env_sha256": {
+    "/root/batchforge-runtime/app/.runtime/qwen235b-adaptive64-v1/engine.env": "07d72d8c467eb8ca21690c42a637f89e23caf7db0a960b37d69344f121bcc1ac",
+    "/root/batchforge-runtime/app/.runtime/qwen235b-adaptive64-v1/worker.env": "a8421b2a11db94bfcb2c2ae4a6a3a1a95c704721478452934240b3a4fcbe91cb"
+  },
+  "expected_input_tokens": 109056,
+  "expected_output_tokens": 13600,
+  "forced_fixed_length": true,
+  "gpu_summary": {
+    "0": {
+      "max_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_percent": 93.28395061728395,
+      "samples": 162
+    },
+    "1": {
+      "max_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_percent": 86.68518518518519,
+      "samples": 162
+    },
+    "2": {
+      "max_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_percent": 36.364197530864196,
+      "samples": 162
+    },
+    "3": {
+      "max_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_percent": 74.9753086419753,
+      "samples": 162
+    }
+  },
+  "lifecycle_actions": false,
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "passed": true,
+  "phase": "complete",
+  "sample_count": 162,
+  "sampler_failed": false,
+  "scope": "engine_only_cold_first_20_cell_burst_not_durable_platform_completions",
+  "source_sha256": {
+    "/root/batchforge-runtime/app/ops/manage.py": "159fc37c6f9a64e36e5e0f20bc97a8adf08d6ce93934f988339bab534879d0a0",
+    "/root/batchforge-runtime/app/scripts/benchmark.py": "1d9d64f933c59f457187dfe50d42ae46be7591a60490c3d86cf930a498e22066",
+    "/root/batchforge-runtime/app/scripts/engine_matrix.py": "14e9ca117b9f9cf902bb793afa286f8a9cadc3fd8386567aef18b2243a480f09"
+  },
+  "summary": {
+    "all_terminal_completion_seconds": {
+      "max": 162.421076,
+      "mean": 57.313464,
+      "p50": 29.432035,
+      "p95": 161.724429,
+      "p99": 162.281747,
+      "samples": 20
+    },
+    "completed": 20,
+    "completion_seconds": {
+      "max": 162.421076,
+      "mean": 57.313464,
+      "p50": 29.432035,
+      "p95": 161.724429,
+      "p99": 162.281747,
+      "samples": 20
+    },
+    "cost": {
+      "scope": "User supplied allocation price; includes idle/failed work during this experiment only",
+      "supplied_allocation_usd_per_hour": 16.1,
+      "usd_per_million_generated_tokens": 53.41058756718269,
+      "usd_per_million_successful_inferences": 36319.19954568423,
+      "window_usd": 0.7263839909136846
+    },
+    "elapsed_seconds": 162.42126504902262,
+    "errors": 0,
+    "final_text_codepoints": 56646,
+    "final_text_present": 20,
+    "first_final_content_seconds": {
+      "max": 4.076386,
+      "mean": 2.287967,
+      "p50": 1.983714,
+      "p95": 4.075183,
+      "p99": 4.076146,
+      "samples": 20
+    },
+    "generated_tokens": 13600,
+    "generated_tokens_per_second": 83.73287817882218,
+    "http_service_seconds": {
+      "max": 162.398177,
+      "mean": 55.945776,
+      "p50": 27.578425,
+      "p95": 161.715593,
+      "p99": 162.26166,
+      "samples": 20
+    },
+    "http_ttft_seconds": {
+      "max": 4.076386,
+      "mean": 2.287967,
+      "p50": 1.983714,
+      "p95": 4.075183,
+      "p99": 4.076146,
+      "samples": 20
+    },
+    "no_final_text": 0,
+    "offered": 20,
+    "prompt_tokens": 109056,
+    "prompt_tokens_per_second": 671.4391737257082,
+    "queue_seconds": {
+      "max": 8.758126,
+      "mean": 1.367688,
+      "p50": 0.016911,
+      "p95": 6.768284,
+      "p99": 8.360158,
+      "samples": 20
+    },
+    "reasoning_text_codepoints": 0,
+    "stream_span_per_reported_output_token_proxy_seconds": {
+      "max": 0.119521,
+      "mean": 0.086877,
+      "p50": 0.082807,
+      "p95": 0.101969,
+      "p99": 0.116011,
+      "samples": 20
+    },
+    "successful_inferences_per_second": 0.12313658555709144,
+    "visible_text_codepoints": 56646
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "availability_note": "Prepared target includes physical pg_database_size, which can harmlessly change and refuse execution. This is conservative availability behavior; never retry after an execution claim/unknown action.",
+  "independent_tests": {
+    "cluster_stopped_removed": true,
+    "credentials_inherited": false,
+    "fresh_unix_only_postgres_major": 16,
+    "nonsuperuser_createrole_owner": true,
+    "passed": 8,
+    "production_used": false,
+    "returncode": 0,
+    "seconds": 1.43,
+    "skipped": 0,
+    "stderr_bytes": 0
+  },
+  "remaining_p1_p2": [],
+  "reviewed_source_sha256": {
+    "qualify_runtime_acl.py": "21a9f684409d5d1a2b24e370a15555cf5af64a81c7f891b1d00a1c450573f7ac",
+    "test_qualify_runtime_acl.py": "a4386f19e56c1f8654a9b70f9e817f70a4b5f05483379345a03b2499c9028396"
+  },
+  "scope": "Exact private schema11/runtime ACL probe on an explicitly prepared empty owned qualification database only; SET ROLE privileges, not LOGIN/authentication/committed durability/production cutover",
+  "verified_contracts": [
+    "Exact11canonicalmigrationchecksums/grants/verifier source bindings",
+    "Explicit actual host/database/owner/TLS config and actual TLS flag; PG environment scrubbed; freshprivate run preparation then exactpreparedSHA andexclusiveexecutionclaim",
+    "Actual empty allusernamespaces and no preexistingbf_runtime; neveradopt/alterexisting role",
+    "Only adapted databaseidentifier in immutable runtime grants; correct quoted targetDB",
+    "One rollback-only transaction creates NOLOGIN restricted role and membership, fullschema, grants and2synthetictasks; no COMMIT/databasecreate/drop/login/password/appconfig",
+    "Five privateSECURITYDEFINER owner/search_path plusPUBLIC/runtime EXECUTEdenials verified",
+    "Nineteen expecteddenials includingtenantadmin/taskdelete/history/aux/retention/quota and expiredtokens",
+    "Actualclaim/heartbeat/idempotentcomplete/leaseexpiry/recover/reclaim/fail conserveexact2tasks3attempts and7input3outputacceptedtokens",
+    "Canonical fullschema verification metered; p.execute/servercursor execute max256/120secondstartbudget, extra finitepreflight/transactioncontrols explicitlyoutsidehardglobalclaim",
+    "Knownrollback followed by emptycatalog+roleabsence verification; unknownoutcome preserved/no replay/automaticcleanup"
+  ],
+  "version": 1
+}

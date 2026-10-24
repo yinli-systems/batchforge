@@ -1,0 +1,355 @@
+"""Exact schema11/runtime privileges in one rollback-only disposable DB transaction.
+
+No database create/drop, LOGIN/password, inference, external objects, real tenant
+keys, COMMIT or application configuration changes. Root stages/runs separately.
+SET ROLE proves SQL privileges, not authentication or committed-write durability.
+"""
+from __future__ import annotations
+
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import shlex
+import stat
+import sys
+import time
+
+import psycopg
+from psycopg import sql
+from psycopg.conninfo import conninfo_to_dict, make_conninfo
+from psycopg.types.json import Jsonb
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from backend.migrate import MIGRATIONS
+from ops.ha.local_pg17_restore import verify_database
+
+CHECKSUMS = ('9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219',
+ '68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b',
+ '0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003',
+ '5c401e019eaec4491b281169522febe94878cb2c465242820d88d761eeb83fb0',
+ '424e4e0426f6bb456c503fd731e3d1e717f3a8485c28256f38d6608dbbdf9339',
+ 'a44389417577344ef85745e5e299b35a764b40483983197993eeafe6904e90e3',
+ '6225f00575675d8834f16c0462728d563985a7d73753344cde366e150eac79d0',
+ '5ffedba95c7147bdf973052fea000bf268a852e9136f5b2e9e66740040f3727d',
+ '663e8f86c2f6da66d70ec538794317662c10eb3a10977a94cd4ca9b2424731d3',
+ 'd31d74f77ea90d8050f689e6437984149a3ca8a6ac49b70275ce870d8f6a397b',
+ '7efcc522482000c8e22e3dc5133ed528919817a26d0c1c50d9993513277f05f8')
+GRANTS_SHA = 'aa233b076eb1cdaba6066e37a94472e75747ebad7f1763d48aaad0d604ddcd61'
+VERIFY_SHA = '20ac142bf34fda32404e2e677fe604b576a1eb8f3af9db2d7657a3ec1bda939a'
+NAME = re.compile(r'bf_qualification_[0-9a-f]{8,32}\Z')
+ROLE = 'bf_runtime'
+TENANT = 'bf_qualification_tenant'
+MODEL = 'bf_qualification_synthetic_model'
+FP = 'sha256:'+'a'*64
+DEFINERS = ('batchforge_auxiliary_lock(text)',
+ 'batchforge_auxiliary_adjust(text,text,bigint,bigint)',
+ 'batchforge_auxiliary_guard()', 'batchforge_auxiliary_account()',
+ 'batchforge_archive_metadata_identity()')
+EMPTY_SQL = """SELECT
+ (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname NOT LIKE 'pg_%' AND n.nspname<>'information_schema'
+     AND c.relkind IN('r','p','v','m','S','f')),
+ (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname NOT LIKE 'pg_%' AND n.nspname<>'information_schema'),
+ EXISTS(SELECT 1 FROM pg_roles WHERE rolname='bf_runtime')"""
+
+
+class Refusal(ValueError): pass
+
+
+def require(value, code):
+    if not value:
+        raise Refusal(code)
+
+
+def sha(raw): return hashlib.sha256(raw).hexdigest()
+def stamp(): return datetime.now(timezone.utc).isoformat()
+def encoded(value): return (json.dumps(value, sort_keys=True, separators=(',', ':'))+'\n').encode()
+
+
+def source_guard():
+    require(tuple(v for v, _, _ in MIGRATIONS) == tuple(range(1, 12))
+            and tuple(d for _, _, d in MIGRATIONS) == CHECKSUMS
+            and all(sha(statement.encode()) == checksum for _, statement, checksum in MIGRATIONS),
+            'exact_immutable_eleven_migrations_required')
+    grants = (ROOT/'ops/ha/runtime_grants.sql').read_bytes()
+    require(sha(grants) == GRANTS_SHA and sha((ROOT/'ops/ha/local_pg17_restore.py').read_bytes()) == VERIFY_SHA,
+            'exact_grants_and_verifier_source_required')
+    return {'migration_checksums': list(CHECKSUMS), 'runtime_grants_sha256': GRANTS_SHA,
+            'verifier_sha256': VERIFY_SHA}, grants.decode()
+
+
+def preflight(conn):
+    row = conn.execute("""SELECT current_database(),current_user,session_user,
+      pg_get_userbyid(d.datdba)=current_user,r.rolsuper,r.rolcreaterole,
+      current_setting('default_transaction_read_only'),current_setting('server_version_num')::integer,
+      pg_database_size(d.oid) FROM pg_database d JOIN pg_roles r ON r.rolname=current_user
+      WHERE d.datname=current_database()""").fetchone()
+    require(row and NAME.fullmatch(row[0]) and row[1] == row[2] and row[3]
+            and row[4] is False and row[5] is True and row[6] == 'on'
+            and row[7] >= 160000 and row[8] <= 64*1024**2,
+            'empty_owned_disposable_nonsuperuser_createrole_readonly_database_required')
+    require(conn.execute(EMPTY_SQL).fetchone() == (0, 0, False),
+            'all_user_namespaces_empty_and_runtime_role_absent_required')
+    return {'database': row[0], 'owner': row[1], 'server_version_num': row[7],
+            'database_bytes_before': row[8], 'nonsuperuser': True,
+            'runtime_role_absent': True, 'user_relations_functions_before': [0, 0]}
+
+
+class Probe:
+    def __init__(self, conn, *, clock=time.monotonic):
+        self.conn, self.clock, self.started, self.count = conn, clock, clock(), 0
+        self.denials = []
+        self.phase = 'begin'
+
+    def reserve(self):
+        require(self.count < 256 and self.clock()-self.started <= 120, 'finite_statement_or_time_budget_reached')
+        self.count += 1
+
+    def execute(self, statement, params=()):
+        self.reserve()
+        return self.conn.execute(statement, params) if params else self.conn.execute(statement)
+
+    def deny(self, label, statement, params=(), state='42501'):
+        try:
+            with self.conn.transaction():
+                self.execute(statement, params)
+        except psycopg.Error as error:
+            require(error.sqlstate == state, 'unexpected_denial_sqlstate')
+            self.denials.append({'label': label, 'sqlstate': state})
+        else:
+            raise Refusal('forbidden_operation_unexpectedly_succeeded')
+
+
+class VerifierConnection:
+    """Meter canonical verifier execute calls without changing its queries."""
+    def __init__(self, probe): self.probe = probe
+    def execute(self, statement, params=()): return self.probe.execute(statement, params)
+    def cursor(self, *args, **kwargs):
+        probe = self.probe
+        class Cursor:
+            def __init__(self): self.actual = probe.conn.cursor(*args, **kwargs)
+            def __enter__(self): self.actual.__enter__(); return self
+            def __exit__(self, *values): return self.actual.__exit__(*values)
+            def execute(self, statement, params=()):
+                probe.reserve()
+                return self.actual.execute(statement, params) if params else self.actual.execute(statement)
+            def __iter__(self): return iter(self.actual)
+        return Cursor()
+
+
+def qualify(conn, prepared, *, clock=time.monotonic):
+    binding, grants = source_guard()
+    require(preflight(conn) == prepared, 'prepared_database_identity_or_emptiness_changed')
+    p = Probe(conn, clock=clock)
+    result = {'passed': False, 'rollback_confirmed': False,
+              'runtime_authenticated_login_tested': False, 'committed_write_durability_tested': False,
+              'real_data_or_keys_used': False, 'source_binding': binding,
+              'limits': {'synthetic_tasks': 2, 'max_synthetic_attempts': 3,
+                         'metered_driver_execute_calls': 256, 'admit_next_execute_within_seconds': 120,
+                         'transaction_control_and_preflight_calls_are_extra_finite': True,
+                         'hard_total_wall_deadline_claimed': False},
+              'scope': 'SET_ROLE_SQL_privileges_in_one_rollback_only_synthetic_transaction'}
+    try:
+        with conn.transaction():
+            p.execute('SET TRANSACTION READ WRITE ISOLATION LEVEL READ COMMITTED')
+            require(p.execute('SELECT pg_try_advisory_xact_lock(1936150189)').fetchone() == (True,), 'other_qualification_active')
+            p.phase = 'transactional_role_creation'
+            p.execute('CREATE ROLE bf_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS')
+            p.execute(sql.SQL('GRANT bf_runtime TO {}').format(sql.Identifier(prepared['owner'])))
+            p.execute('CREATE TABLE public.batchforge_schema_migrations(version integer PRIMARY KEY,checksum text NOT NULL,applied_at timestamptz NOT NULL DEFAULT clock_timestamp())')
+            for version, statement, checksum in MIGRATIONS:
+                p.phase = 'canonical_migration_'+str(version)
+                p.execute(statement)
+                p.execute('INSERT INTO public.batchforge_schema_migrations(version,checksum) VALUES(%s,%s)', (version, checksum))
+            before = 'GRANT CONNECT ON DATABASE batchforge TO bf_runtime;'
+            p.phase = 'scoped_runtime_grants'
+            require(grants.count(before) == 1, 'single_database_identifier_grant_adapter_required')
+            adapted = grants.replace(before, sql.SQL('GRANT CONNECT ON DATABASE {} TO bf_runtime;').format(sql.Identifier(prepared['database'])).as_string(conn))
+            p.execute(adapted)
+            result['adapted_grants_sha256'] = sha(adapted.encode())
+            p.phase = 'bounded_synthetic_seed'
+            p.execute("INSERT INTO tenants(id,name) VALUES(%s,'Synthetic qualification')", (TENANT,))
+            p.execute('UPDATE tenant_retention_limits SET max_retained_tasks=2,max_response_bytes=65536 WHERE tenant_id=%s', (TENANT,))
+            p.execute('INSERT INTO tenant_history_retirement_policy(tenant_id,enabled) VALUES(%s,false)', (TENANT,))
+            profile = {'profile_id': 'bf_qualification_profile', 'runtime_fingerprint': FP,
+                       'prefill_tokens_per_second': 1000, 'decode_tokens_per_second': 10,
+                       'hourly_cost_usd': 1, 'calibration_label': 'SYNTHETIC', 'cost_source': 'SYNTHETIC'}
+            p.execute("INSERT INTO workers(id,name,model,concurrency,metadata,scheduler_profile_id,runtime_fingerprint,prefill_tokens_per_second,decode_tokens_per_second,hourly_cost_usd) VALUES('bf_qualification_worker','Synthetic',%s,2,%s,%s,%s,1000,10,1)",
+                      (MODEL, Jsonb({'engine_count': 1, 'ready_engine_count': 1, 'scheduling_profile': profile}), profile['profile_id'], FP))
+            p.execute("INSERT INTO files(id,tenant_id,filename,kind) VALUES('bf_qualification_input',%s,'Synthetic','input')", (TENANT,))
+            p.execute("INSERT INTO tenant_queues(tenant_id,model,pending_count) VALUES(%s,%s,2)", (TENANT, MODEL))
+            p.execute("INSERT INTO batches(id,tenant_id,input_file_id,model,status,total_count,pending_count) VALUES('bf_qualification_batch',%s,'bf_qualification_input',%s,'in_progress',2,2)", (TENANT, MODEL))
+            for number in range(2):
+                p.execute("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts) VALUES(%s,%s,'bf_qualification_batch',%s,%s,%s,'pending',3)",
+                          ('bf_qualification_task_'+str(number), TENANT, str(number), MODEL,
+                           Jsonb({'model': MODEL, 'messages': [{'role': 'user', 'content': 'SYNTHETIC'}], 'max_tokens': 8})))
+            for signature in DEFINERS:
+                p.phase = 'private_definer_security_and_acl'
+                flags = p.execute("""SELECT p.prosecdef,p.proowner=(SELECT relowner FROM pg_class WHERE oid='public.tasks'::regclass),
+                  p.proconfig,has_function_privilege('bf_runtime',p.oid,'EXECUTE'),
+                  EXISTS(SELECT 1 FROM aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE')
+                  FROM pg_proc p WHERE p.oid=%s::regprocedure""", ('public.'+signature,)).fetchone()
+                require(flags and flags[0] and flags[1] and 'search_path=pg_catalog, public' in flags[2]
+                        and flags[3:] == (False, False), 'private_definer_security_or_public_runtime_acl_differs')
+            p.execute('SET LOCAL ROLE bf_runtime')
+            p.phase = 'runtime_denials_and_quota'
+            require(p.execute("SELECT current_user,session_user,pg_has_role(current_user,%s,'USAGE')", (prepared['owner'],)).fetchone() ==
+                    (ROLE, prepared['owner'], False), 'runtime_is_not_independent_nonowner_role')
+            p.execute('SELECT tenant_id FROM tenant_retention_limits WHERE tenant_id=%s', (TENANT,)).fetchone()
+            p.execute('SELECT * FROM batchforge_attempt_hourly WHERE tenant_id=%s', (TENANT,)).fetchall()
+            for signature, params in ((DEFINERS[0], (TENANT,)), (DEFINERS[1], (TENANT, 'input_files', 0, 0)),
+                                      (DEFINERS[2], ()), (DEFINERS[3], ()), (DEFINERS[4], ())):
+                name = signature.split('(', 1)[0]
+                placeholders = ','.join(['%s']*len(params))
+                p.deny('direct_'+name, 'SELECT public.'+name+'('+placeholders+')', params)
+            for label, statement, params, state in (
+                ('schema_create', 'CREATE TABLE public.bf_qualification_forbidden(id integer)', (), '42501'),
+                ('tenant_insert', "INSERT INTO tenants(id,name) VALUES('bf_qualification_forbidden','Synthetic')", (), '42501'),
+                ('tenant_identity_update', "UPDATE tenants SET id='bf_qualification_forbidden' WHERE id=%s", (TENANT,), '42501'),
+                ('tenant_delete', 'DELETE FROM tenants WHERE id=%s', (TENANT,), '42501'),
+                ('api_key_admin', "INSERT INTO api_keys(key_hash,tenant_id) VALUES('SYNTHETIC-NOT-A-KEY',%s)", (TENANT,), '42501'),
+                ('task_delete', "DELETE FROM tasks WHERE id='bf_qualification_task_0'", (), '42501'),
+                ('history_policy_update', 'UPDATE tenant_history_retirement_policy SET enabled=true WHERE tenant_id=%s', (TENANT,), '42501'),
+                ('history_retire_function', 'SELECT batchforge_retire_history_page(%s,%s,20,false,NULL)', (TENANT, 'bf_qualification_batch'), '42501'),
+                ('replay_floor_function', 'SELECT batchforge_retire_idempotency_page(%s,1,1,false)', (TENANT,), '42501'),
+                ('auxiliary_counter_update', "UPDATE tenant_auxiliary_usage SET rows=rows+1 WHERE tenant_id=%s", (TENANT,), '42501'),
+                ('retention_counter_update', 'UPDATE tenant_retention_usage SET retained_tasks=retained_tasks+1 WHERE tenant_id=%s', (TENANT,), 'BR403'),
+                ('retained_task_quota', "INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts) VALUES('bf_qualification_overquota',%s,'bf_qualification_batch','extra',%s,'{}','pending',3)", (TENANT, MODEL), 'BQ429')):
+                p.deny(label, statement, params, state)
+            p.phase = 'runtime_claim_heartbeat_complete_recover_fail'
+            claimed = p.execute('SELECT batchforge_claim_scheduled(%s,%s,2,30,%s,60,60)', ('bf_qualification_worker', MODEL, 'cost_aware')).fetchone()[0]
+            tasks = claimed['tasks']; require(len(tasks) == 2 and all(t['scheduling_decision']['policy'] == 'cost_aware' for t in tasks), 'scheduled_two_task_claim_failed')
+            first, second = sorted(tasks, key=lambda t: t['id'])
+            worker = 'bf_qualification_worker'
+            require(p.execute('SELECT batchforge_heartbeat(%s,%s,%s,30)', (first['id'], worker, first['attempt_token'])).fetchone()[0]['ok'], 'heartbeat_not_acknowledged')
+            response = Jsonb({'choices': [{'message': {'role': 'assistant', 'content': 'SYNTHETIC'}}], 'usage': {'prompt_tokens': 7, 'completion_tokens': 3, 'total_tokens': 10}})
+            require(p.execute('SELECT batchforge_complete(%s,%s,%s,%s,7,3)', (first['id'], worker, first['attempt_token'], response)).fetchone()[0] == {'ok': True}, 'complete_not_acknowledged')
+            require(p.execute('SELECT batchforge_complete(%s,%s,%s,%s,7,3)', (first['id'], worker, first['attempt_token'], response)).fetchone()[0] == {'ok': True, 'duplicate': True}, 'duplicate_complete_not_fenced')
+            p.execute('RESET ROLE')
+            p.execute("UPDATE tasks SET lease_expires_at=clock_timestamp()-interval '1 second' WHERE id=%s", (second['id'],))
+            p.execute('SET LOCAL ROLE bf_runtime')
+            recovered = p.execute('SELECT batchforge_recover(10,4,1)').fetchone()[0]
+            require(recovered['recovered'] == 1 and recovered['processed'] == 1, 'single_lease_not_recovered')
+            p.deny('expired_heartbeat_fence', 'SELECT batchforge_heartbeat(%s,%s,%s,30)', (second['id'], worker, second['attempt_token']), 'BF409')
+            p.deny('expired_complete_fence', 'SELECT batchforge_complete(%s,%s,%s,%s,7,3)', (second['id'], worker, second['attempt_token'], response), 'BF409')
+            p.execute('RESET ROLE')
+            p.execute("UPDATE tasks SET ready_at=clock_timestamp()-interval '1 second' WHERE id=%s", (second['id'],))
+            p.execute("UPDATE tenant_queues SET next_ready_at=clock_timestamp()-interval '1 second' WHERE tenant_id=%s AND model=%s", (TENANT, MODEL))
+            p.execute('SET LOCAL ROLE bf_runtime')
+            retry = p.execute('SELECT batchforge_claim_scheduled(%s,%s,1,30,%s,60,60)', (worker, MODEL, 'cost_aware')).fetchone()[0]['tasks']
+            require(len(retry) == 1 and retry[0]['id'] == second['id'] and retry[0]['attempt_token'] != second['attempt_token'], 'recovery_reclaim_not_fenced')
+            require(p.execute('SELECT batchforge_fail(%s,%s,%s,%s,false,1)', (second['id'], worker, retry[0]['attempt_token'], Jsonb({'code': 'synthetic', 'message': 'SYNTHETIC'}))).fetchone()[0] == {'ok': True, 'status': 'failed'}, 'failure_not_acknowledged')
+            p.execute('RESET ROLE')
+            require(p.execute('SELECT total_count,completed_count,failed_count,pending_count,running_count,prompt_tokens,completion_tokens FROM batches').fetchone() == (2, 1, 1, 0, 0, 7, 3), 'batch_accounting_differs')
+            p.phase = 'full_schema_verification'
+            verification = verify_database(VerifierConnection(p), MIGRATIONS)
+            result.update(transactional_accounting_verified=True, accepted_completed_tasks=1,
+                          synthetic_failed_tasks=1, accepted_prompt_tokens=7, accepted_completion_tokens=3,
+                          expired_attempts_reclaimed=1, stale_tokens_rejected=True,
+                          private_definers_public_and_runtime_execute_denied=5,
+                          denials=p.denials, full_schema_verification=verification)
+            raise psycopg.Rollback()
+        result['rollback_confirmed'] = True
+        require(conn.execute(EMPTY_SQL).fetchone() == (0, 0, False), 'rollback_empty_catalog_and_role_absence_not_confirmed')
+        result.update(passed=True, role_creation_rolled_back=True, user_catalog_empty_after=True)
+    except BaseException as error:
+        result.update(failure_code=str(error) if type(error) is Refusal else 'qualification_failed_without_error_text',
+                      error_type=type(error).__name__, failure_phase=p.phase,
+                      sqlstate=getattr(error, 'sqlstate', None) if re.fullmatch('[A-Z0-9]{5}', getattr(error, 'sqlstate', '') or '') else None)
+        # conn.transaction() sent ROLLBACK for a known server error. A transport
+        # error cannot establish its acknowledgement; no reconnect/DDL replay.
+        if conn.info.transaction_status == psycopg.pq.TransactionStatus.IDLE:
+            result['rollback_confirmed'] = True
+        result['passed'] = False
+    result.update(statement_calls=p.count, elapsed_seconds=round(clock()-p.started, 6))
+    return result
+
+
+def private_read(path, maximum=131072):
+    path = Path(path); info = path.lstat()
+    require(stat.S_ISREG(info.st_mode) and not path.is_symlink() and info.st_uid == os.geteuid()
+            and not info.st_mode & 0o077 and info.st_nlink == 1 and 0 < info.st_size <= maximum, 'private_file_required')
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    try:
+        actual = os.fstat(fd); require((actual.st_dev, actual.st_ino, actual.st_size, actual.st_mtime_ns) ==
+                                      (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns), 'private_file_changed')
+        raw = os.read(fd, maximum+1); require(len(raw) == info.st_size, 'private_file_size_changed'); return raw
+    finally: os.close(fd)
+
+
+def load_dsn(path, host, database):
+    require(NAME.fullmatch(database) and re.fullmatch(r'[A-Za-z0-9.-]{1,253}', host), 'explicit_target_required')
+    raw = private_read(path); values = []
+    for line in raw.decode().splitlines():
+        if line.startswith('DATABASE_URL='):
+            fields = shlex.split(line[13:], comments=False); require(len(fields) == 1, 'one_literal_dsn_required'); values.extend(fields)
+    require(len(values) == 1, 'one_database_url_required')
+    parts = conninfo_to_dict(values[0])
+    require(parts.get('host') == host and parts.get('dbname') == database and parts.get('user') == 'batchforge_owner'
+            and parts.get('sslmode') == 'verify-full' and not any(parts.get(k) for k in ('hostaddr', 'service')),
+            'exact_strict_tls_qualification_target_required')
+    port = parts.get('port') or '5432'
+    require(re.fullmatch('[0-9]{1,5}', port) and 1 <= int(port) <= 65535, 'single_explicit_port_required')
+    return make_conninfo(values[0], port=port), sha(raw)
+
+
+def save(path, value, *, fresh=False):
+    path = Path(path); raw = encoded(value)
+    temporary = path if fresh else path.with_name(path.name+'.pending')
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, 'wb') as out: out.write(raw); out.flush(); os.fsync(out.fileno())
+    if not fresh: os.replace(temporary, path)
+    fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+    try: os.fsync(fd)
+    finally: os.close(fd)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ('access-env', 'run-directory'): parser.add_argument('--'+name, type=Path, required=True)
+    for name in ('expected-host', 'expected-database'): parser.add_argument('--'+name, required=True)
+    parser.add_argument('--execute', action='store_true'); parser.add_argument('--prepared-sha256')
+    args = parser.parse_args(argv); os.umask(0o077)
+    try:
+        require(bool(args.prepared_sha256) == args.execute, 'separate_prepared_execution_required')
+        source, _ = source_guard(); dsn, config_sha = load_dsn(args.access_env, args.expected_host, args.expected_database)
+        # This is a separate operator process. Do not inherit a different
+        # PGHOSTADDR/PGPORT/PGSERVICE/password/certificate from its caller.
+        for key in tuple(os.environ):
+            if key.startswith('PG'): os.environ.pop(key)
+        run = args.run_directory
+        if not args.execute: run.mkdir(mode=0o700)
+        info = run.lstat(); require(stat.S_ISDIR(info.st_mode) and not run.is_symlink()
+            and info.st_uid == os.geteuid() and not info.st_mode & 0o077, 'private_new_run_directory_required')
+        with psycopg.connect(dsn, autocommit=True, connect_timeout=5,
+             options='-c default_transaction_read_only=on -c statement_timeout=5000 -c lock_timeout=1000 -c idle_in_transaction_session_timeout=15000') as conn:
+            require(conn.pgconn.ssl_in_use, 'actual_tls_required')
+            observed = preflight(conn)
+            binding = {'target': observed, 'configuration_sha256': config_sha, 'source_binding': source,
+                       'operator_source_sha256': sha(Path(__file__).read_bytes())}
+            prepared = {'phase': 'prepared', 'binding': binding, 'automatic_replay': False}
+            if not args.execute:
+                save(run/'prepared.json', prepared, fresh=True)
+                print(json.dumps({'phase': 'prepared', 'prepared_sha256': sha(private_read(run/'prepared.json'))})); return 0
+            raw = private_read(run/'prepared.json'); require(sha(raw) == args.prepared_sha256 and json.loads(raw) == prepared, 'exact_prepared_binding_required')
+            require(not (run/'report.json').exists() and not (run/'execution.claim').exists(), 'existing_execution_no_replay')
+            save(run/'execution.claim', {'prepared_sha256': args.prepared_sha256, 'nonce': secrets.token_hex(16), 'automatic_replay': False}, fresh=True)
+            save(run/'report.json', {'phase': 'started_or_unknown', 'passed': False, 'pending_action': 'rollback_only_qualification_transaction', 'prepared_sha256': args.prepared_sha256}, fresh=True)
+            result = qualify(conn, observed)
+            report = {'phase': 'complete' if result['passed'] else 'failed_or_unknown', 'pending_action': None if result['rollback_confirmed'] else 'rollback_ack_unknown', 'prepared_sha256': args.prepared_sha256,
+                      'at': stamp(), 'automatic_replay': False, **result}
+            save(run/'report.json', report)
+            print(json.dumps({k: report[k] for k in ('phase', 'passed', 'rollback_confirmed', 'pending_action', 'statement_calls')})); return 0 if report['passed'] else 2
+    except BaseException:
+        print('{"phase":"refused_or_outcome_unknown","passed":false,"automatic_replay":false}'); return 2
+
+
+if __name__ == '__main__': raise SystemExit(main())

@@ -1,0 +1,293 @@
+"""Once-only direct-engine80 streaming diagnostic. No DB, profiler or lifecycle RPC.
+
+Exactly16 repeats of5 pinned public-text cells at16 HTTP concurrency. Raw SSE
+stays private on this Pod. TTFT and a stream-span/token proxy are not ITL or SLO.
+"""
+from __future__ import annotations
+import argparse,asyncio,contextvars,copy,fcntl,hashlib,json,math,os,re,signal,stat,subprocess,sys,threading,time
+from collections import deque
+from contextlib import ExitStack,contextmanager
+from pathlib import Path
+from types import ModuleType,SimpleNamespace
+import httpx
+from prometheus_client.parser import text_string_to_metric_families
+
+SELF=Path(__file__).resolve();ROOT=SELF.parent.parent;sys.dont_write_bytecode=True
+if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
+MODEL='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8';REVISION='e156cb4efae43fbee1a1ab073f946a1377e6b969'
+FP='sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3'
+OP='qwen235b-render-wait-engine80-v1'
+RECOVERY_SHA='a6af85068a4f4b65c92986901709130301b8f8e0b2344e2a5a42aee2e749b934'
+MANIFEST_SHA='760d9cccb1bdc9a89868fb298bd4e90311936a86890cb6bbb29f862651d6ddf4'
+PINS={'.runtime/run_qwen235b_fault_cohort.py':'35b8b852d4093ebcaf7fa4342d4fc3d13badc3c53bea89303f401d3a2495c655',
+ '.runtime/run_qwen235b_execution_cohorts_guarded_proposed.py':'d622d20a1499e8256dde5cfbe39ea57fa79b2dd1c2902ca9f473d518ac1b9602',
+ 'scripts/engine_matrix.py':'14e9ca117b9f9cf902bb793afa286f8a9cadc3fd8386567aef18b2243a480f09'}
+KNOWN={'engine-qwen235b':(249333,'36488000'),'worker-qwen235b':(250353,'36494104'),'supervisor-primary':(250356,'36494365')}
+CELLS=(('S',128,32),('M',2048,128),('L',8192,512),('H',16384,2048),('D',128,2048))
+COUNTERS=('vllm:request_success_total','vllm:prompt_tokens_total','vllm:generation_tokens_total')
+GAUGES=('vllm:num_requests_running','vllm:num_requests_waiting')
+KV=('vllm:kv_cache_usage_perc','vllm:gpu_cache_usage_perc')
+WORKER={'batchforge_worker_inflight':0.,'batchforge_worker_reserved_context_tokens':0.,'batchforge_worker_adaptive_kv_waiting':0.,'batchforge_worker_adaptive_kv_paused':0.,'batchforge_worker_capacity':64.,'batchforge_worker_adaptive_kv_budget_tokens':298384.}
+MAX_STREAM=4*1024**2;MAX_LINE=65536;TIMEOUT=1200;SAMPLES=1205
+STREAM=contextvars.ContextVar('private_stream')
+
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def require(ok,code):
+ if not ok:raise ValueError(code)
+def encoded(v):return (json.dumps(v,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode()
+def strict(raw):
+ def unique(pairs):
+  d={}
+  for k,v in pairs:require(k not in d,'duplicate_json_key');d[k]=v
+  return d
+ def bad(_):raise ValueError('nonfinite_json')
+ return json.loads(raw,object_pairs_hook=unique,parse_constant=bad)
+def load_tools():
+ modules=[]
+ for rel,digest in PINS.items():
+  path=ROOT/rel;raw=path.read_bytes();require(not path.is_symlink() and sha(raw)==digest,'frozen_dependency_differs')
+  m=ModuleType('private_engine80_'+str(len(modules)));m.__file__=str(path);exec(compile(raw,str(path),'exec'),m.__dict__);modules.append(m)
+ return modules
+@contextmanager
+def locks(U):
+ with ExitStack() as stack:
+  for name in ('scheduler-policy.lock','qwen235b-maintenance.lock','single-pod-worker-fault.lock','postpair-source-rollout.lock','fault-cohort-launcher.lock','engine80.lock'):
+   fd=os.open(ROOT/'.runtime'/name,os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW,0o600);stack.callback(os.close,fd);s=os.fstat(fd)
+   require(stat.S_ISREG(s.st_mode) and s.st_uid==os.geteuid() and s.st_nlink==1 and not s.st_mode&0o077,'private_shared_lock_required');fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+  yield
+
+def parse_engine_metrics(raw):
+ found={};kv={}
+ for family in text_string_to_metric_families(raw.decode()):
+  for s in family.samples:
+   if s.labels.get('model_name')!=MODEL or s.labels.get('engine')!='0':continue
+   if s.name in COUNTERS+GAUGES+KV:
+    require(math.isfinite(s.value) and s.value>=0,'nonnegative_finite_engine_metric')
+    target=kv if s.name in KV else found;target[s.name]=target.get(s.name,0.)+s.value
+ require(set(found)==set(COUNTERS+GAUGES) and 1<=len(kv)<=2,'required_model_engine_metrics_absent')
+ require(all(0<=v<=1 for v in kv.values()) and len(set(kv.values()))==1,'kv_cache_fraction_invalid')
+ return {**found,'kv_cache_usage_fraction':next(iter(kv.values()))}
+def parse_worker_metrics(raw):
+ values={}
+ for f in text_string_to_metric_families(raw.decode()):
+  for s in f.samples:
+   if s.name in WORKER:
+    require(s.name not in values and not s.labels,'unique_unlabelled_worker_gauge_required');values[s.name]=s.value
+ require(values==WORKER,'worker_not_idle_or_released_capacity_differs');return values
+
+def gpu_sample():
+ argv=['nvidia-smi','--query-gpu=index,uuid,name,utilization.gpu,memory.used,memory.total,power.draw','--format=csv,noheader,nounits']
+ r=subprocess.run(argv,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=3)
+ require(r.returncode==0 and len(r.stdout)<=8192,'bounded_nvml_query_failed');rows=[]
+ for line in r.stdout.decode().splitlines():
+  f=[x.strip() for x in line.split(',')];require(len(f)==7,'gpu_row_shape')
+  row=dict(index=int(f[0]),uuid=f[1],name=f[2],utilization_percent=float(f[3]),memory_used_mib=float(f[4]),memory_total_mib=float(f[5]),power_watts=float(f[6]))
+  require('H100' in row['name'] and 70000<=row['memory_total_mib']<=90000 and 0<=row['utilization_percent']<=100 and all(math.isfinite(row[k]) and row[k]>=0 for k in ('memory_used_mib','memory_total_mib','power_watts')),'expected_four_h100_80gb_required');rows.append(row)
+ require({r['index'] for r in rows}=={0,1,2,3} and len(rows)==len({r['uuid'] for r in rows})==4,'exact_four_unique_devices_required')
+ return sorted(rows,key=lambda r:r['index'])
+def gpu_identity(rows):return [{k:r[k] for k in ('index','uuid','name','memory_total_mib')} for r in rows]
+
+def workload(U,fixture,manifest):
+ raw=U.read(fixture,32*1024**2);require(sha(raw)==U.FIXTURE_SHA,'pinned_public_fixture_differs')
+ mraw=U.read(manifest,32*1024**2);require(sha(mraw)==MANIFEST_SHA,'pinned_token_manifest_differs');m=U.load(mraw)
+ require(m['model']==MODEL and m['tokenizer_revision']==REVISION and m['workload_sha256']==sha(raw),'manifest_model_revision_hash_differs')
+ source=[U.load(line) for line in raw.splitlines()];selected={};examples={}
+ for label,inputs,outputs in CELLS:
+  key=f'mix-0-{inputs}-{outputs}';matches=[r for r in source if r['custom_id']==key];require(len(matches)==1,'exact_five_fixture_cells_required');r=matches[0];e=m['examples'][key]
+  require(r['method']=='POST' and r['url']=='/v1/chat/completions' and r['body']['model']==MODEL and r['body']['max_tokens']==outputs and e['rendered_prompt_tokens']==inputs and e['output_token_cap']==outputs,'exact_actual_prompt_output_cell_required');selected[label]=r;examples[label]=e
+ rows=[];mapping={}
+ for repeat in range(16):
+  for label,inputs,outputs in CELLS:
+   r=copy.deepcopy(selected[label]);r['custom_id']=f'{OP}-{label}-{repeat:02}';rows.append(r);mapping[r['custom_id']]={**examples[label],'class':label,'diagnostic_shape':[inputs,outputs]}
+ return rows,mapping
+
+def original_environment_hashes(U,paths,expected):
+ actual={str(p):sha(U.read(p,2*1024**2)) for p in paths}
+ require(actual==expected,'exact_original_six_environment_bytes_required');return actual
+
+class Context:
+ def __init__(self,U,D):
+  self.U,self.D=U,D
+  from ops import manage,engine_members
+  from ops.supervise import load_manifest
+  self.manage,self.members=manage,engine_members
+  self.recovery_path=ROOT/'.runtime/q235-graphB-v2-runtime-recovery-v1/report.json';rr=U.read(self.recovery_path,2*1024**2);require(sha(rr)==RECOVERY_SHA,'known_eager_recovery_receipt_required');self.recovery=U.load(rr)
+  require(self.recovery['phase']=='complete' and self.recovery['original_eager_restored'] is True and self.recovery['manual_recovery_required'] is False and self.recovery['pending_action'] is None,'completed_known_eager_recovery_only')
+  self.manifest,self.services,_=load_manifest(ROOT/'.runtime/services-primary.json',root=ROOT)
+  require(sha(U.read(self.manifest))==self.recovery['prepared_binding']['manifest_sha256'],'original_restored_manifest_required')
+  self.worker=next(s for s in self.services if s['role']=='worker');self.engine=next(s for s in self.services if s['role']=='engine')
+  self.watchdog=dict(role='supervisor',name='primary',env_file=str(ROOT.parent/'supervisor.env'),python=str(ROOT.parent/'venv/bin/python'))
+  self.all=[*self.services,self.watchdog];require({self.key(s) for s in self.all}==set(self.recovery['safe_state_machine_binding']['effective_processes']),'exact_six_owned_services')
+  self.expected=copy.deepcopy(self.recovery['prepared_binding']['owned_identities'])
+  for k,(pid,ticks) in KNOWN.items():self.expected[k]=dict(pid=pid,start_ticks=ticks,cwd=str(ROOT))
+  self.sources=self.recovery['safe_state_machine_binding']['serving_source_sha256']
+  paths={Path(s['env_file']) for s in self.all};original_environment_hashes(U,paths,self.recovery['prepared_binding']['environment_sha256'])
+  self.envs={p:U.env_values(U.read(p,2*1024**2)) for p in paths}
+  self.engine_env=self.envs[Path(self.engine['env_file'])];self.worker_env=self.envs[Path(self.worker['env_file'])]
+  e=self.engine_env;w=self.worker_env
+  require(e.get('MODEL_NAME')==MODEL and e.get('ENGINE_REVISION')==REVISION and e.get('ENGINE_TENSOR_PARALLEL_SIZE')=='4' and e.get('ENGINE_MAX_MODEL_LEN')=='18440' and e.get('ENGINE_MAX_NUM_SEQS')=='64' and e.get('ENGINE_MAX_NUM_BATCHED_TOKENS')=='4096' and e.get('ENGINE_ENABLE_PREFIX_CACHING','0')=='0' and manage.engine_execution_configuration(e)=={'enforce_eager':True} and self.engine.get('gpu')=='0,1,2,3','pinned_eager_tp4_engine_configuration_required')
+  self.profile=json.loads(w['SCHEDULER_PROFILE_JSON']);require(self.profile==self.recovery['original_profile'] and self.profile['runtime_fingerprint']==FP and w.get('WORKER_MAX_INFLIGHT')=='64' and w.get('WORKER_TOKEN_BUDGET')=='298384','original_worker_profile_budget_required')
+  self.engine_url=f'http://127.0.0.1:{self.engine["port"]}';self.worker_url=f'http://127.0.0.1:{self.worker["port"]}';self.headers={'Authorization':'Bearer '+w['INFERENCE_API_KEY']} if w.get('INFERENCE_API_KEY') else {}
+  self.http=httpx.Client(trust_env=False,follow_redirects=False,timeout=3,transport=httpx.HTTPTransport(retries=0))
+  self.baseline=None;self.trace=None;self.log=None
+ def close(self):self.http.close()
+ @staticmethod
+ def key(s):return s['role']+'-'+s['name']
+ def processes(self):
+  result={}
+  for s in self.all:
+   key=self.key(s);record=self.manage.owned_record(ROOT/'.runtime'/(key+'.json'));require(record and {k:record[k] for k in ('pid','start_ticks','cwd')}==self.expected[key],'exact_owned_service_generation_changed')
+   p=Path('/proc')/str(record['pid']);env=(p/'environ').read_bytes();argv=(p/'cmdline').read_bytes();require(len(env)<=2*1024**2 and len(argv)<=65536,'bounded_proc_metadata')
+   actual={k.decode():v.decode() for part in env.split(b'\0') if b'=' in part for k,v in [part.split(b'=',1)]};require(all(actual.get(k)==v for k,v in self.envs[Path(s['env_file'])].items()),'actual_effective_owned_environment_differs')
+   require(self.manage.owned_record(ROOT/'.runtime'/(key+'.json'))==record,'owned_identity_changed_during_read')
+   if s['role']=='engine':
+    wanted=self.manage.command(SimpleNamespace(role='engine',python=s['python'],port=s['port'],gpu=s['gpu']),self.engine_env);require(argv==b'\0'.join(v.encode() for v in wanted)+b'\0','actual_original_eager_argv_required')
+   result[key]={**{k:record[k] for k in ('pid','start_ticks','cwd')},'environment_sha256':sha(env),'argv_sha256':sha(argv)}
+  return result
+ def static(self):
+  actual=self.U.source_map();actual.pop('.runtime/run_qwen235b_fault_cohort.py',None);require(actual==self.sources,'frozen_serving_source_map_changed')
+  return dict(source_sha256=actual,environment_sha256={str(p):sha(self.U.read(p,2*1024**2)) for p in self.envs},manifest_sha256=sha(self.U.read(self.manifest)),controller_sha256=sha(self.U.read(SELF,2*1024**2,private=False)),dependencies={p:sha(self.U.read(ROOT/p,2*1024**2,private=False)) for p in PINS},recovery_sha256=sha(self.U.read(self.recovery_path,2*1024**2)))
+ def get(self,url):
+  with self.http.stream('GET',url,headers=self.headers if url.startswith(self.engine_url+'/') else {}) as r:
+   require(r.status_code==200,'readonly_metrics_http_failure');raw=bytearray()
+   for part in r.iter_bytes():raw.extend(part);require(len(raw)<=2*1024**2,'bounded_metrics_response')
+  return bytes(raw)
+ def metrics(self):return parse_engine_metrics(self.get(self.engine_url+'/metrics'))
+ def capture(self,run):
+  processes=self.processes();directory=self.D.process_profiler_environment(self,self.U,processes)
+  require(directory is not None,'known_configured_unstarted_profiler_expected');self.profiler_directory=directory;self.trace=self.D.profiler_trace_metadata(directory,self.U)
+  startup=self.recovery['engine_startup_logs'];require(len(startup)==1 and startup[0]['owned_identity']==self.expected['engine-qwen235b'],'known_eager_startup_log_required');self.log=self.D.profiler_log_metadata(self.U,249333,startup[0]['log_offset'])
+  path=run/'owned-engine-members.json';record=self.manage.owned_record(ROOT/'.runtime/engine-qwen235b.json');require(self.members.capture(path,record),'exact_owned_engine_members_capture_failed');self.members_snapshot=self.members.read(path)
+  log=self.U.read(Path(startup[0]['path']),2*1024**2);require(sha(log)==startup[0]['sha256'],'fresh_eager_startup_log_sha_differs')
+  ranks={}
+  for rank,pid in re.findall(r'\(Worker_TP([0-9]+) pid=([0-9]+)\)',log.decode()):
+   rank,pid=int(rank),int(pid)
+   choices=[m for m in self.members_snapshot['members'] if m['pid']==pid]
+   if choices:require(rank not in ranks or ranks[rank]==choices[0],'ambiguous_tp_rank');ranks[rank]=choices[0]
+  require(set(ranks)=={0,1,2,3} and len({r['pid'] for r in ranks.values()})==4,'four_exact_live_tp_ranks_required');self.ranks=ranks
+  g=gpu_sample();require(all(self.members.identity(v['pid'])==v for v in ranks.values()),'rank_identity_changed')
+  self.baseline=dict(runtime=self.static(),processes=processes,gpus=gpu_identity(g),ranks=ranks,profile=self.profile,profiler=dict(trace=self.trace,log=self.log,operator_attestation=True,direct_in_memory_state_verified=False))
+  self.guard();return self.baseline
+ def guard(self):
+  require(self.baseline is not None and self.static()==self.baseline['runtime'] and self.processes()==self.baseline['processes'],'runtime_source_config_or_process_drift')
+  require(all(self.members.identity(v['pid'])==v for v in self.ranks.values()),'owned_tp_rank_drift')
+  require(self.D.profiler_trace_metadata(self.profiler_directory,self.U)==self.trace,'profiler_trace_metadata_changed');self.D.profiler_log_metadata(self.U,249333,self.log['offset'],self.log)
+  parse_worker_metrics(self.get(self.worker_url+'/metrics'))
+
+class StreamCapture:
+ def __init__(self,path):
+  self.fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600);self.file=os.fdopen(self.fd,'wb');self.size=0;self.digest=hashlib.sha256();self.done=False;self.events=0
+ def write(self,raw):
+  self.size+=len(raw);require(self.size<=MAX_STREAM,'bounded_private_sse_stream');self.file.write(raw);self.digest.update(raw)
+ def close(self):self.file.flush();os.fsync(self.file.fileno());self.file.close()
+ def metadata(self):return dict(bytes=self.size,sha256=self.digest.hexdigest(),done=self.done,events=self.events)
+
+async def bounded_sse(response):
+ state=STREAM.get();buffer=b'';data=[];done=False;usage_seen=False;finished=False
+ def consume(payload):
+  nonlocal done,usage_seen,finished
+  require(not done,'stream_data_after_done')
+  if payload=='[DONE]':done=True;state.done=True;return None
+  obj=strict(payload);require(type(obj) is dict and obj.get('model',MODEL)==MODEL and not obj.get('error'),'invalid_engine_sse_object')
+  state.events+=1;require(state.events<=8192,'sse_event_bound')
+  usage=obj.get('usage')
+  if usage:
+   require(not usage_seen and type(usage) is dict and all(type(usage.get(k)) is int and usage[k]>0 for k in ('prompt_tokens','completion_tokens','total_tokens')) and usage['total_tokens']==usage['prompt_tokens']+usage['completion_tokens'],'unique_exact_usage_required');usage_seen=True
+  choices=obj.get('choices',[]);require(type(choices) is list and len(choices)<=1,'single_choice_required')
+  for c in choices:
+   require(type(c) is dict and c.get('index',0)==0,'single_choice_index_required')
+   if c.get('finish_reason') is not None:require(not finished and c['finish_reason']=='length','forced_length_finish_required');finished=True
+  return payload
+ async for raw in response.aiter_bytes():
+  state.write(raw);buffer+=raw;require(len(buffer)<=MAX_STREAM,'bounded_sse_buffer')
+  while b'\n' in buffer:
+   line,buffer=buffer.split(b'\n',1);require(len(line)<=MAX_LINE,'bounded_sse_line');line=line.removesuffix(b'\r').decode('utf-8')
+   if not line:
+    if data:
+     payload='\n'.join(data);data=[];value=consume(payload)
+     if value is not None:yield value
+   elif line.startswith('data:'):data.append(line[5:].removeprefix(' '));require(sum(map(len,data))<=MAX_LINE,'bounded_sse_event')
+   elif line.startswith(':'):continue
+   else:require(line.startswith(('event:','id:','retry:')),'unknown_sse_field')
+  require(len(buffer)<=MAX_LINE,'bounded_sse_line')
+ require(not buffer and not data and done and usage_seen and finished,'complete_done_usage_length_required')
+ yield '[DONE]'
+
+class Job:
+ def __init__(self,args,loaded=None,context_factory=None):
+  self.args=args;self.U,self.D,self.E=loaded or load_tools();self.context=(context_factory or Context)(self.U,self.D);self.run=ROOT/'.runtime'/OP;self.stop=threading.Event();self.sample_stop=threading.Event();self.samples=[];self.sample_error=None;self.journal=None
+ def close(self):self.context.close()
+ def save(self):self.U.write(self.run/'journal.json',self.journal,exclusive=False)
+ def prepare(self):
+  require(self.args.attest_no_profiler_control_rpcs,'explicit_no_profiler_control_attestation_required');self.U.directory(self.run,fresh=True);self.U.sync(self.run.parent)
+  space=os.statvfs(self.run);require(space.f_bavail*space.f_frsize>=80*MAX_STREAM+32*1024**2,'bounded_private_output_disk_headroom_required')
+  rows,examples=workload(self.U,self.args.fixture,self.args.token_manifest);binding=self.context.capture(self.run);before=self.context.metrics();require(all(before[k]==0 for k in GAUGES),'idle_engine_required')
+  catalog=self.U.load(self.context.get(self.context.engine_url+'/v1/models'));entries=[v for v in catalog.get('data',[]) if v.get('id')==MODEL];require(len(entries)==1 and entries[0].get('max_model_len')==18440,'actual_advertised_model_context_required')
+  self.U.write(self.run/'private-workload.json',rows);self.U.write(self.run/'private-examples.json',examples)
+  plan=dict(version=1,operation=OP,scope='engine-only direct streaming diagnostic; no platform completions',binding=binding,fixture_sha256=self.U.FIXTURE_SHA,token_manifest_sha256=MANIFEST_SHA,requests=80,concurrency=16,timeout_seconds=TIMEOUT,cells=CELLS,prompt_tokens=430080,completion_tokens=76288,metrics_at_prepare=before,warm_state='recorded engine counters; no assumption of cold service',operator_no_profiler_control_attestation=True)
+  self.U.write(self.run/'plan.json',plan);self.journal=dict(phase='prepared',prepared_sha256=sha(self.U.read(self.run/'plan.json')),automatic_replay=False,pending={},events=[],request_acks={},submitted=0);self.U.write(self.run/'journal.json',self.journal)
+  return dict(phase='prepared',prepared_sha256=self.journal['prepared_sha256'],submitted=0,requests_planned=80)
+ def intent(self,key):
+  require(key not in self.journal['pending'] and key not in self.journal['request_acks'],'request_no_replay');self.journal['pending'][key]=dict(at=self.U.stamp(),monotonic=time.monotonic());self.journal['submitted']+=1;self.save()
+ def sampler(self):
+  while not self.sample_stop.is_set() and len(self.samples)<SAMPLES:
+   began=time.monotonic()
+   try:
+    g=gpu_sample();require(gpu_identity(g)==self.context.baseline['gpus'],'gpu_identity_changed');m=self.context.metrics();parse_worker_metrics(self.context.get(self.context.worker_url+'/metrics'))
+    self.samples.append(dict(monotonic=began,at=self.U.stamp(),gpus=g,engine=m));self.U.write(self.run/'samples.json',self.samples,exclusive=False)
+   except BaseException as error:self.sample_error=type(error).__name__;self.stop.set();break
+   self.sample_stop.wait(max(0,1-(time.monotonic()-began)))
+ async def burst(self,rows,examples):
+  require(len(rows)==80 and len(examples)==80,'exact80_prepared_inputs_required');pending=deque(enumerate(rows));results=[];offered=time.monotonic();self.E.sse_events=bounded_sse
+  async with httpx.AsyncClient(base_url=self.context.engine_url,headers=self.context.headers,trust_env=False,follow_redirects=False,timeout=TIMEOUT,transport=httpx.AsyncHTTPTransport(retries=0),limits=httpx.Limits(max_connections=17)) as client:
+   async def consumer():
+    while pending and not self.stop.is_set():
+     index,row=pending.popleft();await asyncio.to_thread(self.context.guard)
+     if self.stop.is_set():return
+     key=row['custom_id'];self.intent(key);capture=StreamCapture(self.run/f'private-response-{index:03}.sse');token=STREAM.set(capture)
+     try:r=await self.E.invoke(client,row,examples[key],offered=offered,dispatch=index,force_length=True,request_timeout=TIMEOUT)
+     finally:STREAM.reset(token);capture.close()
+     r['private_stream']=capture.metadata();results.append(r);self.U.write(self.run/f'result-{index:03}.json',r)
+     if r['status']!='completed':self.stop.set();continue
+     self.journal['request_acks'][key]=dict(result_sha256=sha(self.U.read(self.run/f'result-{index:03}.json')),stream_sha256=capture.digest.hexdigest());self.journal['pending'].pop(key);self.save()
+   async with asyncio.timeout(max(.001,self.execution_deadline-time.monotonic())):await asyncio.gather(*(consumer() for _ in range(16)))
+  return results,time.monotonic()-offered
+ def execute(self,expected):
+  U=self.U;raw=U.read(self.run/'plan.json');require(sha(raw)==expected,'exact_prepared_sha_required');plan=U.load(raw);self.journal=U.load(U.read(self.run/'journal.json'))
+  require(self.args.attest_no_profiler_control_rpcs and self.journal['phase']=='prepared' and not self.journal['pending'] and self.journal['submitted']==0 and not (self.run/'execution-marker.json').exists(),'fresh_prepared_once_only')
+  self.context.baseline=plan['binding'];self.context.ranks={int(k):v for k,v in plan['binding']['ranks'].items()};self.context.trace=plan['binding']['profiler']['trace'];self.context.log=plan['binding']['profiler']['log'];self.context.profiler_directory=self.D.process_profiler_environment(self.context,U,self.context.processes());self.context.guard()
+  rows=U.load(U.read(self.run/'private-workload.json',32*1024**2));examples=U.load(U.read(self.run/'private-examples.json',32*1024**2));expectedrows,expectedexamples=workload(U,self.args.fixture,self.args.token_manifest);require(rows==expectedrows and examples==expectedexamples,'private_prepared_workload_differs')
+  U.write(self.run/'execution-marker.json',dict(prepared_sha256=expected,at=U.stamp()));self.journal['phase']='running';self.save();thread=None;started=time.monotonic();self.execution_deadline=started+TIMEOUT
+  try:
+   before=self.context.metrics();require(all(before[k]==0 for k in GAUGES),'idle_before_requests_required');self.journal['metrics_before']=before;self.save()
+   thread=threading.Thread(target=self.sampler,daemon=True);thread.start();results,elapsed=asyncio.run(self.burst(rows,examples));require(not self.stop.is_set() and self.sample_error is None and len(results)==len(self.journal['request_acks'])==80 and not self.journal['pending'],'complete80_known_streams_required')
+   deadline=min(time.monotonic()+30,self.execution_deadline)
+   while True:
+    self.context.guard();after=self.context.metrics();delta={k:after[k]-before[k] for k in COUNTERS}
+    if delta==dict(zip(COUNTERS,(80.,430080.,76288.))) and all(after[k]==0 for k in GAUGES):break
+    require(time.monotonic()<deadline,'engine_counter_delta_or_idle_not_isolated');time.sleep(1)
+   self.sample_stop.set();thread.join(10);require(not thread.is_alive() and self.sample_error is None and len(self.samples)>=1,'bounded_sampler_known_stop_required');self.context.guard()
+   summary=self.E.summarize(results,elapsed,hourly_cost=16.10);require(summary['errors']==0 and summary['completed']==80 and summary['prompt_tokens']==430080 and summary['generated_tokens']==76288,'exact80_actual_usage_required')
+   report=dict(version=1,operation=OP,scope=plan['scope'],prepared_sha256=expected,passed=True,automatic_replay=False,manual_recovery_required=False,model=MODEL,revision=REVISION,profile=plan['binding']['profile'],source_binding_sha256=sha(U.encoded(plan['binding'])),metrics_before=before,metrics_after=after,metrics_delta=delta,summary=summary,by_shape={label:self.E.summarize([r for r in results if r['class']==label],elapsed) for label,_,_ in CELLS},records=sorted(results,key=lambda r:r['dispatch_index']),sample_count=len(self.samples),samples_sha256=sha(U.read(self.run/'samples.json',32*1024**2)),full_execution_seconds=time.monotonic()-started,profiler_evidence=plan['binding']['profiler'],limitations=['Direct engine diagnostic bypasses BatchForge durable admission/scheduler/leases/KV worker gate; zero platform completions claimed','Forced min_tokens==max_tokens plus ignore_eos; not answer quality or production SLO','HTTP TTFT includes engine queueing/network; SSE text events are not tokens and stream-span/token metric is only a proxy, not ITL','TP4 on one Pod; no heterogeneous placement, HA, daily throughput or invoice claim','Warm state is actual pre-run engine cumulative counters; no unrecorded warmup or cold-start assumption','Each shape shares full burst wall; not isolated prefill/decode peak','Profiler configured-unstarted under operator attestation and unchanged trace/log metadata; not direct in-memory state verification'])
+   U.write(self.run/'report.json',report);self.journal.update(phase='complete',report_sha256=sha(U.read(self.run/'report.json',8*1024**2)),manual_recovery_required=False);self.save();return dict(phase='complete',requests=80,report_sha256=self.journal['report_sha256'],scope='engine-only')
+  except BaseException as error:
+   self.stop.set();self.journal.update(phase='manual_recovery_required',manual_recovery_required=True,error_type=type(error).__name__)
+   try:self.save()
+   except BaseException:pass
+   raise
+  finally:
+   self.sample_stop.set()
+   if thread:thread.join(10)
+
+def main(argv=None):
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--operation',choices=[OP],required=True);p.add_argument('--fixture',type=Path,default=ROOT/'.runtime/qwen235b-v1/workload-20.jsonl');p.add_argument('--token-manifest',type=Path,default=ROOT/'.runtime/qwen235b-v1/workload-20-manifest.json');p.add_argument('--attest-no-profiler-control-rpcs',action='store_true');p.add_argument('--execute',action='store_true');p.add_argument('--prepared-sha256');a=p.parse_args(argv);job=None;os.umask(0o077)
+ try:
+  require(ROOT==Path('/root/batchforge-runtime/app') and sys.platform=='linux','same_pod_linux_only');require(a.execute==bool(a.prepared_sha256),'execute_exact_prepared_sha_required');U,D,E=load_tools()
+  with locks(U):
+   job=Job(a,loaded=(U,D,E))
+   for sig in (signal.SIGINT,signal.SIGTERM,signal.SIGHUP):signal.signal(sig,lambda *_:job.stop.set())
+   print(json.dumps(job.execute(a.prepared_sha256) if a.execute else job.prepare()));return 0
+ except BaseException as error:print(json.dumps(dict(refused_or_manual=True,error_type=type(error).__name__,automatic_replay=False,scope='engine-only')));return 1
+ finally:
+  if job:job.close()
+if __name__=='__main__':raise SystemExit(main())

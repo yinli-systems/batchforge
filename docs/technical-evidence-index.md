@@ -1,5 +1,13 @@
 # Technical evidence index — October 24, 2026
 
+**Latest operational boundary:** Neon now rejects SQL connections because the
+project's monthly network-transfer allowance is exhausted. Historical readiness
+and accepted-task results below describe their recorded windows. A separate
+[Render Free qualification](free-postgres-validation-2026-10-24.md) has passed
+strict TLS, full schema11 rollback and runtime SQL ACL checks; old data has not
+been migrated or replaced. The [new direct-engine diagnostics](qwen235b-engine-diagnostics-2026-10-24.md)
+continue four-H100 measurements without claiming durable platform completions.
+
 BatchForge has run the official Qwen3-235B-A22B-Instruct-2507-FP8 checkpoint on
 one four-H100 80GB Pod. The model has 235B total and 22B active parameters. The
 checkpoint revision is `e156cb4efae43fbee1a1ab073f946a1377e6b969`; execution uses

@@ -1,0 +1,14 @@
+{
+  "channel": "authenticated_console_feedback_form",
+  "credentials_or_database_contents_sent": false,
+  "exact_request": "请为项目 little-math-11178935 提供一次免费的只读导出窗口，以迁移至已创建的 Render 免费数据库。当前控制台错误：Limit reached — You've used all of your monthly network transfer allowance for this project. 请保留原项目；不升级套餐、不绑定银行卡、不授权任何收费。此请求不包含凭据或数据库内容。",
+  "export_window_approved": false,
+  "plan_or_card_changed": false,
+  "project_id": "little-math-11178935",
+  "provider": "Neon",
+  "screenshot_sha256": "9cc96d2921271750626fdbc8b72cac843b393bda59bfcc4e633b2376120a18e1",
+  "submitted_on": "2026-10-24",
+  "ticket_id": null,
+  "ui_acknowledgement": "Thanks for your feedback!",
+  "user_explicitly_authorized": true
+}

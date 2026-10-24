@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-24T12:14:25.641696+00:00",
+  "automatic_replay": false,
+  "database_created": true,
+  "phase": "created_verified_empty",
+  "production_config_changed": false,
+  "provider_service_id": "dpg-dbea0jfb9u1s738voe8g-a",
+  "qualification_config_sha256": "0a1e9d41b07c52ec5e7637d7d05592b3301e8705d6597189bc82455bccab08b9",
+  "qualification_database": "bf_qualification_2026102412140001",
+  "source_config_sha256": "df2d04fc374335d61d526eebd5ccb6f09b612ab51fd9150395256ff40114e19d"
+}

@@ -1,0 +1,133 @@
+"""One cold-first 20-cell engine burst; no database, profiler or lifecycle action."""
+import argparse,asyncio,hashlib,json,os,subprocess,sys,time
+from pathlib import Path
+
+ROOT=Path('/root/batchforge-runtime/app')
+MODEL='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+RUN=ROOT/'.runtime/qwen235b-render-wait-engine20-v1'
+EXPECTED={'engine-qwen235b':(249333,'36488000'),'worker-qwen235b':(250353,'36494104'),'supervisor-primary':(250356,'36494365')}
+sys.path.insert(0,str(ROOT))
+
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def save(report):
+ p=RUN/'report.pending';fd=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+ with os.fdopen(fd,'w') as f:json.dump(report,f,sort_keys=True,indent=2);f.write('\n');f.flush();os.fsync(f.fileno())
+ os.replace(p,RUN/'report.json')
+
+async def execute():
+ from ops.manage import owned_record,engine_execution_configuration
+ from ops.supervise import load_manifest
+ from ops.ha.retune_full_gpu import file_env
+ from scripts import engine_matrix
+ import httpx
+ from prometheus_client.parser import text_string_to_metric_families
+ os.umask(0o077)
+ recovery=ROOT/'.runtime/q235-graphB-v2-runtime-recovery-v1/report.json'
+ assert sha(recovery.read_bytes())=='a6af85068a4f4b65c92986901709130301b8f8e0b2344e2a5a42aee2e749b934'
+ _,services,_=load_manifest(ROOT/'.runtime/services-primary.json')
+ engine=next(s for s in services if (s['role'],s['name'])==('engine','qwen235b'))
+ worker=next(s for s in services if (s['role'],s['name'])==('worker','qwen235b'))
+ files={Path(s['env_file']):sha(Path(s['env_file']).read_bytes()) for s in (engine,worker)}
+ sources={ROOT/p:sha((ROOT/p).read_bytes()) for p in ('scripts/engine_matrix.py','scripts/benchmark.py','ops/manage.py')}
+ ev,wv=file_env(engine['env_file']),file_env(worker['env_file'])
+ assert engine_execution_configuration(ev)=={'enforce_eager':True}
+ assert (ev['ENGINE_TENSOR_PARALLEL_SIZE'],ev['ENGINE_MAX_MODEL_LEN'],ev['ENGINE_MAX_NUM_SEQS'],ev['ENGINE_MAX_NUM_BATCHED_TOKENS'])==('4','18440','64','4096')
+ assert ev.get('ENGINE_ENABLE_PREFIX_CACHING','0')=='0' and ev.get('ENGINE_ENABLE_CHUNKED_PREFILL','1')=='1'
+ assert b'--enforce-eager' in Path('/proc/249333/cmdline').read_bytes().split(b'\0')
+ assert wv['MODEL_NAME']==MODEL and wv['WORKER_MAX_INFLIGHT']=='64'
+ assert json.loads(wv['SCHEDULER_PROFILE_JSON'])['runtime_fingerprint']=='sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3'
+ effective_hashes={}
+ for pid,values in ((249333,ev),(250353,wv)):
+  raw=Path('/proc',str(pid),'environ').read_bytes()
+  actual={k.decode():v.decode() for item in raw.split(b'\0') if item for k,v in [item.split(b'=',1)]}
+  assert all(actual.get(k)==v for k,v in values.items())
+  effective_hashes[pid]=sha(raw)
+ assets=ROOT/'.runtime/qwen235b-v1';payload=assets/'workload-20.jsonl';manifest=assets/'workload-20-manifest.json'
+ assert sha(payload.read_bytes())=='52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f'
+ assert sha(manifest.read_bytes())=='760d9cccb1bdc9a89868fb298bd4e90311936a86890cb6bbb29f862651d6ddf4'
+ expected_input=109056;expected_output=13600
+ def guard():
+  for name,(pid,ticks) in EXPECTED.items():
+   r=owned_record(ROOT/'.runtime'/(name+'.json'))
+   if not r or (r['pid'],r['start_ticks'],r['cwd'])!=(pid,ticks,str(ROOT)):raise RuntimeError('owned_generation_changed')
+  for p,h in {**files,**sources}.items():
+   if sha(p.read_bytes())!=h:raise RuntimeError('source_or_config_changed')
+  for pid,h in effective_hashes.items():
+   if sha(Path('/proc',str(pid),'environ').read_bytes())!=h:raise RuntimeError('effective_environment_changed')
+ guard()
+ base=f'http://127.0.0.1:{engine["port"]}'
+ headers={'Authorization':'Bearer '+wv['INFERENCE_API_KEY']} if wv.get('INFERENCE_API_KEY') else {}
+ keys={'vllm:request_success_total','vllm:prompt_tokens_total','vllm:generation_tokens_total','vllm:num_requests_running','vllm:num_requests_waiting','vllm:kv_cache_usage_perc'}
+ def parse(text):
+  found={};seen=set()
+  for family in text_string_to_metric_families(text):
+   for sample in family.samples:
+    if sample.name in keys and sample.labels.get('model_name')==MODEL and sample.labels.get('engine')=='0':
+     found[sample.name]=found.get(sample.name,0)+sample.value;seen.add(sample.name)
+  if seen!=keys:raise RuntimeError('missing_scoped_engine_metrics')
+  return found
+ async with httpx.AsyncClient(trust_env=False,headers=headers,timeout=3) as client:
+  async def metrics():
+   r=await client.get(base+'/metrics');r.raise_for_status();return parse(r.text)
+  before=await metrics();assert all(before[k]==0 for k in keys)
+  r=await client.get(f'http://127.0.0.1:{worker["port"]}/metrics');r.raise_for_status()
+  inflight=[s.value for f in text_string_to_metric_families(r.text) for s in f.samples if s.name=='batchforge_worker_inflight']
+  assert inflight==[0.0]
+  RUN.mkdir(mode=0o700)
+  report={'phase':'running','passed':False,'automatic_replay':False,'scope':'engine_only_cold_first_20_cell_burst_not_durable_platform_completions','database_queries':False,'lifecycle_actions':False,'engine_metrics_before':before,'source_sha256':{str(k):v for k,v in sources.items()},'env_sha256':{str(k):v for k,v in files.items()},'controller_source_sha256':sha(Path(__file__).read_bytes()),'sample_count':0,'sampler_failed':False,'model':MODEL,'concurrency':16,'forced_fixed_length':True,'expected_input_tokens':expected_input,'expected_output_tokens':expected_output}
+  save(report);stop=asyncio.Event();samples=[]
+  async def sample():
+   try:
+    while not stop.is_set() and len(samples)<650:
+     guard();t=time.monotonic()
+     child=await asyncio.create_subprocess_exec('nvidia-smi','--query-gpu=index,name,utilization.gpu,utilization.memory,memory.used,memory.total,power.draw','--format=csv,noheader,nounits',stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
+     stdout,stderr=await asyncio.wait_for(child.communicate(),5)
+     if child.returncode:raise RuntimeError('gpu_sampler_failed')
+     gpus=[]
+     for line in stdout.decode().splitlines():
+      fields=[x.strip() for x in line.split(',')];assert len(fields)==7 and 'H100' in fields[1]
+      gpus.append({'index':int(fields[0]),'gpu_utilization_percent':float(fields[2]),'memory_utilization_percent':float(fields[3]),'memory_used_mib':float(fields[4]),'memory_total_mib':float(fields[5]),'power_watts':float(fields[6])})
+     assert {g['index'] for g in gpus}=={0,1,2,3};gpus.sort(key=lambda g:g['index'])
+     samples.append({'monotonic':t,'gpus':gpus,'engine':await metrics()})
+     with (RUN/'gpu-and-engine-samples.jsonl').open('a') as out:out.write(json.dumps(samples[-1],sort_keys=True)+'\n')
+     try:await asyncio.wait_for(stop.wait(),max(.01,1-(time.monotonic()-t)))
+     except TimeoutError:pass
+   except BaseException as error:report.update(sampler_failed=True,sampler_failure_type=type(error).__name__)
+  class BoundTransport(httpx.AsyncBaseTransport):
+   def __init__(self):self.transport=httpx.AsyncHTTPTransport(retries=0)
+   async def handle_async_request(self,request):
+    if request.method=='POST':guard()
+    return await self.transport.handle_async_request(request)
+   async def aclose(self):await self.transport.aclose()
+  transport=BoundTransport();sampler=asyncio.create_task(sample());previous=os.environ.get('INFERENCE_API_KEY')
+  os.environ['INFERENCE_API_KEY']=wv.get('INFERENCE_API_KEY','')
+  try:
+   args=argparse.Namespace(url=base,workload=payload,manifest=manifest,engine_label='235b-cold-first20-render-wait',policy='fifo',concurrency=16,context_limit=18440,request_timeout=300,hourly_cost=16.10,force_length=True)
+   async with asyncio.timeout(600):result=await engine_matrix.run(args,transport=transport)
+   with (RUN/'inference.json').open('x') as out:json.dump(result,out,sort_keys=True,indent=2);out.write('\n')
+   guard();after=await metrics()
+   for _ in range(10):
+    if after['vllm:num_requests_running']==after['vllm:num_requests_waiting']==0 and after['vllm:generation_tokens_total']>=expected_output:break
+    await asyncio.sleep(1);after=await metrics()
+   delta={k:after[k]-before[k] for k in ('vllm:request_success_total','vllm:prompt_tokens_total','vllm:generation_tokens_total')}
+   summary=result['summary']
+   assert result['passed'] and summary['completed']==20 and summary['prompt_tokens']==expected_input and summary['generated_tokens']==expected_output
+   assert delta=={'vllm:request_success_total':20.0,'vllm:prompt_tokens_total':float(expected_input),'vllm:generation_tokens_total':float(expected_output)}
+   assert after['vllm:num_requests_running']==after['vllm:num_requests_waiting']==0
+   report.update(phase='complete',passed=not report['sampler_failed'],summary=summary,engine_metrics_after=after,engine_counter_deltas=delta)
+  except BaseException as error:report.update(phase='failed_or_unknown',passed=False,failure_type=type(error).__name__)
+  finally:
+   stop.set();await sampler;await transport.aclose()
+   if previous is None:os.environ.pop('INFERENCE_API_KEY',None)
+   else:os.environ['INFERENCE_API_KEY']=previous
+   report['sample_count']=len(samples)
+   if not samples:report['passed']=False
+   report['gpu_summary']={str(index):{'samples':len(samples),'mean_gpu_utilization_percent':sum(s['gpus'][index]['gpu_utilization_percent'] for s in samples)/len(samples),'max_gpu_utilization_percent':max(s['gpus'][index]['gpu_utilization_percent'] for s in samples)} for index in range(4)} if samples else {}
+   report['ended_at_unix']=time.time();save(report)
+  return report
+
+if __name__=='__main__':
+ try:
+  result=asyncio.run(execute());print(json.dumps({k:result.get(k) for k in ('phase','passed','sample_count','failure_type')}))
+ except BaseException as error:
+  print(json.dumps({'phase':'preflight_refused_or_unknown','failure_type':type(error).__name__,'automatic_replay':False}));raise SystemExit(1)

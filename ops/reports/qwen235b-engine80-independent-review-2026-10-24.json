@@ -1,0 +1,31 @@
+{
+  "independent_tests": {
+    "gpu_used": false,
+    "http_streams_metrics_and_prepare_context": "synthetic mocks only",
+    "passed": 34,
+    "production_used": false,
+    "returncode": 0,
+    "seconds": 0.22,
+    "skipped": 0,
+    "ssh_used": false
+  },
+  "prior_bug_fixed": "Job.prepare catalog U.load NameError corrected to self.U.load; real prepare happy-path/warm20/existing-directory no-replay regression passed.",
+  "remaining_p1_p2": [],
+  "reviewed_files": {
+    "qwen235b-engine80-operator-notes.txt": "3f59475bdc6d0562490e0e20f0b423a49f1b4ef5ac145f62d832bcbcf5ab1a64",
+    "run_qwen235b_engine80.py": "727ffa612b494bd52908ebdccc89f45b72abf09654629de38eadc8ca309ba8c0",
+    "test_run_qwen235b_engine80.py": "71b4d58bd77e3ad5635be5a085513496e3069b2923072a1e0e57dfa9b987382a"
+  },
+  "scope": "Exact once-only direct-engine80 private diagnostic. No platform completions, DB, profiler or lifecycle operations approved by this receipt. Root remains sole actual operator.",
+  "verified_contracts": [
+    "Fixed80 fivecells16each/concurrency16/430080input76288output; exact pinnedfixture/tokenizer/model/revision",
+    "Six original envfile SHA matched recoveryanchor plus actual ownedPID/startticks/environ/argv,145source map,manifest,profile/rank/GPU/profiler guards",
+    "No DBContext constructed; reused35b/d622/E14 pure helpers only; no lifecycle/profiler/network outside loopbackengine/worker",
+    "Exclusiveprepare/execute marker and durable perPOSTintent before single HTTP attempt; no retries/redirects/proxyenv; unknownpending preserved",
+    "Bounded4MiB streams/64KiBline-event/8192events requireEOF thenDONE/oneusage/length; raw staysprivate600",
+    "Same model/engine metrics before actualwarmcounterbaseline (notzero) and exact80/430080/76288delta+idle; workerinflight/KVwait/reserved0",
+    "Sampler finite bounds/stop-join only in finally; no compensation request/lifecycle action",
+    "TTFT/SSE proxy/wholeburst allocation limits explicit; not ITL/quality/SLO/daily scale/heterogeneous placement"
+  ],
+  "version": 1
+}
