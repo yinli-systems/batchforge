@@ -1,0 +1,110 @@
+{
+  "comparison_population": "Two serial real160-task cohorts,8batches20/class; cost arrival protocol invalid, so no causal policy benefit/cost-saving claim",
+  "date": "2026-10-24",
+  "evidence_source_sha256": "023936c69afec87c390aa9515e4e26b416e2ce9a0ab7c75e58221ae4048444ed",
+  "files": [
+    {
+      "artifact": "report",
+      "bytes": 368227,
+      "operation": "qwen235b-policy-fair160-v1",
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/policy-cohorts/qwen235b-policy-fair160-v1/report.json",
+      "repository_path": "ops/reports/qwen235b-policy-fair160-v1-report-2026-10-24.json",
+      "sha256": "d12e9efaa84fbcf8b3e64e5ac0be610b08a2605c008afc080f5f568041ca4057",
+      "trusted_root_transport_manifest_sha256": "43dd4400c46afc3d3953855441602a918f56d546270fa8a1c74bc4c6bf9e530b"
+    },
+    {
+      "artifact": "plan",
+      "bytes": 40668,
+      "operation": "qwen235b-policy-fair160-v1",
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/policy-cohorts/qwen235b-policy-fair160-v1/plan.json",
+      "repository_path": "ops/reports/qwen235b-policy-fair160-v1-plan-2026-10-24.json",
+      "sha256": "0434786f775251e427f34da745db8fdf482f63a6bc42d03e4a964489c4eee655",
+      "trusted_root_transport_manifest_sha256": "43dd4400c46afc3d3953855441602a918f56d546270fa8a1c74bc4c6bf9e530b"
+    },
+    {
+      "artifact": "journal",
+      "bytes": 5435,
+      "operation": "qwen235b-policy-fair160-v1",
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/policy-cohorts/qwen235b-policy-fair160-v1/journal.json",
+      "repository_path": "ops/reports/qwen235b-policy-fair160-v1-journal-2026-10-24.json",
+      "sha256": "05a6a15e1a2e8652380a17abc824a77be8af935cd6073e64b711501ca7d9b6f5",
+      "trusted_root_transport_manifest_sha256": "43dd4400c46afc3d3953855441602a918f56d546270fa8a1c74bc4c6bf9e530b"
+    },
+    {
+      "artifact": "report",
+      "bytes": 369428,
+      "operation": "qwen235b-policy-cost160-v1",
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/policy-cohorts/qwen235b-policy-cost160-v1/report.json",
+      "repository_path": "ops/reports/qwen235b-policy-cost160-v1-report-2026-10-24.json",
+      "sha256": "72d2f75d2d171798c77482bc0e04b46eacc711f88f99dbfeb5fb6c2825997b2a",
+      "trusted_root_transport_manifest_sha256": "c0f78ee82b520c43875ffb3f1fd3f3d73fec79915d2d5de782c2cc4cd0356f5f"
+    },
+    {
+      "artifact": "plan",
+      "bytes": 40927,
+      "operation": "qwen235b-policy-cost160-v1",
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/policy-cohorts/qwen235b-policy-cost160-v1/plan.json",
+      "repository_path": "ops/reports/qwen235b-policy-cost160-v1-plan-2026-10-24.json",
+      "sha256": "6cdd1c98fd5d6acfd2cf91c45603044c49a1ad21d3510c31575623526aaddab5",
+      "trusted_root_transport_manifest_sha256": "c0f78ee82b520c43875ffb3f1fd3f3d73fec79915d2d5de782c2cc4cd0356f5f"
+    },
+    {
+      "artifact": "journal",
+      "bytes": 5424,
+      "operation": "qwen235b-policy-cost160-v1",
+      "original_bytes_preserved": true,
+      "original_same_pod_path": "/root/batchforge-runtime/app/.runtime/policy-cohorts/qwen235b-policy-cost160-v1/journal.json",
+      "repository_path": "ops/reports/qwen235b-policy-cost160-v1-journal-2026-10-24.json",
+      "sha256": "9caa4c8eb0d0413de61e7f0100f234cc12c5c5aaffb68efe26cab01565b2b410",
+      "trusted_root_transport_manifest_sha256": "c0f78ee82b520c43875ffb3f1fd3f3d73fec79915d2d5de782c2cc4cd0356f5f"
+    }
+  ],
+  "local_analysis_used_production_http_sql_gpu_ssh": false,
+  "metadata_validator_source_sha256": "6063ce8d731af9f7fbed5ae51a4a89c0e18a8b2f1e4943a4c1418c9b7cb426d7",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "producer_source_sha256": "a7da1c04c66b9db6d0e5aeaf9d9ac67b1ab9b185abbf800ad9324e536b4c3a23",
+  "provenance_scope": "Trusted root SHA anchors exact historical metadata bytes; not a signature or independent production observation",
+  "raw_prompts_outputs_environment_credentials_dumps_included": false,
+  "rounds": {
+    "cost": {
+      "arrival_protocol_valid": false,
+      "completed_tasks": 160,
+      "individual_pair_arrival_comparable_field": false,
+      "integrity_passed": true,
+      "local_receiver_receipt_sha256": "ec3ea989ddb754202870048f7e1da617d9ea7da35c6ca5a2fd6f35bb183ba849",
+      "trusted_root_transport_manifest_sha256": "c0f78ee82b520c43875ffb3f1fd3f3d73fec79915d2d5de782c2cc4cd0356f5f"
+    },
+    "fair": {
+      "arrival_protocol_valid": true,
+      "completed_tasks": 160,
+      "individual_pair_arrival_comparable_field": true,
+      "integrity_passed": true,
+      "local_receiver_receipt_sha256": "5c0353dfdae44d518bce662cad1762a79edc06e167feba68d43b3f69adf0e9aa",
+      "trusted_root_transport_manifest_sha256": "43dd4400c46afc3d3953855441602a918f56d546270fa8a1c74bc4c6bf9e530b"
+    }
+  },
+  "status": "ACTUAL_COMPLETED_COHORTS_NOT_A_VALID_CAUSAL_PAIR",
+  "strict_claim_counterfactual_attribution": "inconclusive_no_same_claim_candidate_audit",
+  "transport_manifests": {
+    "cost": {
+      "bytes": 1233,
+      "external_trust_anchor": "Exact SHA supplied by root through parent channel before local receipt validation",
+      "original_bytes_preserved": true,
+      "repository_path": "ops/reports/qwen235b-policy-cost160-v1-transport-manifest-2026-10-24.json",
+      "sha256": "c0f78ee82b520c43875ffb3f1fd3f3d73fec79915d2d5de782c2cc4cd0356f5f"
+    },
+    "fair": {
+      "bytes": 1233,
+      "external_trust_anchor": "Exact SHA supplied by root through parent channel before local receipt validation",
+      "original_bytes_preserved": true,
+      "repository_path": "ops/reports/qwen235b-policy-fair160-v1-transport-manifest-2026-10-24.json",
+      "sha256": "43dd4400c46afc3d3953855441602a918f56d546270fa8a1c74bc4c6bf9e530b"
+    }
+  },
+  "version": 1
+}

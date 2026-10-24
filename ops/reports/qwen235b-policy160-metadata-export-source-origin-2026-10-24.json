@@ -1,0 +1,33 @@
+{
+  "execution_status": "REVIEWED_READY; root stages/executes separately; this inventory does not attest later production or transport outcomes",
+  "files": [
+    {
+      "bytes": 21457,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-policy160-metadata-export-source-2026-10-24.py.txt",
+      "sha256": "6063ce8d731af9f7fbed5ae51a4a89c0e18a8b2f1e4943a4c1418c9b7cb426d7",
+      "source_path": ".runtime/export_policy160_metadata.py"
+    },
+    {
+      "bytes": 13613,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-policy160-metadata-export-tests-2026-10-24.py.txt",
+      "sha256": "8dbccc16d10856ede24fd6aeb5f2aaf8c668d933971fa0466d3053ab47d61f6f",
+      "source_path": ".runtime/test_export_policy160_metadata.py"
+    },
+    {
+      "bytes": 4245,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-policy160-metadata-export-notes-2026-10-24.txt",
+      "sha256": "f14823d4521220cd3f4e97cb3a76efef86ea2126730e2117e7b4a96cb7c3d616",
+      "source_path": ".runtime/policy160-metadata-export-notes.txt"
+    }
+  ],
+  "independent_review_tests_passed": 21,
+  "local_tests_passed": 21,
+  "prepared_at": "2026-10-24T10:48:30.563037+00:00",
+  "production_execution_by_author": false,
+  "scope": "Exact source/test/notes copies only; no raw prompts, outputs, private configuration, credentials, traces or dump",
+  "trust_scope": "Source SHA inventory is not a digital signature or independent production observation",
+  "version": 1
+}

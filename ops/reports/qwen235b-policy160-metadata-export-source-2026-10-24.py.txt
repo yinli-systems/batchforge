@@ -1,0 +1,154 @@
+"""Validate/copy exact completed policy160 report+plan+journal metadata only.
+
+Default is read-only preview. Historical report bytes have explicit trusted-root
+SHA anchors; receiving additionally requires the original canonical manifest SHA.
+No HTTP/SSH/SQL/process/GPU/activation code is invoked. Invalid offered-arrival
+protocol stays invalid and causal attribution always stays inconclusive.
+"""
+from __future__ import annotations
+import argparse,copy,hashlib,json,math,os,re,stat,sys
+from datetime import datetime
+from pathlib import Path
+from types import SimpleNamespace
+ROOT=Path(__file__).resolve().parents[1];REMOTE=Path('/root/batchforge-runtime/app')
+if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
+PRODUCER='a7da1c04c66b9db6d0e5aeaf9d9ac67b1ab9b185abbf800ad9324e536b4c3a23'
+EVIDENCE='023936c69afec87c390aa9515e4e26b416e2ce9a0ab7c75e58221ae4048444ed'
+OPS={'qwen235b-policy-fair160-v1':'fair','qwen235b-policy-cost160-v1':'cost_aware'}
+REPORT_SHA={'qwen235b-policy-fair160-v1':'d12e9efaa84fbcf8b3e64e5ac0be610b08a2605c008afc080f5f568041ca4057','qwen235b-policy-cost160-v1':'72d2f75d2d171798c77482bc0e04b46eacc711f88f99dbfeb5fb6c2825997b2a'}
+NAMES=('report','plan','journal');MAX_FILE=8*1024**2
+FP='sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3'
+MODEL='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+TRUST='Trusted root SHA anchors exact historical metadata bytes; not a signature or independent production observation'
+PROFILE={'calibration_label':'projected-from-static16;claimlimit64-not-newpricedexecutioncapacity;rates-not-recalibrated;source:primary-h100-tp4-qwen235b-fp8-seq16','cost_source':'operator-allocation-16.1-USD-hour-divided-by-16-slots;assumes-full-occupancy;adaptive64-claimlimit-not-new-priced-execution-capacity','decode_tokens_per_second':11.775313909354303,'hourly_cost_usd':1.00625,'prefill_tokens_per_second':5573.560941602189,'profile_id':'primary-h100-tp4-qwen235b-fp8-adaptive64','runtime_fingerprint':FP}
+class Refusal(ValueError):pass
+def require(ok,code):
+ if not ok:raise Refusal(code)
+def sha(raw):return hashlib.sha256(raw).hexdigest()
+def encode(value):return (json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode()
+def load(raw):
+ def unique(pairs):
+  result={}
+  for key,value in pairs:require(key not in result,'duplicate_json_key');result[key]=value
+  return result
+ def invalid(_):raise Refusal('nonfinite_json')
+ return json.loads(raw.decode('utf-8'),object_pairs_hook=unique,parse_constant=invalid)
+def match(pattern):return lambda value:type(value) is str and re.fullmatch(pattern,value) is not None
+def literal(*values):return lambda value:any(type(value) is type(v) and value==v for v in values)
+I=lambda v:type(v) is int and 0<=v<10**18
+N=lambda v:type(v) in (int,float) and math.isfinite(v) and abs(v)<10**18
+B=lambda v:type(v) is bool
+H=match('[0-9a-f]{64}');D=match('[1-9][0-9]{0,18}');FILE=match('file_[0-9a-f]{32}');BATCH=match('batch_[0-9a-f]{32}');TASK=match('task_[0-9a-f]{32}')
+OP=literal(*OPS);POLICY=literal(*OPS.values());WORKER=literal('primary-qwen235b-tp4');NULL=literal(None)
+PATH=literal('/root/batchforge-runtime/api-a.env','/root/batchforge-runtime/api-b.env','/root/batchforge-runtime/gateway.env','/root/batchforge-runtime/supervisor.env','/root/batchforge-runtime/app/.runtime/qwen235b-adaptive64-v1/engine.env','/root/batchforge-runtime/app/.runtime/qwen235b-adaptive64-v1/worker.env','/root/batchforge-runtime/app/.runtime/scheduler-v6/benchmark.env','/root/batchforge-runtime/app/.runtime/services-primary.json','/root/batchforge-runtime/app/.runtime/qwen235b-v1/workload-20.jsonl')
+def TIME(v):
+ return type(v) is str and re.fullmatch(r'\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,6})?(?:\+00:00|Z)',v) is not None and datetime.fromisoformat(v).utcoffset() is not None
+def array(node):return ('list',node)
+def mapping(key,node):return ('map',key,node)
+def either(*nodes):return ('either',nodes)
+def schema(v,s):
+ if type(s) is dict:
+  require(type(v) is dict,'metadata_object_required');required={k for k in s if not k.endswith('?')};allowed={k.rstrip('?') for k in s};require(required<=set(v)<=allowed,'unknown_or_missing_metadata_field')
+  for k,x in v.items():schema(x,s[k] if k in s else s[k+'?'])
+ elif type(s) is tuple:
+  if s[0]=='list':require(type(v) is list and len(v)<=10000,'bounded_metadata_list_required');[schema(x,s[1]) for x in v]
+  elif s[0]=='map':require(type(v) is dict and len(v)<=512 and all(s[1](k) for k in v),'metadata_map_keys_refused');[schema(x,s[2]) for x in v.values()]
+  else:
+   for choice in s[1]:
+    try:schema(v,choice);return
+    except (Refusal,ValueError,TypeError):pass
+   raise Refusal('metadata_union_type_refused')
+ else:require(s(v),'metadata_scalar_refused')
+
+CODEPATH=match(r'(?:backend|worker|ops|scripts)/[A-Za-z0-9_./-]+\.(?:py|sql)|\.runtime/run_qwen235b_fault_cohort\.py')
+PROCESS={'pid':I,'start_ticks':D,'cwd':literal(str(REMOTE)),'environment_sha256':H,'argv_sha256':H}
+PROC=mapping(literal('api-a','api-b','gateway-edge','engine-qwen235b','worker-qwen235b','supervisor-primary'),PROCESS)
+RUNTIME={'source_sha256':mapping(CODEPATH,H),'configuration_sha256':mapping(PATH,H),'migration_checksums':mapping(literal(*(str(i) for i in range(1,12))),H),'runtime_fingerprint':literal(FP),'scheduling_profile':literal(PROFILE),'fixture_sha256':literal('52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f'),'interpreter':literal('/usr/bin/python3.12')}
+LIMITS={'tenant_id':literal('default'),'max_retained_tasks':I,'max_payload_bytes':I,'max_response_bytes':I,'max_error_bytes':I}
+AUX={'tenant_id':literal('default'),'resource':literal('input_files','upload_reservations','idempotency','blob_generations','archive_runs','archive_chunks','input_read_leases','result_read_leases'),'max_rows':I,'max_bytes':I,'max_row_bytes':I}
+HISTORY=either(NULL,{'tenant_id':literal('default'),'enabled':literal(False),'eligible_created_after':either(NULL,TIME),'min_age_seconds':I,'replay_floor':I,'replay_ttl_seconds':I})
+OUTSIDE={k:I for k in ('tasks','prompt_tokens','completion_tokens','pending','running','completed','failed','cancelled')}
+DATABASE={'limits':LIMITS,'auxiliary':array(AUX),'history':HISTORY,'outside':OUTSIDE}
+CONTROLS={'controller_sha256':literal(PRODUCER),'evidence_sha256':literal(EVIDENCE),'runtime':RUNTIME,'protected_processes':PROC,'limits':LIMITS,'auxiliary_limits':array(AUX),'history_policy':HISTORY}
+REFERENCE=either(NULL,{'report_sha256':H,'journal_sha256':H,'fair_arrival_protocol_valid':B})
+BINDING={'runtime':RUNTIME,'processes':PROC,'database':DATABASE,'pair_controls':CONTROLS,'reference':REFERENCE,'operator_sha256':literal(PRODUCER),'evidence_sha256':literal(EVIDENCE)}
+DIST={'samples':I,'p50':N,'p95':N,'p99':N,'max':N,'mean':N}
+BRACKET={'client_before_utc':TIME,'client_after_utc':TIME,'client_bracket_seconds':N,'db_before_utc':TIME,'db_after_utc':TIME,'transaction_mode':literal('READ COMMITTED READ ONLY; one data SELECT; no row locks')}
+DECISION={'policy':POLICY,'profile_id':literal(PROFILE['profile_id']),'runtime_fingerprint':literal(FP),'estimate_source':literal('utf8_json_bytes_div4_and_output_cap_v1','postgres_jsonb_utf8_bytes_div4_and_output_cap_v1'),'estimated_input_tokens':I,'estimated_output_tokens':I,'prefill_tokens_per_second':N,'decode_tokens_per_second':N,'hourly_cost_usd':N,'predicted_prefill_seconds':N,'predicted_decode_seconds':N,'predicted_service_seconds':N,'predicted_cost_usd':N,'calibration_label':literal(PROFILE['calibration_label']),'cost_source':literal(PROFILE['cost_source']),'runtime_compatibility_scope':literal('first_dispatch'),'aging_seconds':I,'selected_at':TIME}
+TASKROW={'id':TASK,'tenant_id':literal('default'),'batch_id':BATCH,'custom_id':match(r'qwen235b-policy-(?:fair|cost)160-v1-[LS][0-3]-[01][0-9]'),'model':literal(MODEL),'status':literal('completed'),'attempts':I,'worker_id':WORKER,'runtime_fingerprint':literal(FP),'estimated_input_tokens':I,'estimated_output_tokens':I,'estimate_source':DECISION['estimate_source'],'prompt_tokens':I,'completion_tokens':I,'created_at':TIME,'finished_at':TIME,'db_created_to_finish_seconds':N}
+BATCHROW={'id':BATCH,'tenant_id':literal('default'),'model':literal(MODEL),'status':literal('completed'),'total_count':I,'pending_count':I,'running_count':I,'completed_count':I,'failed_count':I,'cancelled_count':I,'prompt_tokens':I,'completion_tokens':I,'runtime_fingerprint':literal(FP),'created_at':TIME,'completed_at':TIME,'engine_label':OP,'policy_class':literal('L','S'),'batch_index':match('[0-7]')}
+ATTEMPT={'task_id':TASK,'tenant_id':literal('default'),'batch_id':BATCH,'worker_id':WORKER,'number':I,'status':literal('completed'),'prompt_tokens':I,'completion_tokens':I,'claim_transaction_started_at':TIME,'completion_update_at':TIME,'observed_attempt_seconds':N,'scheduling_decision':DECISION}
+FINAL={'db_observed_at':TIME,'batches':array(BATCHROW),'tasks':array(TASKROW),'attempt_decisions':array(ATTEMPT),'global_other_unfinished':I,'operation':OP,'policy':POLICY,'profile':literal(PROFILE),'worker_ids':array(WORKER),'client_bracket':BRACKET,'attribution':literal('inconclusive'),'completed':I,'accepted_once':literal(True),'no_retries':literal(True),'usage_matches':literal(True),'prompt_tokens':I,'completion_tokens':I,'timestamp_semantics':literal('claim transaction start / completion SQL update, not durable COMMIT or GPU start')}
+ARRIVAL={'started_offset':N,'lateness_seconds':N,'ack_offset':N};INDEX=match('[0-7]')
+CLASSLAT={'tasks':I,'prompt_tokens':I,'completion_tokens':I,'DB_batch_created_to_task_finish_seconds':DIST,'DB_batch_created_to_claim_transaction_start_seconds':DIST,'claim_transaction_start_to_SQL_finish_seconds':DIST,'scheduled_to_client_admission_ACK_seconds':DIST,'scheduled_to_client_batch_terminal_observation_seconds':DIST}
+LIMITATIONS=['Serial N=1; fixed offered trace; no heterogeneous GPU or invoice claim','Candidate overlap proves only sampled snapshot; no later claim counterfactual','DB start/update timestamps are not durable COMMIT acknowledgement','Identical body prompts repeated; prefix caching disabled; fixed output work is not quality','Source hashes bind on-disk operator files; separate managed deployment/activation proof is required']
+REPORT={'version':literal(1),'operation':OP,'policy':POLICY,'integrity_passed':literal(True),'arrival_protocol_valid':B,'sampled_candidate_overlap_observed':B,'observation_errors':I,'observation_samples':I,'strict_later_claim_visibility':literal('inconclusive_no_same_claim_candidate_audit'),'allocation':{'whole_pod_usd_per_hour_scenario':N,'full_operation_seconds':N,'full_operation_usd':N,'basis':literal('Preupload validation through output validation and final drain; excludes prepare/policy roll/final report writes; scenario not invoice'),'T0_to_terminal_seconds':N,'T0_to_terminal_usd':N},'pair_controls':CONTROLS,'fair_reference':REFERENCE,'pair_arrival_comparable':B,'final':FINAL,'latencies':{'by_class':{'L':CLASSLAT,'S':CLASSLAT},'latency_semantics':literal('DB start/update timestamps are not durable COMMIT; client terminal population is4 batches/class, SQL task population80/class')},'completed_tasks_per_full_operation_second':N,'completed_tasks_per_T0_to_terminal_second':N,'output_proofs':mapping(INDEX,{'sha256':H,'bytes':I,'count':I,'prompt_tokens':I,'completion_tokens':I,'class_counts':{'L':I,'S':I},'raw_text_exported':literal(False),'usage_matches_sql':literal(True)}),'arrivals':mapping(INDEX,ARRIVAL),'source_binding_sha256':H,'limits_unchanged':literal(True),'protected_other_business_totals_unchanged':literal(True),'limitations':literal(LIMITATIONS)}
+PLAN={'version':literal(1),'operation':OP,'arguments':{'operation':OP,'manifest':PATH,'env_file':PATH,'supervisor_env':PATH,'benchmark_env':PATH,'fixture':PATH,'baseline_sha256':either(literal('None'),H)},'binding':BINDING,'capacity':{'body_bytes':I,'required_payload_bytes':I,'input_bytes':I,'retained_before':{'retained_tasks':I,'charged_payload_bytes':I,'actual_tasks':I,'actual_payload':I}},'inputs':array({'index':I,'class_label':literal('L','S'),'offset':N,'sha256':H,'bytes':I}),'fixed_trace':array(N),'tasks':literal(160),'automatic_replay':literal(False)}
+JOURNAL={'phase':literal('complete'),'operation':OP,'prepared_sha256':H,'pending_actions':{},'events':array({'action':match(r'execute|(?:upload|create):[0-7]'),'at':TIME,'file_id?':FILE,'batch_id?':BATCH,'response_sha256?':H}),'uploads':mapping(INDEX,FILE),'batches':mapping(INDEX,BATCH),'automatic_replay':literal(False),'release_at':TIME,'fixed_trace':array(N),'db_key_epoch':I,'arrivals':mapping(INDEX,ARRIVAL),'create_outcomes':array(NULL),'finished_at':TIME,'report_sha256':H,'manual_recovery_required':literal(False)}
+
+def path(value):
+ p=Path(value);require(p.is_absolute() and p.resolve()==p and p.is_relative_to(ROOT/'.runtime'),'canonical_private_runtime_path_required');return p
+def directory(p):
+ p=path(p);s=p.lstat();require(stat.S_ISDIR(s.st_mode) and s.st_uid==os.geteuid() and stat.S_IMODE(s.st_mode)==0o700,'owned0700_directory_required');return p
+def read(p):
+ p=path(p);fd=os.open(p,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+ try:
+  a=os.fstat(fd);require(stat.S_ISREG(a.st_mode) and a.st_uid==os.geteuid() and stat.S_IMODE(a.st_mode)==0o600 and a.st_nlink==1 and 0<a.st_size<=MAX_FILE,'owned0600_bounded_file_required')
+  with os.fdopen(fd,'rb',closefd=False) as f:raw=f.read(MAX_FILE+1)
+  b=os.fstat(fd);require(len(raw)==a.st_size and all(getattr(a,k)==getattr(b,k) for k in ('st_dev','st_ino','st_size','st_mtime_ns','st_ctime_ns')),'metadata_changed');return raw
+ finally:os.close(fd)
+def sync(p):
+ fd=os.open(p,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+ try:os.fsync(fd)
+ finally:os.close(fd)
+def write(p,raw):
+ directory(p.parent);fd=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+ with os.fdopen(fd,'wb') as f:f.write(raw);f.flush();os.fsync(f.fileno())
+ sync(p.parent)
+def evidence():
+ for name,wanted in {'backend/scheduling.py':'d867b94dc4ee9d468742f38957b966b9a3caa203035cde741c1bf77b511b337c','scripts/benchmark.py':'1d9d64f933c59f457187dfe50d42ae46be7591a60490c3d86cf930a498e22066'}.items():require(sha((ROOT/name).read_bytes())==wanted,'frozen_pure_dependency_differs')
+ p=ROOT/'.runtime/qwen235b_policy_evidence.py';raw=p.read_bytes();require(not p.is_symlink() and sha(raw)==EVIDENCE,'frozen_evidence_source_differs');ns={'__name__':'policy_metadata_readonly_definitions','__file__':str(p)};exec(compile(raw,str(p),'exec'),ns);return SimpleNamespace(**ns)
+def validate(raw,operation,E=None):
+ require(operation in OPS and set(raw)==set(NAMES) and sha(raw['report'])==REPORT_SHA[operation],'trusted_actual_report_sha_required');r,p,j=(load(raw[k]) for k in NAMES)
+ for v,s in ((r,REPORT),(p,PLAN),(j,JOURNAL)):schema(v,s)
+ require(r['operation']==p['operation']==p['arguments']['operation']==j['operation']==operation and r['policy']==OPS[operation],'operation_differs')
+ require(j['prepared_sha256']==sha(raw['plan']) and j['report_sha256']==sha(raw['report']) and r['source_binding_sha256']==sha(encode(p['binding'])) and r['pair_controls']==p['binding']['pair_controls'] and r['fair_reference']==p['binding']['reference'],'exact_plan_journal_report_crosslink_differs')
+ require({**p['binding']['runtime'],'configuration_sha256':p['binding']['pair_controls']['runtime']['configuration_sha256']}==p['binding']['pair_controls']['runtime'],'runtime_binding_shape_differs')
+ require(set(j['batches'])==set(j['uploads'])==set(j['arrivals'])==set(r['arrivals'])==set(r['output_proofs'])=={str(i) for i in range(8)} and r['arrivals']==j['arrivals'] and j['create_outcomes']==[None]*8,'exact_eight_batch_admission_metadata_required')
+ offsets=[0.,.1,.2,.3,2.,2.1,2.2,2.3];require(p['fixed_trace']==j['fixed_trace']==offsets and len(p['inputs'])==8 and [(i['index'],i['class_label'],i['offset']) for i in p['inputs']]==[(i,'L' if i<4 else 'S',offsets[i]) for i in range(8)],'fixed_offered_trace_differs')
+ actions=j['events'];require(len(actions)==17 and len({a['action'] for a in actions})==17 and {a['action'] for a in actions}=={'execute',*[f'{kind}:{i}' for kind in ('upload','create') for i in range(8)]},'exact_confirmed_actions_required')
+ for a in actions:
+  if a['action'].startswith('upload:'):require(a['file_id']==j['uploads'][a['action'][-1]],'upload_event_link_differs')
+  if a['action'].startswith('create:'):require(a['batch_id']==j['batches'][a['action'][-1]],'batch_event_link_differs')
+ E=E or evidence();expected={f'{operation}-{kind}{batch}-{n:02d}':kind for kind in ('L','S') for batch in range(4) for n in range(20)};final=copy.deepcopy(r['final']);globals_=E.final_rows.__globals__;original=globals_['statement']
+ def readonly_adapter(conn,sql,params):
+  require(conn is None and sql==E.FINAL_SQL and params==(operation,list(E.DECISION_KEYS),operation),'pure_evidence_adapter_contract_differs');return copy.deepcopy(final),copy.deepcopy(final['client_bracket'])
+ try:
+  globals_['statement']=readonly_adapter;checked=E.final_rows(None,operation,expected,MODEL,OPS[operation],PROFILE)
+ finally:globals_['statement']=original
+ require(checked==final and final['worker_ids']==['primary-qwen235b-tp4'] and {b['batch_index']:b['id'] for b in final['batches']}==j['batches'],'final_exact160_readonly_proof_differs')
+ valid=all(v['lateness_seconds']<=.25 for v in r['arrivals'].values()) and max(r['arrivals'][str(i)]['ack_offset'] for i in range(4))<min(r['arrivals'][str(i)]['started_offset'] for i in range(4,8))
+ require(r['arrival_protocol_valid'] is valid and r['pair_arrival_comparable'] is (valid and (r['fair_reference'] is None or r['fair_reference']['fair_arrival_protocol_valid'])),'arrival_invalid_flag_must_be_preserved')
+ if OPS[operation]=='fair':require(r['fair_reference'] is None,'fair_reference_must_be_null')
+ else:require(r['fair_reference']['report_sha256']==REPORT_SHA['qwen235b-policy-fair160-v1'],'exact_actual_fair_reference_required')
+ for k,proof in r['output_proofs'].items():
+  kind='L' if int(k)<4 else 'S';require(proof['count']==20 and proof['prompt_tokens']==20*(2048 if kind=='L' else 128) and proof['completion_tokens']==20*(128 if kind=='L' else 32) and proof['class_counts']=={'L':20 if kind=='L' else 0,'S':20 if kind=='S' else 0},'output_proof_counts_or_usage_differs')
+ allocation=r['allocation'];require(all(v>0 for v in (allocation['full_operation_seconds'],allocation['T0_to_terminal_seconds'])) and math.isclose(allocation['whole_pod_usd_per_hour_scenario'],16.1) and all(math.isclose(allocation[k+'_usd'],allocation[k+'_seconds']*16.1/3600,rel_tol=1e-9) for k in ('full_operation','T0_to_terminal')),'whole_pod_allocation_differs')
+ return dict(operation=operation,completed=160,integrity_passed=True,arrival_protocol_valid=valid,pair_arrival_comparable=r['pair_arrival_comparable'],strict_later_claim_visibility=r['strict_later_claim_visibility'],original_sha256={k:sha(v) for k,v in raw.items()},raw_inputs_outputs_env_included=False)
+def packet(operation,source,destination,expected_manifest_sha=None,apply=False):
+ source=directory(source);raw={k:read(source/(k+'.json')) for k in NAMES};proof=validate(raw,operation)
+ manifest=dict(version=1,operation=operation,helper_source_sha256=sha(Path(__file__).read_bytes()),producer_source_sha256=PRODUCER,evidence_source_sha256=EVIDENCE,files=[dict(name=k+'.json',bytes=len(raw[k]),sha256=sha(raw[k]),original_same_pod_path=str(REMOTE/'.runtime/policy-cohorts'/operation/(k+'.json'))) for k in NAMES],original_bytes_preserved=True,raw_inputs_outputs_env_included=False,trust_scope=TRUST)
+ digest=sha(encode(manifest))
+ if expected_manifest_sha is not None:require(H(expected_manifest_sha) and digest==expected_manifest_sha,'external_manifest_sha_differs')
+ target=path(destination);directory(target.parent);require(not target.exists() and not target.is_symlink() and not target.is_relative_to(source) and not source.is_relative_to(target),'new_disjoint_destination_required');result=dict(phase='validated',written=False,transport_manifest_sha256=digest,**proof)
+ if not apply:return result
+ target.mkdir(mode=0o700);sync(target.parent);write(target/'intent.json',encode(dict(phase='copy_intent',transport_manifest_sha256=digest,automatic_replay=False)));out=target/'metadata';out.mkdir(mode=0o700);sync(target)
+ for k in NAMES:write(out/(k+'.json'),raw[k])
+ require(all(read(out/(k+'.json'))==v for k,v in raw.items()),'copied_bytes_differ');write(target/'transport-manifest.json',encode(manifest));result.update(phase='complete',written=True,automatic_replay=False);write(target/'receipt.json',encode(result));return result
+def main(argv=None):
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--operation',choices=OPS,required=True);p.add_argument('--source-directory',type=Path);p.add_argument('--destination',type=Path,required=True);p.add_argument('--expected-manifest-sha256');p.add_argument('--write',action='store_true');a=p.parse_args(argv);os.umask(0o077)
+ try:
+  require(a.expected_manifest_sha256 is not None or (ROOT==REMOTE and sys.platform=='linux'),'local_receive_requires_external_manifest_sha');source=a.source_directory or ROOT/'.runtime/policy-cohorts'/a.operation
+  result=packet(a.operation,source,a.destination,a.expected_manifest_sha256,a.write);print(json.dumps(result,sort_keys=True));return 0
+ except Exception as e:print(json.dumps(dict(phase='refused_or_partial',reason_code=str(e) if type(e) is Refusal else type(e).__name__,automatic_replay=False)));return 1
+if __name__=='__main__':raise SystemExit(main())

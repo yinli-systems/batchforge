@@ -1,0 +1,91 @@
+"""Entirely SYNTHETIC local metadata/FS fixtures; no real results are invented."""
+import copy,json,runpy
+from pathlib import Path
+import pytest
+ROOT=Path(__file__).resolve().parents[1];M=runpy.run_path(str(ROOT/'.runtime/export_policy160_metadata.py'),run_name='policy_metadata_test');G=M['validate'].__globals__;E=M['evidence']()
+OP='qwen235b-policy-fair160-v1';COST='qwen235b-policy-cost160-v1';NOW='2026-10-24T10:00:04+00:00';CREATED='2026-10-24T10:00:00+00:00';CLAIM='2026-10-24T10:00:01+00:00';FINISHED='2026-10-24T10:00:03+00:00'
+def fixture(op=OP,invalid=False):
+ profile=copy.deepcopy(M['PROFILE']);bracket=dict(client_before_utc=NOW,client_after_utc=NOW,client_bracket_seconds=.01,db_before_utc=NOW,db_after_utc=NOW,transaction_mode='READ COMMITTED READ ONLY; one data SELECT; no row locks');tasks=[];batches=[];attempts=[];files={};bids={};proofs={}
+ for index in range(8):
+  kind='L' if index<4 else 'S';prompt,completion=(2048,128) if kind=='L' else (128,32);bid='batch_'+f'{index+1:032x}';bids[str(index)]=bid;files[str(index)]='file_'+f'{index+1:032x}'
+  batches.append(dict(id=bid,tenant_id='default',model=M['MODEL'],status='completed',total_count=20,pending_count=0,running_count=0,completed_count=20,failed_count=0,cancelled_count=0,prompt_tokens=20*prompt,completion_tokens=20*completion,runtime_fingerprint=M['FP'],created_at=CREATED,completed_at=FINISHED,engine_label=op,policy_class=kind,batch_index=str(index)))
+  proofs[str(index)]=dict(sha256='a'*64,bytes=4000,count=20,prompt_tokens=20*prompt,completion_tokens=20*completion,class_counts={'L':20 if kind=='L' else 0,'S':20 if kind=='S' else 0},raw_text_exported=False,usage_matches_sql=True)
+  for n in range(20):
+   tid='task_'+f'{index*20+n+1:032x}';estimate=2400 if kind=='L' else 160
+   tasks.append(dict(id=tid,tenant_id='default',batch_id=bid,custom_id=f'{op}-{kind}{index%4}-{n:02d}',model=M['MODEL'],status='completed',attempts=1,worker_id='primary-qwen235b-tp4',runtime_fingerprint=M['FP'],estimated_input_tokens=estimate,estimated_output_tokens=completion,estimate_source='utf8_json_bytes_div4_and_output_cap_v1',prompt_tokens=prompt,completion_tokens=completion,created_at=CREATED,finished_at=FINISHED,db_created_to_finish_seconds=3.))
+   prefill=estimate/profile['prefill_tokens_per_second'];decode=completion/profile['decode_tokens_per_second'];d=dict(profile,policy=M['OPS'][op],estimated_input_tokens=estimate,estimated_output_tokens=completion,estimate_source='utf8_json_bytes_div4_and_output_cap_v1',predicted_prefill_seconds=prefill,predicted_decode_seconds=decode,predicted_service_seconds=prefill+decode,predicted_cost_usd=(prefill+decode)*profile['hourly_cost_usd']/3600,runtime_compatibility_scope='first_dispatch',aging_seconds=60,selected_at=CLAIM)
+   attempts.append(dict(task_id=tid,tenant_id='default',batch_id=bid,worker_id='primary-qwen235b-tp4',number=1,status='completed',prompt_tokens=prompt,completion_tokens=completion,claim_transaction_started_at=CLAIM,completion_update_at=FINISHED,observed_attempt_seconds=2.,scheduling_decision=d))
+ final=dict(db_observed_at=NOW,batches=batches,tasks=tasks,attempt_decisions=attempts,global_other_unfinished=0,operation=op,policy=M['OPS'][op],profile=profile,worker_ids=['primary-qwen235b-tp4'],client_bracket=bracket,attribution='inconclusive',completed=160,accepted_once=True,no_retries=True,usage_matches=True,prompt_tokens=174080,completion_tokens=12800,timestamp_semantics='claim transaction start / completion SQL update, not durable COMMIT or GPU start')
+ config={p:'a'*64 for p in ('/root/batchforge-runtime/api-a.env','/root/batchforge-runtime/api-b.env','/root/batchforge-runtime/gateway.env','/root/batchforge-runtime/supervisor.env','/root/batchforge-runtime/app/.runtime/qwen235b-adaptive64-v1/engine.env','/root/batchforge-runtime/app/.runtime/qwen235b-adaptive64-v1/worker.env','/root/batchforge-runtime/app/.runtime/scheduler-v6/benchmark.env','/root/batchforge-runtime/app/.runtime/services-primary.json')}
+ runtime=dict(source_sha256={'.runtime/run_qwen235b_fault_cohort.py':'a'*64},configuration_sha256=config,migration_checksums={str(i):'a'*64 for i in range(1,12)},runtime_fingerprint=M['FP'],scheduling_profile=profile,fixture_sha256='52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f',interpreter='/usr/bin/python3.12')
+ processes={k:dict(pid=i+100,start_ticks=str(i+1000),cwd=str(M['REMOTE']),environment_sha256='a'*64,argv_sha256='a'*64) for i,k in enumerate(('api-a','api-b','gateway-edge','engine-qwen235b','worker-qwen235b','supervisor-primary'))}
+ limits=dict(tenant_id='default',max_retained_tasks=50000,max_payload_bytes=335544320,max_response_bytes=65536,max_error_bytes=32768);aux=[dict(tenant_id='default',resource=k,max_rows=10000,max_bytes=0,max_row_bytes=4096) for k in ('input_files','upload_reservations','idempotency','blob_generations','archive_runs','archive_chunks','input_read_leases','result_read_leases')]
+ db=dict(limits=limits,auxiliary=aux,history=None,outside=dict(tasks=27903,prompt_tokens=0,completion_tokens=0,pending=0,running=0,completed=27903,failed=0,cancelled=0))
+ controls=dict(controller_sha256=M['PRODUCER'],evidence_sha256=M['EVIDENCE'],runtime=runtime,protected_processes={k:v for k,v in processes.items() if k.startswith(('engine-','worker-','gateway-'))},limits=limits,auxiliary_limits=aux,history_policy=None)
+ reference=None if op==OP else dict(report_sha256=M['REPORT_SHA'][OP],journal_sha256='a'*64,fair_arrival_protocol_valid=True)
+ binding=dict(runtime=runtime,processes=processes,database=db,pair_controls=controls,reference=reference,operator_sha256=M['PRODUCER'],evidence_sha256=M['EVIDENCE']);offsets=[0.,.1,.2,.3,2.,2.1,2.2,2.3]
+ args=dict(operation=op,manifest='/root/batchforge-runtime/app/.runtime/services-primary.json',env_file='/root/batchforge-runtime/api-a.env',supervisor_env='/root/batchforge-runtime/supervisor.env',benchmark_env='/root/batchforge-runtime/app/.runtime/scheduler-v6/benchmark.env',fixture='/root/batchforge-runtime/app/.runtime/qwen235b-v1/workload-20.jsonl',baseline_sha256='None' if op==OP else M['REPORT_SHA'][OP])
+ plan=dict(version=1,operation=op,arguments=args,binding=binding,capacity=dict(body_bytes=1000,required_payload_bytes=31458280,input_bytes=1000,retained_before=dict(retained_tasks=27903,charged_payload_bytes=206000000,actual_tasks=27903,actual_payload=206000000)),inputs=[dict(index=i,class_label='L' if i<4 else 'S',offset=offsets[i],sha256='a'*64,bytes=1000) for i in range(8)],fixed_trace=offsets,tasks=160,automatic_replay=False)
+ arr={str(i):dict(started_offset=t+.01,lateness_seconds=.01,ack_offset=t+(6. if invalid else .02)) for i,t in enumerate(offsets)}
+ dist=dict(samples=80,p50=1.,p95=1.,p99=1.,max=1.,mean=1.);clat={k:copy.deepcopy(dist) for k in ('DB_batch_created_to_task_finish_seconds','DB_batch_created_to_claim_transaction_start_seconds','claim_transaction_start_to_SQL_finish_seconds','scheduled_to_client_admission_ACK_seconds','scheduled_to_client_batch_terminal_observation_seconds')};clat.update(tasks=80,prompt_tokens=0,completion_tokens=0)
+ report=dict(version=1,operation=op,policy=M['OPS'][op],integrity_passed=True,arrival_protocol_valid=not invalid,sampled_candidate_overlap_observed=False,observation_errors=0,observation_samples=120,strict_later_claim_visibility='inconclusive_no_same_claim_candidate_audit',allocation=dict(whole_pod_usd_per_hour_scenario=16.1,full_operation_seconds=20.,full_operation_usd=20*16.1/3600,basis='Preupload validation through output validation and final drain; excludes prepare/policy roll/final report writes; scenario not invoice',T0_to_terminal_seconds=10.,T0_to_terminal_usd=10*16.1/3600),pair_controls=controls,fair_reference=reference,pair_arrival_comparable=not invalid,final=final,latencies=dict(by_class={'L':copy.deepcopy(clat),'S':copy.deepcopy(clat)},latency_semantics='DB start/update timestamps are not durable COMMIT; client terminal population is4 batches/class, SQL task population80/class'),completed_tasks_per_full_operation_second=8.,completed_tasks_per_T0_to_terminal_second=16.,output_proofs=proofs,arrivals=arr,source_binding_sha256=M['sha'](M['encode'](binding)),limits_unchanged=True,protected_other_business_totals_unchanged=True,limitations=M['LIMITATIONS'])
+ events=[dict(action='execute',at=NOW)]+[dict(action='upload:'+str(i),at=NOW,file_id=files[str(i)],response_sha256='a'*64) for i in range(8)]+[dict(action='create:'+str(i),at=NOW,batch_id=bids[str(i)],response_sha256='a'*64) for i in range(8)]
+ journal=dict(phase='complete',operation=op,prepared_sha256='a'*64,pending_actions={},events=events,uploads=files,batches=bids,automatic_replay=False,release_at=NOW,fixed_trace=offsets,db_key_epoch=1792800000,arrivals=arr,create_outcomes=[None]*8,finished_at=NOW,report_sha256='a'*64,manual_recovery_required=False)
+ return dict(report=report,plan=plan,journal=journal)
+def raws(d):
+ d=copy.deepcopy(d);d['report']['source_binding_sha256']=M['sha'](M['encode'](d['plan']['binding']));raw={k:M['encode'](d[k]) for k in ('report','plan')};d['journal'].update(prepared_sha256=M['sha'](raw['plan']),report_sha256=M['sha'](raw['report']));raw['journal']=M['encode'](d['journal']);return raw
+def validate_fake(d,monkeypatch):
+ raw=raws(d);anchors=dict(G['REPORT_SHA']);anchors[d['report']['operation']]=M['sha'](raw['report']);monkeypatch.setitem(G,'REPORT_SHA',anchors);return M['validate'](raw,d['report']['operation'],E)
+
+@pytest.mark.parametrize('op,invalid',[(OP,False),(COST,True)])
+def test_exact_full_synthetic_metadata_preserves_invalid_cost_arrival(op,invalid,monkeypatch):
+ result=validate_fake(fixture(op,invalid),monkeypatch);assert result['completed']==160 and result['arrival_protocol_valid'] is (not invalid) and result['pair_arrival_comparable'] is (not invalid);assert result['strict_later_claim_visibility']=='inconclusive_no_same_claim_candidate_audit'
+
+@pytest.mark.parametrize('key',('raw_output','body','messages','BATCHFORGE_API_KEY','DSN','prompt'))
+def test_unknown_nested_raw_or_secret_field_refused_even_with_report_sha_rebound(key,monkeypatch):
+ d=fixture();d['report']['final']['tasks'][0][key]='SYNTHETIC PRIVATE'
+ with pytest.raises(M['Refusal']):validate_fake(d,monkeypatch)
+
+@pytest.mark.parametrize('kind',('quota_secret','profile_secret','wrong_decision','retry','unknown_task','wrong_batch','invalid_claimed_valid','pending','event','flags'))
+def test_source_proof_and_protocol_semantics_fail_closed(kind,monkeypatch):
+ d=fixture(COST,True)
+ if kind=='quota_secret':d['plan']['binding']['database']['limits']['dsn']='SYNTHETIC_PRIVATE'
+ elif kind=='profile_secret':d['report']['final']['profile']['cost_source']='SYNTHETIC_PRIVATE'
+ elif kind=='wrong_decision':d['report']['final']['attempt_decisions'][0]['scheduling_decision']['hourly_cost_usd']=64.
+ elif kind=='retry':d['report']['final']['attempt_decisions'].append(copy.deepcopy(d['report']['final']['attempt_decisions'][0]))
+ elif kind=='unknown_task':d['report']['final']['tasks'][0]['custom_id']=OP+'-L0-00'
+ elif kind=='wrong_batch':d['journal']['batches']['0']='batch_'+'f'*32
+ elif kind=='invalid_claimed_valid':d['report']['arrival_protocol_valid']=True
+ elif kind=='pending':d['journal']['pending_actions']={'create:0':{'raw':'PRIVATE'}}
+ elif kind=='event':d['journal']['events'].pop()
+ else:d['report']['strict_later_claim_visibility']='conclusive'
+ with pytest.raises((M['Refusal'],E.Refusal)):validate_fake(d,monkeypatch)
+
+def test_actual_root_report_sha_anchor_not_auto_accepted_from_file(monkeypatch):
+ d=fixture();raw=raws(d)
+ with pytest.raises(M['Refusal'],match='trusted_actual_report'):M['validate'](raw,OP,E)
+
+def test_pure_evidence_adapter_never_calls_sql_or_retains_override(monkeypatch):
+ original=E.final_rows.__globals__['statement'];validate_fake(fixture(),monkeypatch);assert E.final_rows.__globals__['statement'] is original
+ d=fixture();d['report']['final']['completed']=159
+ with pytest.raises(M['Refusal']):validate_fake(d,monkeypatch)
+ assert E.final_rows.__globals__['statement'] is original
+
+def test_preview_exact_copy_once_external_manifest_and_partial_no_replay(tmp_path,monkeypatch):
+ runtime=tmp_path/'.runtime';runtime.mkdir(mode=0o700);source=runtime/'incoming';source.mkdir(mode=0o700);d=fixture(COST,True);raw=raws(d)
+ anchors=dict(G['REPORT_SHA']);anchors[COST]=M['sha'](raw['report']);monkeypatch.setitem(G,'REPORT_SHA',anchors);monkeypatch.setitem(G,'ROOT',tmp_path);monkeypatch.setitem(G,'evidence',lambda:E)
+ for k,v in raw.items():p=source/(k+'.json');p.write_bytes(v);p.chmod(0o600)
+ target=runtime/'received';preview=M['packet'](COST,source,target);assert not target.exists() and preview['arrival_protocol_valid'] is False
+ with pytest.raises(M['Refusal'],match='external_manifest'):M['packet'](COST,source,target,'0'*64,True)
+ out=M['packet'](COST,source,target,preview['transport_manifest_sha256'],True);assert out['phase']=='complete' and out['pair_arrival_comparable'] is False
+ for k,v in raw.items():assert (target/'metadata'/(k+'.json')).read_bytes()==v
+ with pytest.raises(M['Refusal'],match='new_disjoint'):M['packet'](COST,source,target,preview['transport_manifest_sha256'],True)
+ write=G['write']
+ def fail(p,raw):
+  if p.name=='plan.json':raise OSError('SYNTHETIC PRIVATE')
+  write(p,raw)
+ monkeypatch.setitem(G,'write',fail);partial=runtime/'partial'
+ with pytest.raises(OSError):M['packet'](COST,source,partial,preview['transport_manifest_sha256'],True)
+ assert (partial/'intent.json').exists() and not (partial/'receipt.json').exists()
+ monkeypatch.setitem(G,'write',write)
+ with pytest.raises(M['Refusal']):M['packet'](COST,source,partial,preview['transport_manifest_sha256'],True)

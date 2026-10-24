@@ -1,0 +1,27 @@
+{
+  "compatibility_change": "Only adds producer54b literal recovery_before_original_worker to known phase allowlist; original09c6 main retained unchanged for engine transport",
+  "execution_status": "REVIEWED_READY; root stages/executes separately; this inventory does not attest later production or transport outcomes",
+  "files": [
+    {
+      "bytes": 97412,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-fault-metadata-packet-v2-source-2026-10-24.py.txt",
+      "sha256": "7aff8c357a4ebe71507ea14f4c791bb681c203062f95c511391b8c9bcabc8cf8",
+      "source_path": ".runtime/export_fault_metadata_packet_v2.py"
+    },
+    {
+      "bytes": 2170,
+      "original_bytes_preserved": true,
+      "review_copy": "ops/reports/qwen235b-fault-metadata-packet-v2-tests-2026-10-24.py.txt",
+      "sha256": "1eaf3fecc12780a56e52da0953de2c2ce58e01e96673fc4af6cc7aa876bbbe0b",
+      "source_path": ".runtime/test_export_fault_metadata_packet_v2.py"
+    }
+  ],
+  "independent_review_tests_passed": 48,
+  "local_tests_passed": 48,
+  "prepared_at": "2026-10-24T10:48:30.578134+00:00",
+  "production_execution_by_author": false,
+  "scope": "Exact source/test/notes copies only; no raw prompts, outputs, private configuration, credentials, traces or dump",
+  "trust_scope": "Source SHA inventory is not a digital signature or independent production observation",
+  "version": 1
+}

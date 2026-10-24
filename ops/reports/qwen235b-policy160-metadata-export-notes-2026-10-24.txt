@@ -1,0 +1,69 @@
+Policy160 exact report/plan/journal metadata operator (author: LOCAL ONLY)
+
+Reviewed source export_policy160_metadata.py6063ce8d / tests8dbccc16:
+  21 local synthetic tests; independent history_retirement21/21 pass.
+No production, SSH, service request, SQL, GPU or original inference file was
+read/executed by the author. Root alone stages/runs the helper after timed work.
+
+Hard trusted-root report SHA anchors, supplied after actual completion:
+  qwen235b-policy-fair160-v1
+    d12e9efaa84fbcf8b3e64e5ac0be610b08a2605c008afc080f5f568041ca4057
+  qwen235b-policy-cost160-v1
+    72d2f75d2d171798c77482bc0e04b46eacc711f88f99dbfeb5fb6c2825997b2a
+Cost arrival protocol INVALID must remain false/inconclusive. No matched policy
+performance improvement or lock-root-cause claim follows merely from completion.
+
+Dependencies (definitions/pure metadata validation only, no Context construction):
+  .runtime/qwen235b_policy_evidence.py023936c69afec87c390aa9515e4e26b416e2ce9a0ab7c75e58221ae4048444ed
+  backend/scheduling.pyd867b94d / scripts/benchmark.py1d9d64f9
+Historical producer a7da1c04 and evidence023936 are bound by the original plan.
+The final_rows adapter supplies already-read metadata in RAM, asserts conn=None
+and exact SQL-string/parameter ABI, then restores the function in finally. It
+does not send any statement to a database. Schema rejects all unknown nested
+fields and all free-form values; input/output/env/credentials cannot be copied.
+
+Same-Pod preview, then distinct explicit write (ROOT EXECUTES LATER):
+  cd /root/batchforge-runtime/app
+  OP=qwen235b-policy-fair160-v1
+  DEST="/root/batchforge-runtime/app/.runtime/policy-metadata/$OP-v1"
+  # Parent .runtime/policy-metadata must already be root-owned0700.
+  /root/batchforge-runtime/venv/bin/python .runtime/export_policy160_metadata.py \
+    --operation "$OP" --destination "$DEST"
+  # Default reads ONLY report.json, plan.json, journal.json from the original
+  # operation directory. It creates no packet. After preview, repeat --write.
+  # --write makes one exclusive0700 destination; fsyncs intent before copies;
+  # writes metadata/{report,plan,journal}.json exact original0600 bytes, manifest
+  # and completion receipt. No overwrite/resume/adopt/delete or retry is allowed.
+  # Repeat with OP=qwen235b-policy-cost160-v1 and its own fresh destination.
+
+Trusted transport:
+  Root records stdout/transport-manifest SHA via the trusted root channel.
+  Transfer ONLY the three destination metadata/*.json originals and manifest.
+  Do not copy the original source operation directory, whose inputs/outputs are
+  deliberately not read or exported. Self hashes are not signatures.
+
+Mac exact validation/receive (after root transfers originals):
+  cd '/Users/kevin/Documents/ChatGPT/app 3'
+  BASE="$(pwd -P)/.runtime"
+  OP=qwen235b-policy-cost160-v1
+  ROOT_MANIFEST_SHA='<original canonical manifest SHA from trusted root channel>'
+  .venv/bin/python .runtime/export_policy160_metadata.py \
+    --operation "$OP" --source-directory "$BASE/$OP-incoming" \
+    --expected-manifest-sha256 "$ROOT_MANIFEST_SHA" \
+    --destination "$BASE/$OP-received"
+  # Preview by default; --write copies into another fresh exclusive directory.
+  # Manifest is recomputed from exact three input bytes plus fixed remote source
+  # paths and exact helper SHA, so both copies must use the same6063 helper bytes.
+  # This external SHA is required locally: report SHA alone does not externally
+  # anchor every plan/journal byte. Never substitute a freshly self-made hash.
+
+Failure/analysis boundaries:
+  Unknown/partial copy keeps its durable intent and any copied files. Missing
+  completion receipt is not success; do not automatically retry/delete/adopt.
+  CLI prints fixed refusal codes or exception types, never parser/body values.
+  After actual originals arrive, inspect eight ACK/start/lateness offsets,
+  class latency distributions, candidate-overlap flag and SQL timing metadata.
+  DB transaction-start/update times are not durable COMMIT; observation cannot
+  prove later claim visibility or identify a lock holder without further data.
+  Keep cost arrival_protocol_valid=false, pair_arrival_comparable=false and
+  strict_later_claim_visibility=inconclusive_no_same_claim_candidate_audit.

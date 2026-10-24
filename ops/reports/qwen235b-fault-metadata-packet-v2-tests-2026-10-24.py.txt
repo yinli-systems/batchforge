@@ -1,0 +1,33 @@
+"""Run all frozen09c6 tests unchanged against V2, plus the sole phase addition.
+
+All tests stay local; new capacity evidence here is explicitly SYNTHETIC.
+"""
+import hashlib,runpy
+from pathlib import Path
+import pytest
+ROOT=Path(__file__).resolve().parents[1]
+SOURCE=ROOT/'.runtime/export_fault_metadata_packet.py'
+BASETEST=ROOT/'.runtime/test_export_fault_metadata_packet.py'
+assert hashlib.sha256(SOURCE.read_bytes()).hexdigest()=='09c6e41a79b83250cf91b63cb449e324750eaa395ebcffef8503e628ed301aa4'
+assert hashlib.sha256(BASETEST.read_bytes()).hexdigest()=='c75bef33c76650755fc105e2dd4d5a8c8d63d80a7697b49f0fdfd85de5f22a72'
+V=runpy.run_path(str(ROOT/'.runtime/export_fault_metadata_packet_v2.py'),run_name='fault_packet_v2_test')
+T=runpy.run_path(str(BASETEST),run_name='frozen_fault_packet_tests_against_v2')
+TG=T['documents'].__globals__;TG.update(M=V,G=V['validate_packet'].__globals__,Refusal=V['Refusal'])
+for name,value in T.items():
+ if name.startswith('test_') or name=='local':globals()[name]=value
+
+def test_v2_only_changes_exact_producer_phase_literal():
+ old=runpy.run_path(str(SOURCE),run_name='original_frozen09c6')
+ before=old['SCHEMA_REGISTRY'];after=V['SCHEMA_REGISTRY'];key='probe/engine_quiescence_gates/*/phase'
+ assert set(before)==set(after)
+ assert all(before[k]==after[k] for k in before if k!=key)
+ assert set(after[key]['literals'])-set(before[key]['literals'])=={'recovery_before_original_worker'}
+ phase='recovery_before_original_worker'
+ assert hashlib.sha256(phase.encode()).hexdigest()=='9104216696331be13a3c3bebe7b10d9702bcd089f3811e4c19302031e592145f'
+ assert b"await_engine_quiescence('recovery_before_original_worker', interruptible=False, force=True)" in (ROOT/'ops/ha/single_pod_fault_probe.py').read_bytes()
+
+def test_new_capacity_restore_phase_positive_but_unknown_phase_still_refused():
+ docs=T['documents']('capacity2-fault100-v1');docs['probe']['engine_quiescence_gates'][0]['phase']='recovery_before_original_worker'
+ assert T['checked'](docs)['completed']==100
+ docs['probe']['engine_quiescence_gates'][0]['phase']='PRIVATE UNKNOWN PROMPT'
+ with pytest.raises(V['Refusal'],match='unknown_metadata_string'):T['checked'](docs)
