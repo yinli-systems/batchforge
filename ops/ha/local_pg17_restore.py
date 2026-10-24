@@ -155,7 +155,11 @@ def verify_database(connection, expected_migrations):
     for number, (table,) in enumerate(tables):
         digest, count = hashlib.sha256(), 0
         with connection.cursor(name='backup_digest_' + str(number)) as cursor:
-            cursor.execute(sql.SQL('SELECT row_to_json(t)::text FROM public.{} t ORDER BY row_to_json(t)::text').format(sql.Identifier(table)))
+            # PostgreSQL's default text collation is database-specific. A dump
+            # restored into a managed database may use en_US.utf8 while the
+            # isolated source verifier uses C. Pin binary text order so the
+            # row digest is portable across those database locales.
+            cursor.execute(sql.SQL('SELECT row_to_json(t)::text FROM public.{} t ORDER BY (row_to_json(t)::text) COLLATE "C"').format(sql.Identifier(table)))
             for (row,) in cursor:
                 encoded = row.encode('utf-8')
                 digest.update(len(encoded).to_bytes(8, 'big'));digest.update(encoded);count += 1

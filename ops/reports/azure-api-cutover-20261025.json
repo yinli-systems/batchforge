@@ -1,0 +1,60 @@
+{
+  "passed": true,
+  "mode": "emergency snapshot failover",
+  "observed_at": "2026-10-24T22:52:53.230556+00:00",
+  "source_neon_reachable": false,
+  "source_neon_reason": "provider quota/network connection failure",
+  "destination_host": "batchforge-pg-frc-20261025.postgres.database.azure.com",
+  "destination_database": "batchforge_import_20261025",
+  "schema_version": 11,
+  "counts": {
+    "tenants": 2,
+    "api_keys": 2,
+    "workers": 29,
+    "files": 1090,
+    "batches": 524,
+    "tasks": 29243,
+    "attempts": 29871,
+    "idempotency": 523,
+    "tenant_queues": 5
+  },
+  "task_states": {
+    "failed": 179,
+    "completed": 29064
+  },
+  "api_readiness": {
+    "8082": true,
+    "8083": true
+  },
+  "api_live_database_targets": {
+    "api-a.env": {
+      "host": "batchforge-pg-frc-20261025.postgres.database.azure.com",
+      "dbname": "batchforge_import_20261025"
+    },
+    "api-b.env": {
+      "host": "batchforge-pg-frc-20261025.postgres.database.azure.com",
+      "dbname": "batchforge_import_20261025"
+    }
+  },
+  "worker_process_changed": false,
+  "worker_uses_api_control_plane": true,
+  "source_snapshot_utc": "2026-10-24T09:40:44Z",
+  "known_rpo_limit": "Writes after the pinned snapshot could not be queried or reconciled because Neon was unreachable.",
+  "object_payloads_in_snapshot": false,
+  "rollback_configs": [
+    "/root/batchforge-runtime/api-a.env.pre-azure-cutover-20261025",
+    "/root/batchforge-runtime/api-b.env.pre-azure-cutover-20261025"
+  ],
+  "post_cutover_checks": {
+    "api_ready_replicas": 2,
+    "tenant_models_endpoint_http_200_replicas": 2,
+    "worker_metrics_endpoint_http_200_replicas": 2,
+    "worker_recent_heartbeat_count_within_2m": 1,
+    "object_store_references": 170,
+    "object_store_head_and_metadata_verified": 170,
+    "sampled_object_full_sha256_verified": {
+      "count": 1,
+      "bytes": 109130
+    }
+  }
+}

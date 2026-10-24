@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "snapshot_sha256": "e24edc2c3a9461486e3c38ae1743c3929afff61fbdb2d41cf33057666539f8e7",
+  "snapshot_bytes": 128439422,
+  "snapshot_time_utc": "2026-10-24T09:40:44Z",
+  "destination_database": "batchforge_import_20261025",
+  "schema_version": 11,
+  "table_count": 25,
+  "tasks": 29243,
+  "attempts": 29871,
+  "batches": 524,
+  "all_table_digests_match_verified_snapshot": true,
+  "runtime_login_tls_and_basic_privileges_verified": true,
+  "neon_source_modified": false,
+  "serving_apis_changed": false,
+  "created_at": "2026-10-24T22:16:48.474104+00:00",
+  "limitations": [
+    "Point-in-time database snapshot; Neon could not be queried for later writes.",
+    "External object-store payloads are not included in this PostgreSQL dump.",
+    "Database import is staged; serving API cutover is a separate step."
+  ]
+}
