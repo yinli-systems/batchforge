@@ -1,0 +1,98 @@
+"""Local pure regression checks only: never constructs Context or calls main."""
+import copy
+import hashlib
+import json
+from pathlib import Path
+import runpy
+import tempfile
+import unittest
+
+ROOT=Path(__file__).resolve().parent.parent
+C=runpy.run_path(str(ROOT/'.runtime/qwen235b-v11-matched-controller.py'),run_name='pure_test_controller')
+E=runpy.run_path(str(ROOT/'.runtime/export_sustained_v11_metadata.py'),run_name='pure_test_exporter')
+
+
+def old(stem):
+    return json.loads((ROOT/f'ops/reports/qwen235b-soak30m-baseline-{stem}-2026-10-24.json').read_bytes())
+
+
+def report():
+    value=old('report')
+    value['http_rejections']['upload_not_forwarded']=0
+    return value
+
+
+def round_metadata():
+    value=old('controller')
+    for name in ('controller_sha256','quota_mutations'):value.pop(name)
+    for key in ('service_identities_before','service_identities_after'):
+        for identity in value[key].values():
+            identity['process_environ_sha256']='0'*64
+            identity['process_argv_sha256']='1'*64
+    usage={k:0 for k in E['USAGE'] if k!='auxiliary_usage'}
+    usage['auxiliary_usage']=[['input_files',36,1000]]
+    policy=dict(phase='committed',target=[50000,335544320,1048576,32768],previous=[50000,335544320,1048576,32768],
+        only_future_max_response_bytes_changed=True,old_task_limits_immutable=True,started_at='2026-10-24T08:00:00+00:00',
+        commit_intent_at='2026-10-24T08:00:01+00:00',before_usage=usage,changed=False,committed_at='2026-10-24T08:00:02+00:00')
+    value.update(label='baseline',legacy_context_not_comparable=True,full_plan_passed=False,response_policy=policy,
+        before_usage=usage,runtime_proof_sha256='5'*64,response_audit_sha256='2'*64,output_collection_sha256='3'*64,response_policy_journal_sha256='4'*64)
+    return value
+
+
+class PureMetadataTests(unittest.TestCase):
+    def validate(self,name,value):return E['validate_artifact'](name,json.dumps(value,ensure_ascii=False).encode())
+    def refuse(self,name,value):
+        with self.assertRaises(E['ExportRefusal']):self.validate(name,value)
+    def test_four_real_metadata_schemas(self):
+        for name,value in [('report.json',report()),('runtime-proof.json',old('runtime-proof')),
+                ('output-collection.json',old('output-collection')),('response-audit.json',old('response-audit'))]:
+            with self.subTest(name=name):self.assertEqual(self.validate(name,value),value)
+    def test_real_identity_start_ticks_remain_digit_strings(self):
+        value=round_metadata();self.validate('controller.json',value)
+        self.assertTrue(all(isinstance(v['start_ticks'],str) for v in value['service_identities_before'].values()))
+        value['service_identities_before']['api-a']['start_ticks']=123
+        self.refuse('controller.json',value)
+    def test_unknown_top_level_raw_field_refused(self):
+        value=report();value['raw_output']='private answer';self.refuse('report.json',value)
+    def test_unknown_top_level_secret_field_refused(self):
+        value=old('response-audit');value['BATCHFORGE_API_KEY']='private-token';self.refuse('response-audit.json',value)
+    def test_nested_task_raw_field_refused(self):
+        value=report();value['tasks'][0]['raw_output']='private answer';self.refuse('report.json',value)
+    def test_nested_controller_credential_field_refused(self):
+        value=round_metadata();value['response_policy']['before_usage']['DATABASE_URL']='private';self.refuse('controller.json',value)
+    def test_dynamic_map_unknown_key_refused(self):
+        value=old('response-audit');value['completion_token_groups']['raw_output']={};self.refuse('response-audit.json',value)
+    def test_known_string_credential_content_refused(self):
+        value=report();value['limitations'].append('postgresql://private:token@host/db');self.refuse('report.json',value)
+    def test_duplicate_key_refused(self):
+        with self.assertRaises(E['ExportRefusal']):E['load'](b'{"report_version":1,"report_version":2}')
+    def test_nonfinite_refused(self):
+        for raw in (b'{"x":NaN}',b'{"x":Infinity}',b'{"x":-Infinity}'):
+            with self.assertRaises(E['ExportRefusal']):E['load'](raw)
+    def test_utf16_refused(self):
+        with self.assertRaises(UnicodeError):E['load']('{"x":1}'.encode('utf-16'))
+    def test_unknown_collection_field_refused(self):
+        value=old('output-collection');value['binding']['raw_output']='private';self.refuse('output-collection.json',value)
+    def test_exact_bytes_read_and_export_preserve_hash(self):
+        raw=(ROOT/'ops/reports/qwen235b-soak30m-baseline-response-audit-2026-10-24.json').read_bytes()
+        with tempfile.TemporaryDirectory(prefix='batchforge-metadata-pure-') as directory:
+            first=Path(directory)/'source.json';second=Path(directory)/'export.json'
+            C['write'](first,raw,exclusive=True,raw=True)
+            bound=E['read'](first);E['validate_artifact']('response-audit.json',bound)
+            C['write'](second,bound,exclusive=True,raw=True)
+            self.assertEqual(second.read_bytes(),raw)
+            self.assertEqual(E['sha'](second.read_bytes()),hashlib.sha256(raw).hexdigest())
+            with self.assertRaises(FileExistsError):C['write'](second,bound,exclusive=True,raw=True)
+    def test_engine_port_and_workload_explicit(self):
+        argv=C['runner_command'](ROOT,ROOT/'fixture.jsonl',ROOT/'.runtime/sustained/test','new-job',8399,'/python')
+        self.assertEqual(argv[argv.index('--engine-url')+1],'http://127.0.0.1:8399')
+        for flag,expected in (('--tasks','720'),('--duration-seconds','1800'),('--max-inflight-tasks','80'),('--seed','20261024')):
+            self.assertEqual(argv[argv.index(flag)+1],expected)
+    def test_serialized_binding_lists_and_tuples_compare_equal(self):
+        self.assertEqual(C['encoded']({'policy':(50000,335544320,65536,32768)}),C['encoded']({'policy':[50000,335544320,65536,32768]}))
+    def test_all_six_pinned_files_match(self):
+        self.assertEqual(len(C['PINS']),6)
+        for name,expected in C['PINS'].items():
+            with self.subTest(name=name):self.assertEqual(hashlib.sha256((ROOT/name).read_bytes()).hexdigest(),expected)
+
+if __name__=='__main__':unittest.main()

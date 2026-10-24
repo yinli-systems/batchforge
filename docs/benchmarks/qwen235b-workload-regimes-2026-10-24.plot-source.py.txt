@@ -1,0 +1,179 @@
+"""Plot two real, different workload regimes; no production or inference access.
+
+Run with .runtime/plot-venv312/bin/python. Default validates only; --write emits
+PNG/SVG/audit plus this exact source as a .py.txt under docs/benchmarks.
+"""
+from __future__ import annotations
+import argparse
+from collections import Counter
+from datetime import datetime
+import hashlib
+import io
+import json
+import math
+import os
+from pathlib import Path
+import sys
+
+SELF=Path(__file__).resolve();ROOT=SELF.parent.parent
+sys.path.insert(0,str(ROOT))
+from scripts.plot_sustained_comparison import read_metadata,write_artifacts
+
+FILES={
+ 'prefill':'ops/reports/qwen235b-prefill100-report-2026-10-24.json',
+ 'decode':'ops/reports/qwen235b-decode100-report-2026-10-24.json',
+ 'reconciliation':'ops/reports/qwen235b-regime100-reconciliation-2026-10-24.json',
+ 'controller_source':'ops/reports/qwen235b-decode100-controller-source-2026-10-24.py.txt'}
+EXPECTED={
+ 'prefill':'9b56475ed30d9e70188486b2213272a00fe5f9807b1d9c484fc30c0f3124f061',
+ 'decode':'a6659a1dd28e6ed05adeb51089d3edcc2adcb8555a85454938ac33c183db6e87',
+ 'reconciliation':'118230f4e37ac0f08107b9bf0486983bc83b9b65bf50e7b64409f4f5c81c0d02',
+ 'controller_source':'d2328ba541a050b20b94c4e669ca1024100a8a548ffdeb6560f2afbec64076fd'}
+PREFIX=ROOT/'docs/benchmarks/qwen235b-workload-regimes-2026-10-24'
+BOUNDS=[
+ 'Different workloads, two serial N=1 descriptive cohorts; not an A/B or improvement comparison; no confidence intervals',
+ 'Qwen3-235B-A22B FP8: 235B total parameters / approximately22B active; one TP4 engine across all4 H100 GPUs',
+ '100 accepted durable completions per workload; controlled length-capped outputs, not answer quality evidence',
+ 'Token rates divide observed aggregate tokens by client-observed submission-to-terminal wall; not GPU kernel or isolated prefill/decode rates',
+ 'Task latency is DB batch creation to accepted completion and includes durable queue; it excludes client upload/admission',
+ 'Cost is an assumed whole-Pod $16.10/hour allocation scenario over each cohort wall; excludes output validation and gaps between cohorts; not invoice or marginal cost',
+ 'GPU means are device-wide, unweighted NVML sample means; sample windows include validation and differ from cohort wall windows',
+ 'No sampling-gap trace is available in these summaries; no missing interval is zero-filled or treated as continuously observed',
+ 'No daily/fleet capacity forecast, availability claim, short-QA throughput claim or future-model guarantee']
+
+
+def require(value,code):
+ if not value:raise ValueError(code)
+def near(a,b,absolute=1e-6):
+ require(type(a) in (int,float) and math.isfinite(a) and math.isclose(a,b,rel_tol=1e-10,abs_tol=absolute),'numeric_evidence_mismatch')
+def dist(values):
+ ordered=sorted(values)
+ def q(p):
+  position=(len(ordered)-1)*p;lower=math.floor(position);upper=math.ceil(position)
+  return round(ordered[lower]+(ordered[upper]-ordered[lower])*(position-lower),6)
+ return dict(samples=len(ordered),p50=q(.5),p95=q(.95),p99=q(.99),max=round(max(ordered),6),mean=round(sum(ordered)/len(ordered),6))
+
+
+def dataset():
+ inputs={};shas={}
+ for key,path in FILES.items():
+  if key=='controller_source':
+   raw=(ROOT/path).read_bytes();shas[key]=hashlib.sha256(raw).hexdigest()
+  else:inputs[key],shas[key]=read_metadata(ROOT/path)
+ require(shas==EXPECTED,'frozen_input_sha_mismatch')
+ recon=inputs['reconciliation']
+ require(recon['performance_ab_comparison'] is False and recon['phase']=='complete' and recon['passed'] is True
+  and recon['services_and_sources_unchanged'] is True,'reconciliation_not_guarded')
+ require(recon['source_controller_sha256']==shas['controller_source'],'controller_source_sha_mismatch')
+ result={}
+ for key,expected_tokens in [('prefill',(1228800,8000)),('decode',(32000,128000))]:
+  report=inputs[key];rows=report['tasks'];count=len(rows);elapsed=report['elapsed_seconds']
+  require(recon[key+'_report_sha256']==shas[key],'report_reconciliation_sha_mismatch')
+  require(report['passed'] is True and report['database_schema_version']==10 and report['model']=='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+   and report['accepted_exactly_once'] is True and report['all_output_lengths_exact'] is True and report['test_fixture_detected'] is False,'cohort_not_real_and_exact')
+  require(count==report['requested_tasks']==report['submitted_tasks']==report['completed']==100 and report['failed']==report['cancelled']==0
+   and report['accepted_batches']==report['terminal_batches']==report['batches']==1
+   and not any(report[k] for k in ('unfinished_batch_ids','submission_errors','output_validation_errors')),'cohort_population_mismatch')
+  require(len({row['id'] for row in rows})==len({row['custom_id'] for row in rows})==100
+   and all(row['status']=='completed' and row['attempts']==row['accepted_attempts']==1 and row['completion_tokens']==row['output_cap']
+    and row['custom_id'].startswith(report['run_id']+'-') for row in rows),'task_completion_proof_mismatch')
+  require((sum(r['prompt_tokens'] for r in rows),sum(r['completion_tokens'] for r in rows))==expected_tokens
+   ==(report['observed_prompt_tokens'],report['observed_completion_tokens']),'observed_tokens_mismatch')
+  require(type(elapsed) in (int,float) and math.isfinite(elapsed) and elapsed>0,'invalid_elapsed')
+  near(report['completed_tasks_per_second'],count/elapsed)
+  for field,total in [('observed_prompt_tokens_per_second',expected_tokens[0]),('observed_completion_tokens_per_second',expected_tokens[1])]:near(report[field],total/elapsed)
+  for metric,field in [('task_completion_seconds','completion_seconds'),('prompt_tokens_per_task','prompt_tokens'),('completion_tokens_per_task','completion_tokens')]:
+   recomputed=dist([row[field] for row in rows])
+   for stat,value in recomputed.items():near(report[metric][stat],value)
+  cost=report['cost'];near(cost['assumed_whole_pod_usd_per_hour'],16.10)
+  near(cost['run_allocation_usd'],elapsed*16.10/3600,1e-12)
+  near(cost['usd_per_million_durable_completions'],elapsed*16.10/3600/count*1e6)
+  for field,value in recon[key].items():require(report[field]==value,'reconciliation_summary_mismatch')
+  gpu=report['gpu_observation'];require(set(gpu['physical_device_utilization'])=={'0','1','2','3'},'four_gpu_evidence_required')
+  require(gpu['measurement_seconds_including_validation']>=elapsed and gpu['samples']>0,'gpu_window_invalid')
+  for value in gpu['physical_device_utilization'].values():
+   require(value['samples']==gpu['samples'] and all(type(value[k]) in (int,float) and math.isfinite(value[k]) and 0<=value[k]<=100
+    for k in ('p50','p95','p99','max','mean')),'gpu_samples_invalid')
+  cells=Counter((r['prompt_tokens'],r['output_cap']) for r in rows)
+  require(len(cells)==4 and set(cells.values())=={25},'four_balanced_cells_required')
+  fps={r['scheduling_decision']['runtime_fingerprint'] for r in report['attempt_decisions']}
+  require(len(report['attempt_decisions'])==100 and len(fps)==1,'runtime_fingerprint_not_unique')
+  result[key]={
+   'run_id':report['run_id'],'measurement_started_at':report['measurement_started_at'],'terminal_observation_ended_at':report['terminal_observation_ended_at'],
+   'completed':count,'elapsed_seconds':elapsed,'completed_tasks_per_second':report['completed_tasks_per_second'],
+   'observed_prompt_tokens':expected_tokens[0],'observed_completion_tokens':expected_tokens[1],
+   'observed_prompt_tokens_per_second':report['observed_prompt_tokens_per_second'],'observed_completion_tokens_per_second':report['observed_completion_tokens_per_second'],
+   'task_completion_seconds':report['task_completion_seconds'],'prompt_tokens_per_task':report['prompt_tokens_per_task'],
+   'completion_tokens_per_task':report['completion_tokens_per_task'],'cost':cost,'gpu_observation':gpu,
+   'runtime_fingerprint':next(iter(fps)),'cell_counts':{f'input={i};output={o}':n for (i,o),n in sorted(cells.items())}}
+ require(result['prefill']['runtime_fingerprint']==result['decode']['runtime_fingerprint'],'runtime_fingerprints_differ')
+ require(datetime.fromisoformat(result['prefill']['terminal_observation_ended_at'])<datetime.fromisoformat(result['decode']['measurement_started_at']),'cohorts_not_serial')
+ return {'chart_version':1,'model':'Qwen/Qwen3-235B-A22B-Instruct-2507-FP8','physical_gpu_count':4,'tensor_parallel_size':4,
+  'performance_ab_comparison':False,'independent_runs_per_workload':1,'source_inputs_sha256':shas,'source_paths':FILES,
+  'plot_source_sha256':hashlib.sha256(SELF.read_bytes()).hexdigest(),'exact_numeric_dataset':result,
+  'interpretation_bounds':BOUNDS,'raw_model_content_included':False,'business_state_modified':False}
+
+
+def render(audit):
+ import matplotlib
+ matplotlib.use('Agg')
+ from matplotlib import pyplot as plt
+ from matplotlib.ticker import FuncFormatter
+ plt.rcParams.update({'font.family':'DejaVu Sans','font.size':10,'text.usetex':False,'svg.fonttype':'none',
+  'axes.spines.top':False,'axes.spines.right':False,'axes.titleweight':'bold','text.color':'#24354A','axes.labelcolor':'#24354A'})
+ colors=('#205D96','#C36A2D');names=('Prefill-heavy','Decode-heavy');runs=[audit['exact_numeric_dataset'][key] for key in ('prefill','decode')]
+ fig=plt.figure(figsize=(14.6,11),facecolor='white')
+ grid=fig.add_gridspec(2,2,left=.075,right=.97,top=.735,bottom=.205,hspace=.63,wspace=.33)
+ axes=[fig.add_subplot(grid[i,j]) for i in range(2) for j in range(2)]
+ def grouped(ax,series,labels,fmt):
+  for side,values in enumerate(series):
+   positions=[i+(side-.5)*.36 for i in range(len(values))]
+   ax.bar(positions,values,width=.33,color=colors[side],label=names[side])
+   for x,y in zip(positions,values):ax.annotate(fmt(y),(x,y),textcoords='offset points',xytext=(0,5),ha='center',fontsize=9)
+  ax.set_xticks(range(len(labels)),labels);ax.grid(axis='y',alpha=.18);ax.set_axisbelow(True)
+ grouped(axes[0],[[r['observed_prompt_tokens_per_second'],r['observed_completion_tokens_per_second']] for r in runs],['Input tokens','Generated tokens'],lambda v:f'{v:,.1f}')
+ axes[0].set_yscale('log');axes[0].set_ylim(40,35000);axes[0].set_ylabel('Observed tokens / cohort wall second (log scale)')
+ axes[0].set_title('A  Observed token throughput',loc='left',pad=17);axes[0].legend(frameon=False,fontsize=9)
+ grouped(axes[1],[[r['task_completion_seconds'][key] for key in ('p50','p95','p99')] for r in runs],['P50','P95','P99'],lambda v:f'{v:.1f}')
+ axes[1].set_ylim(0,300);axes[1].set_ylabel('DB-created to accepted completion (seconds)');axes[1].set_title('B  Task completion includes queue time',loc='left',pad=17)
+ values=[r['cost']['run_allocation_usd'] for r in runs]
+ axes[2].bar(names,values,color=colors,width=.52);axes[2].set_ylim(0,1.45);axes[2].set_ylabel('Assumed USD / 100 observed completions')
+ axes[2].yaxis.set_major_formatter(FuncFormatter(lambda x,_:f'${x:.2f}'));axes[2].set_title('C  Whole-Pod allocation scenario: $16.10/hour',loc='left',pad=17)
+ axes[2].grid(axis='y',alpha=.18);axes[2].set_axisbelow(True)
+ for i,value in enumerate(values):axes[2].annotate(f'${value:.4f}',(i,value),textcoords='offset points',xytext=(0,6),ha='center',fontweight='bold')
+ grouped(axes[3],[[r['gpu_observation']['physical_device_utilization'][str(i)]['mean'] for i in range(4)] for r in runs],[f'GPU {i}' for i in range(4)],lambda v:f'{v:.1f}%')
+ axes[3].set_ylim(0,110);axes[3].set_ylabel('NVML sampled device utilization mean (%)');axes[3].set_title('D  Activity sampled on all four GPUs',loc='left',pad=17)
+ fig.text(.075,.95,'Two workloads on Qwen3-235B-A22B',fontsize=22,fontweight='bold')
+ fig.text(.075,.915,'235B total / ~22B active parameters | FP8 | All 4 H100 GPUs, TP4 | Serial N=1 per workload | No CIs',fontsize=11)
+ fig.text(.075,.88,'Different input/output mixes: descriptive workload evidence; no A/B, speedup or sustained-capacity claim.',fontsize=10)
+ for x,color,name,run,profile in zip((.075,.545),colors,names,runs,('Input 8,192 / 16,384; output 32 / 128 tokens','Input 128 / 512; output 512 / 2,048 tokens')):
+  fig.text(x,.834,f'{name}: 100/100 durable completions',fontsize=11,color=color,fontweight='bold')
+  fig.text(x,.809,profile+'; four cells x25',fontsize=10)
+  fig.text(x,.784,f"Cohort wall {run['elapsed_seconds']:.3f}s | {run['completed_tasks_per_second']:.6f} tasks/s",fontsize=10)
+ fig.text(.075,.145,'Token rates are cohort-wall observations, not isolated kernel rates. Fixed length-capped outputs do not establish answer quality.',fontsize=9)
+ fig.text(.075,.122,'GPU samples: prefill n=79 / 87.182s; decode n=233 / 255.963s (validation included). Device-wide activity; gaps unknown.',fontsize=9)
+ fig.text(.075,.099,'Cost scenario covers each cohort wall, excludes validation and inter-run gaps. No invoice, daily/fleet capacity or availability guarantee.',fontsize=9)
+ fig.text(.075,.065,'SHA256 prefixes (full checksums and exact numeric dataset in chart audit):',fontsize=8)
+ fig.text(.075,.045,' | '.join(f'{k} {v[:12]}' for k,v in audit['source_inputs_sha256'].items()),fontsize=7.5)
+ fig.text(.075,.026,f"plot {audit['plot_source_sha256'][:12]} | Original prefill controller post-run KeyError was reconciled; preserved reports were not rerun.",fontsize=7.5)
+ try:
+  artifacts={}
+  for format_name in ('png','svg'):
+   buffer=io.BytesIO();fig.savefig(buffer,format=format_name,dpi=160,metadata={'Creator':'BatchForge verified workload-regime evidence'})
+   artifacts[format_name]=buffer.getvalue()
+  return artifacts
+ finally:plt.close(fig)
+
+
+def main():
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--write',action='store_true');args=parser.parse_args()
+ audit=dataset();files={}
+ if args.write:
+  source=PREFIX.with_suffix('.plot-source.py.txt')
+  require(not source.exists() and not source.is_symlink(),'plot_source_already_exists')
+  artifacts=render(audit);artifacts['plot-source.py.txt']=SELF.read_bytes()
+  files=write_artifacts(PREFIX,artifacts,audit)
+ print(json.dumps({'validated':True,'artifacts_written':files,'source_inputs_sha256':audit['source_inputs_sha256']},sort_keys=True))
+if __name__=='__main__':
+ try:main()
+ except Exception as error:print(json.dumps({'validated':False,'error_code':str(error) if type(error) is ValueError else type(error).__name__}));raise SystemExit(1) from None

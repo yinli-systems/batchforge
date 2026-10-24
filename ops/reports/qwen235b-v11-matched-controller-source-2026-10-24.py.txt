@@ -1,0 +1,422 @@
+"""Prepare, then explicitly execute two fresh matched schema11 arrival windows.
+
+No automatic start/replay. Run on the serving Pod only after review. Default is
+read-only preparation plus a private plan; --execute requires that exact plan
+SHA. No service restart, task cancellation, retirement, GC or quota widening.
+Old schema10 baseline/pilot reports are context only, never comparison inputs.
+"""
+from __future__ import annotations
+import argparse
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import signal
+import stat
+import subprocess
+import sys
+import time
+
+SELF = Path(__file__).resolve()
+MODEL = 'Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+RUNNER_SHA = '2285f71fb69bde10325c7f393e225b80fe51d70708cf221fac9c1aa9d5192289'
+FIXTURE_SHA = '52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f'
+PUBLISHER_CUTOFF = '2026-10-24T03:59:21.961089+00:00'
+PINS = {'scripts/sustained_benchmark.py': RUNNER_SHA,
+ 'ops/gateway/worker_gateway.py': '341395d04b3e7500b1221577d24354a7713a9135b2ad3add1f7c010dcd321cb1',
+ 'scripts/collect_sustained_outputs.py': 'e8e6910e6623d968c8ae9d8beb3013364cc2a0365d2d3f8d850e76d875082a47',
+ 'scripts/audit_response_reservation.py': '61fc8c2dfb44b250273e185b4be52bbf90aea5436f10f86c67bac739a62ade7c',
+ 'scripts/compare_sustained_reports.py': '90df1ebbb26a40d7288fb230ec9ddc484e3ece2414c691b6d993936bd17862c3',
+ 'ops/ha/single_pod_fault_probe.py': '4098fa038faa1008e451975acf4524c46a388dad94ea3ce9dd0eb42c44b93844'}
+POLICY_BASE = (50000, 335544320, 1048576, 32768)
+POLICY_CANDIDATE = (50000, 335544320, 65536, 32768)
+POLICY_SQL = 'SELECT max_retained_tasks,max_payload_bytes,max_response_bytes,max_error_bytes FROM tenant_retention_limits WHERE tenant_id=%s'
+LIMITATIONS = ['Serial N=1 per policy; no confidence intervals or matched-task/GPU-kernel speedup claim',
+ 'Old schema10 baseline and failed upload pilot are not matched comparison inputs',
+ 'All accepted work must finish, but a partial 720-task plan remains passed=false',
+ 'Legacy payload is preserved; completed task rows, input blobs and auxiliary metadata accumulate between windows',
+ 'No retirement, GC, history reset, task cancellation, service change or total-quota widening',
+ 'Runner cost covers its measured wall window; pair allocation additionally includes collection and cleanup waits',
+ 'Observed response coverage does not guarantee arbitrary future responses or other workloads/models',
+ 'Private raw outputs remain on this Pod; no database dump or off-Pod raw export',
+ 'Independent input/auxiliary quotas may bind; their usage is recorded and they are not widened',
+ 'Controlled prior cleanup respects the existing publisher cutoff; older235B payload stays immutable legacy']
+
+class Refusal(RuntimeError):
+    pass
+
+def require(condition, code):
+    if not condition: raise Refusal(code)
+
+def stamp(): return datetime.now(timezone.utc).isoformat()
+def sha(raw): return hashlib.sha256(raw).hexdigest()
+def encoded(value): return (json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False)+'\n').encode()
+
+def read(path, maximum=16*1024**2):
+    fd=os.open(path, os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    try:
+        before=os.fstat(fd)
+        require(stat.S_ISREG(before.st_mode) and before.st_uid==os.geteuid() and not before.st_mode&0o077 and 0<before.st_size<=maximum, 'unsafe_private_file')
+        with os.fdopen(fd,'rb',closefd=False) as handle: raw=handle.read(maximum+1)
+        after=os.fstat(fd)
+        require(len(raw)==before.st_size and all(getattr(before,k)==getattr(after,k) for k in ('st_ino','st_dev','st_size','st_mtime_ns','st_ctime_ns')), 'private_file_changed')
+        return raw
+    finally: os.close(fd)
+
+def sync(path):
+    fd=os.open(path,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+    try: os.fsync(fd)
+    finally: os.close(fd)
+
+def write(path, value, exclusive=False, raw=False):
+    body=value if raw else encoded(value)
+    temporary=path if exclusive else path.with_name(path.name+'.'+secrets.token_hex(8)+'.tmp')
+    fd=os.open(temporary,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    try:
+        with os.fdopen(fd,'wb') as handle: handle.write(body);handle.flush();os.fsync(handle.fileno())
+        if not exclusive: os.replace(temporary,path)
+        sync(path.parent)
+    finally:
+        if not exclusive: temporary.unlink(missing_ok=True)
+
+def directory(path, *, fresh=False):
+    if fresh: path.mkdir(mode=0o700,parents=False)
+    else: path.mkdir(mode=0o700,parents=True,exist_ok=True)
+    info=path.lstat()
+    require(path.resolve()==path and stat.S_ISDIR(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o077,'unsafe_private_directory')
+
+def check_registry(conn):
+    from backend.migrate import MIGRATIONS, SCHEMA_VERSION
+    expected=[(v,h) for v,_s,h in MIGRATIONS]
+    require(SCHEMA_VERSION==11 and len(expected)==11 and expected[-1][0]==11,'local_registry11_required')
+    require(conn.execute('SELECT version,checksum FROM batchforge_schema_migrations ORDER BY version').fetchall()==expected,'actual_ledger11_checksum_mismatch')
+    return {str(v):h for v,h in expected}
+
+def source_map(root, exporter):
+    paths={p for folder in ('backend','worker','ops','scripts') for p in (root/folder).rglob('*') if p.is_file() and p.suffix in {'.py','.sql'}}
+    paths.update((SELF,exporter))
+    return {str(p.relative_to(root)):sha(p.read_bytes()) for p in sorted(paths)}
+
+def process_binding(root,services):
+    from ops.ha.set_scheduler_policy import owned_identity
+    from ops.ha.finalize_api_policy import values
+    result={}
+    for service in services:
+        identity=owned_identity(root,service)
+        actual=Path('/proc')/str(identity['pid'])
+        environ=(actual/'environ').read_bytes()
+        parsed={k.decode():v.decode() for item in environ.split(b'\0') if b'=' in item for k,v in [item.split(b'=',1)]}
+        require(all(parsed.get(k)==v for k,v in values(read(Path(service['env_file']))).items()),'actual_service_environment_differs')
+        require(owned_identity(root,service)==identity,'service_identity_changed_during_capture')
+        result[service['role']+'-'+service['name']]={**identity,'process_environ_sha256':sha(environ), 'process_argv_sha256':sha((actual/'cmdline').read_bytes())}
+    return result
+
+def runner_command(root,fixture,run,job,engine_port,python):
+    return [python,'-m','scripts.sustained_benchmark','--job-id',job,'--env-file',str(run/'benchmark.env'),
+            '--input-jsonl',str(fixture),'--model',MODEL,'--state-dir',str(run),'--tasks','720','--tasks-per-batch','20',
+            '--seed','20261024','--fixed-output','--arrival-rate','0.4','--duration-seconds','1800','--drain-seconds','900',
+            '--max-inflight-tasks','80','--submission-concurrency','2','--poll-seconds','2','--sample-seconds','10','--hourly-cost','16.10',
+            '--url','http://127.0.0.1:8080','--engine-url',f"http://127.0.0.1:{engine_port}",
+            '--api','api-a=http://127.0.0.1:8082','--api','api-b=http://127.0.0.1:8083']
+
+class Context:
+    def __init__(self,args):
+        self.args=args;self.root=args.root;self.stop=False
+        require(self.root.resolve()==self.root and SELF.parent==self.root/'.runtime','controller_must_be_in_app_runtime')
+        sys.path.insert(0,str(self.root))
+        import psycopg
+        from ops.supervise import load_manifest
+        from ops.ha.finalize_api_policy import values
+        from ops.ha.deploy_storage_admission import bound_owner_dsn
+        self.psycopg=psycopg
+        self.manifest,self.services,_=load_manifest(args.manifest,root=self.root)
+        self.apis=sorted((s for s in self.services if s['role']=='api'),key=lambda s:s['name'])
+        require([(s['name'],s['port']) for s in self.apis]==[('a',8082),('b',8083)],'exact_api_replicas_required')
+        engines=[s for s in self.services if s['role']=='engine'];workers=[s for s in self.services if s['role']=='worker']
+        require(len(engines)==len(workers)==1,'single_engine_worker_required')
+        self.engine,self.worker=engines[0],workers[0]
+        require([(s['name'],s['port']) for s in self.services if s['role']=='gateway']==[('edge',8080)],'bound_private_gateway_required')
+        self.services=[*self.services,dict(role='supervisor',name='primary',env_file=str(args.supervisor_env),python=self.apis[0]['python'])]
+        self.api_envs=[values(read(Path(s['env_file']))) for s in self.apis]
+        self.worker_env=values(read(Path(self.worker['env_file'])))
+        engine_env=values(read(Path(self.engine['env_file'])))
+        require(engine_env.get('MODEL_NAME')==self.worker_env.get('MODEL_NAME')==MODEL and self.engine.get('gpu')=='0,1,2,3' and engine_env.get('ENGINE_TENSOR_PARALLEL_SIZE')=='4','exact_tp4_qwen235b_required')
+        require(self.worker_env.get('INFERENCE_BASE_URLS')==f"http://127.0.0.1:{self.engine['port']}",'single_private_engine_required')
+        for env in self.api_envs:
+            require(env.get('MODEL_NAME')==MODEL and env.get('SCHEDULER_POLICY')=='cost_aware' and int(env.get('MAX_ATTEMPTS','3'))==3,'api_model_scheduler_or_attempts_drift')
+            require(all(env.get(k,'false').lower() in {'true','1'} for k in ('SQL_RECOVERY_ENABLED','RESULT_READERS_ENABLED','RESULT_ARCHIVE_ENABLED','RETENTION_ADMISSION_ENABLED')),'required_api_features_not_enabled')
+        self.cutoff=datetime.fromisoformat(PUBLISHER_CUTOFF)
+        require(all(datetime.fromisoformat(e.get('RESULT_ARCHIVE_AFTER','').replace('Z','+00:00'))==self.cutoff for e in self.api_envs),'existing_publisher_cutoff_differs')
+        self.benchmark=values(read(args.benchmark_env))
+        require(self.benchmark.get('DATABASE_URL') in {e['DATABASE_URL'] for e in self.api_envs},'benchmark_runtime_dsn_not_bound_to_api')
+        self.owner_dsn=bound_owner_dsn(read(args.owner_env),[e['DATABASE_URL'] for e in self.api_envs])
+        self.profile=json.loads(self.worker_env['SCHEDULER_PROFILE_JSON']);self.fp=self.profile['runtime_fingerprint']
+        require(re.fullmatch(r'sha256:[0-9a-f]{64}',self.fp) is not None,'runtime_fingerprint_required')
+        self.conn=psycopg.connect(self.benchmark['DATABASE_URL'],autocommit=True,connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=5000 -c lock_timeout=1000')
+        require(self.conn.execute('SELECT current_user,current_database()').fetchone()==('bf_runtime','batchforge'),'bound_runtime_role_required')
+        key_hash=sha(self.benchmark['BATCHFORGE_API_KEY'].encode())
+        require(self.conn.execute('SELECT tenant_id FROM api_keys WHERE key_hash=%s AND NOT revoked',(key_hash,)).fetchone()==('default',),'default_tenant_api_key_required')
+        self.ledger=check_registry(self.conn)
+        require(sha(read(args.fixture,32*1024**2))==FIXTURE_SHA,'fixture_sha_drift')
+        require(all(sha((self.root/p).read_bytes())==h for p,h in PINS.items()),'pinned_tool_source_drift')
+        self.history_policy=self.conn.execute("SELECT to_jsonb(p) FROM tenant_history_retirement_policy p WHERE tenant_id='default'").fetchone()
+        require(self.history_policy is None or self.history_policy[0].get('enabled') is False,'default_history_retirement_must_be_disabled')
+        self.aux_policy=self.conn.execute("SELECT resource,max_rows,max_bytes FROM tenant_auxiliary_limits WHERE tenant_id='default' ORDER BY resource").fetchall()
+        self.worker_profile()
+        from ops.ha.single_pod_fault_probe import WorkerController
+        require(callable(getattr(WorkerController,'engine_quiescence',None)),'released_engine_quiescence_helper_required')
+        self.manager=WorkerController(root=self.root)
+
+    def close(self): self.conn.close()
+    def policy(self): return self.conn.execute(POLICY_SQL,('default',)).fetchone()
+    def worker_profile(self):
+        row=self.conn.execute("SELECT runtime_fingerprint,metadata->'scheduling_profile',model,concurrency,metadata->'kv_admission'->>'budget',last_seen_at>clock_timestamp()-interval '120 seconds' FROM workers WHERE id=%s",(self.worker_env['WORKER_ID'],)).fetchone()
+        adaptive=self.worker_env.get('WORKER_ADAPTIVE_KV_ENABLED','false').lower() in {'true','1'}
+        slots=int(self.worker_env.get('WORKER_MAX_INFLIGHT','8'))
+        if not adaptive: slots=min(slots,int(self.worker_env.get('WORKER_TOKEN_BUDGET','16384'))//int(self.worker_env.get('ENGINE_MAX_MODEL_LEN','2048')))
+        require(row and row[:4]==(self.fp,self.profile,MODEL,slots) and row[-1] is True,'actual_worker_registration_profile_differs')
+        if adaptive: require(row[4]==self.worker_env['WORKER_TOKEN_BUDGET'],'actual_worker_token_budget_differs')
+        require(self.conn.execute("SELECT count(*) FROM workers WHERE model=%s AND last_seen_at>clock_timestamp()-interval '120 seconds'",(MODEL,)).fetchone()==(1,),'another_fresh_model_worker')
+
+    def static_binding(self):
+        configs={str(p):sha(read(p)) for p in {self.manifest,self.args.benchmark_env,self.args.owner_env,*[Path(s['env_file']) for s in self.services]}}
+        return dict(source_sha256=source_map(self.root,self.args.exporter),configuration_sha256=configs,
+            service_processes=process_binding(self.root,self.services),runtime_fingerprint=self.fp,
+            scheduling_profile=self.profile,migration_checksums=self.ledger,
+            history_policy=self.history_policy,auxiliary_limits=self.aux_policy,publisher_cutoff_utc=PUBLISHER_CUTOFF)
+
+    def guard(self,binding,expected_policy):
+        require(encoded(self.static_binding())==encoded(binding),'source_service_environment_or_policy_binding_changed')
+        check_registry(self.conn);self.worker_profile()
+        require(self.policy()==tuple(expected_policy),'response_or_total_retention_policy_changed')
+        require(encoded(self.conn.execute("SELECT to_jsonb(p) FROM tenant_history_retirement_policy p WHERE tenant_id='default'").fetchone())==encoded(binding['history_policy']),'history_policy_changed')
+        require(encoded(self.conn.execute("SELECT resource,max_rows,max_bytes FROM tenant_auxiliary_limits WHERE tenant_id='default' ORDER BY resource").fetchall())==encoded(binding['auxiliary_limits']),'auxiliary_limits_changed')
+
+    def prior_batches(self):
+        return [[*row[:4],row[4].isoformat()] for row in self.conn.execute("SELECT id,metadata->>'sustained_job',metadata->>'benchmark_run',total_count,created_at FROM batches WHERE model=%s AND (metadata ? 'sustained_job' OR metadata ? 'benchmark_run') ORDER BY id",(MODEL,)).fetchall()]
+
+    def cleanup(self,prior,jobs,all_prior=None):
+        with self.conn.transaction():
+            self.conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
+            return self._cleanup_snapshot(prior,jobs,all_prior if all_prior is not None else prior)
+
+    def _cleanup_snapshot(self,prior,jobs,all_prior):
+        prior_ids=[row[0] for row in prior]
+        chosen="(b.id=ANY(%s) OR b.metadata->>'sustained_job'=ANY(%s))"
+        known=self.conn.execute('SELECT id FROM batches b WHERE '+chosen,(prior_ids,jobs)).fetchall()
+        known_ids=[r[0] for r in known]
+        inventory_ids=list({row[0] for row in all_prior}|set(known_ids))
+        unknown=self.conn.execute("SELECT count(*) FROM batches WHERE model=%s AND (metadata ? 'sustained_job' OR metadata ? 'benchmark_run') AND NOT(id=ANY(%s))",(MODEL,inventory_ids)).fetchone()[0]
+        require(self.conn.execute("SELECT count(*) FROM batches WHERE metadata->>'sustained_job'=ANY(%s) AND created_at<%s",(jobs,self.cutoff)).fetchone()==(0,),'new_pair_predates_publisher_cutoff')
+        require(not unknown,'unplanned_qwen_experiment_appeared')
+        active=self.conn.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]
+        incomplete=self.conn.execute('SELECT count(*) FROM tasks t JOIN batches b ON b.id=t.batch_id WHERE '+chosen+' AND NOT t.retention_payload_cleared',(prior_ids,jobs)).fetchone()[0]
+        archives=self.conn.execute("SELECT count(*) FROM batches b WHERE "+chosen+" AND (b.status='in_progress' OR NOT EXISTS(SELECT 1 FROM result_archive_runs r WHERE r.batch_id=b.id AND r.tenant_id=b.tenant_id AND r.state='ready' AND r.purged_at IS NOT NULL))",(prior_ids,jobs)).fetchone()[0]
+        usage=self.conn.execute("SELECT retained_tasks,charged_payload_bytes FROM tenant_retention_usage WHERE tenant_id='default'").fetchone()
+        legacy=self.conn.execute("SELECT coalesce(sum(t.retention_body_bytes+t.retention_response_bytes+t.retention_error_bytes),0) FROM tasks t JOIN batches b ON b.id=t.batch_id WHERE t.tenant_id='default' AND NOT(b.id=ANY(%s))",(known_ids,)).fetchone()[0]
+        return dict(global_active_tasks=active,controlled_tasks_uncleared=incomplete,controlled_batches_without_ready_purged_archive=archives,
+            retained_tasks=usage[0],charged_payload_bytes=usage[1],legacy_charged_payload_bytes=int(legacy),task_headroom=50000-usage[0],payload_headroom_bytes=335544320-usage[1],
+            auxiliary_usage=[list(r) for r in self.conn.execute("SELECT resource,rows,bytes FROM tenant_auxiliary_usage WHERE tenant_id='default' ORDER BY resource").fetchall()])
+
+    def wait_clean(self,plan,doc,save,policy,legacy=None):
+        deadline=time.monotonic()+self.args.cleanup_timeout
+        while True:
+            require(not self.stop,'operator_interrupted_no_child_cancel')
+            self.guard(plan['binding'],policy)
+            value=self.cleanup(plan['prior_batches'],plan['jobs'],plan['all_prior_inventory'])
+            if legacy is not None: require(value['legacy_charged_payload_bytes']==legacy,'legacy_payload_changed')
+            doc.setdefault('cleanup_observations',[]).append(dict(at=stamp(),**value));save()
+            ready=not any(value[k] for k in ('global_active_tasks','controlled_tasks_uncleared','controlled_batches_without_ready_purged_archive'))
+            if ready and self.manager.engine_quiescence(self.engine).get('quiescent') is True:
+                require(value['charged_payload_bytes']==value['legacy_charged_payload_bytes'],'controlled_payload_not_fully_released')
+                require(value['task_headroom']>=720,'task_cap_could_bind_this_window')
+                return value
+            require(time.monotonic()<deadline,'cleanup_or_engine_quiescence_timeout')
+            time.sleep(self.args.poll_seconds)
+
+    def change_response_policy(self,plan,run,doc,save,target,previous,legacy):
+        self.guard(plan['binding'],previous)
+        require(self.cleanup(plan['prior_batches'],plan['jobs'],plan['all_prior_inventory'])['legacy_charged_payload_bytes']==legacy,'legacy_payload_changed')
+        policy_doc=dict(phase='prepared',target=list(target),previous=list(previous),only_future_max_response_bytes_changed=True,old_task_limits_immutable=True,started_at=stamp())
+        path=run/'response-policy-journal.json';write(path,policy_doc,exclusive=True)
+        try:
+            with self.psycopg.connect(self.owner_dsn,connect_timeout=10,options='-c statement_timeout=10000 -c lock_timeout=1000') as conn:
+                conn.execute('SET TRANSACTION ISOLATION LEVEL READ COMMITTED')
+                require(conn.execute("SELECT current_user=pg_get_userbyid(relowner) FROM pg_class WHERE oid='public.tenant_retention_limits'::regclass").fetchone()==(True,),'exact_policy_owner_required')
+                conn.execute("SELECT id FROM tenants WHERE id='default' FOR NO KEY UPDATE NOWAIT")
+                old=conn.execute(POLICY_SQL+' FOR UPDATE NOWAIT',('default',)).fetchone()
+                require(old==tuple(previous),'previous_policy_changed')
+                check_registry(conn)
+                require(conn.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()==(0,),'global_drain_required_before_policy_commit')
+                value=self.cleanup(plan['prior_batches'],plan['jobs'],plan['all_prior_inventory'])
+                require(value['controlled_tasks_uncleared']==value['controlled_batches_without_ready_purged_archive']==0 and value['charged_payload_bytes']==legacy and value['legacy_charged_payload_bytes']==legacy,'cleanup_required_before_policy_commit')
+                conn.execute("UPDATE tenant_retention_limits SET max_response_bytes=%s WHERE tenant_id='default'",(target[2],))
+                require(conn.execute(POLICY_SQL,('default',)).fetchone()==tuple(target),'target_policy_differs')
+                policy_doc.update(phase='commit_attempted',commit_intent_at=stamp(),before_usage=value,changed=old!=tuple(target));write(path,policy_doc)
+                doc['pending_action']=dict(stage='policy_commit',job_id=run.name,policy_journal_sha256=sha(read(path)));save()
+                conn.commit()
+            policy_doc.update(phase='committed',committed_at=stamp());write(path,policy_doc)
+            doc.pop('pending_action',None);save()
+        except BaseException:
+            policy_doc['phase']='commit_outcome_unknown' if policy_doc['phase']=='commit_attempted' else 'failed_before_commit'
+            write(path,policy_doc)
+            raise
+        self.guard(plan['binding'],target)
+        return policy_doc
+
+    def runtime_proof(self,plan,report_raw):
+        self.worker_profile()
+        return dict(report_sha256=sha(report_raw),engine_runtime_fingerprint=self.fp,
+            engine_configuration_sha256=sha(read(Path(self.engine['env_file']))),
+            worker_configuration_sha256=sha(read(Path(self.worker['env_file']))),service_source_sha256=plan['binding']['source_sha256'])
+
+    def round(self,plan,doc,save,label,job,target,previous,legacy):
+        from scripts.compare_sustained_reports import validate_report
+        from scripts.collect_sustained_outputs import collect
+        from scripts.audit_response_reservation import audit
+        run=self.root/'.runtime/sustained'/job;directory(run,fresh=True)
+        benchmark={k:self.benchmark[k] for k in ('DATABASE_URL','BATCHFORGE_API_KEY')}
+        benchmark['BATCHFORGE_WORKER_TOKEN']=self.api_envs[0]['BATCHFORGE_WORKER_TOKEN']
+        import shlex
+        write(run/'benchmark.env',''.join(k+'='+shlex.quote(v)+'\n' for k,v in sorted(benchmark.items())).encode(),exclusive=True,raw=True)
+        round_doc=dict(job_id=job,label=label,phase='prepared',initial_schema_version=11,started_at=stamp(),runner_sha256=RUNNER_SHA,
+            source_sha256=plan['binding']['source_sha256'],configuration_sha256=plan['binding']['configuration_sha256'],
+            service_identities_before=plan['binding']['service_processes'],legacy_context_not_comparable=True,
+            service_mutations=False,off_pod_data_export=False,full_plan_passed=None)
+        path=run/'controller-journal.json'
+        def round_save(): write(path,round_doc)
+        round_save();doc['rounds'][label]=dict(job_id=job,phase='prepared');save()
+        policy=self.change_response_policy(plan,run,doc,save,target,previous,legacy)
+        round_doc['response_policy']=policy;round_doc['before_usage']=self.cleanup(plan['prior_batches'],plan['jobs'],plan['all_prior_inventory']);round_save()
+        argv=runner_command(self.root,self.args.fixture,run,job,self.engine['port'],sys.executable)
+        round_doc.update(phase='spawn_intent',argv=argv);round_save()
+        doc['pending_action']=dict(stage='runner_spawn',job_id=job);save()
+        with (run/'runner.log').open('xb') as output:
+            child=subprocess.Popen(argv,cwd=self.root,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,start_new_session=True)
+            round_doc.update(phase='running',child_pid=child.pid);round_save();doc.pop('pending_action',None);save()
+            deadline=time.monotonic()+3000
+            while child.poll() is None:
+                require(not self.stop,'operator_interrupted_child_not_cancelled')
+                self.guard(plan['binding'],target)
+                require(self.cleanup(plan['prior_batches'],plan['jobs'],plan['all_prior_inventory'])['legacy_charged_payload_bytes']==legacy,'legacy_payload_changed')
+                require(time.monotonic()<deadline,'runner_observation_timeout_child_not_cancelled')
+                time.sleep(self.args.poll_seconds)
+            code=child.returncode
+            output.flush();os.fsync(output.fileno())
+        round_doc.update(phase='validating',child_returncode=code);round_save()
+        require((run/'report.json').exists(),'runner_terminal_report_missing_preserve_failure_journal')
+        raw=read(run/'report.json');report=json.loads(raw);summary=validate_report(report)
+        require(code==(0 if report['passed'] else 1),'runner_returncode_or_terminal_status_differs')
+        require(report['job_id']==job and report['configuration']['code_sha256']['sustained_benchmark.py']==RUNNER_SHA,'runner_report_identity_or_source_differs')
+        expected=dict(tasks=720,tasks_per_batch=20,seed=20261024,fixed_output=True,arrival_rate=.4,duration_seconds=1800,drain_seconds=900,
+            max_inflight_tasks=80,submission_concurrency=2,poll_seconds=2,sample_seconds=10,hourly_cost=16.10,request_timeout=120,
+            model=MODEL,source_sha256=FIXTURE_SHA,url='http://127.0.0.1:8080',engine_url=f"http://127.0.0.1:{self.engine['port']}")
+        require(all(report['configuration'].get(k)==v for k,v in expected.items()),'runner_workload_configuration_differs')
+        self.guard(plan['binding'],target)
+        require(self.conn.execute("SELECT count(*) FROM tasks t JOIN batches b ON b.id=t.batch_id WHERE b.metadata->>'sustained_job'=%s AND (t.retention_response_limit<>%s OR t.retention_error_limit<>32768 OR t.max_attempts<>3)",(job,target[2])).fetchone()==(0,),'new_task_immutable_limits_drift')
+        proof=self.runtime_proof(plan,raw);write(run/'runtime-proof.json',proof,exclusive=True)
+        collection=collect(argparse.Namespace(url='http://127.0.0.1:8080',run_id=job,checkpoint=run/'checkpoint.json',checkpoint_sha256=sha(read(run/'checkpoint.json')),
+            report=run/'report.json',report_sha256=sha(raw),expected_completed=summary['completed_tasks'],env_file=run/'benchmark.env',output_dir=run/'raw-outputs',require_full_plan=False))
+        write(run/'output-collection.json',collection,exclusive=True)
+        audited=audit(sorted((run/'raw-outputs').glob('batch-*-output.jsonl')),expected_count=summary['completed_tasks'],run_id=job,
+            candidate_limit_bytes=65536,original_limit_bytes=1048576,expected_output_caps={32,128,512,2048})
+        write(run/'response-audit.json',audited,exclusive=True)
+        require(audited['candidate']['all_observed_responses_fit'] is True and audited['candidate']['minimum_headroom_bytes']>=16384,'observed_response_bound_insufficient_no_next_policy')
+        self.guard(plan['binding'],target)
+        round_doc.update(phase='complete' if report['passed'] else 'failed_or_partial',passed=report['passed'],full_plan_passed=report['passed'],
+            accepted_tasks=report['accepted_tasks'],completed_tasks=report['completed_tasks'],finished_at=stamp(),report_sha256=sha(raw),
+            runtime_proof_sha256=sha(read(run/'runtime-proof.json')),response_audit_sha256=sha(read(run/'response-audit.json')),
+            output_collection_sha256=sha(read(run/'output-collection.json')),response_policy_journal_sha256=sha(read(run/'response-policy-journal.json')),
+            service_identities_after=plan['binding']['service_processes'],protected_services_and_sources_unchanged=True)
+        round_save();doc['rounds'][label]=dict(job_id=job,phase=round_doc['phase'],full_plan_passed=report['passed'],report_sha256=sha(raw));save()
+        return report
+
+
+def spec(args):
+    return {key:str(getattr(args,key)) if isinstance(getattr(args,key),Path) else getattr(args,key)
+        for key in ('root','operation','manifest','supervisor_env','owner_env','benchmark_env','fixture','exporter','baseline_job','candidate_job','cleanup_timeout','poll_seconds')}
+
+def parser():
+    p=argparse.ArgumentParser(description=__doc__)
+    root=SELF.parent.parent
+    p.add_argument('--root',type=Path,default=root);p.add_argument('--operation',default='qwen235b-v11-matched-v1')
+    for name,default in (('manifest',root/'.runtime/services-primary.json'),('supervisor-env',root.parent/'supervisor.env'),
+            ('owner-env',root.parent/'neon-owner.env'),('benchmark-env',root/'.runtime/scheduler-v6/benchmark.env'),
+            ('fixture',root/'.runtime/qwen235b-v1/workload-20.jsonl'),('exporter',SELF.with_name('export_sustained_v11_metadata.py'))):
+        p.add_argument('--'+name,type=Path,default=default)
+    p.add_argument('--baseline-job',default='qwen235b-soak30m-v11-response1m-v1')
+    p.add_argument('--candidate-job',default='qwen235b-soak30m-v11-response64k-v1')
+    p.add_argument('--cleanup-timeout',type=int,default=900);p.add_argument('--poll-seconds',type=int,default=10)
+    p.add_argument('--execute',action='store_true');p.add_argument('--prepared-sha256')
+    return p
+
+def main(argv=None):
+    os.umask(0o077);args=parser().parse_args(argv)
+    require(all(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,63}',v) for v in (args.operation,args.baseline_job,args.candidate_job)) and args.baseline_job!=args.candidate_job,'invalid_operation_or_job_ids')
+    require(120<=args.cleanup_timeout<=1800 and 2<=args.poll_seconds<=30,'invalid_observation_bounds')
+    context=Context(args)
+    operation=args.root/'.runtime/sustained-matched'/args.operation;directory(operation)
+    lockfd=os.open(operation/'operation.lock',os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW,0o600)
+    doc=None;started=time.monotonic()
+    try:
+        fcntl.flock(lockfd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        prepared=operation/'plan.json';journal=operation/'controller-journal.json'
+        require(not journal.exists(),'existing_execution_no_automatic_replay')
+        if not args.execute:
+            require(not prepared.exists(),'prepared_plan_already_exists')
+            require(context.policy() in (POLICY_BASE,POLICY_CANDIDATE),'unsupported_initial_response_or_quota_policy')
+            require(context.conn.execute("SELECT count(*) FROM batches WHERE metadata->>'sustained_job'=ANY(%s)",([args.baseline_job,args.candidate_job],)).fetchone()==(0,),'job_already_has_durable_work')
+            require(not any((args.root/'.runtime/sustained'/job).exists() for job in (args.baseline_job,args.candidate_job)),'job_state_directory_already_exists')
+            inventory=context.prior_batches()
+            controlled=[row for row in inventory if datetime.fromisoformat(row[4])>=context.cutoff]
+            plan=dict(version=1,phase='prepared',prepared_at=stamp(),specification=spec(args),binding=context.static_binding(),
+                prior_batches=controlled,all_prior_inventory=inventory,legacy_prior_batches=[row for row in inventory if row not in controlled],jobs=[args.baseline_job,args.candidate_job],initial_policy=list(context.policy()),
+                controller_sha256=sha(read(SELF)),limitations=LIMITATIONS,automatic_replay=False,production_business_state_modified=False)
+            write(prepared,plan,exclusive=True)
+            print(json.dumps(dict(phase='prepared',plan_sha256=sha(read(prepared)),execute_required=True)))
+            return 0
+        require(re.fullmatch(r'[0-9a-f]{64}',args.prepared_sha256 or '') is not None and sha(read(prepared))==args.prepared_sha256,'exact_prepared_sha_required')
+        plan=json.loads(read(prepared));require(plan['specification']==spec(args) and plan['controller_sha256']==sha(read(SELF)),'prepared_configuration_or_controller_changed')
+        context.guard(plan['binding'],plan['initial_policy'])
+        doc=dict(version=1,operation=args.operation,phase='starting',started_at=stamp(),plan_sha256=args.prepared_sha256,rounds={},
+            automatic_replay=False,business_mutations='future max_response_bytes only plus explicit bounded benchmark workload',limitations=LIMITATIONS)
+        def save(): write(journal,doc)
+        save()
+        for signum in (signal.SIGINT,signal.SIGTERM): signal.signal(signum,lambda *_:setattr(context,'stop',True))
+        clean=context.wait_clean(plan,doc,save,plan['initial_policy']);legacy=clean['legacy_charged_payload_bytes']
+        doc.update(initial_clean_usage=clean,legacy_charged_payload_baseline_bytes=legacy);save()
+        baseline=context.round(plan,doc,save,'baseline',args.baseline_job,POLICY_BASE,plan['initial_policy'],legacy)
+        context.wait_clean(plan,doc,save,POLICY_BASE,legacy)
+        candidate=context.round(plan,doc,save,'candidate',args.candidate_job,POLICY_CANDIDATE,POLICY_BASE,legacy)
+        context.wait_clean(plan,doc,save,POLICY_CANDIDATE,legacy)
+        from scripts.compare_sustained_reports import compare,markdown
+        inputs={};shas={}
+        for label,job in (('baseline',args.baseline_job),('candidate',args.candidate_job)):
+            run=args.root/'.runtime/sustained'/job
+            for suffix,filename in (('report','report.json'),('runtime_proof','runtime-proof.json')):
+                raw=read(run/filename);inputs[label+'_'+suffix]=json.loads(raw);shas[label+'_'+suffix]=sha(raw)
+        result=compare(inputs['baseline_report'],inputs['candidate_report'],inputs['baseline_runtime_proof'],inputs['candidate_runtime_proof'],
+            before_sha=shas['baseline_report'],after_sha=shas['candidate_report'],input_shas=shas)
+        write(operation/'comparison.json',result,exclusive=True);write(operation/'comparison.md',markdown(result).encode(),exclusive=True,raw=True)
+        doc.update(phase='complete',finished_at=stamp(),comparison_sha256=sha(read(operation/'comparison.json')),
+            baseline_full_plan_passed=baseline['passed'],candidate_full_plan_passed=candidate['passed'],whole_pair_wall_seconds=time.monotonic()-started)
+        doc['assumed_whole_pair_allocation_usd']=doc['whole_pair_wall_seconds']*16.10/3600;save()
+        print(json.dumps({k:doc[k] for k in ('phase','baseline_full_plan_passed','candidate_full_plan_passed','comparison_sha256','whole_pair_wall_seconds','assumed_whole_pair_allocation_usd')}))
+        return 0
+    except BaseException as error:
+        if doc is not None:
+            doc.update(phase='manual_recovery_required',failed_at=stamp(),failure_code=str(error) if isinstance(error,Refusal) else type(error).__name__,no_automatic_replay=True,child_work_not_cancelled=True)
+            write(operation/'controller-journal.json',doc)
+        print(json.dumps(dict(phase='refused',reason_code=str(error) if isinstance(error,Refusal) else type(error).__name__)))
+        return 1
+    finally: os.close(lockfd);context.close()
+
+if __name__=='__main__':
+    try: raise SystemExit(main())
+    except Exception as error:
+        print(json.dumps(dict(phase='refused',reason_code=str(error) if isinstance(error,Refusal) else type(error).__name__)))
+        raise SystemExit(1) from None

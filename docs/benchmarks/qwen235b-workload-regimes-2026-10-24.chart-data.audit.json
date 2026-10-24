@@ -1,0 +1,236 @@
+{
+  "artifacts": {
+    "qwen235b-workload-regimes-2026-10-24.plot-source.py.txt": {
+      "bytes": 14178,
+      "sha256": "e318eae4bd8b93bac214693f42946fbc4803ad6fbdaf555ccd272aea37a3e78c"
+    },
+    "qwen235b-workload-regimes-2026-10-24.png": {
+      "bytes": 326945,
+      "sha256": "9daf169d960d954ae36f51659c18e979817b8be4bc99d9952786276191a47102"
+    },
+    "qwen235b-workload-regimes-2026-10-24.svg": {
+      "bytes": 43159,
+      "sha256": "eb58a15961abaabee860ce047ad8d0edb50f1e59674dd17372cd3e97cb727af9"
+    }
+  },
+  "business_state_modified": false,
+  "chart_version": 1,
+  "exact_numeric_dataset": {
+    "decode": {
+      "cell_counts": {
+        "input=128;output=2048": 25,
+        "input=128;output=512": 25,
+        "input=512;output=2048": 25,
+        "input=512;output=512": 25
+      },
+      "completed": 100,
+      "completed_tasks_per_second": 0.391651,
+      "completion_tokens_per_task": {
+        "max": 2048,
+        "mean": 1280.0,
+        "p50": 1280.0,
+        "p95": 2048.0,
+        "p99": 2048.0,
+        "samples": 100
+      },
+      "cost": {
+        "assumed_whole_pod_usd_per_hour": 16.1,
+        "basis": "operator supplied whole-Pod allocation scenario; not current invoice or marginal inference cost",
+        "run_allocation_usd": 1.1418899508333333,
+        "usd_per_million_durable_completions": 11418.899508333334
+      },
+      "elapsed_seconds": 255.32943,
+      "gpu_observation": {
+        "engine_maxima": {
+          "vllm:gpu_cache_usage_perc": 0.34111054508405503,
+          "vllm:kv_cache_usage_perc": 0.34111054508405503,
+          "vllm:num_requests_running": 64.0,
+          "vllm:num_requests_waiting": 13.0
+        },
+        "measurement_seconds_including_validation": 255.96275235398207,
+        "physical_device_utilization": {
+          "0": {
+            "max": 100.0,
+            "mean": 89.11588,
+            "p50": 95.0,
+            "p95": 99.0,
+            "p99": 100.0,
+            "samples": 233
+          },
+          "1": {
+            "max": 100.0,
+            "mean": 71.583691,
+            "p50": 80.0,
+            "p95": 99.0,
+            "p99": 100.0,
+            "samples": 233
+          },
+          "2": {
+            "max": 100.0,
+            "mean": 68.862661,
+            "p50": 75.0,
+            "p95": 98.0,
+            "p99": 98.68,
+            "samples": 233
+          },
+          "3": {
+            "max": 100.0,
+            "mean": 77.669528,
+            "p50": 90.0,
+            "p95": 99.0,
+            "p99": 100.0,
+            "samples": 233
+          }
+        },
+        "samples": 233
+      },
+      "measurement_started_at": "2026-10-24T08:09:04.395719+00:00",
+      "observed_completion_tokens": 128000,
+      "observed_completion_tokens_per_second": 501.3131467061983,
+      "observed_prompt_tokens": 32000,
+      "observed_prompt_tokens_per_second": 125.32828667654958,
+      "prompt_tokens_per_task": {
+        "max": 512,
+        "mean": 320.0,
+        "p50": 320.0,
+        "p95": 512.0,
+        "p99": 512.0,
+        "samples": 100
+      },
+      "run_id": "bench-d33a27ddbab4",
+      "runtime_fingerprint": "sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3",
+      "task_completion_seconds": {
+        "max": 254.162637,
+        "mean": 123.804679,
+        "p50": 128.668152,
+        "p95": 212.381859,
+        "p99": 254.087056,
+        "samples": 100
+      },
+      "terminal_observation_ended_at": "2026-10-24T08:13:19.725168+00:00"
+    },
+    "prefill": {
+      "cell_counts": {
+        "input=16384;output=128": 25,
+        "input=16384;output=32": 25,
+        "input=8192;output=128": 25,
+        "input=8192;output=32": 25
+      },
+      "completed": 100,
+      "completed_tasks_per_second": 1.156819,
+      "completion_tokens_per_task": {
+        "max": 128,
+        "mean": 80.0,
+        "p50": 80.0,
+        "p95": 128.0,
+        "p99": 128.0,
+        "samples": 100
+      },
+      "cost": {
+        "assumed_whole_pod_usd_per_hour": 16.1,
+        "basis": "operator supplied whole-Pod allocation scenario; not current invoice or marginal inference cost",
+        "run_allocation_usd": 0.3865966704444445,
+        "usd_per_million_durable_completions": 3865.9667044444454
+      },
+      "elapsed_seconds": 86.443976,
+      "gpu_observation": {
+        "engine_maxima": {
+          "vllm:gpu_cache_usage_perc": 0.9433520122261844,
+          "vllm:kv_cache_usage_perc": 0.9433520122261844,
+          "vllm:num_requests_running": 25.0,
+          "vllm:num_requests_waiting": 22.0
+        },
+        "measurement_seconds_including_validation": 87.18236659502145,
+        "physical_device_utilization": {
+          "0": {
+            "max": 100.0,
+            "mean": 91.873418,
+            "p50": 99.0,
+            "p95": 100.0,
+            "p99": 100.0,
+            "samples": 79
+          },
+          "1": {
+            "max": 100.0,
+            "mean": 86.620253,
+            "p50": 99.0,
+            "p95": 100.0,
+            "p99": 100.0,
+            "samples": 79
+          },
+          "2": {
+            "max": 100.0,
+            "mean": 87.455696,
+            "p50": 99.0,
+            "p95": 100.0,
+            "p99": 100.0,
+            "samples": 79
+          },
+          "3": {
+            "max": 100.0,
+            "mean": 91.949367,
+            "p50": 99.0,
+            "p95": 100.0,
+            "p99": 100.0,
+            "samples": 79
+          }
+        },
+        "samples": 79
+      },
+      "measurement_started_at": "2026-10-24T08:04:06.857146+00:00",
+      "observed_completion_tokens": 8000,
+      "observed_completion_tokens_per_second": 92.54548865267373,
+      "observed_prompt_tokens": 1228800,
+      "observed_prompt_tokens_per_second": 14214.987057050683,
+      "prompt_tokens_per_task": {
+        "max": 16384,
+        "mean": 12288.0,
+        "p50": 12288.0,
+        "p95": 16384.0,
+        "p99": 16384.0,
+        "samples": 100
+      },
+      "run_id": "bench-02975a180156",
+      "runtime_fingerprint": "sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3",
+      "task_completion_seconds": {
+        "max": 84.91188,
+        "mean": 50.685592,
+        "p50": 53.52553,
+        "p95": 83.379998,
+        "p99": 84.613885,
+        "samples": 100
+      },
+      "terminal_observation_ended_at": "2026-10-24T08:05:33.301149+00:00"
+    }
+  },
+  "independent_runs_per_workload": 1,
+  "interpretation_bounds": [
+    "Different workloads, two serial N=1 descriptive cohorts; not an A/B or improvement comparison; no confidence intervals",
+    "Qwen3-235B-A22B FP8: 235B total parameters / approximately22B active; one TP4 engine across all4 H100 GPUs",
+    "100 accepted durable completions per workload; controlled length-capped outputs, not answer quality evidence",
+    "Token rates divide observed aggregate tokens by client-observed submission-to-terminal wall; not GPU kernel or isolated prefill/decode rates",
+    "Task latency is DB batch creation to accepted completion and includes durable queue; it excludes client upload/admission",
+    "Cost is an assumed whole-Pod $16.10/hour allocation scenario over each cohort wall; excludes output validation and gaps between cohorts; not invoice or marginal cost",
+    "GPU means are device-wide, unweighted NVML sample means; sample windows include validation and differ from cohort wall windows",
+    "No sampling-gap trace is available in these summaries; no missing interval is zero-filled or treated as continuously observed",
+    "No daily/fleet capacity forecast, availability claim, short-QA throughput claim or future-model guarantee"
+  ],
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "performance_ab_comparison": false,
+  "physical_gpu_count": 4,
+  "plot_source_sha256": "e318eae4bd8b93bac214693f42946fbc4803ad6fbdaf555ccd272aea37a3e78c",
+  "raw_model_content_included": false,
+  "source_inputs_sha256": {
+    "controller_source": "d2328ba541a050b20b94c4e669ca1024100a8a548ffdeb6560f2afbec64076fd",
+    "decode": "a6659a1dd28e6ed05adeb51089d3edcc2adcb8555a85454938ac33c183db6e87",
+    "prefill": "9b56475ed30d9e70188486b2213272a00fe5f9807b1d9c484fc30c0f3124f061",
+    "reconciliation": "118230f4e37ac0f08107b9bf0486983bc83b9b65bf50e7b64409f4f5c81c0d02"
+  },
+  "source_paths": {
+    "controller_source": "ops/reports/qwen235b-decode100-controller-source-2026-10-24.py.txt",
+    "decode": "ops/reports/qwen235b-decode100-report-2026-10-24.json",
+    "prefill": "ops/reports/qwen235b-prefill100-report-2026-10-24.json",
+    "reconciliation": "ops/reports/qwen235b-regime100-reconciliation-2026-10-24.json"
+  },
+  "tensor_parallel_size": 4
+}

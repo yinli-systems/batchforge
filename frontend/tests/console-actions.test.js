@@ -27,10 +27,12 @@ function jsonResponse(body) {
 function harness(fetch, sessionStorage = storage()) {
   const observed = {notices: [], opened: [], rendered: [], dialogCloses: 0};
   const confirmButton = {disabled: false};
+  const drawer = {innerHTML: '', scrollTop: 0, contains() { return false; }};
   const document = {
     querySelector(selector) {
       if (selector === '#confirm-submit') return confirmButton;
       if (selector === '#confirm-dialog') return {close() { observed.dialogCloses++; }};
+      if (selector === '#batch-drawer') return drawer;
       throw new Error(`Unexpected DOM access: ${selector}`);
     }
   };
@@ -44,12 +46,13 @@ function harness(fetch, sessionStorage = storage()) {
     refresh = async () => {};
     refreshDetail = async () => {};
     openBatch = async id => observed.opened.push(id);
+    const renderDetails = renderDrawer;
     renderDrawer = () => observed.rendered.push(state.detail);
-    globalThis.actions = {state, retryBatch, cancelBatch};
+    globalThis.actions = {state, retryBatch, cancelBatch, renderDetails};
   `, context, {filename: 'frontend/app.js'});
   context.actions.state.key = 'test-tenant-key';
   context.actions.state.detailId = 'source-batch';
-  return {...context.actions, observed, confirmButton};
+  return {...context.actions, observed, confirmButton, drawer};
 }
 
 test('cancellation reports completion when completion wins the race', async () => {
@@ -125,4 +128,74 @@ test('a lost retry acknowledgement cannot create duplicate work, including after
   assert.notEqual(keys[2], keys[1]);
   assert.equal(billableBatches, 2);
   assert.equal(reloadedTab.observed.opened.at(-1), 'retry-2');
+});
+
+function finishedBatch(history) {
+  return {
+    id: 'source-batch', status: 'failed', model: 'test-model',
+    request_counts: {total: 10, completed: 8, failed: 2, running: 0, pending: 0, cancelled: 0},
+    usage: {prompt_tokens: 123, completion_tokens: 456},
+    output_file_id: 'file-output', error_file_id: 'file-errors',
+    ...(history ? {history_retention: history} : {})
+  };
+}
+
+for (const [name, history, expectedNotice] of [
+  ['fully retired', {state: 'retired', retired_requests: 10}, /Task details have been fully retired/],
+  ['partially retired', {state: 'retiring', retired_requests: 3}, /3 of 10 task details have been retired/],
+  ['retirement started before the first page', {state: 'retiring', retired_requests: 0}, /Task detail retirement has started/]
+]) {
+  test(`${name} keeps totals, usage and downloads while blocking even a stale retry control`, async () => {
+    let requests = 0;
+    const app = harness(async () => { requests++; throw new Error('No retry may be submitted'); });
+    app.state.detail = finishedBatch(history);
+    app.renderDetails();
+    assert.match(app.drawer.innerHTML, expectedNotice);
+    assert.match(app.drawer.innerHTML, /Batch totals and token usage are preserved/);
+    assert.match(app.drawer.innerHTML, /data-download-file="file-output"/);
+    assert.match(app.drawer.innerHTML, /data-download-file="file-errors"/);
+    assert.match(app.drawer.innerHTML, /Input tokens<\/dt><dd>123<\/dd>/);
+    assert.match(app.drawer.innerHTML, /Output tokens<\/dt><dd>456<\/dd>/);
+    assert.match(app.drawer.innerHTML, /Total requests<\/dt><dd class="">10<\/dd>/);
+    assert.doesNotMatch(app.drawer.innerHTML, /data-action="retry-batch"|Retry creates a new batch/);
+    const staleButton = {disabled: false};
+    await app.retryBatch(staleButton);
+    assert.equal(requests, 0);
+    assert.equal(staleButton.disabled, false);
+    assert.match(app.observed.notices.at(-1).message, /cannot be retried.*history retirement has started/i);
+  });
+}
+
+test('an unknown retention state is never interpolated and a positive retired count still prevents retry', async () => {
+  const injected = '<img src=x onerror="alert(1)">';
+  let requests = 0;
+  const app = harness(async () => { requests++; throw new Error('No retry'); });
+  app.state.detail = finishedBatch({state: injected, retired_requests: 2});
+  app.state.detail.output_file_id = 'file-"<unsafe>';
+  app.renderDetails();
+  assert.match(app.drawer.innerHTML, /Task history partially retired/);
+  assert.match(app.drawer.innerHTML, /2 of 10 task details have been retired/);
+  assert.doesNotMatch(app.drawer.innerHTML, /<img|onerror|data-action="retry-batch"/);
+  assert.match(app.drawer.innerHTML, /data-download-file="file-&quot;&lt;unsafe&gt;"/);
+  await app.retryBatch({disabled: false});
+  assert.equal(requests, 0);
+});
+
+test('a normal unmarked terminal batch preserves its existing retry and result behavior', async () => {
+  let requests = 0;
+  const app = harness(async (url, request) => {
+    requests++;
+    assert.equal(url, '/v1/batches/source-batch/retry');
+    assert.equal(request.method, 'POST');
+    return jsonResponse({id: 'retry-normal', status: 'in_progress'});
+  });
+  app.state.detail = finishedBatch();
+  app.renderDetails();
+  assert.match(app.drawer.innerHTML, /data-action="retry-batch"/);
+  assert.match(app.drawer.innerHTML, /Retry creates a new batch from failed tasks only/);
+  assert.doesNotMatch(app.drawer.innerHTML, /aria-label="Task history retention"/);
+  assert.match(app.drawer.innerHTML, /data-download-file="file-output"/);
+  await app.retryBatch({disabled: false});
+  assert.equal(requests, 1);
+  assert.equal(app.observed.opened.at(-1), 'retry-normal');
 });

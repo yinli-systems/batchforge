@@ -1,0 +1,263 @@
+{
+  "archived_retention_ledger": {
+    "charged_payload_bytes": 0,
+    "retained_tasks": 20
+  },
+  "batches": {
+    "first": "batch_35fd23299dd676c962891ff3fbd16829",
+    "second": "batch_d43f607b4d25765639b196dd9482afc6"
+  },
+  "binding": {
+    "archive_identity_sha256": "0f4477094f1ad8ed344e84dcf3b1dc36fa7392bfb2a2850b5d627deaa9f7cef2",
+    "environment_sha256": {
+      "/root/batchforge-runtime/api-a.env": "5302ce0dd33949325437ee10619c5e77e032d218ee7bc97bbbe2e6cb5b2d242d",
+      "/root/batchforge-runtime/api-b.env": "5302ce0dd33949325437ee10619c5e77e032d218ee7bc97bbbe2e6cb5b2d242d",
+      "/root/batchforge-runtime/app/.runtime/qwen235b-adaptive64-v1/engine.env": "07d72d8c467eb8ca21690c42a637f89e23caf7db0a960b37d69344f121bcc1ac",
+      "/root/batchforge-runtime/app/.runtime/qwen235b-adaptive64-v1/worker.env": "be0e6463aa1351dd0470f5b437f4c964cceaf3673f087645f9142ccd4fe82994",
+      "/root/batchforge-runtime/gateway.env": "983f690f4990226b6d7dcaf06f3f69a89c9e76644536d3384041a59fc2a72856",
+      "/root/batchforge-runtime/supervisor.env": "5b8b9248709c5ea2cf1115d778fd76ebedebbf4d4900f3eb194ef69c90bb40cd"
+    },
+    "fixture": {
+      "bytes": 109130,
+      "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+      "requests": 20,
+      "sha256": "1160867847ed599a6045094864c36e8cd68880658f116e20f2e7e94b114f7566"
+    },
+    "manifest_path": "/root/batchforge-runtime/app/.runtime/services-primary.json",
+    "manifest_sha256": "ecbec45bfa6da34d6d1aba7ff63e49cbdbb7ff9c2b9280af5c2c1a01fc65dcf6",
+    "service_identities": {
+      "api-a": {
+        "cwd": "/root/batchforge-runtime/app",
+        "pid": 219920,
+        "start_ticks": "35336382"
+      },
+      "api-b": {
+        "cwd": "/root/batchforge-runtime/app",
+        "pid": 219930,
+        "start_ticks": "35336820"
+      },
+      "engine-qwen235b": {
+        "cwd": "/root/batchforge-runtime/app",
+        "pid": 188251,
+        "start_ticks": "33599375"
+      },
+      "gateway-edge": {
+        "cwd": "/root/batchforge-runtime/app",
+        "pid": 219738,
+        "start_ticks": "35326874"
+      },
+      "supervisor-primary": {
+        "cwd": "/root/batchforge-runtime/app",
+        "pid": 219940,
+        "start_ticks": "35338302"
+      },
+      "worker-qwen235b": {
+        "cwd": "/root/batchforge-runtime/app",
+        "pid": 190897,
+        "start_ticks": "33605683"
+      }
+    },
+    "source_sha256": {
+      "backend/blob_storage.py": "bd0dfab6deda84d70dfd0eaa58e5142a3411bc22fbd571d52c8329f7ea7736cb",
+      "backend/history_retirement.py": "e5c2a3e85a620d0b03f80502b1766cd45f8ca5be97a11ae15b0011ac09834c7c",
+      "backend/migrate.py": "9e0d43a71b638154077db7f7def39c14b9d71b5b3a394a8b87644d79846e1425",
+      "backend/migrations/0011_history_retirement.sql": "7efcc522482000c8e22e3dc5133ed528919817a26d0c1c50d9993513277f05f8",
+      "backend/result_archival.py": "ed5a2cf011e72bd1311f1ef69d88cde20a591adb1623a3090c2564c1309231b7",
+      "backend/store.py": "62d7d94b2ea7b77d0a8838a26de17e98724e24d3bde493f2422f1dcf0a77890a",
+      "ops/ha/deploy_storage_admission.py": "91bfdd92d96a5f60aa6ede763883589c65f0f92a8f3653efd88497c985714456",
+      "ops/ha/finalize_api_policy.py": "65e0c38fa60f87c57697f6dc9127980be5b73c69f4bbc29b72f490187363028c",
+      "ops/ha/history_maintenance.py": "c0bec091905a6e64211b7165210b86f94598fe61fd82851de24a8c4de4db87a3",
+      "ops/ha/local_pg17_restore.py": "20ac142bf34fda32404e2e677fe604b576a1eb8f3af9db2d7657a3ec1bda939a",
+      "ops/ha/set_scheduler_policy.py": "ad0ebfe614e71bc1169c5793f3124e5b9bf8414409d8048c9ad879f354962498",
+      "ops/ha/verify_history_retirement.py": "25d41488c8e814f606a84e77ff781c40e40e4fb79ea17a936a833f28b7a3806c",
+      "ops/supervise.py": "3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0"
+    }
+  },
+  "checks": {
+    "atomic_task_cap429": true,
+    "automatic_publisher_archive_purge": true,
+    "capacity_re_admission": true,
+    "exact_7_7_6_retirement": true,
+    "global_ledger_invariants_zero": true,
+    "new_tenant_only": true,
+    "physical_key_compaction_and_410": true,
+    "preserved_output_and_metering": true,
+    "protected_default_unchanged": true,
+    "real_twenty_accepted_once_twice": true,
+    "retired_retry410": true,
+    "service_identities_unchanged": true
+  },
+  "cohort_created_after": "2026-10-24T08:20:46.087098+00:00",
+  "downloads": {
+    "autoarchive": {
+      "bytes": 17410,
+      "lines": 20,
+      "sha256": "31c04ecef5f0f4118193d4aff829d1ddc833dc8b04302fac4994a5084dd4fa70"
+    },
+    "original": {
+      "bytes": 17410,
+      "lines": 20,
+      "sha256": "31c04ecef5f0f4118193d4aff829d1ddc833dc8b04302fac4994a5084dd4fa70"
+    },
+    "readmitted": {
+      "bytes": 17410,
+      "lines": 20,
+      "sha256": "6f5469c60b4d8b732b837868a2010f401a61415a0e1a71edd4c920dab7d415dc"
+    },
+    "retired": {
+      "bytes": 17410,
+      "lines": 20,
+      "sha256": "31c04ecef5f0f4118193d4aff829d1ddc833dc8b04302fac4994a5084dd4fa70"
+    }
+  },
+  "finished_at": "2026-10-24T08:23:26.377895+00:00",
+  "first_overview": {
+    "stats": {
+      "cancelled_tasks": 0,
+      "completed_tasks": 20,
+      "completion_tokens": 308,
+      "failed_tasks": 0,
+      "prompt_tokens": 22485,
+      "queued_tasks": 0,
+      "running_tasks": 0,
+      "total_batches": 1,
+      "total_tasks": 20
+    },
+    "throughput": [
+      {
+        "completed": 20,
+        "failed": 0,
+        "timestamp": "2026-10-24T08:00:00+00:00",
+        "tokens": 22793
+      }
+    ]
+  },
+  "first_retention_ledger": {
+    "charged_payload_bytes": 4039150,
+    "retained_tasks": 20
+  },
+  "first_usage": {
+    "accepted": 20,
+    "completion_tokens": 308,
+    "prompt_tokens": 22485,
+    "repeated_attempts": 0
+  },
+  "global_after": {
+    "auxiliary_ledger_mismatches": 0,
+    "retention_ledger_mismatches": 0,
+    "retention_missing_tenant_ledgers": 0,
+    "retention_undercharged_tasks": 0
+  },
+  "global_before": {
+    "auxiliary_ledger_mismatches": 0,
+    "retention_ledger_mismatches": 0,
+    "retention_missing_tenant_ledgers": 0,
+    "retention_undercharged_tasks": 0
+  },
+  "http": {
+    "expired_replay": {
+      "elapsed_seconds": 0.02643898903625086,
+      "status": 410
+    },
+    "first": {
+      "elapsed_seconds": 0.45965460903244093,
+      "status": 200
+    },
+    "negative": {
+      "elapsed_seconds": 0.6271590000251308,
+      "status": 429
+    },
+    "retired_retry": {
+      "elapsed_seconds": 0.022525639040395617,
+      "status": 410
+    },
+    "second": {
+      "elapsed_seconds": 0.4157569410162978,
+      "status": 200
+    },
+    "upload": {
+      "elapsed_seconds": 0.4624578690272756,
+      "status": 200
+    }
+  },
+  "input_file_id": "file_106a37dbc807b59bc85365b99bf9bb19",
+  "limitations": [
+    "Exclusive drained private-operator window required",
+    "Raw output/key remain private same-Pod",
+    "No synthetic completion or timestamp manipulation",
+    "No backup export or new infrastructure"
+  ],
+  "operation": "history-retirement-real-20261024-v1",
+  "pending_action": null,
+  "phase": "passed",
+  "prepared_at": "2026-10-24T08:20:24.318316+00:00",
+  "protected_default": {
+    "batches": {
+      "batches": 456,
+      "completed": 27724,
+      "completion_tokens": 6054792,
+      "prompt_tokens": 39355009,
+      "total": 27903
+    },
+    "ledger": {
+      "charged_payload_bytes": 205935962,
+      "retained_tasks": 27903
+    },
+    "tasks": {
+      "charged": 205935962,
+      "identity_md5": "b60d28ded563de67729dd771b35e5c57",
+      "tasks": 27903
+    }
+  },
+  "retired_retention_ledger": {
+    "charged_payload_bytes": 0,
+    "retained_tasks": 0
+  },
+  "retirement": {
+    "archive_verified_bytes": 52230,
+    "cycles": [
+      {
+        "after_retained_tasks": 13,
+        "before_retained_tasks": 20,
+        "elapsed_seconds": 0.623967464955058,
+        "retired_tasks": 7
+      },
+      {
+        "after_retained_tasks": 6,
+        "before_retained_tasks": 13,
+        "elapsed_seconds": 0.45285851298831403,
+        "retired_tasks": 7
+      },
+      {
+        "after_retained_tasks": 0,
+        "before_retained_tasks": 6,
+        "elapsed_seconds": 0.4607542839949019,
+        "retired_tasks": 6
+      }
+    ],
+    "pages": [
+      7,
+      7,
+      6
+    ],
+    "retained_task_quota_path": [
+      20,
+      13,
+      6,
+      0
+    ],
+    "retired_attempts": 20,
+    "retired_tasks": 20
+  },
+  "scope": "Only one freshly generated isolated tenant; no existing tenant/history mutation",
+  "second_usage": {
+    "accepted": 20,
+    "completion_tokens": 308,
+    "prompt_tokens": 22485,
+    "repeated_attempts": 0
+  },
+  "tenant_id": "bfverify_b9a27f5c0fc22b910e76873ea98b081f",
+  "tenant_key_sha256": "a6e3c69fd8608c4f5933fa9c9853c8f1ff9495d876698c5d91d32434d5306a4a",
+  "updated_at": "2026-10-24T08:23:26.377914+00:00",
+  "version": 1
+}

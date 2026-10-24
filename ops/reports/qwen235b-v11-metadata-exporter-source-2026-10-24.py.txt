@@ -1,0 +1,282 @@
+"""Validate/export metadata for an exact terminal fresh schema11 matched round.
+
+Same-Pod only: no SSH, model-output export, DB dump, mutation or inference.
+Default only validates; --write creates new private metadata files. Requires the
+operator-reviewed prepared-plan SHA, exact job/round and unchanged live runtime.
+Past schema10 baseline/pilot reports cannot be selected or relabeled here.
+"""
+from __future__ import annotations
+import argparse
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import stat
+import sys
+
+SELF=Path(__file__).resolve()
+
+class ExportRefusal(RuntimeError):
+    pass
+
+def require(condition,code):
+    if not condition: raise ExportRefusal(code)
+
+def read(path,maximum=16*1024**2):
+    fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    try:
+        info=os.fstat(fd)
+        require(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid() and not info.st_mode&0o077 and 0<info.st_size<=maximum,'unsafe_private_metadata')
+        with os.fdopen(fd,'rb',closefd=False) as handle: raw=handle.read(maximum+1)
+        after=os.fstat(fd)
+        require(len(raw)==info.st_size and all(getattr(info,k)==getattr(after,k) for k in ('st_ino','st_dev','st_size','st_mtime_ns','st_ctime_ns')),'metadata_changed')
+        return raw
+    finally: os.close(fd)
+
+def sha(raw): return hashlib.sha256(raw).hexdigest()
+
+def load(raw):
+    def unique(pairs):
+        result={}
+        for key,value in pairs:
+            require(key not in result,'duplicate_metadata_key')
+            result[key]=value
+        return result
+    def constant(_): raise ExportRefusal('nonfinite_metadata')
+    return json.loads(raw.decode('utf-8'),object_pairs_hook=unique,parse_constant=constant)
+
+def safe_metadata(value):
+    denied={'response','body','content','messages','choices','text','answer','reasoning','prompt','password','api_key','worker_token','database_url','dsn','attempt_token'}
+    def visit(item,depth=0):
+        require(depth<=128,'metadata_nesting_bound')
+        if isinstance(item,dict):
+            require(not any(str(k).lower() in denied for k in item),'raw_or_secret_field_refused')
+            for v in item.values():visit(v,depth+1)
+        elif isinstance(item,list):
+            for v in item:visit(v,depth+1)
+        elif isinstance(item,str):
+            require(not re.search(r'(?i)(?:postgres(?:ql)?://|bearer\s+[A-Za-z0-9_-]{16}|(?:https?://)[^/\s]*@)',item),'credential_like_text_refused')
+    visit(value)
+    json.dumps(value,allow_nan=False,ensure_ascii=False).encode('utf-8')
+
+
+# Exact controlled-producer schemas. Dynamic maps also bind their key space;
+# unknown fields at any nesting level fail before any bytes can be exported.
+def optional(item): return ('nullable',item)
+def sequence(item): return ('list',item)
+def mapping(pattern,item): return ('map',pattern,item)
+N='number';I='integer';S='string';B='boolean';H=('pattern',r'[0-9a-f]{64}')
+D={'samples':I,**{k:optional(N) for k in ('p50','p95','p99','max','mean')}}
+AD={k:N for k in ('count','max','mean','min','p50','p95','p99','total')}
+QUEUE={k:I for k in ('pending','running','completed','failed','cancelled')}
+QUOTA={'auxiliary':sequence({'bytes':I,'max_bytes':I,'max_rows':I,'resource':S,'rows':I}),
+    'cleanup':{'oldest_terminal_age_seconds':optional(N),'terminal_batches_pending_purge':I},'queue':QUEUE,
+    'retention':{k:I for k in ('charged_payload_bytes','max_payload_bytes','max_retained_tasks','retained_tasks')}}
+SHAS=mapping(r'(?:backend|worker|ops|scripts|\.runtime)/[A-Za-z0-9_./-]+\.(?:py|sql)',H)
+CONFIG_SHAS=mapping(r'/[^\x00\r\n]+',H)
+IDENTITY={'pid':I,'start_ticks':('pattern',r'[0-9]+'),'cwd':S,'process_environ_sha256':H,'process_argv_sha256':H}
+IDENTITIES=mapping(r'(?:api|engine|worker|gateway|supervisor)-[A-Za-z0-9_-]+',IDENTITY)
+USAGE={**{k:I for k in ('global_active_tasks','controlled_tasks_uncleared','controlled_batches_without_ready_purged_archive',
+    'retained_tasks','charged_payload_bytes','legacy_charged_payload_bytes','task_headroom','payload_headroom_bytes')},
+    'auxiliary_usage':sequence(('tuple',[S,I,I]))}
+POLICY={'phase':S,'target':('tuple',[I,I,I,I]),'previous':('tuple',[I,I,I,I]),'only_future_max_response_bytes_changed':B,
+    'old_task_limits_immutable':B,'started_at':S,'commit_intent_at':S,'before_usage':USAGE,'changed':B,'committed_at':S}
+BUCKET={'lower_exclusive_seconds':N,'upper_inclusive_seconds':optional(N),'upper_unbounded':B}
+RUNTIME={'api_scrape_failures':mapping(r'api-[ab]',I),'counter_resets_excluded_intervals':mapping(r'api-[ab]',I),
+    'first_durable_queue':optional({**QUEUE,'batches':I}),'last_durable_queue':optional({**QUEUE,'batches':I}),
+    'first_sample_at':optional(S),'last_sample_at':optional(S),'measurement_bounds':sequence(S),'sample_count':I,
+    'operations':sequence({'apis_observed':sequence(('pattern',r'api-[ab]')),
+        'bucket_deltas':mapping(r'(?:\+Inf|[0-9]+(?:\.[0-9]+)?)',N),'count':N,'mean_seconds':optional(N),
+        'method':S,'route':S,'sum_seconds':N,'p50_bucket':optional(BUCKET),'p95_bucket':optional(BUCKET)})}
+REPORT={**{k:I for k in ('report_version','accepted_batches','accepted_tasks','completed_tasks','terminal_tasks','unfinished_tasks',
+    'failed_tasks','cancelled_tasks','duplicate_accepted_attempts','attempt_records','tasks_with_retries','prompt_tokens',
+    'completion_tokens','observation_samples','observation_errors','journal_sequence')},
+    **{k:B for k in ('accepted_exactly_once','accepted_usage_matches_task_usage','passed')},
+    'fixed_output_lengths_exact':optional(B),**{k:S for k in ('job_id','started_at','finished_at','class_definition',
+    'percentile_method','latency_definition','scheduled_latency_definition')},
+    'elapsed_seconds_including_disconnect_and_validation':N,'completed_tasks_per_second':optional(N),
+    **{k:D for k in ('task_completion_seconds','scheduled_arrival_to_finished_seconds','scheduled_arrival_to_durable_admission_seconds',
+        'task_first_queue_seconds','arrival_to_submission_delay_seconds')},
+    'configuration':{**{k:S for k in ('job_id','model','source_sha256','url','engine_url')},
+        **{k:N for k in ('arrival_rate','duration_seconds','drain_seconds','hourly_cost','poll_seconds','sample_seconds','request_timeout')},
+        **{k:I for k in ('tasks','tasks_per_batch','seed','max_inflight_tasks','submission_concurrency')},'fixed_output':B,
+        'api':sequence(('tuple',[S,S])),'code_sha256':{k:H for k in ('benchmark.py','observe_runtime.py','sustained_benchmark.py')}},
+    'cost':{'allocation_usd':N,'assumed_whole_pod_usd_per_hour':N,'basis':S,'usd_per_million_completed_tasks':optional(N)},
+    'http_rejections':{k:I for k in ('create_429','uncertain_create_responses','upload_429','upload_not_forwarded')},
+    'gpu_utilization_percent':mapping(r'[0-3]',D),
+    'completion_counts_by_60_second_window':mapping(r'[0-9]+',I),
+    'by_class':mapping(r'(?:balanced|decode_heavy|prefill_heavy)',{'completion_seconds':D,'completion_tokens':I,'prompt_tokens':I,'tasks':I}),
+    'sampling_coverage':{**{k:N for k in ('continuous_sampling_segment_span_seconds','maximum_sample_or_boundary_gap_seconds',
+        'observed_wall_span_seconds','wall_seconds_outside_sampling_segments')},'basis':S,'long_gaps_over_twice_target_interval':I,
+        'first_sample_at':optional(S),'last_sample_at':optional(S)},
+    'first_quota':optional(QUOTA),'last_quota':optional(QUOTA),'runtime_http':optional(RUNTIME),'limitations':sequence(S),
+    'tasks':sequence({**{k:I for k in ('accepted_attempts','accepted_completion_tokens','accepted_prompt_tokens','attempts',
+        'completion_tokens','prompt_tokens','total_attempt_records')},**{k:S for k in ('batch_id','custom_id','id','status')},
+        'finished_at':optional(S),'completion_seconds':optional(N),'first_queue_seconds':optional(N),'simulated':B})}
+PROOF={'report_sha256':H,'engine_runtime_fingerprint':('pattern',r'sha256:[0-9a-f]{64}'),
+    'engine_configuration_sha256':H,'worker_configuration_sha256':H,'service_source_sha256':SHAS}
+ROUND={**{k:S for k in ('job_id','label','phase','started_at','finished_at')},'initial_schema_version':I,
+    **{k:H for k in ('runner_sha256','report_sha256','runtime_proof_sha256','response_audit_sha256',
+        'output_collection_sha256','response_policy_journal_sha256')},'source_sha256':SHAS,'configuration_sha256':CONFIG_SHAS,
+    'service_identities_before':IDENTITIES,'service_identities_after':IDENTITIES,
+    **{k:B for k in ('legacy_context_not_comparable','service_mutations','off_pod_data_export','full_plan_passed','passed',
+        'protected_services_and_sources_unchanged')},'response_policy':POLICY,'before_usage':USAGE,'argv':sequence(S),
+    **{k:I for k in ('child_pid','child_returncode','accepted_tasks','completed_tasks')}}
+COLLECTION={'binding':{'batch_files':sequence({'batch_id':S,'file_id':S,'index':I}),'checkpoint_sha256':H,
+    'collector_source_sha256':H,'environment_sha256':H,'expected_completed':I,'report_sha256':H,'run_id':S,'url':S},
+    'business_state_modified':B,'completed_count':I,'get_reader_leases_expected':B,'original_report_passed':B,
+    'partial_plan':B,'phase':S,'raw_output_bytes':I,
+    'files':mapping(r'[0-9]+',{'?attempts':sequence({'stage':optional(S),'partial':optional(S),'error_code':optional(S)}),
+        '?error_code':S,'bytes':I,'completion_tokens':I,'count':I,'filename':('pattern',r'batch-[0-9]{6}-output\.jsonl'),
+        '?partial':('pattern',r'batch-[0-9]{6}-[0-9a-f]{16}\.part'),'prompt_tokens':I,'sha256':H,'stage':S})}
+AUDIT={**{k:I for k in ('audit_version','expected_count','observed_count','input_bytes')},
+    **{k:S for k in ('canonical_definition','group_basis','observed_at','percentile_method','run_id')},'source_sha256':H,
+    **{k:B for k in ('custom_ids_unique_and_run_prefix_bound','database_read','http_requests','policy_changed','preview_only')},
+    'completion_tokens':AD,'response_jsonb_text_bytes':AD,'declared_output_caps':sequence(I),'limitations':sequence(S),
+    'candidate':{**{k:I for k in ('limit_bytes','covered_count','minimum_headroom_bytes','response_reservation_bytes_for_observed_count')},
+        'coverage_fraction':N,'all_observed_responses_fit':B},
+    'original':{k:I for k in ('limit_bytes','covered_count','minimum_headroom_bytes','response_reservation_bytes_for_observed_count')},
+    'completion_token_groups':mapping(r'(?:32|128|512|2048)',{'candidate_covered_count':I,'candidate_minimum_headroom_bytes':I,
+        'count':I,'response_jsonb_text_bytes':AD}),
+    'input_files':sequence({'bytes':I,'completion_tokens':AD,'count':I,'file_index':I,'response_jsonb_text_bytes':AD,'sha256':H}),
+    'reservation_comparison':{'response_reservation_reduction_bytes':I,'response_reservation_reduction_fraction':N,'scope':S}}
+SCHEMAS={'report.json':REPORT,'controller.json':ROUND,'runtime-proof.json':PROOF,'output-collection.json':COLLECTION,'response-audit.json':AUDIT}
+
+def validate_schema(value,schema,depth=0):
+    require(depth<=128,'metadata_nesting_bound')
+    if isinstance(schema,dict):
+        require(isinstance(value,dict),'metadata_schema_type')
+        allowed={k.removeprefix('?'):v for k,v in schema.items()}
+        required={k for k in schema if not k.startswith('?')}
+        require(required<=value.keys() and value.keys()<=allowed.keys(),'unknown_or_missing_metadata_field')
+        for key,item in value.items():validate_schema(item,allowed[key],depth+1)
+    elif isinstance(schema,tuple):
+        kind=schema[0]
+        if kind=='nullable':
+            if value is not None:validate_schema(value,schema[1],depth+1)
+        elif kind=='list':
+            require(isinstance(value,list) and len(value)<=50000,'metadata_schema_type')
+            for item in value:validate_schema(item,schema[1],depth+1)
+        elif kind=='tuple':
+            require(isinstance(value,list) and len(value)==len(schema[1]),'metadata_schema_type')
+            for item,sub in zip(value,schema[1]):validate_schema(item,sub,depth+1)
+        elif kind=='map':
+            require(isinstance(value,dict) and len(value)<=50000,'metadata_schema_type')
+            for key,item in value.items():
+                require(isinstance(key,str) and re.fullmatch(schema[1],key) is not None,'unknown_metadata_map_key')
+                validate_schema(item,schema[2],depth+1)
+        elif kind=='pattern':require(isinstance(value,str) and re.fullmatch(schema[1],value) is not None,'metadata_schema_pattern')
+        else:raise ExportRefusal('internal_schema_invalid')
+    elif schema==S:require(isinstance(value,str) and len(value)<=16384,'metadata_schema_type')
+    elif schema==I:require(type(value) is int,'metadata_schema_type')
+    elif schema==N:require(type(value) in (int,float) and (type(value) is int or __import__('math').isfinite(value)),'metadata_schema_type')
+    elif schema==B:require(type(value) is bool,'metadata_schema_type')
+    else:raise ExportRefusal('internal_schema_invalid')
+
+def validate_artifact(name,raw):
+    require(name in SCHEMAS,'unknown_metadata_artifact')
+    value=load(raw);validate_schema(value,SCHEMAS[name]);safe_metadata(value)
+    return value
+
+def main(argv=None):
+    os.umask(0o077)
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root',type=Path,default=SELF.parent.parent)
+    parser.add_argument('--operation',required=True);parser.add_argument('--round',choices=('baseline','candidate'),required=True)
+    parser.add_argument('--prepared-sha256',required=True);parser.add_argument('--write',action='store_true')
+    parser.add_argument('--output-dir',type=Path)
+    args=parser.parse_args(argv);connection=None
+    try:
+        require(args.root.resolve()==args.root and SELF.parent==args.root/'.runtime','same_pod_app_runtime_required')
+        require(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,63}',args.operation) is not None and re.fullmatch(r'[0-9a-f]{64}',args.prepared_sha256) is not None,'invalid_operation_or_plan_sha')
+        operation=args.root/'.runtime/sustained-matched'/args.operation
+        plan_raw=read(operation/'plan.json');require(sha(plan_raw)==args.prepared_sha256,'prepared_plan_sha_differs')
+        plan=load(plan_raw)
+        require(plan.get('version')==1 and plan.get('phase')=='prepared' and plan['specification']['root']==str(args.root) and plan['specification']['operation']==args.operation,'exact_prepared_operation_required')
+        controller=Path(plan['specification']['root'])/'.runtime/qwen235b-v11-matched-controller.py'
+        require(sha(read(controller))==plan['controller_sha256'],'controller_source_changed')
+        require(plan['binding']['source_sha256'].get(str(SELF.relative_to(args.root)))==sha(read(SELF)),'exporter_source_changed')
+        spec=importlib.util.spec_from_file_location('matched_v11_controller_metadata_only',controller)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        sys.path.insert(0,str(args.root))
+        from ops.supervise import load_manifest
+        from ops.ha.finalize_api_policy import values
+        from scripts.compare_sustained_reports import validate_report,validate_proof
+        require(module.source_map(args.root,SELF)==plan['binding']['source_sha256'],'source_binding_changed')
+        require(all(sha(read(Path(p)))==h for p,h in plan['binding']['configuration_sha256'].items()),'configuration_changed')
+        manifest,services,_=load_manifest(Path(plan['specification']['manifest']),root=args.root)
+        apis=sorted((s for s in services if s['role']=='api'),key=lambda s:s['name'])
+        services=[*services,dict(role='supervisor',name='primary',env_file=plan['specification']['supervisor_env'],python=apis[0]['python'])]
+        require(module.encoded(module.process_binding(args.root,services))==module.encoded(plan['binding']['service_processes']),'actual_process_identity_or_environment_changed')
+        job=plan['specification']['baseline_job' if args.round=='baseline' else 'candidate_job']
+        require(job in plan['jobs'] and job not in {'qwen235b-soak30m-v1','qwen235b-soak30m-response64k-v1'},'fresh_v11_job_required')
+        run=args.root/'.runtime/sustained'/job
+        report_raw=read(run/'report.json');report=load(report_raw)
+        round_raw=read(run/'controller-journal.json');round_doc=load(round_raw)
+        proof_raw=read(run/'runtime-proof.json');proof=load(proof_raw)
+        collection_raw=read(run/'output-collection.json');audit_raw=read(run/'response-audit.json')
+        summary=validate_report(report);validate_proof(proof,sha(report_raw))
+        require(round_doc.get('job_id')==job and round_doc.get('label')==args.round and round_doc.get('initial_schema_version')==11
+            and round_doc.get('runner_sha256')==module.RUNNER_SHA and round_doc.get('protected_services_and_sources_unchanged') is True
+            and round_doc.get('phase')==('complete' if report['passed'] else 'failed_or_partial')
+            and round_doc.get('passed') is report['passed'] and round_doc.get('full_plan_passed') is report['passed']
+            and round_doc.get('accepted_tasks')==round_doc.get('completed_tasks')==summary['completed_tasks']
+            and round_doc.get('report_sha256')==sha(report_raw) and round_doc.get('runtime_proof_sha256')==sha(proof_raw)
+            and round_doc.get('response_audit_sha256')==sha(audit_raw) and round_doc.get('output_collection_sha256')==sha(collection_raw),'round_not_guarded_terminal')
+        require(report['job_id']==job and report['configuration']['code_sha256']['sustained_benchmark.py']==module.RUNNER_SHA
+            and report['configuration']['source_sha256']==module.FIXTURE_SHA,'report_job_source_or_fixture_differs')
+        require(round_doc['source_sha256']==proof['service_source_sha256']==plan['binding']['source_sha256']
+            and round_doc['configuration_sha256']==plan['binding']['configuration_sha256']
+            and round_doc['service_identities_before']==round_doc['service_identities_after']==plan['binding']['service_processes']
+            and proof['engine_runtime_fingerprint']==plan['binding']['runtime_fingerprint'],'historical_runtime_proof_differs')
+        engine=next(s for s in services if s['role']=='engine');worker=next(s for s in services if s['role']=='worker')
+        require(proof['engine_configuration_sha256']==sha(read(Path(engine['env_file'])))
+            and proof['worker_configuration_sha256']==sha(read(Path(worker['env_file']))),'engine_or_worker_configuration_differs')
+        import psycopg
+        api=values(read(Path(apis[0]['env_file'])));worker_env=values(read(Path(worker['env_file'])))
+        connection=psycopg.connect(api['DATABASE_URL'],autocommit=True,connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=5000')
+        require(connection.execute('SELECT current_user,current_database()').fetchone()==('bf_runtime','batchforge'),'runtime_role_required')
+        require(module.check_registry(connection)==plan['binding']['migration_checksums'],'registry11_changed')
+        registered=connection.execute("SELECT runtime_fingerprint,metadata->'scheduling_profile' FROM workers WHERE id=%s",(worker_env['WORKER_ID'],)).fetchone()
+        require(registered==(plan['binding']['runtime_fingerprint'],plan['binding']['scheduling_profile']),'actual_registered_profile_changed')
+        require(connection.execute(module.POLICY_SQL,('default',)).fetchone() in (module.POLICY_BASE,module.POLICY_CANDIDATE),'unexpected_current_retention_policy')
+        artifacts={'report.json':report_raw,'controller.json':round_raw,'runtime-proof.json':proof_raw,
+            'output-collection.json':collection_raw,'response-audit.json':audit_raw}
+        for name,raw in artifacts.items(): validate_artifact(name,raw)
+        audit=load(audit_raw);collection=load(collection_raw)
+        require(audit.get('run_id')==job and audit.get('observed_count')==summary['completed_tasks']
+            and audit['candidate'].get('limit_bytes')==65536 and audit['candidate'].get('all_observed_responses_fit') is True,'response_audit_cohort_differs')
+        expected_policy=module.POLICY_BASE if args.round=='baseline' else module.POLICY_CANDIDATE
+        policy_raw=read(run/'response-policy-journal.json');policy=load(policy_raw)
+        require(round_doc.get('response_policy_journal_sha256')==sha(policy_raw) and policy==round_doc.get('response_policy')
+            and policy.get('phase')=='committed' and policy.get('target')==list(expected_policy)
+            and policy.get('only_future_max_response_bytes_changed') is True and policy.get('old_task_limits_immutable') is True,'round_policy_commit_or_target_differs')
+        require(round_doc.get('argv')==module.runner_command(args.root,Path(plan['specification']['fixture']),run,job,engine['port'],round_doc['argv'][0])
+            and Path(round_doc['argv'][0]).resolve()==Path(apis[0]['python']).resolve(),'runner_argv_not_exact_controlled_workload')
+        require(collection.get('binding',{}).get('expected_completed')==summary['completed_tasks']
+            and collection.get('partial_plan') is (not report['passed']) and collection.get('original_report_passed') is report['passed']
+            and collection.get('binding',{}).get('collector_source_sha256')==module.PINS['scripts/collect_sustained_outputs.py'],'collection_terminal_binding_differs')
+        require(collection.get('binding',{}).get('run_id')==job and collection.get('binding',{}).get('report_sha256')==sha(report_raw) and collection.get('phase')=='complete' and collection.get('completed_count')==summary['completed_tasks'],'collection_cohort_differs')
+        output=args.output_dir or operation/'exports'/args.round
+        written={}
+        if args.write:
+            require(output.resolve()==output and output.is_relative_to(args.root/'.runtime'),'private_metadata_output_required')
+            module.directory(output)
+            for suffix,raw in artifacts.items():
+                path=output/(job+'-'+suffix)
+                require(not path.exists() and not path.is_symlink(),'metadata_export_already_exists')
+            for suffix,raw in artifacts.items():
+                path=output/(job+'-'+suffix);module.write(path,raw,exclusive=True,raw=True);written[path.name]=sha(raw)
+        print(json.dumps(dict(validated=True,job_id=job,schema_version=11,completed_tasks=summary['completed_tasks'],
+            full_plan_passed=report['passed'],report_sha256=sha(report_raw),source_inputs_sha256={name:sha(raw) for name,raw in artifacts.items()},
+            raw_outputs_exported=False,business_state_modified=False,metadata_files_written=written),sort_keys=True))
+        return 0
+    except Exception as error:
+        print(json.dumps(dict(validated=False,reason_code=str(error) if isinstance(error,ExportRefusal) else type(error).__name__)))
+        return 1
+    finally:
+        if connection: connection.close()
+
+if __name__=='__main__': raise SystemExit(main())
