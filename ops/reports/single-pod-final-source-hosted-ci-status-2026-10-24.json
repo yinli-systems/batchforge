@@ -1,0 +1,15 @@
+{
+  "observed_at": "2026-10-24T03:56:10.005656+00:00",
+  "commit": "4752605da4819a148f2bb292fff6a6e2e0eb84f5",
+  "github_actions_run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40059617184",
+  "job_id": 120770068619,
+  "hosted_status": "failure_before_any_steps",
+  "steps": [],
+  "failure_annotation": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the Billing & plans section in your settings",
+  "annotation_source": "GitHub authenticated check-runs annotations API via gh; connector endpoint unsupported",
+  "billing_changed": false,
+  "independent_validation_report": "single-pod-final-source-linux-pg17-validation-2026-10-24.json",
+  "independent_validation_report_sha256": "3df85a54b3708c4a520f5abfbf0d2014472506593e8df8412f5db0bb0a1aaa8c",
+  "independent_linux_pg17_tests_passed": 704,
+  "hosted_ci_claimed_passed": false
+}

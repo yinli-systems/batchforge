@@ -6,7 +6,54 @@ Defaults below are code defaults, not a claim about the current deployment's
 private environment. This document records source properties and real isolated
 PostgreSQL tests, not a throughput, physical-storage or storage-cost qualification.
 
-## v9 task admission: implemented locally, pending deployment
+## v9/v10 admission: deployed and checked
+
+Schema9 and10 were committed together on2026-10-24 at03:44:43UTC from source
+checkpoint `5448ee8aabe2d55b8575894c6a39f0dd6d340221`. Both API replicas then
+rolled with retention enabled; the watchdog was restored by03:44:49UTC. The
+[executed deployment report](../ops/reports/storage-admission-live-deployment-2026-10-24.json)
+(SHA `1ae36514cfb4dcc6d4e47ba04400c0915fc717d71845040b82bd9d41867e3995`)
+records zero retained-ledger, undercharge, missing-ledger and auxiliary-ledger
+mismatches, identical old20 downloads on both APIs/gateway, and unchanged
+engine/worker/gateway identities. The clean11-file bundle SHA was
+`f344c1420f69826d9a3c8e45ef41aa4e70c3e9ebc20e9f9b4116c739a20e00ee`.
+This qualifies the executed rollout, not indefinite storage capacity.
+
+The subsequent [API policy roll](../ops/reports/final-api-policy-live-deployment-2026-10-24.json)
+completed at 03:55:58 UTC, preserving the inference pool, profile, gateway and
+all other API settings. The publisher is now enabled only for batches created
+after **2026-10-24 03:59:21.961089 UTC**, with a minimum terminal age of 120
+seconds and purge pages of at most 1,000 tasks. Historical batches remain outside
+that cutoff. Publication is asynchronous: the age threshold does not promise
+that credits are released exactly 120 seconds after completion.
+
+Before activation, a new schema10 dump and an
+[actual isolated PostgreSQL 17.11 restore](../ops/reports/schema10-postgres17-local-restore-2026-10-24.json)
+passed, including all four storage ledgers; the temporary cluster was stopped
+and removed. The new schema10 dump's **off-Pod copy is not verified**: automatic
+approval rejected that export and explicit user authorization is pending.
+The earlier schema8 dump was separately verified off-Pod. These are distinct
+recovery proofs and do not establish complete off-site disaster recovery for
+the current schema.
+
+Production policy for tenant`default` is50,000 retained tasks,320MiB charged
+task payload,1MiB per response and32KiB per task/attempt error. The generic
+new-tenant defaults below remain100,000/1GiB. V10 additionally bounds retained
+input files including future-file reservations to2,000; uploads32;
+idempotency4,096 rows plus128MiB reserved responses at64KiB/key; blob
+generations2,000; archive runs2,000; chunks20,000; and each reader class128.
+All states and tombstones count until actual authorized row retirement. Output
+and error files are bounded by retained batches without an auxiliary quota lock
+on completion. See [the separate v10 contract](auxiliary-retention.md).
+
+The [production read-only ACL inventory](../ops/reports/storage-admission-production-lowpriv-2026-10-24.json)
+checks the source database's actual privileges separately from restore tests:
+`bf_runtime` and PUBLIC cannot execute any of the five private auxiliary
+security-definer functions; runtime cannot change their policies/counters or
+delete retained task/history rows and has no owner/DDL/key-management ability.
+V9 derived usage intentionally retains an UPDATE ACL for nested invoker
+triggers, protected by its enabled outer-write guard. No destructive negative
+permission test was run against production.
 
 [Migration 9](../backend/migrations/0009_retention_admission.sql) adds durable,
 operator-owned per-tenant limits and derived usage counters. Every new task is
@@ -76,7 +123,7 @@ bootstrap over-limit adoption, archive quota exhaustion, create/purge and
 delete/purge races, attempt-error/purge races, and mixed terminal retention.
 They do not claim production migration or steady-state cleanup capacity.
 
-## What already rejects excess work
+## Original v8 admission audit
 
 The HTTP middleware caps each upload and other write request before routing.
 JSONL validation caps file bytes, row count, row bytes and requested output
@@ -105,7 +152,7 @@ file metadata and generation tombstone. These maintenance jobs require their
 enable flag and a healthy storage backend; configured retention is not a promise
 that cleanup will finish on time during an outage.
 
-## What the result publisher does and does not bound
+## Original v8 publisher boundary
 
 The result archiver reserves output bytes under a tenant usage lock before each
 object PUT and limits stored plus reserved archive bytes; the code default is
@@ -184,11 +231,11 @@ can overlap network transit. The inspected code alone cannot prove either that
 
 ## Remaining implementation priorities
 
-1. Deploy and qualify v9 with measured bootstrap charge, conservative production
-   limits and physical-storage headroom. Complete independent admission for the
-   auxiliary metadata listed above. Expose quota exhaustion, oldest pending
-   archive, reserved payload bytes and cleanup lag. A per-tenant reservation is
-   not a global physical database high-water gate.
+1. Operate the deployed v9/v10 limits with measured cleanup lag and conservative
+   physical-storage headroom. Expose oldest pending archive and reserved payload
+   bytes. Per-tenant task and auxiliary limits do not form a global physical
+   database/WAL high-water gate; operator-created tenants/keys/workers and logs
+   require their own lifecycle. Do not raise limits automatically on exhaustion.
 2. Define a customer-visible result/history retention and idempotency replay
    horizon. Implement bounded/partitioned retirement of tasks, attempts,
    batches/files and result objects while preserving a compact metering ledger

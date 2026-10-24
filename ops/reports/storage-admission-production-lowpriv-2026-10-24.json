@@ -1,0 +1,217 @@
+{
+  "passed": true,
+  "observed_at": "2026-10-24T03:46:19.544816+00:00",
+  "database_modified": false,
+  "only_readonly_queries": true,
+  "negative_mutation_tests_executed": false,
+  "role": "bf_runtime",
+  "role_flags": {
+    "superuser": false,
+    "create_role": false,
+    "create_db": false,
+    "replication": false,
+    "bypass_rls": false
+  },
+  "owner_and_ddl_capabilities": {
+    "schema_create": false,
+    "database_create": false,
+    "schema_owner_usage": false,
+    "task_table_owner_usage": false,
+    "authorize_retention_delete_execute": false,
+    "api_key_insert": false,
+    "api_key_update": false
+  },
+  "private_auxiliary_functions": [
+    {
+      "function": "batchforge_auxiliary_lock(text)",
+      "security_definer": true,
+      "runtime_execute": false,
+      "public_execute_acl": false,
+      "runtime_has_owner_usage": false,
+      "proconfig": [
+        "search_path=pg_catalog, public"
+      ]
+    },
+    {
+      "function": "batchforge_auxiliary_adjust(text,text,bigint,bigint)",
+      "security_definer": true,
+      "runtime_execute": false,
+      "public_execute_acl": false,
+      "runtime_has_owner_usage": false,
+      "proconfig": [
+        "search_path=pg_catalog, public"
+      ]
+    },
+    {
+      "function": "batchforge_auxiliary_guard()",
+      "security_definer": true,
+      "runtime_execute": false,
+      "public_execute_acl": false,
+      "runtime_has_owner_usage": false,
+      "proconfig": [
+        "search_path=pg_catalog, public"
+      ]
+    },
+    {
+      "function": "batchforge_auxiliary_account()",
+      "security_definer": true,
+      "runtime_execute": false,
+      "public_execute_acl": false,
+      "runtime_has_owner_usage": false,
+      "proconfig": [
+        "search_path=pg_catalog, public"
+      ]
+    },
+    {
+      "function": "batchforge_archive_metadata_identity()",
+      "security_definer": true,
+      "runtime_execute": false,
+      "public_execute_acl": false,
+      "runtime_has_owner_usage": false,
+      "proconfig": [
+        "search_path=pg_catalog, public"
+      ]
+    }
+  ],
+  "history_delete_privileges": {
+    "tasks": false,
+    "attempts": false,
+    "batches": false,
+    "files": false,
+    "idempotency": false,
+    "blob_objects": false,
+    "result_archive_runs": false,
+    "result_archive_files": false,
+    "result_archive_chunks": false,
+    "tenants": false,
+    "api_keys": false,
+    "workers": false,
+    "tenant_queues": false
+  },
+  "policy_and_usage_update_privileges": {
+    "tenant_retention_limits": false,
+    "tenant_retention_usage": true,
+    "tenant_auxiliary_limits": false,
+    "tenant_auxiliary_usage": false
+  },
+  "retention_usage_guard_triggers": [
+    {
+      "name": "retention_usage_guard",
+      "enabled": "O"
+    }
+  ],
+  "schema_version": 10,
+  "migration_checksums_exact": true,
+  "migration_checksums": {
+    "1": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219",
+    "2": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b",
+    "3": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003",
+    "4": "5c401e019eaec4491b281169522febe94878cb2c465242820d88d761eeb83fb0",
+    "5": "424e4e0426f6bb456c503fd731e3d1e717f3a8485c28256f38d6608dbbdf9339",
+    "6": "a44389417577344ef85745e5e299b35a764b40483983197993eeafe6904e90e3",
+    "7": "6225f00575675d8834f16c0462728d563985a7d73753344cde366e150eac79d0",
+    "8": "5ffedba95c7147bdf973052fea000bf268a852e9136f5b2e9e66740040f3727d",
+    "9": "663e8f86c2f6da66d70ec538794317662c10eb3a10977a94cd4ca9b2424731d3",
+    "10": "d31d74f77ea90d8050f689e6437984149a3ca8a6ac49b70275ce870d8f6a397b"
+  },
+  "global_active_tasks": 0,
+  "ledger_invariants": {
+    "retention_ledger_mismatches": 0,
+    "retention_undercharged_tasks": 0,
+    "retention_missing_tenant_ledgers": 0,
+    "auxiliary_ledger_mismatches": 0,
+    "default_retained_tasks": 26823,
+    "default_payload_charge_bytes": 205935962,
+    "minimum_100_tasks_excluding_bodies": 117964800,
+    "remaining_after_100_minimum_excluding_new_bodies": 11643558,
+    "default_auxiliary_usage": {
+      "input_files": {
+        "rows": 418,
+        "bytes": 0
+      },
+      "upload_reservations": {
+        "rows": 0,
+        "bytes": 0
+      },
+      "idempotency": {
+        "rows": 414,
+        "bytes": 27131904
+      },
+      "blob_generations": {
+        "rows": 57,
+        "bytes": 0
+      },
+      "archive_runs": {
+        "rows": 1,
+        "bytes": 0
+      },
+      "archive_chunks": {
+        "rows": 1,
+        "bytes": 0
+      },
+      "input_read_leases": {
+        "rows": 0,
+        "bytes": 0
+      },
+      "result_read_leases": {
+        "rows": 0,
+        "bytes": 0
+      }
+    }
+  },
+  "default_retention_policy": {
+    "max_retained_tasks": 50000,
+    "max_payload_bytes": 335544320,
+    "max_response_bytes": 1048576,
+    "max_error_bytes": 32768
+  },
+  "default_auxiliary_policies": {
+    "archive_chunks": {
+      "max_rows": 20000,
+      "max_bytes": 0,
+      "max_row_bytes": 8192
+    },
+    "archive_runs": {
+      "max_rows": 2000,
+      "max_bytes": 0,
+      "max_row_bytes": 8192
+    },
+    "blob_generations": {
+      "max_rows": 2000,
+      "max_bytes": 0,
+      "max_row_bytes": 8192
+    },
+    "idempotency": {
+      "max_rows": 4096,
+      "max_bytes": 134217728,
+      "max_row_bytes": 65536
+    },
+    "input_files": {
+      "max_rows": 2000,
+      "max_bytes": 0,
+      "max_row_bytes": 16777216
+    },
+    "input_read_leases": {
+      "max_rows": 128,
+      "max_bytes": 0,
+      "max_row_bytes": 4096
+    },
+    "result_read_leases": {
+      "max_rows": 128,
+      "max_bytes": 0,
+      "max_row_bytes": 4096
+    },
+    "upload_reservations": {
+      "max_rows": 32,
+      "max_bytes": 0,
+      "max_row_bytes": 8192
+    }
+  },
+  "tls_in_use": true,
+  "configured_sslmode": "verify-full",
+  "limitations": [
+    "Source ACL inventory is distinct from --no-owner/--no-acl restored-data verification",
+    "Runtime retains UPDATE ACL on v9 derived usage for SECURITY INVOKER nested triggers; enabled guard rejects outer writes. This read-only inventory does not attempt a destructive negative mutation.",
+    "Logical JSON limits are not physical PostgreSQL/WAL capacity or automatic history retirement."
+  ]
+}

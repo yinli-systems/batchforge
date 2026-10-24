@@ -1,0 +1,281 @@
+"""Once-only Qwen235B adaptive64 final schema10 publisherON exact-KV durable fixed100 only; never changes services."""
+from pathlib import Path
+import argparse,datetime,fcntl,hashlib,json,math,os,subprocess,sys,time,urllib.request,threading
+ROOT=Path('/root/batchforge-runtime/app');os.chdir(ROOT);os.umask(0o077);sys.path.insert(0,str(ROOT))
+from ops.manage import process_identity,owned_record
+from ops.supervise import private_write as original_private_write,private_read,load_manifest
+from ops.ha.retune_full_gpu import file_env
+from prometheus_client.parser import text_string_to_metric_families
+import psycopg
+
+from decimal import Decimal
+
+def json_safe_default(value):
+ if isinstance(value,Decimal):
+  if not value.is_finite():raise ValueError('nonfinite_decimal_evidence')
+  if value==value.to_integral_value():return int(value)
+  number=float(value)
+  if not math.isfinite(number):raise ValueError('decimal_evidence_overflow')
+  return number
+ if isinstance(value,(datetime.datetime,datetime.date)):return value.isoformat()
+ raise TypeError('unsupported_evidence_type_'+type(value).__name__)
+
+def private_write(path,value):
+ normalized=json.loads(json.dumps(value,default=json_safe_default,allow_nan=False))
+ return original_private_write(path,normalized)
+
+MODEL='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+SOURCE_SHA='52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f'
+HISTOGRAMS={'vllm:request_prefill_time_seconds','vllm:request_decode_time_seconds','vllm:time_to_first_token_seconds','vllm:time_per_output_token_seconds','vllm:e2e_request_latency_seconds','vllm:request_queue_time_seconds','vllm:request_inference_time_seconds'}
+def stamp():return datetime.datetime.now(datetime.timezone.utc).isoformat()
+def drained(env):
+ with psycopg.connect(env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=5000') as c:
+  if c.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]:raise RuntimeError('not_drained')
+def source_inventory():
+ paths=set()
+ for folder in ('backend','worker','ops','scripts'):
+  paths.update(p for p in (ROOT/folder).rglob('*.py') if '__pycache__' not in p.parts and 'reports' not in p.parts)
+ paths.update((ROOT/'backend').rglob('*.sql'));paths.update((ROOT/'frontend').glob('*.js'))
+ return {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
+def guard_state(services):
+ result={}
+ for s in services+[{'role':'supervisor','name':'primary'}]:
+  key=s['role']+'-'+s['name'];r=owned_record(ROOT/'.runtime'/(key+'.json'))
+  if not r:raise RuntimeError('owned_service_missing_'+key)
+  entry={'identity':{k:r[k] for k in ('pid','start_ticks','cwd')}}
+  if s.get('env_file'):entry['environment_sha256']=hashlib.sha256(private_read(Path(s['env_file']))).hexdigest()
+  result[key]=entry
+ return result
+
+def metrics():
+ opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+ with opener.open('http://127.0.0.1:8300/metrics',timeout=10) as response:
+  raw=response.read(16*1024*1024+1)
+ if len(raw)>16*1024*1024:raise RuntimeError('metric_response_too_large')
+ selected=[]
+ for family in text_string_to_metric_families(raw.decode()):
+  if family.name not in HISTOGRAMS:continue
+  for sample in family.samples:
+   if sample.name not in {family.name+'_sum',family.name+'_count',family.name+'_bucket'}:continue
+   if not math.isfinite(sample.value):raise RuntimeError('nonfinite_metric')
+   if set(sample.labels)-{'model_name','le','engine'}:raise RuntimeError('unexpected_metric_labels')
+   if sample.labels.get('engine')!='0' or sample.labels.get('model_name')!=MODEL:raise RuntimeError('unexpected_metric_scope')
+   selected.append({'name':sample.name,'labels':sample.labels,'value':sample.value})
+ if {s['name'].removesuffix('_count') for s in selected if s['name'].endswith('_count')}!=HISTOGRAMS:raise RuntimeError('missing_histogram')
+ return {'at':stamp(),'series':selected,'scope':'engine cumulative wall-time histograms; no CUDA kernel attribution'}
+def phase_delta(before,after,expected):
+ def key(s):return (s['name'],tuple(sorted(s['labels'].items())))
+ b={key(s):s['value'] for s in before['series']};a={key(s):s['value'] for s in after['series']}
+ if set(a)!=set(b):raise RuntimeError('histogram_series_changed')
+ d={k:a[k]-b[k] for k in a}
+ if any(v < -1e-9 for v in d.values()):raise RuntimeError('histogram_counter_reset')
+ out={}
+ for family in sorted(HISTOGRAMS):
+  count=sum(v for (name,_),v in d.items() if name==family+'_count');total=sum(v for (name,_),v in d.items() if name==family+'_sum')
+  buckets={}
+  for (name,labels),value in d.items():
+   if name==family+'_bucket':
+    le=float(dict(labels)['le']);buckets[le]=buckets.get(le,0)+value
+  quantiles={}
+  for q in (.5,.95,.99):
+   eligible=[le for le,c in sorted(buckets.items()) if c>=count*q]
+   upper=eligible[0] if eligible and count>0 else None
+   quantiles[str(q)]=upper if upper is not None and math.isfinite(upper) else '+Inf' if upper is not None else None
+  out[family]={'count':count,'sum_seconds':total,'mean_seconds':total/count if count else None,'percentile_bucket_upper_seconds':quantiles,'delta_buckets':{str(k):v for k,v in sorted(buckets.items())}}
+ # Per-output-token observations are not per-request counts.
+ for family in HISTOGRAMS-{'vllm:time_per_output_token_seconds'}:
+  if out[family]['count']!=expected:raise RuntimeError('request_histogram_count_mismatch_'+family)
+ return {'before_at':before['at'],'after_at':after['at'],'histograms':out,'percentile_method':'first cumulative bucket whose delta count >= quantile*delta_count; bucket upper bounds, not interpolated exact percentiles','limitations':['Prefill/decode means are engine wall-time stages under continuous batching, not CUDA kernel time.','Snapshot interval brackets workload submission and output validation. Exact expectedrequest observations and unchanged engine identity are required.']}
+
+WORKER_GAUGES={
+ 'batchforge_worker_reserved_context_tokens','batchforge_worker_adaptive_kv_budget_tokens',
+ 'batchforge_worker_adaptive_kv_waiting','batchforge_worker_adaptive_kv_peak_tokens',
+ 'batchforge_worker_adaptive_kv_paused','batchforge_worker_inflight',
+ 'batchforge_worker_capacity','batchforge_worker_ready_engines'}
+def worker_metrics():
+ opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+ with opener.open('http://127.0.0.1:9105/metrics',timeout=3) as response:raw=response.read(1024*1024+1)
+ if len(raw)>1024*1024:raise RuntimeError('worker_metric_response_too_large')
+ values={}
+ for family in text_string_to_metric_families(raw.decode()):
+  for sample in family.samples:
+   if sample.name not in WORKER_GAUGES:continue
+   if sample.labels or sample.name in values or not math.isfinite(sample.value):raise RuntimeError('worker_metric_scope_changed')
+   values[sample.name]=sample.value
+ if set(values)!=WORKER_GAUGES:raise RuntimeError('worker_gauge_missing')
+ return {'at':stamp(),'gauges':values}
+def validate_worker_sample(sample,idle=False):
+ v=sample['gauges']
+ if v['batchforge_worker_capacity']!=64 or v['batchforge_worker_ready_engines']!=1 or v['batchforge_worker_adaptive_kv_budget_tokens']!=298384:raise RuntimeError('worker_adaptive_configuration_mismatch')
+ if any(x<0 for x in v.values()):raise RuntimeError('negative_worker_gauge')
+ if v['batchforge_worker_reserved_context_tokens']>298384 or v['batchforge_worker_adaptive_kv_peak_tokens']>298384 or v['batchforge_worker_inflight']>64 or v['batchforge_worker_adaptive_kv_paused']!=0:raise RuntimeError('worker_adaptive_bound_or_pause')
+ if idle and any(v[k]!=0 for k in ('batchforge_worker_reserved_context_tokens','batchforge_worker_adaptive_kv_waiting','batchforge_worker_inflight')):raise RuntimeError('worker_not_idle')
+class WorkerObserver:
+ def __init__(self):self.samples=[];self.done=threading.Event();self.thread=threading.Thread(target=self.observe,daemon=True)
+ def start(self):self.thread.start()
+ def observe(self):
+  while not self.done.is_set():
+   try:self.samples.append(worker_metrics())
+   except Exception as e:self.samples.append({'at':stamp(),'error_type':type(e).__name__})
+   if len(self.samples)>=7200:break
+   self.done.wait(1)
+ def stop(self):self.done.set();self.thread.join(timeout=5)
+ def summary(self):
+  valid=[s for s in self.samples if 'gauges'in s]
+  if len(valid)<5:raise RuntimeError('worker_observation_insufficient')
+  for sample in valid:validate_worker_sample(sample)
+  return {'valid_samples':len(valid),'error_samples':len(self.samples)-len(valid),'sampled_maxima':{k:max(s['gauges'][k] for s in valid) for k in WORKER_GAUGES},'scope':'single worker logical exact-token reservations, not physical GPU KV occupancy; inflight includes tokenization, reserve waiters, inference and reporting; no stage counts inferred by subtraction','peak_scope':'adaptive_kv_peak_tokens is process-lifetime cumulative; reserved_context_tokens sampled maximum is the observed workload peak, not a guaranteed continuous maximum'}
+
+def verify_final_release(args,env,services,require_capacity=True):
+ from backend.migrate import MIGRATIONS
+ from psycopg.types.json import Jsonb
+ if args.release_file is None or not args.release_sha256:raise RuntimeError('exact_release_manifest_required')
+ raw=private_read(args.release_file,1024*1024)
+ if hashlib.sha256(raw).hexdigest()!=args.release_sha256:raise RuntimeError('release_manifest_sha_changed')
+ release=json.loads(raw)
+ if release.get('schema_version')!=10 or not release.get('source_sha256'):raise RuntimeError('requires_schema10_release')
+ for name,expected in release['source_sha256'].items():
+  path=Path(name)
+  if path.is_absolute() or '..' in path.parts or not name.startswith(('backend/','worker/','scripts/','ops/ha/')):raise RuntimeError('invalid_release_path')
+  if hashlib.sha256((ROOT/path).read_bytes()).hexdigest()!=expected:raise RuntimeError('released_source_mismatch_'+name)
+ api_values=[file_env(Path(s['env_file'])) for s in services if s['role']=='api']
+ if len(api_values)!=2:raise RuntimeError('requires_two_api_replicas')
+ policies=[]
+ for values in api_values:
+  if values.get('MODEL_NAME')!=MODEL or values.get('SCHEDULER_POLICY')!='cost_aware' or values.get('BLOB_STORAGE_BACKEND')!='s3':raise RuntimeError('final_model_policy_storage_gate')
+  if any(values.get(k,'').lower() not in {'true','1'} for k in ('RESULT_READERS_ENABLED','RESULT_ARCHIVE_ENABLED','RETENTION_ADMISSION_ENABLED','SQL_COMPLETION_ENABLED','SQL_CLAIM_ENABLED','SQL_RECOVERY_ENABLED')):raise RuntimeError('final_api_feature_gate')
+  cutoff=datetime.datetime.fromisoformat(values.get('RESULT_ARCHIVE_AFTER','').replace('Z','+00:00'))
+  if cutoff.utcoffset()!=datetime.timedelta(0) or cutoff>datetime.datetime.now(datetime.timezone.utc):raise RuntimeError('future_cutoff_not_started')
+  policy={'cutoff':cutoff.isoformat(),'grace':int(values.get('RESULT_ARCHIVE_MIN_AGE_SECONDS','0')),'purge_rows':int(values.get('RESULT_ARCHIVE_PURGE_ROWS','0')),'max_attempts':int(values.get('MAX_ATTEMPTS','3'))}
+  if policy['grace']!=120 or policy['purge_rows']!=1000 or policy['max_attempts']!=3:raise RuntimeError('released_archive_policy_mismatch')
+  policies.append(policy)
+ if policies[0]!=policies[1]:raise RuntimeError('api_archive_policies_differ')
+ with psycopg.connect(env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=10000') as conn:
+  ledger=conn.execute('SELECT version,checksum FROM batchforge_schema_migrations ORDER BY version').fetchall()
+  if ledger!=[(v,h) for v,_,h in MIGRATIONS] or ledger[-1][0]!=10:raise RuntimeError('exact_schema10_ledger_required')
+  capacity=None
+  if require_capacity:
+   # The fixture already specifies output caps. The harness adds min_tokens;
+   # JSONB canonicalization below is the exact stored task-body byte metric.
+   rows=[json.loads(line) for line in (ROOT/'.runtime/qwen235b-v1/workload-20.jsonl').read_bytes().splitlines() if line.strip()]
+   bodies=[]
+   for row in rows:
+    body=dict(row['body']);body['min_tokens']=body.get('max_tokens',body.get('max_completion_tokens',256));bodies.append(body)
+   bodybytes=conn.execute('SELECT sum(public.batchforge_json_bytes(v)) FROM jsonb_array_elements(%s) v',(Jsonb(bodies),)).fetchone()[0]*5
+   data=conn.execute("SELECT l.max_retained_tasks-u.retained_tasks,l.max_payload_bytes-u.charged_payload_bytes,l.max_response_bytes,l.max_error_bytes FROM tenant_retention_limits l JOIN tenant_retention_usage u USING(tenant_id) WHERE l.tenant_id='default'").fetchone()
+   if not data:raise RuntimeError('default_tenant_admission_policy_missing')
+   required=bodybytes+100*(data[2]+4*data[3])
+   if required!=120540265 or data[0]<100 or data[1]<required:raise RuntimeError('insufficient_exact100_admission_capacity')
+   capacity={'body_bytes':bodybytes,'response_error_reservation_bytes':100*(data[2]+4*data[3]),'required_payload_bytes':required,'remaining_payload_bytes':data[1],'remaining_task_rows':data[0]}
+ return {'release_manifest_sha256':args.release_sha256,'released_source_sha256':release['source_sha256'],'migration_checksums':{str(v):h for v,h in ledger}},policies[0],capacity
+
+class NegativeProbeObserver:
+ def __init__(self,env,policy,label,report):
+  self.env,self.policy,self.label,self.report=env,policy,label,report
+  self.done=threading.Event();self.thread=threading.Thread(target=self.observe,daemon=True);self.result={'phase':'waiting_for100_durable'}
+ def start(self):self.thread.start()
+ def stop(self):
+  self.done.set();self.thread.join(timeout=60)
+  if self.thread.is_alive():self.result={'phase':'uncertain_probe_thread_alive_no_retry'}
+ def observe(self):
+  from ops.ha.http_backpressure_probe import run_once
+  deadline=time.monotonic()+120
+  try:
+   while not self.done.is_set() and time.monotonic()<deadline:
+    with psycopg.connect(self.env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=5000') as conn:
+     rows=conn.execute("SELECT metadata->>'benchmark_run',count(*),sum(total_count) FROM batches WHERE metadata->>'engine_label'=%s GROUP BY metadata->>'benchmark_run'",(self.label,)).fetchall()
+    if len(rows)>1:raise RuntimeError('duplicate_label_no_probe')
+    if rows and rows[0][1:]==(5,100):
+     self.result=run_once(self.env['DATABASE_URL'],self.env['BATCHFORGE_API_KEY'],rows[0][0],datetime.datetime.fromisoformat(self.policy['cutoff']),self.policy['grace'],self.policy['max_attempts'],self.report)
+     return
+    self.done.wait(.5)
+   self.result={'phase':'skipped_no_post','reason':'durable100_not_observed_inside_probe_window'};private_write(self.report,self.result)
+  except Exception as error:
+   self.result={'phase':'uncertain_no_retry','error_type':type(error).__name__};private_write(self.report,self.result)
+
+def main():
+ p=argparse.ArgumentParser();p.add_argument('--execute',action='store_true');p.add_argument('--expected-engine-pid',type=int);p.add_argument('--expected-worker-pid',type=int);p.add_argument('--expected-watchdog-pid',type=int);p.add_argument('--release-file',type=Path);p.add_argument('--release-sha256');a=p.parse_args()
+ run=ROOT/'.runtime/scheduler-qwen235b-final-source-adaptive64-v1';run.mkdir(exist_ok=True,mode=0o700)
+ source=ROOT/'.runtime/qwen235b-v1/workload-20.jsonl'
+ if hashlib.sha256(source.read_bytes()).hexdigest()!=SOURCE_SHA:raise RuntimeError('source_hash_mismatch')
+ if not a.execute:
+  sample=metrics();print(json.dumps({'state':'prepared_no_submission','source_sha256':SOURCE_SHA,'metric_series':len(sample['series']),'cohorts':[100]}));return
+ journal=run/'platform-cohorts-v1-journal.json'
+ lock=(run/'platform-cohorts-v1.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+ if journal.exists():raise RuntimeError('existing_job_no_resubmit')
+ env_path=ROOT/'.runtime/scheduler-v6/benchmark.env';env=file_env(env_path);drained(env)
+ manifest,services,_=load_manifest(ROOT/'.runtime/services-primary.json')
+ engines=[s for s in services if s['role']=='engine'];workers=[s for s in services if s['role']=='worker']
+ if len(engines)!=1 or len(workers)!=1 or engines[0]['name']!='qwen235b' or workers[0]['name']!='qwen235b':raise RuntimeError('requires_one_qwen235b_engine_worker')
+ engine=file_env(Path(engines[0]['env_file']));worker=file_env(Path(workers[0]['env_file']))
+ if engine.get('MODEL_NAME')!=MODEL or engine.get('ENGINE_MAX_NUM_SEQS')!='64' or engine.get('ENGINE_MAX_MODEL_LEN')!='18440' or engine.get('ENGINE_MAX_NUM_BATCHED_TOKENS')!='4096' or float(engine.get('ENGINE_GPU_MEMORY_UTILIZATION','0'))!=.90:raise RuntimeError('engine_configuration_mismatch')
+ if engine.get('ENGINE_DISABLE_CUSTOM_ALL_REDUCE','0')!='0' or engine.get('VLLM_ALLREDUCE_USE_SYMM_MEM','0')!='0':raise RuntimeError('restored_custom_engine_env_gate')
+ if engine.get('ENGINE_REVISION')!='e156cb4efae43fbee1a1ab073f946a1377e6b969' or engine.get('ENGINE_DTYPE')!='bfloat16' or engine.get('ENGINE_TENSOR_PARALLEL_SIZE')!='4' or engine.get('ENGINE_ENABLE_PREFIX_CACHING')!='0' or engine.get('ENGINE_ENABLE_CHUNKED_PREFILL')!='1':raise RuntimeError('engine_frozen_flags_mismatch')
+ if engines[0].get('port')!=8300 or workers[0].get('port')!=9105:raise RuntimeError('private_local_metric_ports_changed')
+ if worker.get('INFERENCE_BASE_URLS')!='http://127.0.0.1:8300':raise RuntimeError('requires_one_exact_local_engine_url')
+ if worker.get('MODEL_NAME')!=MODEL or worker.get('WORKER_MAX_INFLIGHT')!='64' or worker.get('WORKER_TOKEN_BUDGET')!='298384' or worker.get('WORKER_ADAPTIVE_KV_ENABLED','false').lower() not in {'true','1'}:raise RuntimeError('worker_configuration_mismatch')
+ profile=json.loads(worker['SCHEDULER_PROFILE_JSON'])
+ if profile.get('profile_id')!='primary-h100-tp4-qwen235b-fp8-adaptive64':raise RuntimeError('custom_profile_id_mismatch')
+ if profile.get('runtime_fingerprint')!='sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3' or profile.get('hourly_cost_usd')!=1.00625 or profile.get('prefill_tokens_per_second')!=5573.560941602189 or profile.get('decode_tokens_per_second')!=11.775313909354303:raise RuntimeError('static16_projected_price_rates_not_preserved')
+ preworker=worker_metrics();validate_worker_sample(preworker,idle=True)
+ release_proof,archive_policy,capacity_proof=verify_final_release(a,env,services)
+ from ops.ha.collective_qwen235b import running_collective
+ collective_proof=running_collective(ROOT,engines[0],False)
+ before=guard_state(services);sources_before=source_inventory()
+ if {k:before[k]['identity']['pid'] for k in ('engine-qwen235b','worker-qwen235b','supervisor-primary')}!={'engine-qwen235b':a.expected_engine_pid,'worker-qwen235b':a.expected_worker_pid,'supervisor-primary':a.expected_watchdog_pid}:raise RuntimeError('released_service_pids_changed')
+ manifest_sha=hashlib.sha256(private_read(manifest)).hexdigest()
+ doc={'job_id':'qwen235b-final-source-adaptive64-fixed100-v1','phase':'starting','started_at':stamp(),'controller_identity':process_identity(os.getpid()),'controller_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'source_sha256':SOURCE_SHA,'harness_sha256':hashlib.sha256((ROOT/'scripts/scheduler_benchmark.py').read_bytes()).hexdigest(),'identities_before':before,'manifest_sha256':manifest_sha,'jobs':[],'storage_scope':'schema10 production configuration; archive publisherON plus one conditional negative HTTP admission probe; not an isolated storage-causal A/B','runtime_profile':{k:profile.get(k) for k in ('profile_id','runtime_fingerprint','prefill_tokens_per_second','decode_tokens_per_second','hourly_cost_usd','calibration_label','cost_source')},'actual_engine':{k:engine.get(k) for k in ('MODEL_NAME','ENGINE_MODEL_PATH','ENGINE_REVISION','ENGINE_GPU_MEMORY_UTILIZATION','ENGINE_MAX_MODEL_LEN','ENGINE_MAX_NUM_SEQS','ENGINE_MAX_NUM_BATCHED_TOKENS','ENGINE_ENABLE_PREFIX_CACHING','ENGINE_ENABLE_CHUNKED_PREFILL','ENGINE_ENFORCE_EAGER','ENGINE_DTYPE','ENGINE_TENSOR_PARALLEL_SIZE','ENGINE_DISABLE_CUSTOM_ALL_REDUCE','VLLM_ALLREDUCE_USE_SYMM_MEM')}}
+ doc['initial_admission_capacity']=capacity_proof;doc['release_proof']=release_proof;doc['archive_policy']=archive_policy;doc['collective_path_before']=collective_proof;doc['protected_source_sha256']=sources_before;doc['worker_adaptive_before']=preworker;doc['profile_scope']='Static16 measured rates and hourly slot price preserved;64 claimed tasks are not64 priced execution slots.'
+ private_write(journal,doc)
+ worker_observer=None;negative_observer=None
+ try:
+  for count,repeats,batches,fixed,label in [(100,5,5,True,'qwen235b-final-source-adaptive64-cost-fixed100-v1')]:
+   drained(env)
+   if guard_state(services)!=before or source_inventory()!=sources_before or hashlib.sha256(private_read(manifest)).hexdigest()!=manifest_sha:raise RuntimeError('protected_service_changed')
+   report=run/(label+'.json')
+   if report.exists() or (run/(label+'-input.jsonl')).exists():raise RuntimeError('existing_cohort_no_resubmit')
+   pre=metrics();private_write(run/(label+'-phase-before.json'),pre)
+   item={'label':label,'state':'launching','intent_at':stamp(),'expected_tasks':count,'repeats':repeats,'batches':batches,'fixed_output':fixed};doc['jobs'].append(item);private_write(journal,doc)
+   cmd=[sys.executable,'-m','scripts.scheduler_benchmark','--env-file',str(env_path),'--workload',str(source),'--report',str(report),'--label',label,'--repeats',str(repeats),'--batches',str(batches),'--hourly-cost','16.1']+(['--fixed-output'] if fixed else [])
+   fd=os.open(run/(label+'.log'),os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+   with os.fdopen(fd,'ab') as out:child=subprocess.Popen(cmd,cwd=ROOT,stdin=subprocess.DEVNULL,stdout=out,stderr=subprocess.STDOUT,start_new_session=True)
+   identity=None
+   for _ in range(100):
+    identity=process_identity(child.pid)
+    if identity or child.poll() is not None:break
+    time.sleep(.01)
+   item.update(state='running',identity=identity);doc['phase']=label;private_write(journal,doc)
+   worker_observer=WorkerObserver();worker_observer.start()
+   negative_observer=NegativeProbeObserver(env,archive_policy,label,run/(label+'-http-backpressure.json'));negative_observer.start()
+   try:code=child.wait()
+   finally:
+    worker_observer.stop();negative_observer.stop();private_write(run/(label+'-worker-observations.json'),worker_observer.samples)
+    doc['negative_http_probe']=negative_observer.result;private_write(journal,doc)
+   item.update(state='validating',exit_code=code,terminal_at=stamp());private_write(journal,doc)
+   post=metrics();private_write(run/(label+'-phase-after.json'),post)
+   if code:raise RuntimeError('benchmark_child_failed')
+   d=json.loads(private_read(report,limit=16*1024*1024));tasks=d.get('tasks',[])
+   checks={'actual_fixture_sha':d.get('experiment',{}).get('source_sha256')==SOURCE_SHA and hashlib.sha256(source.read_bytes()).hexdigest()==SOURCE_SHA,'passed':d.get('passed')is True,'count':d.get('completed')==count,'failed0':d.get('failed')==0,'accepted_once':d.get('accepted_exactly_once')is True,'prompt_total':d.get('observed_prompt_tokens')==109056*repeats,'single_attempt':len(tasks)==count and all(t.get('attempts')==1 for t in tasks),'policy':d.get('observed_policies')==['cost_aware'],'within_output_caps':len(tasks)==count and all(0<t.get('completion_tokens',0)<=t.get('output_cap',0) for t in tasks)}
+   checks['schema10']=d.get('database_schema_version')==10
+   if fixed:checks.update(exact_outputs=d.get('all_output_lengths_exact')is True,output_total=d.get('observed_completion_tokens')==13600*repeats)
+   item.update(run_id=d.get('run_id'),validation=checks);private_write(journal,doc)
+   if not all(checks.values()):raise RuntimeError('benchmark_validation_failed')
+   if negative_observer.result.get('phase') not in {'passed','skipped_no_post'}:raise RuntimeError('negative_probe_failed_or_uncertain')
+   final_release,_,_=verify_final_release(a,env,services,require_capacity=False)
+   if final_release!=release_proof:raise RuntimeError('final_release_changed')
+   drained(env)
+   if guard_state(services)!=before or source_inventory()!=sources_before or hashlib.sha256(private_read(manifest)).hexdigest()!=manifest_sha:raise RuntimeError('protected_service_changed')
+   final_worker=worker_metrics();validate_worker_sample(final_worker,idle=True)
+   doc['collective_path_after']=running_collective(ROOT,engines[0],False)
+   worker_summary=worker_observer.summary();worker_summary.update(before=preworker,after=final_worker);private_write(run/(label+'-worker-summary.json'),worker_summary)
+   private_write(run/(label+'-phases.json'),phase_delta(pre,post,count))
+   item.update(state='complete',report_sha256=hashlib.sha256(report.read_bytes()).hexdigest());private_write(journal,doc)
+  doc.update(phase='complete',finished_at=stamp(),identities_after=guard_state(services),all_service_identities_environments_unchanged=True,protected_sources_unchanged=source_inventory()==sources_before);private_write(journal,doc)
+ except BaseException as error:
+  if worker_observer is not None:worker_observer.stop()
+  if negative_observer is not None:negative_observer.stop()
+  doc.update(phase='failed_or_uncertain',error_type=type(error).__name__,error_code=str(error) if type(error) is RuntimeError else None,finished_at=stamp());private_write(journal,doc);raise
+ print(json.dumps({'phase':doc['phase'],'jobs':[{'label':j['label'],'run_id':j.get('run_id')} for j in doc['jobs']]}),flush=True)
+if __name__=='__main__':
+ try:main()
+ except Exception as e:print(json.dumps({'error_type':type(e).__name__}),flush=True);raise SystemExit(1)

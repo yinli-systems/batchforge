@@ -1,0 +1,45 @@
+{
+  "sha256": "c5ac22ab76ebceed5e310884f6cfbc4b6fefc1b57a83086097f9cfa06c4f983d",
+  "identities": {
+    "api-a": {
+      "pid": 195813,
+      "start_ticks": "33759111",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 195824,
+      "start_ticks": "33759340",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 195833,
+      "start_ticks": "33759521",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 162130,
+      "start_ticks": "32805671",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen235b": {
+      "pid": 188251,
+      "start_ticks": "33599375",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen235b": {
+      "pid": 190897,
+      "start_ticks": "33605683",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "readyz": {
+    "8080": 200,
+    "8082": 200,
+    "8083": 200
+  },
+  "observed_at": "2026-10-24T03:56:33.376969+00:00",
+  "passed": true,
+  "policy_report": "ops/reports/final-api-policy-live-deployment-2026-10-24.json",
+  "schema10_off_pod_copy_verified": false,
+  "schema10_off_pod_status": "permission_pending"
+}

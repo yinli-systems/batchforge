@@ -1,0 +1,36 @@
+from pathlib import Path
+from datetime import datetime,timezone
+import ast,hashlib,json,os,sys
+ROOT=Path('/root/batchforge-runtime/app');RUN=ROOT/'.runtime/storage-post-v10-5448ee8-v1'
+sys.path.insert(0,str(ROOT));os.umask(0o077)
+def digest(raw):return hashlib.sha256(raw).hexdigest()
+def main():
+ from ops.supervise import private_read,private_write
+ from ops.ha.set_scheduler_policy import atomic_bytes
+ import importlib.util
+ spec=importlib.util.spec_from_file_location('schema10_backup_guards',RUN/'backup.py')
+ guards=importlib.util.module_from_spec(spec);spec.loader.exec_module(guards)
+ preparation=json.loads(private_read(RUN/'preparation.json'))
+ identities=guards.observed_identities(preparation)
+ target=ROOT/'ops/ha/local_pg17_restore.py'
+ old=target.read_bytes();candidate=private_read(RUN/'local_pg17_restore-candidate.py',512*1024)
+ oldsha='50a549fca9508dbf407eefc64860ad2a16bfc385c414976d8d76bb2d7969e459'
+ newsha='51ac28fa374b2917f8a67913631ba082185dd6bc712e7913780f556300e15116'
+ if digest(old)!=oldsha or digest(candidate)!=newsha:raise RuntimeError('Restore helper source mismatch')
+ ast.parse(candidate)
+ with (RUN/'restore-helper-stage.started').open('x') as out:out.write(datetime.now(timezone.utc).isoformat())
+ with (RUN/'original-local_pg17_restore.py').open('xb') as out:out.write(old)
+ atomic_bytes(target,candidate)
+ evicted=[]
+ for p in (ROOT/'ops/ha/__pycache__').glob('local_pg17_restore.*.pyc'):
+  if p.is_symlink() or not p.is_file() or p.stat().st_uid!=os.geteuid():raise RuntimeError('Unexpected cached helper ownership')
+  p.unlink();evicted.append(p.name)
+ if guards.observed_identities(preparation)!=identities or digest(target.read_bytes())!=newsha:raise RuntimeError('Restore helper staging changed service state')
+ report={'phase':'complete','completed_at':datetime.now(timezone.utc).isoformat(),'source_before_sha256':oldsha,
+  'source_after_sha256':newsha,'source_relative_path':'ops/ha/local_pg17_restore.py',
+  'original_snapshot_mode':oct((RUN/'original-local_pg17_restore.py').stat().st_mode&0o777),
+  'evicted_bytecode':evicted,'identities_before':identities,'identities_after':identities,
+  'protected_files_unchanged':True,'live_service_actions':[]}
+ private_write(RUN/'restore-helper-stage.json',report)
+ print(json.dumps({'phase':'complete','source_after_sha256':newsha,'live_service_actions':[]}))
+if __name__=='__main__':main()

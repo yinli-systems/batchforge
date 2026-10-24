@@ -1,0 +1,64 @@
+{
+  "job_id": "qwen235b-final-source-adaptive64-fixed100-v1",
+  "run_id": "bench-7e815935e9bd",
+  "metadata_only": true,
+  "raw_outputs_inputs_env_credentials_database_dump_included": false,
+  "files": {
+    "journal.json": {
+      "sha256": "24dc13b6d5862012f0f6666c7466c833068abfeac4e19bf43e65131496b1bb25",
+      "bytes": 26722
+    },
+    "http-backpressure.json": {
+      "sha256": "a734e4e62be7a56565fe07a473f173e408740fa4bb5d4d47dba53a20d2f655a5",
+      "bytes": 4780
+    },
+    "preflight-error.log": {
+      "sha256": "1645ff6c1672a413d2419bf1e9d071ed37ee9523fb92e0619ee8bbfab9370ce6",
+      "bytes": 28
+    },
+    "preflight-launch.json": {
+      "sha256": "dfef6f1f54e144c08642dbe4635d5da62193b15164871d39bbdcb332ad8a8a34",
+      "bytes": 1337
+    },
+    "continuation-launch.json": {
+      "sha256": "a7b24f84f13cb5399257b348b94e1815a992d0eff7fc2d7da201fc0363e6485d",
+      "bytes": 1777
+    },
+    "actual-controller-source.py.txt": {
+      "sha256": "c552c32980866439533f1288dc87a7715d86a5ef95c1f20d2d0a24a824c3fe57",
+      "bytes": 25471
+    },
+    "original-preflight-controller-source.py.txt": {
+      "sha256": "b3339ddbf91abe28995438aae9cc75bccb3a1f503de221d328f7c955f03f1240",
+      "bytes": 24795
+    },
+    "qwen235b-final-source-adaptive64-cost-fixed100-v1.json": {
+      "sha256": "c3e5c54980dfc18e5a2e9d7672b92a375239adfaef3da22a5a164697dda63d55",
+      "bytes": 191590
+    },
+    "qwen235b-final-source-adaptive64-cost-fixed100-v1-observations.json": {
+      "sha256": "98774e23e551ea1515b88e79fdea98184d6740ba56d376354679d610483d6ecc",
+      "bytes": 152572
+    },
+    "qwen235b-final-source-adaptive64-cost-fixed100-v1-phase-before.json": {
+      "sha256": "4d06f65651fa6c1cdcd0f16bd037b85ed74ebe71ee11622b316aadcab316d1fb",
+      "bytes": 25594
+    },
+    "qwen235b-final-source-adaptive64-cost-fixed100-v1-phase-after.json": {
+      "sha256": "c0acbcea8f1daa3de3fc7080da63680617a2a1f13f80167f9d7d9caf1b4284ed",
+      "bytes": 25930
+    },
+    "qwen235b-final-source-adaptive64-cost-fixed100-v1-phases.json": {
+      "sha256": "a2cd8660db29dc7b6bcb7d28c3acff8e0b79e8ef52c7ccda0cddc7248191d22d",
+      "bytes": 3855
+    },
+    "qwen235b-final-source-adaptive64-cost-fixed100-v1-worker-observations.json": {
+      "sha256": "3572f7fda031fdb536afd81b34dc8028c9d3b26ae5a5ccce9dbb4d5512c06c19",
+      "bytes": 99226
+    },
+    "qwen235b-final-source-adaptive64-cost-fixed100-v1-worker-summary.json": {
+      "sha256": "6ab308c667f270dbd8e20c83102ac8307c4f6d61ce5c9ba04ee78c52ed39f806",
+      "bytes": 1609
+    }
+  }
+}

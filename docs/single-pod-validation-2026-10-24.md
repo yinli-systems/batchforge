@@ -100,9 +100,51 @@ role/ACL, region-loss or whole-provider recovery.
 
 Archival does not delete task/attempt history or failed-task retry bodies.
 Allocated PostgreSQL disk size need not shrink after logical payload cleanup.
-Ready output expiry, history/index compaction, global physical quotas and an
-admission policy when result archival is blocked remain separate work. Archive
-quota exhaustion retains SQL data rather than silently discarding results.
+Database-owned admission now bounds new work while archival is blocked; archive
+quota exhaustion retains SQL data and rejects further over-budget submissions.
+Ready output expiry, history/index retirement and a global physical database
+high-water gate remain separate work.
+
+The production v8-to-v10 migration completed on both API replicas after an
+actual fresh off-Pod snapshot and a drained, fail-fast lock check. It installed
+retained-task/payload admission, eight auxiliary metadata budgets, runtime grants
+and the production policy in one owner transaction. The 11-file bundle came
+from checkpoint `5448ee8`; GPU engine, worker and gateway identities were
+unchanged. A compatibility roll preceded the transaction and a second roll
+enabled the minimum-schema gate. Both APIs and the gateway downloaded the
+existing archived20 result with the original SHA-256.
+
+The drained bootstrap charge was 205,935,962 bytes across 26,823 tasks. The
+production tenant now has a 320 MiB payload budget and 50,000 retained-task cap.
+The exact next fixed100 reserves 120,540,265 bytes, leaving only 9,068,093 bytes;
+this gate includes actual PostgreSQL-canonical body sizes. Completion preserves
+its response/error reservations until verified archival purge releases them,
+so enabling archival before further cohorts is necessary. Auxiliary budgets
+include 128 MiB of idempotency reservations at 64 KiB/key, an effective maximum
+of 2,048 such keys before that byte cap, despite a larger row cap.
+
+Production checks found zero counter/undercharge/missing-ledger mismatches and
+verified the low-privilege runtime cannot execute the five private auxiliary
+definer functions or delete task/attempt history. The v9 usage table intentionally
+retains UPDATE permission for invoker accounting triggers; its direct-mutation
+guard remains enabled. See the
+[rollout procedure](storage-admission-rollout.md),
+[capacity proof](../ops/reports/storage-admission-pre-migration-capacity-2026-10-24.json)
+and [actual privilege inventory](../ops/reports/storage-admission-production-lowpriv-2026-10-24.json).
+These logical reservations are not heap/TOAST/index/WAL bounds. The managed
+project's observed branch logical-size limit is 1 GiB; neither that limit nor
+the quotas establish unlimited retention or sustained daily capacity.
+
+A fresh schema10 custom-format snapshot (127,944,921 bytes, SHA-256
+`302d3f2e7bf4e9b9246b663c4bad9cfc12d5e2b32bd212fc408f96d5ea44b2bd`)
+was actually restored into a separate unprivileged PostgreSQL17.11 cluster on
+the Pod. Exact migration checksums, accepted usage, queue counters, all admission
+ledgers and constraints passed. Pure restore took 10.051 seconds; the cluster
+was stopped and removed. The [restore report](../ops/reports/schema10-postgres17-local-restore-2026-10-24.json)
+records this functional recovery, not a recovery-time SLA or role/ACL/object-store
+recovery. Export of this new snapshot to the operator machine is pending explicit
+permission after automatic approval rejected that transfer. It has **not** been
+verified off-Pod; the earlier schema8 off-Pod snapshot remains a separate proof.
 
 ## Larger model activation
 
@@ -181,6 +223,7 @@ blocks. Fresh startup measured 314,096 KV tokens; the 95% guard selected a
 | Static16 | 466.369 | 0.214423 | 52.915 | 454.555 | 456.580 | 20,857.04 |
 | Adaptive64, custom collective | 244.281 | 0.409364 | 54.408 | 220.535 | 240.953 | 10,924.80 |
 | Adaptive64, NCCL experiment | 256.251 | 0.390243 | 55.736 | 233.262 | 252.007 | 11,460.11 |
+| Adaptive64, final schema10, publisher ON | 250.149 | 0.399762 | 56.605 | 228.294 | 246.166 | 11,187.22 |
 
 The process-lifetime reservation peak was 298,240 tokens, within the budget;
 239 worker samples reported no pause or observation error. Claimed work peaked
@@ -202,13 +245,65 @@ All GPU pairs report NV18 links; link status is not measured bandwidth.
 See [the collective experiment](collective-comparison.md) for source, topology,
 negative result and restoration evidence.
 
+The final source run `bench-7e815935e9bd` used schema10, retained-payload and
+metadata admission, both API publishers ON and one conditional negative HTTP
+probe. Every task again completed once with the same exact token totals, zero
+failures/retries and 100 observations in each request-stage histogram. All
+protected sources, service identities, environments and the manifest remained
+unchanged. Its 250.149091-second makespan was 2.402% longer than the historical
+244.281180-second publisher-OFF adaptive run; P50/P95/P99 increased
+4.04%/3.52%/2.16%. This compares complete production configurations, not an
+isolated causal estimate for schema10 or archival. Relative to static8, the
+final configuration's observed throughput improved about 3.24x.
+
+After the 100 durable submissions, an additional 20-task submission reused an
+existing input and exceeded the remaining payload budget. The real API returned
+`429 retained_payload_limit` in 0.503138 seconds. No probe batch, task, attempt
+or idempotency row remained; normal completion progress was preserved and the
+ledger matched task-derived totals. This was one POST without retry. The
+operator's exclusive workload window and archive-grace checks constrained the
+probe; client timeouts do not cancel an arbitrarily delayed server request.
+The [final analysis](../ops/reports/primary-qwen235b-final-source-platform-analysis-2026-10-24.json)
+indexes the original metadata and all seven checks. The first controller launch
+failed before submission on JSON serialization of PostgreSQL `Decimal` values;
+its source/log are preserved. An explicitly guarded continuation proved zero
+earlier submissions and ran the same stable job once with normalized evidence.
+
 A separate natural-output public SQuAD answer cohort completed 20/20 in
 7.956454 seconds, using 21,783 input and 267 output tokens with no truncation.
 All 20 satisfied the JSON contract; exact match was 16/20 (80%) and token F1
 87.397%. The public dataset can be training-contaminated, the sample is small,
 and this is not an official SQuAD score or general customer-quality guarantee.
-It is independent of the fixed-length throughput measurements and future
-automatic archive validation.
+It is separate from the fixed-length throughput measurements and the final
+automatic archive validation below.
+
+The final publisher-ON natural cohort `bench-5b18ae857c7b` completed 20/20 once
+in 6.319519 seconds, again with 21,783 input and 267 generated tokens. Exact match
+remained 16/20 and F1 87.397%. Inference plus validation took 7.368587 seconds;
+its assumed allocation was $0.032954, or $0.002060 per exact-match answer.
+This is the same small public fixture, not an independent quality population.
+The [final QA/archive analysis](../ops/reports/primary-qwen235b-final-answer20-analysis-2026-10-24.json)
+binds the metadata hashes, answer scoring and lifecycle checks.
+
+Its background publisher then automatically archived and purged all 20 completed
+payloads, returning 23,700,308 bytes of reservation. The observer did not invoke
+archive or purge. Task/attempt identities, accepted token metering and all batch
+counters remained unchanged, and both before/after tenant ledgers matched their
+derived rows. All 17,841 downloaded bytes matched the original through ports
+8080, 8082 and 8083, SHA-256
+`7516276bd07acfdb7ac856ed1b515bb0ff27d181275c5966cc96108a233e5e0e`.
+Archive observation took 122.558 seconds separately from inference: keeping the
+whole Pod allocated for that observation adds a $0.548105 scenario cost, giving
+$0.581067 across the entire 129.928-second validation window. That wait is not
+zero-cost or GPU inference time. This verifies this new post-cutoff batch's
+automatic SQL/S3 lifecycle, not arbitrary history retirement or provider DR.
+The final read-only runtime observation subsequently found all six new archive
+runs complete and all 120 new task payloads purged. The tenant's payload charge
+returned to its pre-run 205,935,962 bytes while retained task count increased
+to 26,943, preserving accepted history. All four admission invariants were zero,
+no tasks remained active and ports 8080/8082/8083 were ready200. The
+[runtime state](../ops/reports/single-pod-final-runtime-state-2026-10-24.json)
+also records current auxiliary usage and the unresolved snapshot-export boundary.
 
 An untimed four-request CUDA capture verified all four TP ranks and physical
 CUDA devices. The original capture's strict file mapper rejected a small,
@@ -253,6 +348,22 @@ constraints. This is a finite-burst extrapolation, not measured daily or
 multi-Pod capacity. Its much larger allocation per million also shows why task
 token distribution and model choice must accompany every capacity claim.
 
+Using the final schema10/publisher-ON 250.149091-second sample instead gives
+34,539 tasks/day under ideal full duty, or 290 four-GPU Pods for ten million;
+at 80% duty the same linear arithmetic gives 362 Pods (1,448 GPUs). Allocated
+cost was $1.118722 per100, or $11,187.22 per million, at the historical assumed
+whole-Pod $16.10/hour. These remain extrapolations from100 tasks; no sustained
+daily arrival test, heterogeneous fleet or quoted current rental cost was
+measured. The current four GPUs do not demonstrate ten-million-per-day capacity.
+This is compute-only arithmetic: the current tenant already retains about
+26,943 tasks against its 50,000 cap, leaving about 23,057. Automatic payload
+purge does not delete retained history or refund that task count. At the sample's
+rate, a continuously submitting tenant would reach that cap in about 16 hours,
+before completing one projected day. Input-file and idempotency history also
+have finite caps. Safe automated history/idempotency retirement and fleet-scale
+admission are prerequisites for sustained capacity; merely multiplying GPU
+count does not resolve them.
+
 The next scalability requirements are independently deployed compute and entry
 points, multiple calibrated GPU pools, per-tenant admission and retention,
 database capacity planning under sustained traffic, object recovery, fault
@@ -277,7 +388,13 @@ credentials inherited and no production database accessed. The temporary
 cluster was stopped and removed, with no remaining scoped test process.
 The [Linux report](../ops/reports/single-pod-linux-pg17-validation-2026-10-24.json)
 binds the commit, source manifest, binary and test-log hashes.
-GitHub-hosted checks for that commit did not start any test step because of the
-account's payment/spending limit. Its
-[separate status report](../ops/reports/single-pod-hosted-ci-status-2026-10-24.json)
+The final code checkpoint `4752605da4819a148f2bb292fff6a6e2e0eb84f5`, including
+the independently reviewed one-POST backpressure probe, subsequently passed
+**704 tests, zero skipped**, in a second isolated PostgreSQL17.11 run. All 142
+Python files compiled and the temporary cluster was stopped and removed;
+[its report](../ops/reports/single-pod-final-source-linux-pg17-validation-2026-10-24.json)
+binds all 159 source files. This CPU test window ended before the final GPU run.
+GitHub-hosted checks for both code checkpoints did not start any test step because
+of the account's payment/spending limit. The
+[final code status report](../ops/reports/single-pod-final-source-hosted-ci-status-2026-10-24.json)
 preserves this distinction; independent validation is not a hosted CI pass.

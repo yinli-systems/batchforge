@@ -1,0 +1,341 @@
+"""Once-only Qwen235B adaptive64 final production SQuAD gold answer20 plus automatic S3 archival proof, natural generation only; never changes services."""
+from pathlib import Path
+import argparse,datetime,fcntl,hashlib,json,math,os,subprocess,sys,time,urllib.request,threading
+ROOT=Path('/root/batchforge-runtime/app');os.chdir(ROOT);os.umask(0o077);sys.path.insert(0,str(ROOT))
+from ops.manage import process_identity,owned_record
+from ops.supervise import private_write as original_private_write,private_read,load_manifest
+from ops.ha.retune_full_gpu import file_env
+from prometheus_client.parser import text_string_to_metric_families
+import psycopg
+
+from decimal import Decimal
+
+def json_safe_default(value):
+ if isinstance(value,Decimal):
+  if not value.is_finite():raise ValueError('nonfinite_decimal_evidence')
+  if value==value.to_integral_value():return int(value)
+  number=float(value)
+  if not math.isfinite(number):raise ValueError('decimal_evidence_overflow')
+  return number
+ if isinstance(value,(datetime.datetime,datetime.date)):return value.isoformat()
+ raise TypeError('unsupported_evidence_type_'+type(value).__name__)
+
+def private_write(path,value):
+ normalized=json.loads(json.dumps(value,default=json_safe_default,allow_nan=False))
+ return original_private_write(path,normalized)
+
+MODEL='Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+SOURCE_SHA='3ae56bc3d0a4f9646eb50c7f7f27a0b39b9f484e92c70ccea9bfc4b864bbc3e8'
+HISTOGRAMS={'vllm:request_prefill_time_seconds','vllm:request_decode_time_seconds','vllm:time_to_first_token_seconds','vllm:time_per_output_token_seconds','vllm:e2e_request_latency_seconds','vllm:request_queue_time_seconds','vllm:request_inference_time_seconds'}
+def stamp():return datetime.datetime.now(datetime.timezone.utc).isoformat()
+def drained(env):
+ with psycopg.connect(env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=5000') as c:
+  if c.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]:raise RuntimeError('not_drained')
+def source_inventory():
+ paths=set()
+ for folder in ('backend','worker','ops','scripts'):
+  paths.update(p for p in (ROOT/folder).rglob('*.py') if '__pycache__' not in p.parts and 'reports' not in p.parts)
+ paths.update((ROOT/'backend').rglob('*.sql'));paths.update((ROOT/'frontend').glob('*.js'))
+ return {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
+def guard_state(services):
+ result={}
+ for s in services+[{'role':'supervisor','name':'primary'}]:
+  key=s['role']+'-'+s['name'];r=owned_record(ROOT/'.runtime'/(key+'.json'))
+  if not r:raise RuntimeError('owned_service_missing_'+key)
+  entry={'identity':{k:r[k] for k in ('pid','start_ticks','cwd')}}
+  if s.get('env_file'):entry['environment_sha256']=hashlib.sha256(private_read(Path(s['env_file']))).hexdigest()
+  result[key]=entry
+ return result
+
+def metrics():
+ opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+ with opener.open('http://127.0.0.1:8300/metrics',timeout=10) as response:
+  raw=response.read(16*1024*1024+1)
+ if len(raw)>16*1024*1024:raise RuntimeError('metric_response_too_large')
+ selected=[]
+ for family in text_string_to_metric_families(raw.decode()):
+  if family.name not in HISTOGRAMS:continue
+  for sample in family.samples:
+   if sample.name not in {family.name+'_sum',family.name+'_count',family.name+'_bucket'}:continue
+   if not math.isfinite(sample.value):raise RuntimeError('nonfinite_metric')
+   if set(sample.labels)-{'model_name','le','engine'}:raise RuntimeError('unexpected_metric_labels')
+   if sample.labels.get('engine')!='0' or sample.labels.get('model_name')!=MODEL:raise RuntimeError('unexpected_metric_scope')
+   selected.append({'name':sample.name,'labels':sample.labels,'value':sample.value})
+ if {s['name'].removesuffix('_count') for s in selected if s['name'].endswith('_count')}!=HISTOGRAMS:raise RuntimeError('missing_histogram')
+ return {'at':stamp(),'series':selected,'scope':'engine cumulative wall-time histograms; no CUDA kernel attribution'}
+def phase_delta(before,after,expected):
+ def key(s):return (s['name'],tuple(sorted(s['labels'].items())))
+ b={key(s):s['value'] for s in before['series']};a={key(s):s['value'] for s in after['series']}
+ if set(a)!=set(b):raise RuntimeError('histogram_series_changed')
+ d={k:a[k]-b[k] for k in a}
+ if any(v < -1e-9 for v in d.values()):raise RuntimeError('histogram_counter_reset')
+ out={}
+ for family in sorted(HISTOGRAMS):
+  count=sum(v for (name,_),v in d.items() if name==family+'_count');total=sum(v for (name,_),v in d.items() if name==family+'_sum')
+  buckets={}
+  for (name,labels),value in d.items():
+   if name==family+'_bucket':
+    le=float(dict(labels)['le']);buckets[le]=buckets.get(le,0)+value
+  quantiles={}
+  for q in (.5,.95,.99):
+   eligible=[le for le,c in sorted(buckets.items()) if c>=count*q]
+   upper=eligible[0] if eligible and count>0 else None
+   quantiles[str(q)]=upper if upper is not None and math.isfinite(upper) else '+Inf' if upper is not None else None
+  out[family]={'count':count,'sum_seconds':total,'mean_seconds':total/count if count else None,'percentile_bucket_upper_seconds':quantiles,'delta_buckets':{str(k):v for k,v in sorted(buckets.items())}}
+ # Per-output-token observations are not per-request counts.
+ for family in HISTOGRAMS-{'vllm:time_per_output_token_seconds'}:
+  if out[family]['count']!=expected:raise RuntimeError('request_histogram_count_mismatch_'+family)
+ return {'before_at':before['at'],'after_at':after['at'],'histograms':out,'percentile_method':'first cumulative bucket whose delta count >= quantile*delta_count; bucket upper bounds, not interpolated exact percentiles','limitations':['Prefill/decode means are engine wall-time stages under continuous batching, not CUDA kernel time.','Snapshot interval brackets workload submission and output validation. Exact expectedrequest observations and unchanged engine identity are required.']}
+
+WORKER_GAUGES={
+ 'batchforge_worker_reserved_context_tokens','batchforge_worker_adaptive_kv_budget_tokens',
+ 'batchforge_worker_adaptive_kv_waiting','batchforge_worker_adaptive_kv_peak_tokens',
+ 'batchforge_worker_adaptive_kv_paused','batchforge_worker_inflight',
+ 'batchforge_worker_capacity','batchforge_worker_ready_engines'}
+def worker_metrics():
+ opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+ with opener.open('http://127.0.0.1:9105/metrics',timeout=3) as response:raw=response.read(1024*1024+1)
+ if len(raw)>1024*1024:raise RuntimeError('worker_metric_response_too_large')
+ values={}
+ for family in text_string_to_metric_families(raw.decode()):
+  for sample in family.samples:
+   if sample.name not in WORKER_GAUGES:continue
+   if sample.labels or sample.name in values or not math.isfinite(sample.value):raise RuntimeError('worker_metric_scope_changed')
+   values[sample.name]=sample.value
+ if set(values)!=WORKER_GAUGES:raise RuntimeError('worker_gauge_missing')
+ return {'at':stamp(),'gauges':values}
+def validate_worker_sample(sample,idle=False):
+ v=sample['gauges']
+ if v['batchforge_worker_capacity']!=64 or v['batchforge_worker_ready_engines']!=1 or v['batchforge_worker_adaptive_kv_budget_tokens']!=298384:raise RuntimeError('worker_adaptive_configuration_mismatch')
+ if any(x<0 for x in v.values()):raise RuntimeError('negative_worker_gauge')
+ if v['batchforge_worker_reserved_context_tokens']>298384 or v['batchforge_worker_adaptive_kv_peak_tokens']>298384 or v['batchforge_worker_inflight']>64 or v['batchforge_worker_adaptive_kv_paused']!=0:raise RuntimeError('worker_adaptive_bound_or_pause')
+ if idle and any(v[k]!=0 for k in ('batchforge_worker_reserved_context_tokens','batchforge_worker_adaptive_kv_waiting','batchforge_worker_inflight')):raise RuntimeError('worker_not_idle')
+class WorkerObserver:
+ def __init__(self):self.samples=[];self.done=threading.Event();self.thread=threading.Thread(target=self.observe,daemon=True)
+ def start(self):self.thread.start()
+ def observe(self):
+  while not self.done.is_set():
+   try:self.samples.append(worker_metrics())
+   except Exception as e:self.samples.append({'at':stamp(),'error_type':type(e).__name__})
+   if len(self.samples)>=7200:break
+   self.done.wait(1)
+ def stop(self):self.done.set();self.thread.join(timeout=5)
+ def summary(self):
+  valid=[s for s in self.samples if 'gauges'in s]
+  if len(valid)<1:raise RuntimeError('worker_observation_insufficient')
+  for sample in valid:validate_worker_sample(sample)
+  return {'valid_samples':len(valid),'error_samples':len(self.samples)-len(valid),'sampled_maxima':{k:max(s['gauges'][k] for s in valid) for k in WORKER_GAUGES},'scope':'single worker logical exact-token reservations, not physical GPU KV occupancy; inflight includes tokenization, reserve waiters, inference and reporting; no stage counts inferred by subtraction','peak_scope':'adaptive_kv_peak_tokens is process-lifetime cumulative; reserved_context_tokens sampled maximum is the observed workload peak, not a guaranteed continuous maximum'}
+
+def verify_final_release(args,env,services,require_capacity=True):
+ from backend.migrate import MIGRATIONS
+ from psycopg.types.json import Jsonb
+ if args.release_file is None or not args.release_sha256:raise RuntimeError('exact_release_manifest_required')
+ raw=private_read(args.release_file,1024*1024)
+ if hashlib.sha256(raw).hexdigest()!=args.release_sha256:raise RuntimeError('release_manifest_sha_changed')
+ release=json.loads(raw)
+ if release.get('schema_version')!=10 or not release.get('source_sha256'):raise RuntimeError('requires_schema10_release')
+ for name,expected in release['source_sha256'].items():
+  path=Path(name)
+  if path.is_absolute() or '..' in path.parts or not name.startswith(('backend/','worker/','scripts/','ops/ha/')):raise RuntimeError('invalid_release_path')
+  if hashlib.sha256((ROOT/path).read_bytes()).hexdigest()!=expected:raise RuntimeError('released_source_mismatch_'+name)
+ api_values=[file_env(Path(s['env_file'])) for s in services if s['role']=='api']
+ if len(api_values)!=2:raise RuntimeError('requires_two_api_replicas')
+ policies=[]
+ for values in api_values:
+  if values.get('MODEL_NAME')!=MODEL or values.get('SCHEDULER_POLICY')!='cost_aware' or values.get('BLOB_STORAGE_BACKEND')!='s3':raise RuntimeError('final_model_policy_storage_gate')
+  if any(values.get(k,'').lower() not in {'true','1'} for k in ('RESULT_READERS_ENABLED','RESULT_ARCHIVE_ENABLED','RETENTION_ADMISSION_ENABLED','SQL_COMPLETION_ENABLED','SQL_CLAIM_ENABLED','SQL_RECOVERY_ENABLED')):raise RuntimeError('final_api_feature_gate')
+  cutoff=datetime.datetime.fromisoformat(values.get('RESULT_ARCHIVE_AFTER','').replace('Z','+00:00'))
+  if cutoff.utcoffset()!=datetime.timedelta(0) or cutoff>datetime.datetime.now(datetime.timezone.utc):raise RuntimeError('future_cutoff_not_started')
+  policy={'cutoff':cutoff.isoformat(),'grace':int(values.get('RESULT_ARCHIVE_MIN_AGE_SECONDS','0')),'purge_rows':int(values.get('RESULT_ARCHIVE_PURGE_ROWS','0')),'max_attempts':int(values.get('MAX_ATTEMPTS','3'))}
+  if policy['grace']!=120 or policy['purge_rows']!=1000 or policy['max_attempts']!=3:raise RuntimeError('released_archive_policy_mismatch')
+  policies.append(policy)
+ if policies[0]!=policies[1]:raise RuntimeError('api_archive_policies_differ')
+ with psycopg.connect(env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=10000') as conn:
+  ledger=conn.execute('SELECT version,checksum FROM batchforge_schema_migrations ORDER BY version').fetchall()
+  if ledger!=[(v,h) for v,_,h in MIGRATIONS] or ledger[-1][0]!=10:raise RuntimeError('exact_schema10_ledger_required')
+  capacity=None
+  if require_capacity:
+   # The fixture already specifies output caps. The harness adds min_tokens;
+   # JSONB canonicalization below is the exact stored task-body byte metric.
+   rows=[json.loads(line) for line in (ROOT/'.runtime/qwen235b-v1/workload-20.jsonl').read_bytes().splitlines() if line.strip()]
+   bodies=[]
+   for row in rows:
+    body=dict(row['body']);body['min_tokens']=body.get('max_tokens',body.get('max_completion_tokens',256));bodies.append(body)
+   bodybytes=conn.execute('SELECT sum(public.batchforge_json_bytes(v)) FROM jsonb_array_elements(%s) v',(Jsonb(bodies),)).fetchone()[0]*5
+   data=conn.execute("SELECT l.max_retained_tasks-u.retained_tasks,l.max_payload_bytes-u.charged_payload_bytes,l.max_response_bytes,l.max_error_bytes FROM tenant_retention_limits l JOIN tenant_retention_usage u USING(tenant_id) WHERE l.tenant_id='default'").fetchone()
+   if not data:raise RuntimeError('default_tenant_admission_policy_missing')
+   required=bodybytes+100*(data[2]+4*data[3])
+   if required!=120540265 or data[0]<100 or data[1]<required:raise RuntimeError('insufficient_exact100_admission_capacity')
+   capacity={'body_bytes':bodybytes,'response_error_reservation_bytes':100*(data[2]+4*data[3]),'required_payload_bytes':required,'remaining_payload_bytes':data[1],'remaining_task_rows':data[0]}
+ return {'release_manifest_sha256':args.release_sha256,'released_source_sha256':release['source_sha256'],'migration_checksums':{str(v):h for v,h in ledger}},policies[0],capacity
+
+
+def qa_admission_capacity(env,rows):
+ from psycopg.types.json import Jsonb
+ if hashlib.sha256((ROOT/'scripts/public_workload.py').read_bytes()).hexdigest()!='982dbb03062d118a75971b707eff4fbdeebf919ce0dde873f03c7e582824fe8c':raise RuntimeError('public_evaluator_changed')
+ with psycopg.connect(env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=10000') as conn:
+  bodybytes=conn.execute('SELECT sum(public.batchforge_json_bytes(v)) FROM jsonb_array_elements(%s) v',(Jsonb([r['body'] for r in rows]),)).fetchone()[0]
+  data=conn.execute("SELECT l.max_retained_tasks-u.retained_tasks,l.max_payload_bytes-u.charged_payload_bytes,l.max_response_bytes,l.max_error_bytes FROM tenant_retention_limits l JOIN tenant_retention_usage u USING(tenant_id) WHERE l.tenant_id='default'").fetchone()
+  required=bodybytes+20*(data[2]+4*data[3])
+  if data[0]<20 or data[1]<required:raise RuntimeError('await_verified_archival_qa20_budget_not_yet_available')
+ return {'body_bytes':bodybytes,'response_error_reservation_bytes':20*(data[2]+4*data[3]),'required_payload_bytes':required,'remaining_payload_bytes':data[1],'remaining_task_rows':data[0]}
+
+def archive_state(env,bid):
+ from psycopg.rows import dict_row
+ with psycopg.connect(env['DATABASE_URL'],row_factory=dict_row,connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=10000') as conn:
+  conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ')
+  b=conn.execute('SELECT id,tenant_id,status,total_count,completed_count,failed_count,cancelled_count,prompt_tokens,completion_tokens,output_file_id,created_at FROM batches WHERE id=%s',(bid,)).fetchone()
+  if not b:raise RuntimeError('quality_batch_missing')
+  t=conn.execute("SELECT count(*) AS n,md5(string_agg(id,',' ORDER BY id)) AS identity_hash,count(*) FILTER(WHERE status='completed') AS completed,count(*) FILTER(WHERE body='{}'::jsonb AND response IS NULL AND retention_payload_cleared) AS payload_cleared,COALESCE(sum(retention_body_bytes+retention_response_bytes+retention_error_bytes),0) AS charged_bytes,COALESCE(sum(prompt_tokens),0) AS prompt_tokens,COALESCE(sum(completion_tokens),0) AS completion_tokens FROM tasks WHERE batch_id=%s",(bid,)).fetchone()
+  attempts=conn.execute("SELECT count(*) AS n,count(*) FILTER(WHERE status='completed') AS accepted,COALESCE(sum(prompt_tokens) FILTER(WHERE status='completed'),0) AS prompt_tokens,COALESCE(sum(completion_tokens) FILTER(WHERE status='completed'),0) AS completion_tokens FROM attempts WHERE batch_id=%s",(bid,)).fetchone()
+  r=conn.execute("SELECT id,state,backend,manifest_sha256,bytes,created_at,ready_at,rows_purged,purged_at FROM result_archive_runs WHERE batch_id=%s AND tenant_id=%s AND state='ready'",(bid,b['tenant_id'])).fetchone()
+  files=chunks=[]
+  if r:
+   files=conn.execute('SELECT file_id,kind,bytes,line_count,expected_count,sha256 FROM result_archive_files WHERE archive_id=%s',(r['id'],)).fetchall()
+   chunks=conn.execute('SELECT id,ordinal,bytes,sha256,state,backend FROM result_archive_chunks WHERE archive_id=%s ORDER BY ordinal',(r['id'],)).fetchall()
+  usage=conn.execute('SELECT retained_tasks,charged_payload_bytes FROM tenant_retention_usage WHERE tenant_id=%s',(b['tenant_id'],)).fetchone()
+  derived=conn.execute('SELECT count(*) AS retained_tasks,COALESCE(sum(retention_body_bytes+retention_response_bytes+retention_error_bytes),0) AS charged_payload_bytes FROM tasks WHERE tenant_id=%s',(b['tenant_id'],)).fetchone()
+  return {'at':stamp(),'batch':b,'tasks':t,'attempts':attempts,'archive':r,'archive_files':files,'chunks':chunks,'tenant_ledger':usage,'tenant_derived':derived}
+
+def automatic_archive_proof(env,report,outputs,policy,path):
+ import httpx
+ if len(report['batch_ids'])!=1:raise RuntimeError('one_quality_batch_required')
+ bid=report['batch_ids'][0];before=archive_state(env,bid)
+ originals=list(outputs.glob('*-output.jsonl'))
+ if len(originals)!=1:raise RuntimeError('one_original_quality_output_required')
+ raw=private_read(originals[0],4*1024*1024);expected=hashlib.sha256(raw).hexdigest()
+ if len(raw.splitlines())!=20:raise RuntimeError('original_quality_output_count')
+ if before['tasks']['n']!=20 or before['tasks']['completed']!=20 or before['tasks']['payload_cleared']!=0 or before['tasks']['charged_bytes']<=0:raise RuntimeError('quality_initial_payload_not_intact')
+ cutoff=datetime.datetime.fromisoformat(policy['cutoff'])
+ if before['batch']['created_at']<cutoff:raise RuntimeError('quality_batch_predates_future_cutoff')
+ doc={'phase':'awaiting_automatic_publication','started_at':stamp(),'batch_id':bid,'run_id':report['run_id'],'policy':policy,'before':before,'original_output_sha256':expected,'original_output_bytes':len(raw),'invoked_archive_or_purge':False,'observations':[],'limitations':['Only this new postcutoff terminal20 batch is attributed to this proof; other eligible batches can archive concurrently.','Retention credit released is measured from this cohort; whole-tenant ledger decreases may include other archive runs.','SHA equality tests byte preservation and cannot establish answer correctness.','S3-compatible storage is separate from the Pod; this is no provider SLA or retention-cost guarantee.']}
+ private_write(path,doc);deadline=time.monotonic()+900
+ while time.monotonic()<deadline:
+  after=archive_state(env,bid);doc['observations'].append({'at':after['at'],'archive_state':after['archive']['state'] if after['archive'] else None,'payload_cleared':after['tasks']['payload_cleared'],'charged_bytes':after['tasks']['charged_bytes'],'purged_at':after['archive']['purged_at'] if after['archive'] else None})
+  private_write(path,doc)
+  if after['archive'] and after['archive']['purged_at'] is not None:break
+  time.sleep(3)
+ else:raise RuntimeError('automatic_archive_not_observed_no_manual_fallback')
+ checks={'usage_totals_match_output_before':before['tasks']['prompt_tokens']==before['batch']['prompt_tokens']==before['attempts']['prompt_tokens']==report['observed_prompt_tokens'] and before['tasks']['completion_tokens']==before['batch']['completion_tokens']==before['attempts']['completion_tokens']==report['observed_completion_tokens'],
+  'all20_payloads_purged':after['tasks']['payload_cleared']==20 and after['tasks']['charged_bytes']==0,
+  'tasks_and_usage_identity_preserved':{k:v for k,v in before['tasks'].items() if k not in ('payload_cleared','charged_bytes')}=={k:v for k,v in after['tasks'].items() if k not in ('payload_cleared','charged_bytes')},
+  'attempts_and_metering_preserved':before['attempts']==after['attempts'] and after['attempts']['accepted']==20 and after['attempts']['n']==20,
+  'batch_counters_identity_preserved':before['batch']==after['batch'],
+  's3_ready_archive':after['archive']['state']=='ready' and after['archive']['backend']=='s3' and after['archive']['rows_purged']==20,
+  'ledger_matches_derived_before_after':before['tenant_ledger']==before['tenant_derived'] and after['tenant_ledger']==after['tenant_derived'],
+  'one_output_manifest_matches_original':len(after['archive_files'])==1 and after['archive_files'][0]['file_id']==before['batch']['output_file_id'] and after['archive_files'][0]['kind']=='output' and after['archive_files'][0]['sha256']==expected and after['archive_files'][0]['bytes']==len(raw) and after['archive_files'][0]['line_count']==20 and after['archive_files'][0]['expected_count']==20,
+  'chunks_ready_s3':bool(after['chunks']) and all(c['state']=='ready' and c['backend']=='s3' for c in after['chunks'])}
+ downloads=[]
+ with httpx.Client(timeout=120,trust_env=False,follow_redirects=False) as client:
+  for port in (8080,8082,8083):
+   response=client.get(f'http://127.0.0.1:{port}/v1/files/{before["batch"]["output_file_id"]}/content',headers={'Authorization':'Bearer '+env['BATCHFORGE_API_KEY']});response.raise_for_status()
+   digest=hashlib.sha256(response.content).hexdigest();downloads.append({'port':port,'sha256':digest,'bytes':len(response.content),'byte_identical':digest==expected and response.content==raw})
+ checks['all_three_paths_byte_identical_after_purge']=all(x['byte_identical'] for x in downloads)
+ doc.update(phase='passed' if all(checks.values()) else 'failed',finished_at=stamp(),after=after,checks=checks,downloads=downloads,cohort_retention_credit_released_bytes=before['tasks']['charged_bytes']-after['tasks']['charged_bytes'])
+ private_write(path,doc)
+ if not all(checks.values()):raise RuntimeError('automatic_archive_proof_failed')
+ return doc
+
+def main():
+ p=argparse.ArgumentParser();p.add_argument('--execute',action='store_true');p.add_argument('--expected-engine-pid',type=int);p.add_argument('--expected-worker-pid',type=int);p.add_argument('--expected-watchdog-pid',type=int);p.add_argument('--release-file',type=Path);p.add_argument('--release-sha256');a=p.parse_args()
+ run=ROOT/'.runtime/qwen235b-final-answer20-autoarchive-v1';run.mkdir(exist_ok=True,mode=0o700)
+ source=run/'workload.jsonl'
+ manifest_source=run/'manifest.json'
+ if hashlib.sha256(manifest_source.read_bytes()).hexdigest()!='4a7dfc048753801468313a169524029e4d6b7f4e9e07db42de23cab97b404e91':raise RuntimeError('public_manifest_hash_mismatch')
+ public_rows=[json.loads(line) for line in source.read_text().splitlines()]
+ if len(public_rows)!=20 or any(row['body'].get('max_tokens')!=96 or any(k in row['body'] for k in ('min_tokens','ignore_eos','stop')) or row['body']['model']!=MODEL for row in public_rows):raise RuntimeError('natural_public_qa_fixture_mismatch')
+ if hashlib.sha256(source.read_bytes()).hexdigest()!=SOURCE_SHA:raise RuntimeError('source_hash_mismatch')
+ if not a.execute:
+  sample=metrics();print(json.dumps({'state':'prepared_no_submission','source_sha256':SOURCE_SHA,'metric_series':len(sample['series']),'cohorts':[20]}));return
+ journal=run/'platform-cohorts-v1-journal.json'
+ lock=(run/'platform-cohorts-v1.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+ if journal.exists():raise RuntimeError('existing_job_no_resubmit')
+ env_path=ROOT/'.runtime/scheduler-v6/benchmark.env';env=file_env(env_path);drained(env)
+ manifest,services,_=load_manifest(ROOT/'.runtime/services-primary.json')
+ engines=[s for s in services if s['role']=='engine'];workers=[s for s in services if s['role']=='worker']
+ if len(engines)!=1 or len(workers)!=1 or engines[0]['name']!='qwen235b' or workers[0]['name']!='qwen235b':raise RuntimeError('requires_one_qwen235b_engine_worker')
+ engine=file_env(Path(engines[0]['env_file']));worker=file_env(Path(workers[0]['env_file']))
+ if engine.get('MODEL_NAME')!=MODEL or engine.get('ENGINE_MAX_NUM_SEQS')!='64' or engine.get('ENGINE_MAX_MODEL_LEN')!='18440' or engine.get('ENGINE_MAX_NUM_BATCHED_TOKENS')!='4096' or float(engine.get('ENGINE_GPU_MEMORY_UTILIZATION','0'))!=.90:raise RuntimeError('engine_configuration_mismatch')
+ if engine.get('ENGINE_REVISION')!='e156cb4efae43fbee1a1ab073f946a1377e6b969' or engine.get('ENGINE_DTYPE')!='bfloat16' or engine.get('ENGINE_TENSOR_PARALLEL_SIZE')!='4' or engine.get('ENGINE_ENABLE_PREFIX_CACHING')!='0' or engine.get('ENGINE_ENABLE_CHUNKED_PREFILL')!='1':raise RuntimeError('engine_frozen_flags_mismatch')
+ if engines[0].get('port')!=8300 or workers[0].get('port')!=9105:raise RuntimeError('private_local_metric_ports_changed')
+ if worker.get('INFERENCE_BASE_URLS')!='http://127.0.0.1:8300':raise RuntimeError('requires_one_exact_local_engine_url')
+ if worker.get('MODEL_NAME')!=MODEL or worker.get('WORKER_MAX_INFLIGHT')!='64' or worker.get('WORKER_TOKEN_BUDGET')!='298384' or worker.get('WORKER_ADAPTIVE_KV_ENABLED','false').lower() not in {'true','1'}:raise RuntimeError('worker_configuration_mismatch')
+ profile=json.loads(worker['SCHEDULER_PROFILE_JSON'])
+ if profile.get('runtime_fingerprint')!='sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3' or profile.get('hourly_cost_usd')!=1.00625 or profile.get('prefill_tokens_per_second')!=5573.560941602189 or profile.get('decode_tokens_per_second')!=11.775313909354303:raise RuntimeError('static16_projected_price_rates_not_preserved')
+ preworker=worker_metrics();validate_worker_sample(preworker,idle=True)
+ release_proof,archive_policy,_=verify_final_release(a,env,services,require_capacity=False)
+ capacity_proof=qa_admission_capacity(env,public_rows)
+ from ops.ha.collective_qwen235b import running_collective
+ collective_proof=running_collective(ROOT,engines[0],False)
+ before=guard_state(services);sources_before=source_inventory()
+ if {k:before[k]['identity']['pid'] for k in ('engine-qwen235b','worker-qwen235b','supervisor-primary')}!={'engine-qwen235b':a.expected_engine_pid,'worker-qwen235b':a.expected_worker_pid,'supervisor-primary':a.expected_watchdog_pid}:raise RuntimeError('released_service_pids_changed')
+ manifest_sha=hashlib.sha256(private_read(manifest)).hexdigest()
+ doc={'job_id':'qwen235b-final-answer20-autoarchive-v1','phase':'starting','started_at':stamp(),'controller_identity':process_identity(os.getpid()),'controller_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'source_sha256':SOURCE_SHA,'harness_sha256':hashlib.sha256((ROOT/'scripts/scheduler_benchmark.py').read_bytes()).hexdigest(),'identities_before':before,'manifest_sha256':manifest_sha,'jobs':[],'storage_scope':'schema10; archive publisherON, future cutoff already active;20 new natural public-gold tasks, then observe automatic archive/purge without invoking archive_batch','runtime_profile':{k:profile.get(k) for k in ('profile_id','runtime_fingerprint','prefill_tokens_per_second','decode_tokens_per_second','hourly_cost_usd','calibration_label','cost_source')},'actual_engine':{k:engine.get(k) for k in ('MODEL_NAME','ENGINE_MODEL_PATH','ENGINE_REVISION','ENGINE_GPU_MEMORY_UTILIZATION','ENGINE_MAX_MODEL_LEN','ENGINE_MAX_NUM_SEQS','ENGINE_MAX_NUM_BATCHED_TOKENS','ENGINE_ENABLE_PREFIX_CACHING','ENGINE_ENABLE_CHUNKED_PREFILL','ENGINE_ENFORCE_EAGER','ENGINE_DTYPE','ENGINE_TENSOR_PARALLEL_SIZE')}}
+ doc['release_proof']=release_proof;doc['initial_admission_capacity']=capacity_proof;doc['archive_policy']=archive_policy;doc['collective_path_before']=collective_proof;doc['protected_source_sha256']=sources_before;doc['worker_adaptive_before']=preworker;doc['profile_scope']='Static16 measured rates and hourly slot price preserved; 64 claimed tasks are not 64 priced execution slots.'
+ private_write(journal,doc)
+ worker_observer=None
+ try:
+  for count,repeats,batches,fixed,label in [(20,1,1,False,'qwen235b-final-answer20-autoarchive-v1')]:
+   drained(env)
+   if guard_state(services)!=before or source_inventory()!=sources_before or hashlib.sha256(private_read(manifest)).hexdigest()!=manifest_sha:raise RuntimeError('protected_service_changed')
+   report=run/(label+'.json')
+   if report.exists() or (run/(label+'-input.jsonl')).exists():raise RuntimeError('existing_cohort_no_resubmit')
+   pre=metrics();private_write(run/(label+'-phase-before.json'),pre)
+   item={'label':label,'state':'launching','intent_at':stamp(),'expected_tasks':count,'repeats':repeats,'batches':batches,'fixed_output':fixed};doc['jobs'].append(item);private_write(journal,doc)
+   cmd=[sys.executable,'-m','scripts.scheduler_benchmark','--env-file',str(env_path),'--workload',str(source),'--report',str(report),'--label',label,'--repeats',str(repeats),'--batches',str(batches),'--hourly-cost','16.1']+(['--fixed-output'] if fixed else [])
+   fd=os.open(run/(label+'.log'),os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+   with os.fdopen(fd,'ab') as out:child=subprocess.Popen(cmd,cwd=ROOT,stdin=subprocess.DEVNULL,stdout=out,stderr=subprocess.STDOUT,start_new_session=True)
+   identity=None
+   for _ in range(100):
+    identity=process_identity(child.pid)
+    if identity or child.poll() is not None:break
+    time.sleep(.01)
+   item.update(state='running',identity=identity);doc['phase']=label;private_write(journal,doc)
+   worker_observer=WorkerObserver();worker_observer.start()
+   try:code=child.wait()
+   finally:worker_observer.stop();private_write(run/(label+'-worker-observations.json'),worker_observer.samples)
+   item.update(state='validating',exit_code=code,terminal_at=stamp());private_write(journal,doc)
+   post=metrics();private_write(run/(label+'-phase-after.json'),post)
+   if code and not report.exists():raise RuntimeError('benchmark_child_failed_before_report')
+   d=json.loads(private_read(report,limit=16*1024*1024));tasks=d.get('tasks',[])
+   checks={'actual_fixture_sha':d.get('experiment',{}).get('source_sha256')==SOURCE_SHA and hashlib.sha256(source.read_bytes()).hexdigest()==SOURCE_SHA,'passed':d.get('passed')is True,'count':d.get('completed')==count,'failed0':d.get('failed')==0,'accepted_once':d.get('accepted_exactly_once')is True,'prompt_total':len(tasks)==count and all(type(t.get('prompt_tokens'))is int and t['prompt_tokens']>0 for t in tasks) and d.get('observed_prompt_tokens')==sum(t['prompt_tokens'] for t in tasks),'single_attempt':len(tasks)==count and all(t.get('attempts')==1 for t in tasks),'policy':d.get('observed_policies')==['cost_aware'],'within_output_caps':len(tasks)==count and all(0<t.get('completion_tokens',0)<=t.get('output_cap',0) for t in tasks)}
+   if fixed:checks.update(exact_outputs=d.get('all_output_lengths_exact')is True,output_total=d.get('observed_completion_tokens')==13600*repeats)
+   from scripts.public_workload import evaluate
+   if hashlib.sha256(manifest_source.read_bytes()).hexdigest()!='4a7dfc048753801468313a169524029e4d6b7f4e9e07db42de23cab97b404e91':raise RuntimeError('public_manifest_changed_during_run')
+   quality=evaluate(json.loads(manifest_source.read_text()),run/(label+'-outputs'))
+   quality.update(run_id=d.get('run_id'),workload_sha256=SOURCE_SHA,manifest_sha256=hashlib.sha256(manifest_source.read_bytes()).hexdigest(),purpose='Final production natural public-gold20; new postcutoff batch; quality and automatic archival proof reported separately')
+   correct=round(quality['answer_exact_match_over_expected']*quality['expected'])
+   quality.update(correct_exact_match_answers=correct,measurement_allocation_usd=d.get('cost',{}).get('run_allocation_usd'),measurement_allocation_usd_per_correct_answer=d['cost']['run_allocation_usd']/correct if correct else None)
+   private_write(run/(label+'-quality.json'),quality)
+   checks['schema10']=d.get('database_schema_version')==10
+   item.update(run_id=d.get('run_id'),validation=checks);private_write(journal,doc)
+   if not all(checks.values()):raise RuntimeError('benchmark_validation_failed')
+   drained(env)
+   if guard_state(services)!=before or source_inventory()!=sources_before or hashlib.sha256(private_read(manifest)).hexdigest()!=manifest_sha:raise RuntimeError('protected_service_changed')
+   final_worker=worker_metrics();validate_worker_sample(final_worker,idle=True)
+   worker_summary=worker_observer.summary();worker_summary.update(before=preworker,after=final_worker);private_write(run/(label+'-worker-summary.json'),worker_summary)
+   private_write(run/(label+'-phases.json'),phase_delta(pre,post,count))
+   item.update(state='complete',report_sha256=hashlib.sha256(report.read_bytes()).hexdigest());private_write(journal,doc)
+  finished=stamp();doc['end_to_end_with_validation_seconds']=(datetime.datetime.fromisoformat(finished)-datetime.datetime.fromisoformat(doc['started_at'])).total_seconds()
+  doc['controller_allocation_usd']=16.1*doc['end_to_end_with_validation_seconds']/3600;quality['controller_allocation_usd']=doc['controller_allocation_usd'];quality['controller_allocation_usd_per_correct_answer']=doc['controller_allocation_usd']/correct if correct else None;private_write(run/(label+'-quality.json'),quality)
+  quality['controller_cost_scope']='inference plus validation only; archive observation allocation separately recorded in controller journal';private_write(run/(label+'-quality.json'),quality)
+  doc['inference_validation_allocation_usd']=doc['controller_allocation_usd'];doc['inference_and_validation_finished_at']=finished;doc['phase']='awaiting_automatic_archive';private_write(journal,doc)
+  archive_observation_started=time.monotonic()
+  archive_proof=automatic_archive_proof(env,d,run/(label+'-outputs'),archive_policy,run/(label+'-automatic-archive.json'))
+  doc['archive_observation_elapsed_seconds']=time.monotonic()-archive_observation_started;doc['archive_observation_allocation_usd']=16.1*doc['archive_observation_elapsed_seconds']/3600
+  doc['total_controller_elapsed_seconds']=(datetime.datetime.now(datetime.timezone.utc)-datetime.datetime.fromisoformat(doc['started_at'])).total_seconds();doc['total_controller_allocation_usd']=16.1*doc['total_controller_elapsed_seconds']/3600
+  doc['automatic_archive_proof_sha256']=hashlib.sha256((run/(label+'-automatic-archive.json')).read_bytes()).hexdigest()
+  drained(env)
+  if guard_state(services)!=before or source_inventory()!=sources_before or hashlib.sha256(private_read(manifest)).hexdigest()!=manifest_sha:raise RuntimeError('protected_service_changed_during_archive_observation')
+  final_release,_,_=verify_final_release(a,env,services,require_capacity=False)
+  if final_release!=release_proof:raise RuntimeError('final_release_changed')
+  doc['collective_path_after']=running_collective(ROOT,engines[0],False)
+  validate_worker_sample(worker_metrics(),idle=True)
+  doc.update(phase='complete',finished_at=stamp(),identities_after=guard_state(services),all_service_identities_environments_unchanged=True,protected_sources_unchanged=source_inventory()==sources_before);private_write(journal,doc)
+ except BaseException as error:
+  if worker_observer is not None:worker_observer.stop()
+  doc.update(phase='failed_or_uncertain',error_type=type(error).__name__,error_code=str(error) if type(error) is RuntimeError else None,finished_at=stamp());private_write(journal,doc);raise
+ print(json.dumps({'phase':doc['phase'],'jobs':[{'label':j['label'],'run_id':j.get('run_id')} for j in doc['jobs']]}),flush=True)
+if __name__=='__main__':
+ try:main()
+ except Exception as e:print(json.dumps({'error_type':type(e).__name__}),flush=True);raise SystemExit(1)

@@ -3,13 +3,23 @@
 The running model is the official
 [Qwen3-235B-A22B-Instruct-2507-FP8](https://huggingface.co/Qwen/Qwen3-235B-A22B-Instruct-2507-FP8),
 revision `e156cb4efae43fbee1a1ab073f946a1377e6b969`, on four H100 80GB devices.
+The current configuration uses adaptive exact-token admission with 64 claim
+slots and a 298,384-token logical budget. The latest guarded restoration of the
+custom collective path completed at 03:30:21 UTC on October 24, 2026; its fresh
+physical KV capacity was 314,096 tokens. Claim slots include tokenization,
+reservation waiting, inference and reporting, so they are not 64 simultaneous
+full-context executions. See the
+[adaptive rollout](../ops/reports/primary-qwen235b-adaptive64-rollout-2026-10-24.json),
+[completed restoration](../ops/reports/primary-qwen235b-custom-restored-2026-10-24.json)
+and [collective comparison](collective-comparison.md).
+
 The initial deployment completed at 02:04:28 UTC on October 24, 2026, with tensor
 parallelism 4, eight sequence slots, an 18,440-token context limit, 4,096 batched
 tokens and a 0.90 GPU memory fraction. Its model card describes
 235B total parameters and 22B active parameters. This distinction matters when
 comparing compute demand with another mixture-of-experts model.
 
-The running deployment was retuned to sixteen static sequence slots at
+An intermediate deployment was retuned to sixteen static sequence slots at
 02:34:07 UTC, keeping the same model revision, TP4 layout, context limit,
 batched-token limit and memory fraction. The fresh startup again reported
 316,144 cache tokens and 17.14 complete contexts, above the 295,040-token
@@ -23,7 +33,7 @@ API and gateway process identities remained unchanged. See the
 [raw sixteen-slot calibration](../ops/reports/primary-qwen235b-direct-fixed20-seq16-2026-10-24.json)
 and [profile fit](../ops/reports/primary-qwen235b-seq16-calibration-fit-2026-10-24.json).
 
-Each rank loaded 55.1856 GiB of model state and reported 14.17 GiB available for
+At the initial eight-slot startup, each rank loaded 55.1856 GiB of model state and reported 14.17 GiB available for
 KV cache. The engine reported 316,144 cache tokens and 17.14 complete contexts.
 This establishes memory admission headroom; it does not establish Tensor Core
 saturation. The direct 20-cell fixed-output calibration completed all 20
@@ -122,13 +132,22 @@ the applicable [performance-counter permissions](https://developer.nvidia.com/nv
 
 For the installed vLLM 0.10.2, the
 [version-specific profiling guide](https://docs.vllm.ai/en/v0.10.2/contributing/profiling.html)
-supports PyTorch tracing through `VLLM_TORCH_PROFILER_DIR`. The running sixteen-slot
-deployment configures an owner-only directory under the application's `.runtime`.
+supports PyTorch tracing through `VLLM_TORCH_PROFILER_DIR`. The sixteen-slot
+retune configured an owner-only directory under the application's `.runtime`;
+the later adaptive deployment retains this idle profiler configuration.
 The installed worker and API implementation hashes were checked: initialization
 constructs the profiler, and only explicit `/start_profile` and `/stop_profile`
 RPCs start and finish a capture. The retune controller never calls those routes.
-A later separate, short probe can test CUPTI activity tracing and inspect GEMM/MoE, attention and
-NCCL kernel intervals on every rank. Profiling adds overhead and must not overlap
+A separate four-request probe subsequently captured CUPTI activity on every TP
+rank. The original strict capture report rejected an additional owned API-leader
+CPU trace; it remains preserved. Offline continuation analyzed those same five
+files, proved that the leader trace contained no device CUDA kernels, and
+validated all four rank identities, exact request/token deltas and profiler stop.
+No inference requests were repeated to obtain the corrected analysis. See the
+[original capture](../ops/reports/primary-qwen235b-trace-capture-original-2026-10-24.json),
+[offline analysis](../ops/reports/primary-qwen235b-trace-offline-analysis-v2-2026-10-24.json)
+and [private local preservation proof](../ops/reports/primary-qwen235b-trace-local-preservation-2026-10-24.json).
+Profiling adds overhead and must not overlap
 the throughput comparison. High NVML GPU activity can include communication or
 spin kernels; memory allocation and GPU utilization alone do not prove that
 GEMM compute is saturated. Overlapping kernel durations must not be summed and
@@ -144,7 +163,7 @@ unions, exclusive category intervals and overlapping intervals; it never sums
 the four ranks into a global elapsed time or infers hardware utilization from
 kernel names.
 
-The prepared `ops/ha/moe_stopped_window.py` experiment snapshots the actual
+The `ops/ha/moe_stopped_window.py` experiment snapshots the actual
 sixteen-slot deployment and requires a separate execution step after the timed
 cohort and trace. Preparation binds the exact manifest bytes, environment hashes
 and owned process PID/start-time identities. Repeating preparation cannot
@@ -161,6 +180,15 @@ reported as an improvement to this eager engine's end-to-end throughput.
 The searched token counts are 1–64 and cover decode-sized shapes, not the
 4,096-token chunked prefill case. A winning small-shape configuration therefore
 does not establish a safe or faster configuration for all inference phases.
+
+That stopped window completed at 02:51:05 UTC, restored the original static16
+engine and worker, and installed no configuration. Four GPU children tested
+decode-sized token counts 1–64. Only each default configuration passed the
+strict bit-identical BF16 correctness check; eight alternatives per size were
+rejected before timing. This result establishes no alternative kernel speedup.
+See the [completed window](../ops/reports/primary-qwen235b-moe-window-2026-10-24.json)
+and its four child reports. Subsequent adaptive64 and collective comparisons
+used the unchanged default MoE configuration.
 
 After the 235B experiment, two independent 120B TP2 replicas are a possible
 follow-up. A simple weight-size projection is about 34.44 GiB per rank instead

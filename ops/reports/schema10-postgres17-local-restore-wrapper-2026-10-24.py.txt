@@ -1,0 +1,39 @@
+from pathlib import Path
+from datetime import datetime,timezone
+import hashlib,importlib.util,json,os,subprocess,sys
+ROOT=Path('/root/batchforge-runtime/app');RUN=ROOT/'.runtime/storage-post-v10-5448ee8-v1'
+sys.path.insert(0,str(ROOT));os.umask(0o077);os.environ['CUDA_VISIBLE_DEVICES']=''
+def digest(raw):return hashlib.sha256(raw).hexdigest()
+def main():
+ from ops.supervise import private_read,private_write
+ spec=importlib.util.spec_from_file_location('schema10_backup_guards',RUN/'backup.py')
+ guards=importlib.util.module_from_spec(spec);spec.loader.exec_module(guards)
+ approved=json.loads(private_read(RUN/'preparation.json'));before=guards.observed_identities(approved)
+ raw=private_read(RUN/'fresh-backup-raw.json');backup=json.loads(raw)
+ if backup['snapshot_sha256']!='302d3f2e7bf4e9b9246b663c4bad9cfc12d5e2b32bd212fc408f96d5ea44b2bd' or backup['snapshot_bytes']!=127944921:raise RuntimeError('Expected exact schema10 snapshot')
+ result=json.loads(private_read(RUN/'backup-result.json'))
+ if not result['passed'] or result['schema_version']!=10 or result['snapshot_sha256']!=backup['snapshot_sha256']:raise RuntimeError('Schema10 backup proof mismatch')
+ if digest((ROOT/'ops/ha/local_pg17_restore.py').read_bytes())!='51ac28fa374b2917f8a67913631ba082185dd6bc712e7913780f556300e15116':raise RuntimeError('Restore helper changed')
+ if (RUN/'restore.json').exists() or (RUN/'restore-binding.json').exists():raise RuntimeError('Existing restore evidence must not be overwritten')
+ binding={'phase':'restoring','started_at':datetime.now(timezone.utc).isoformat(),'schema_version':10,
+  'storage_report_sha256':approved['storage_report_sha256'],'backup_raw_report_sha256':digest(raw),
+  'snapshot_sha256':backup['snapshot_sha256'],'snapshot_bytes':backup['snapshot_bytes'],
+  'source_sha256':digest(Path(__file__).read_bytes()),'restore_helper_sha256':'51ac28fa374b2917f8a67913631ba082185dd6bc712e7913780f556300e15116',
+  'off_pod_copy_verified':False,'off_pod_permission_status':'pending_explicit_user_authorization',
+  'destination_scope':'new unprivileged Unix-only PG17 cluster on the same Pod',
+  'identities_before':before,'limitations':['This proves SQL restoration on the same Pod, not off-Pod or provider disaster recovery.','The new schema10 dump has not been exported to the local computer.']}
+ private_write(RUN/'restore-binding.json',binding)
+ cmd=[sys.executable,'-m','ops.ha.local_pg17_restore','--backup-report',str(RUN/'fresh-backup-raw.json'),
+  '--server-root',str(ROOT.parent/'postgres-server-17/rootfs'),'--client-root',str(ROOT.parent/'postgres-client-17/rootfs'),
+  '--report',str(RUN/'restore.json')]
+ result=subprocess.run(cmd,cwd=ROOT,check=False)
+ report=json.loads(private_read(RUN/'restore.json',1024*1024))
+ after=guards.observed_identities(approved)
+ passed=result.returncode==0 and report.get('passed') is True and report.get('restore_verified') is True and report.get('schema_version')==10 and report.get('temporary_cluster_stopped') is True and report.get('temporary_cluster_removed') is True
+ binding.update(phase='complete' if passed else 'failed',passed=passed,finished_at=datetime.now(timezone.utc).isoformat(),
+  restore_report_sha256=digest(private_read(RUN/'restore.json',1024*1024)),identities_after=after,
+  protected_services_and_files_unchanged=before==after,returncode=result.returncode)
+ private_write(RUN/'restore-binding.json',binding)
+ print(json.dumps({'passed':passed,'off_pod_copy_verified':False,'schema_version':report.get('schema_version'),'restore_report_sha256':binding['restore_report_sha256']}))
+ if not passed:raise SystemExit(1)
+if __name__=='__main__':main()

@@ -1,0 +1,131 @@
+{
+  "observed_at": "2026-10-24T04:15:22.051107+00:00",
+  "scope": "read-only aggregate final production observation, after GPU inference and automatic archival proofs",
+  "schema_version": 10,
+  "migration_checksums": {
+    "1": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219",
+    "2": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b",
+    "3": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003",
+    "4": "5c401e019eaec4491b281169522febe94878cb2c465242820d88d761eeb83fb0",
+    "5": "424e4e0426f6bb456c503fd731e3d1e717f3a8485c28256f38d6608dbbdf9339",
+    "6": "a44389417577344ef85745e5e299b35a764b40483983197993eeafe6904e90e3",
+    "7": "6225f00575675d8834f16c0462728d563985a7d73753344cde366e150eac79d0",
+    "8": "5ffedba95c7147bdf973052fea000bf268a852e9136f5b2e9e66740040f3727d",
+    "9": "663e8f86c2f6da66d70ec538794317662c10eb3a10977a94cd4ca9b2424731d3",
+    "10": "d31d74f77ea90d8050f689e6437984149a3ca8a6ac49b70275ce870d8f6a397b"
+  },
+  "global_active_tasks": 0,
+  "readiness_http_status": {
+    "8080": 200,
+    "8082": 200,
+    "8083": 200
+  },
+  "owned_service_identities": {
+    "api-a": {
+      "pid": 195813,
+      "start_ticks": "33759111",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 195824,
+      "start_ticks": "33759340",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 162130,
+      "start_ticks": "32805671",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen235b": {
+      "pid": 188251,
+      "start_ticks": "33599375",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen235b": {
+      "pid": 190897,
+      "start_ticks": "33605683",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 195833,
+      "start_ticks": "33759521",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "manifest_sha256": "ecbec45bfa6da34d6d1aba7ff63e49cbdbb7ff9c2b9280af5c2c1a01fc65dcf6",
+  "default_model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "scheduler_policy": "cost_aware",
+  "api_storage_flags": [
+    {
+      "RETENTION_ADMISSION_ENABLED": "true",
+      "RESULT_ARCHIVE_ENABLED": "true",
+      "RESULT_READERS_ENABLED": "true",
+      "RESULT_ARCHIVE_AFTER": "2026-10-24T03:59:21.961089+00:00",
+      "RESULT_ARCHIVE_MIN_AGE_SECONDS": "120",
+      "RESULT_ARCHIVE_PURGE_ROWS": "1000"
+    },
+    {
+      "RETENTION_ADMISSION_ENABLED": "true",
+      "RESULT_ARCHIVE_ENABLED": "true",
+      "RESULT_READERS_ENABLED": "true",
+      "RESULT_ARCHIVE_AFTER": "2026-10-24T03:59:21.961089+00:00",
+      "RESULT_ARCHIVE_MIN_AGE_SECONDS": "120",
+      "RESULT_ARCHIVE_PURGE_ROWS": "1000"
+    }
+  ],
+  "ledger_invariants": {
+    "retention_ledger_mismatches": 0,
+    "retention_undercharged_tasks": 0,
+    "retention_missing_tenant_ledgers": 0,
+    "auxiliary_ledger_mismatches": 0,
+    "default_retained_tasks": 26943,
+    "default_payload_charge_bytes": 205935962,
+    "minimum_100_tasks_excluding_bodies": 117964800,
+    "remaining_after_100_minimum_excluding_new_bodies": 11643558,
+    "default_auxiliary_usage": {
+      "blob_generations": {
+        "rows": 63,
+        "bytes": 0
+      },
+      "upload_reservations": {
+        "rows": 0,
+        "bytes": 0
+      },
+      "input_files": {
+        "rows": 424,
+        "bytes": 0
+      },
+      "input_read_leases": {
+        "rows": 0,
+        "bytes": 0
+      },
+      "idempotency": {
+        "rows": 420,
+        "bytes": 27525120
+      },
+      "archive_runs": {
+        "rows": 7,
+        "bytes": 0
+      },
+      "archive_chunks": {
+        "rows": 7,
+        "bytes": 0
+      },
+      "result_read_leases": {
+        "rows": 0,
+        "bytes": 0
+      }
+    }
+  },
+  "post_cutoff_archives_purged": 6,
+  "post_cutoff_task_payloads_purged": 120,
+  "production_database_modified": false,
+  "schema10_snapshot_off_pod_verified": false,
+  "schema10_snapshot_export_authorization": "pending explicit user approval after automatic review rejection",
+  "limitations": [
+    "One Pod has no whole-Pod compute or ingress failover.",
+    "Logical reservations are not a physical database/WAL bound.",
+    "Retained history and idempotency have finite caps without automated retirement.",
+    "New schema10 SQL restore was local; existing schema8 off-Pod proof is separate."
+  ]
+}

@@ -1,5 +1,35 @@
 # BatchForge platform screenshots
 
+## Current single-Pod Qwen3-235B deployment
+
+These unedited screenshots were captured from the running private console on
+October 24, 2026, around 08:19 Asia/Dubai (04:19 UTC), after the final 100-task
+capacity run and 20-task public-gold QA/archive validation. Capturing them
+submitted no inference. No credential form or raw task output is shown.
+
+The overview shows 26,943 historical tasks, 26,764 completed, 179 failed,
+39.9M processed tokens and one connected worker. The chart shows completions
+by reporting interval, not requests per second. Its 29 registered workers and
+493 registered slots include old experiments; they are not current capacity.
+
+![Current workspace overview](qwen235b-overview-2026-10-24.jpg)
+
+The current `primary-qwen235b-tp4` worker is ready with one engine serving
+`Qwen/Qwen3-235B-A22B-Instruct-2507-FP8` across four H100 GPUs. Its 64 configured
+slots are a claim limit controlled by a 298,384-token reservation budget;
+this does not promise 64 simultaneous full 18K contexts. Offline 120B and
+second-Pod registrations remain visible as historical records. Their stale
+engine counters do not establish availability. Worker readiness is not GPU
+utilization. The [validation report](../single-pod-validation-2026-10-24.md)
+contains the measured throughput and separate gold-answer quality checks.
+
+![Current 235B worker and historical offline registrations](qwen235b-workers-2026-10-24.jpg)
+
+## Historical two-Pod 120B deployment
+
+The following five screenshots are preserved evidence from the earlier
+deployment. They do **not** describe the current number of live Pods or workers.
+
 These unedited screenshots were captured from the running private deployment
 on October 24, 2026, around 04:35 Asia/Dubai. They show existing persisted
 workload results; taking the screenshots did not submit any new inference.

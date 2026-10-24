@@ -1,0 +1,95 @@
+{
+  "passed": true,
+  "completed_at": "2026-10-24T03:47:18.687444+00:00",
+  "schema_version": 10,
+  "migration_checksums": {
+    "1": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219",
+    "2": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b",
+    "3": "0e3e483eb061972679ea62bacc5eb1569c334c13c0d553dbe10137ea4fe35003",
+    "4": "5c401e019eaec4491b281169522febe94878cb2c465242820d88d761eeb83fb0",
+    "5": "424e4e0426f6bb456c503fd731e3d1e717f3a8485c28256f38d6608dbbdf9339",
+    "6": "a44389417577344ef85745e5e299b35a764b40483983197993eeafe6904e90e3",
+    "7": "6225f00575675d8834f16c0462728d563985a7d73753344cde366e150eac79d0",
+    "8": "5ffedba95c7147bdf973052fea000bf268a852e9136f5b2e9e66740040f3727d",
+    "9": "663e8f86c2f6da66d70ec538794317662c10eb3a10977a94cd4ca9b2424731d3",
+    "10": "d31d74f77ea90d8050f689e6437984149a3ca8a6ac49b70275ce870d8f6a397b"
+  },
+  "global_active_tasks_before_backup": 0,
+  "storage_report_sha256": "1ae36514cfb4dcc6d4e47ba04400c0915fc717d71845040b82bd9d41867e3995",
+  "source_sha256": "b38282136bf05e117030df8e1b020ed7fad8b836a9ef8558034758a32c75a5f4",
+  "snapshot_path": "/root/batchforge-runtime/app/.runtime/backups/batchforge-20261024T034645Z-c3d83e34.dump",
+  "snapshot_sha256": "302d3f2e7bf4e9b9246b663c4bad9cfc12d5e2b32bd212fc408f96d5ea44b2bd",
+  "snapshot_bytes": 127944921,
+  "archive_list_verified": true,
+  "restore_verified": false,
+  "database_modified": false,
+  "owned_identities_before": {
+    "api-a": {
+      "pid": 192561,
+      "start_ticks": "33692110",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 192581,
+      "start_ticks": "33692386",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 162130,
+      "start_ticks": "32805671",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen235b": {
+      "pid": 188251,
+      "start_ticks": "33599375",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen235b": {
+      "pid": 190897,
+      "start_ticks": "33605683",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 192589,
+      "start_ticks": "33692616",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "owned_identities_after": {
+    "api-a": {
+      "pid": 192561,
+      "start_ticks": "33692110",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 192581,
+      "start_ticks": "33692386",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 162130,
+      "start_ticks": "32805671",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen235b": {
+      "pid": 188251,
+      "start_ticks": "33599375",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen235b": {
+      "pid": 190897,
+      "start_ticks": "33605683",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 192589,
+      "start_ticks": "33692616",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "protected_files_unchanged": true,
+  "limitations": [
+    "Archive listing is not a restore test",
+    "Off-Pod copy is separately verified after this job"
+  ]
+}

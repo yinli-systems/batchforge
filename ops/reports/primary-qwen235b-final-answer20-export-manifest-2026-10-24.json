@@ -1,0 +1,56 @@
+{
+  "job_id": "qwen235b-final-answer20-autoarchive-v1",
+  "run_id": "bench-5b18ae857c7b",
+  "metadata_only": true,
+  "raw_outputs_inputs_env_credentials_database_dump_included": false,
+  "files": {
+    "journal.json": {
+      "sha256": "af06ad8135e4cc3e1e29d1a6cf3e4ae47055931225a7c340a1ce700f658ec173",
+      "bytes": 23475
+    },
+    "quality.json": {
+      "sha256": "8f90c89827e5d2b94d05dd8428e10f96b06e3b6acda3ce2374264afbd9c090e7",
+      "bytes": 1858
+    },
+    "automatic-archive.json": {
+      "sha256": "a208f93603a6fdea202b44c6144bd6324e5d2a97940741dfed1578ef202d7125",
+      "bytes": 8995
+    },
+    "launch.json": {
+      "sha256": "a04788134cb9c65ba25f146ac0f7069db1405d13c981805aef4469cd853d80b9",
+      "bytes": 1530
+    },
+    "actual-controller-source.py.txt": {
+      "sha256": "2be84f61cff390979be971fc73d47a842e9d669c268d383a2699a200ea4f2462",
+      "bytes": 35129
+    },
+    "qwen235b-final-answer20-autoarchive-v1.json": {
+      "sha256": "e0a3b515c90bd8449957384890c6755fdea881b48f2cd47ea46623f88602e109",
+      "bytes": 44238
+    },
+    "qwen235b-final-answer20-autoarchive-v1-observations.json": {
+      "sha256": "281d958965885f4375ae1b593e3712c6e5692f22f255654f33a9d0ac4f486b48",
+      "bytes": 3944
+    },
+    "qwen235b-final-answer20-autoarchive-v1-phase-before.json": {
+      "sha256": "852b190ef5b96ac80c6c8cdf190b8ec32afb75da3f1a4e685577953d18aa76fd",
+      "bytes": 25930
+    },
+    "qwen235b-final-answer20-autoarchive-v1-phase-after.json": {
+      "sha256": "54006590d9d6c75278dddd17d635edc5613011230f92ae9155668fcaef7dff95",
+      "bytes": 25946
+    },
+    "qwen235b-final-answer20-autoarchive-v1-phases.json": {
+      "sha256": "0bb0109655ee5ee23fcbc1a6aa1f27048e058646e1fe77a7021d05d50a09124e",
+      "bytes": 3750
+    },
+    "qwen235b-final-answer20-autoarchive-v1-worker-observations.json": {
+      "sha256": "32bd811a1f217e63412b8db42e5a31dc8132cbcd4e4ed1d0b4334e93bda133bd",
+      "bytes": 2830
+    },
+    "qwen235b-final-answer20-autoarchive-v1-worker-summary.json": {
+      "sha256": "3c22669987ce20c9d0809a25fca8fb7b3c23fb210ce124743e25eab3f1f83399",
+      "bytes": 1610
+    }
+  }
+}

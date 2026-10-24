@@ -5,12 +5,14 @@ an OpenAI-shaped batch API, and an operations console backed by live data.
 
 The current experiment uses **one Pod with four dedicated H100 80GB GPUs**.
 The official FP8 Qwen3-235B-A22B-Instruct-2507 checkpoint (235B total, 22B active
-parameters) is running with TP4 across all four GPUs. Token-budget admission
-reduced its fixed 100-task mixed-length run from **809.62 to 244.28 seconds**
-(0.409 tasks/s), with P95/P99 completion of **220.53/240.95 seconds**.
+parameters) is running with TP4 across all four GPUs. The final schema10
+configuration, with automatic archival enabled, reduced its fixed 100-task
+mixed-length run from **809.62 to 250.15 seconds** (0.400 tasks/s), with P95/P99
+completion of **228.29/246.17 seconds**.
 All 100 tasks completed once with 545,280 input and 68,000 generated tokens.
-An equal-work NCCL experiment was 4.90% slower; the measured faster custom
-collective was restored. These are single finite runs, not daily capacity or
+The earlier archival-OFF adaptive sample took 244.28 seconds; its equal-work
+NCCL experiment was 4.90% slower, so the custom collective was restored.
+These are single finite runs, not daily capacity or
 proof that one collective always wins. The preceding GPT-OSS-120B (116.83B total) 64-slot
 isolated 400-task mixed-length run completed every task in 143.27 seconds
 (2.79 tasks/s), with exactly 2,181,120 input and 272,000 generated tokens.
@@ -40,13 +42,15 @@ private. See [availability](docs/ha.md), [ingress](docs/ingress.md), and
 
 ## Platform screenshots
 
-Captured from the running private deployment on October 24, 2026 (Asia/Dubai).
-The overview includes historical runs across models; it is not a 120B-only
-throughput measurement. [View all five screenshots](docs/screenshots/README.md).
+Current screenshots show the private single-Pod 235B deployment on October 24,
+2026, around 08:19 Asia/Dubai. The overview totals include historical runs;
+29 registered workers and 493 registered slots are historical, while only one
+worker is connected. Its 64 configured slots are a claim limit, not 64 full
+18K contexts or measured GPU utilization. [Current and historical screenshots](docs/screenshots/README.md).
 
-![Live workspace overview](docs/screenshots/overview-2026-10-24.jpg)
+![Current single-Pod workspace overview](docs/screenshots/qwen235b-overview-2026-10-24.jpg)
 
-![Completed GPT-OSS-120B batch](docs/screenshots/batch-120b-completed-2026-10-24.jpg)
+![Current Qwen3-235B worker and historical offline registrations](docs/screenshots/qwen235b-workers-2026-10-24.jpg)
 
 ## Features
 

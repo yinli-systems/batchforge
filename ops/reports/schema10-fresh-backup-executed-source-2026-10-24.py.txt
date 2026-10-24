@@ -1,0 +1,71 @@
+"""Fresh post-schema10 snapshot; called only by its unique approved launcher."""
+from pathlib import Path
+from datetime import datetime, timezone
+import hashlib, importlib.util, json, os, sys
+
+ROOT = Path('/root/batchforge-runtime/app')
+RUN = ROOT / '.runtime/storage-post-v10-5448ee8-v1'
+STORAGE = ROOT / '.runtime/storage-admission-v10-5448ee8-v1/report.json'
+FROZEN = ROOT / '.runtime/storage-release-v10-5448ee8-v1/deploy_storage_admission-frozen.py'
+sys.path.insert(0, str(ROOT)); os.umask(0o077); os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+def digest(raw): return hashlib.sha256(raw).hexdigest()
+
+def observed_identities(approved):
+    observed = {}
+    for name, wanted in approved['owned_identities'].items():
+        pid = wanted['pid']; base = Path('/proc') / str(pid)
+        raw = (base / 'stat').read_text()
+        actual = {'pid': pid, 'start_ticks': raw[raw.rfind(')')+2:].split()[19], 'cwd': str((base / 'cwd').resolve(strict=True))}
+        if actual != wanted: raise RuntimeError('Protected process identity changed')
+        observed[name] = actual
+    for name, wanted in approved['protected_file_sha256'].items():
+        if digest(Path(name).read_bytes()) != wanted: raise RuntimeError('Protected environment or manifest changed')
+    return observed
+
+def main():
+    import psycopg
+    from backend.migrate import MIGRATIONS
+    from devtools.backup_postgres import select_bin_dir, preflight, create_backup, write_private_json
+    from ops.ha.finalize_api_policy import values
+    from ops.supervise import private_read
+    approved = json.loads(private_read(RUN / 'preparation.json'))
+    if approved['phase'] != 'prepared' or approved['schema_version'] != 10: raise RuntimeError('Expected approved schema10 preparation')
+    identities = observed_identities(approved)
+    if (RUN / 'fresh-backup-raw.json').exists(): raise RuntimeError('Existing backup report must not be overwritten')
+    if digest(private_read(STORAGE, 512*1024)) != approved['storage_report_sha256']: raise RuntimeError('Completed storage rollout report differs')
+    storage = json.loads(private_read(STORAGE, 512*1024))
+    if storage['phase'] != 'complete' or storage.get('watchdog_restored') is not True: raise RuntimeError('Storage rollout is not complete')
+    if digest(private_read(FROZEN, 512*1024)) != '91bfdd92d96a5f60aa6ede763883589c65f0f92a8f3653efd88497c985714456': raise RuntimeError('Frozen owner-DSN binding helper differs')
+    spec = importlib.util.spec_from_file_location('schema10_owner_binding', FROZEN)
+    helper = importlib.util.module_from_spec(spec); spec.loader.exec_module(helper)
+    runtime = [values(private_read(ROOT.parent / f'api-{name}.env'))['DATABASE_URL'] for name in ('a','b')]
+    owner = helper.bound_owner_dsn(private_read(ROOT.parent / 'neon-owner.env'), runtime)
+    expected = [(version, checksum) for version, _, checksum in MIGRATIONS]
+    if not expected or expected[-1][0] != 10: raise RuntimeError('Actual application migration registry is not schema10')
+    with psycopg.connect(owner, connect_timeout=10,
+            options='-c default_transaction_read_only=on -c statement_timeout=10000 -c lock_timeout=1000') as conn:
+        ledger = conn.execute('SELECT version,checksum FROM batchforge_schema_migrations ORDER BY version').fetchall()
+        active = conn.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]
+        if ledger != expected or active: raise RuntimeError('Fresh schema10 ledger or drained-state gate failed')
+        if not conn.pgconn.ssl_in_use: raise RuntimeError('TLS backup source required')
+    environment = dict(os.environ)
+    bins = select_bin_dir(ROOT.parent / 'postgres-client-17/bin', environment)
+    metadata = preflight(owner, bins, environment)
+    if metadata['server_major'] != 17 or metadata['pg_dump_major'] != 17: raise RuntimeError('Exact PG17 toolchain required')
+    snapshot, report = create_backup(owner, bins, ROOT / '.runtime/backups', environment,
+        metadata, RUN / 'fresh-backup-raw.json')
+    after_identities = observed_identities(approved)
+    write_private_json(RUN / 'backup-result.json', {'passed':True,'completed_at':datetime.now(timezone.utc).isoformat(),
+        'schema_version':10,'migration_checksums':dict(ledger),'global_active_tasks_before_backup':active,
+        'storage_report_sha256':approved['storage_report_sha256'],'source_sha256':digest(Path(__file__).read_bytes()),
+        'snapshot_path':str(snapshot),'snapshot_sha256':report['snapshot_sha256'],'snapshot_bytes':report['snapshot_bytes'],
+        'archive_list_verified':True,'restore_verified':False,'database_modified':False,
+        'owned_identities_before':identities,'owned_identities_after':after_identities,'protected_files_unchanged':True,
+        'limitations':['Archive listing is not a restore test','Off-Pod copy is separately verified after this job']})
+    print(json.dumps({'passed':True,'snapshot_path':str(snapshot),'snapshot_bytes':report['snapshot_bytes'],'snapshot_sha256':report['snapshot_sha256']}))
+
+if __name__ == '__main__':
+    try: main()
+    except BaseException as error:
+        print(json.dumps({'passed':False,'failure_type':type(error).__name__}));raise SystemExit(1) from None

@@ -1,0 +1,52 @@
+{
+  "phase": "prepared",
+  "schema_version": 10,
+  "prepared_at": "2026-10-24T03:46:42.797877+00:00",
+  "storage_report_sha256": "1ae36514cfb4dcc6d4e47ba04400c0915fc717d71845040b82bd9d41867e3995",
+  "prepared_storage_report_sha256": "6fbfa45c274e815e2675e93e97769e45ca3bdb9f9d22a4e4762c4ba3f481740f",
+  "bundle_sha256": "f344c1420f69826d9a3c8e45ef41aa4e70c3e9ebc20e9f9b4116c739a20e00ee",
+  "owned_identities": {
+    "api-a": {
+      "pid": 192561,
+      "start_ticks": "33692110",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 192581,
+      "start_ticks": "33692386",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 162130,
+      "start_ticks": "32805671",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen235b": {
+      "pid": 188251,
+      "start_ticks": "33599375",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen235b": {
+      "pid": 190897,
+      "start_ticks": "33605683",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 192589,
+      "start_ticks": "33692616",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "protected_file_sha256": {
+    "/root/batchforge-runtime/app/.runtime/services-primary.json": "ecbec45bfa6da34d6d1aba7ff63e49cbdbb7ff9c2b9280af5c2c1a01fc65dcf6",
+    "/root/batchforge-runtime/api-a.env": "4a581148a49f51a26813bebe65d0dc6225b23043ab48113ba448b33269ad36df",
+    "/root/batchforge-runtime/api-b.env": "4a581148a49f51a26813bebe65d0dc6225b23043ab48113ba448b33269ad36df",
+    "/root/batchforge-runtime/gateway.env": "6d421cc45119fce5cd62c28e8dabf16f134dc5da07dec5b55319299bdab61c73",
+    "/root/batchforge-runtime/app/.runtime/qwen235b-adaptive64-v1/engine.env": "07d72d8c467eb8ca21690c42a637f89e23caf7db0a960b37d69344f121bcc1ac",
+    "/root/batchforge-runtime/app/.runtime/qwen235b-adaptive64-v1/worker.env": "be0e6463aa1351dd0470f5b437f4c964cceaf3673f087645f9142ccd4fe82994",
+    "/root/batchforge-runtime/supervisor.env": "5b8b9248709c5ea2cf1115d778fd76ebedebbf4d4900f3eb194ef69c90bb40cd"
+  },
+  "live_readiness": true,
+  "global_active_tasks": 0,
+  "publisher_enabled": false
+}

@@ -1,0 +1,166 @@
+{
+  "run_id": "bench-7e815935e9bd",
+  "idempotency_key": "retention-proof-bench-7e815935e9bd",
+  "phase": "passed",
+  "started_at": "2026-10-24 04:02:55.930652+00:00",
+  "scope": "functional negative admission probe; one POST; requires exclusive no-other-submit/no-manual-purge window; no DB lock across network",
+  "limitations": [
+    "The insufficient-budget proof is one SQL snapshot, not an atomic HTTP dry run.",
+    "HTTPX timeout is per phase, not an end-to-end bound; client timeout does not cancel server-side processing.",
+    "The90-second archive horizon is a conservative risk gate, not a guarantee against an arbitrarily delayed S3 read or future purge.",
+    "Unexpected success or transport/verification uncertainty fails this proof and is never retried."
+  ],
+  "before": {
+    "at": "2026-10-24 04:02:56.122010+00:00",
+    "tenant_id": "default",
+    "input_file_id": "file_e9ad400eb88d0b7f1aba91c6598450d8",
+    "cohort": {
+      "n": 100,
+      "identity_hash": "89bad9d187483040d29ef6af76837315",
+      "completed": 0,
+      "failed_cancelled": 0
+    },
+    "cohort_age_seconds": 2.357114,
+    "all_cohort_after_cutoff": true,
+    "selected": {
+      "n": 20,
+      "body_bytes": "515093",
+      "intact": true
+    },
+    "required_payload_bytes": "24108053",
+    "remaining_payload_bytes": 9068093,
+    "remaining_task_rows": 23077,
+    "ledger": {
+      "tenant_id": "default",
+      "retained_tasks": 26923,
+      "charged_payload_bytes": 326476227
+    },
+    "derived": {
+      "n": 26923,
+      "bytes": "326476227"
+    },
+    "earliest_autoarchive_at": "2026-10-24 04:04:56.122010+00:00",
+    "archive_horizon_seconds": 120.0,
+    "active_unpurged_archives": 0,
+    "file": {
+      "kind": "input",
+      "admission_tasks": 0,
+      "storage_deleted_at": null,
+      "storage_expires_at": "2026-10-25 04:02:53.275194+00:00",
+      "has_blob": true
+    },
+    "auxiliary": [
+      {
+        "resource": "idempotency",
+        "max_rows": 4096,
+        "max_bytes": 134217728,
+        "max_row_bytes": 65536,
+        "rows": 419,
+        "bytes": 27459584
+      },
+      {
+        "resource": "input_read_leases",
+        "max_rows": 128,
+        "max_bytes": 0,
+        "max_row_bytes": 4096,
+        "rows": 0,
+        "bytes": 0
+      }
+    ],
+    "residue": {
+      "keys": 0,
+      "batches": 0,
+      "tasks": 0,
+      "attempts": 0
+    },
+    "tenant_totals": {
+      "batches": 419,
+      "tasks": 26923
+    },
+    "duplicate_accepted_tasks": 0
+  },
+  "request_body_sha256": "a148b9fc00e4f0cd74f84d0f5ce4c7442dd0bb72aeea72bfd74a21c77a6a8a1c",
+  "http_status": 429,
+  "error_code": "retained_payload_limit",
+  "http_elapsed_seconds": 0.5031383120222017,
+  "http_outcome_phase": "http429_verification_pending",
+  "after": {
+    "at": "2026-10-24 04:02:56.918123+00:00",
+    "tenant_id": "default",
+    "input_file_id": "file_e9ad400eb88d0b7f1aba91c6598450d8",
+    "cohort": {
+      "n": 100,
+      "identity_hash": "89bad9d187483040d29ef6af76837315",
+      "completed": 0,
+      "failed_cancelled": 0
+    },
+    "cohort_age_seconds": 3.153227,
+    "all_cohort_after_cutoff": true,
+    "selected": {
+      "n": 20,
+      "body_bytes": "515093",
+      "intact": true
+    },
+    "required_payload_bytes": "24108053",
+    "remaining_payload_bytes": 9068093,
+    "remaining_task_rows": 23077,
+    "ledger": {
+      "tenant_id": "default",
+      "retained_tasks": 26923,
+      "charged_payload_bytes": 326476227
+    },
+    "derived": {
+      "n": 26923,
+      "bytes": "326476227"
+    },
+    "earliest_autoarchive_at": "2026-10-24 04:04:56.918123+00:00",
+    "archive_horizon_seconds": 120.0,
+    "active_unpurged_archives": 0,
+    "file": {
+      "kind": "input",
+      "admission_tasks": 0,
+      "storage_deleted_at": null,
+      "storage_expires_at": "2026-10-25 04:02:53.275194+00:00",
+      "has_blob": true
+    },
+    "auxiliary": [
+      {
+        "resource": "idempotency",
+        "max_rows": 4096,
+        "max_bytes": 134217728,
+        "max_row_bytes": 65536,
+        "rows": 419,
+        "bytes": 27459584
+      },
+      {
+        "resource": "input_read_leases",
+        "max_rows": 128,
+        "max_bytes": 0,
+        "max_row_bytes": 4096,
+        "rows": 0,
+        "bytes": 0
+      }
+    ],
+    "residue": {
+      "keys": 0,
+      "batches": 0,
+      "tasks": 0,
+      "attempts": 0
+    },
+    "tenant_totals": {
+      "batches": 419,
+      "tasks": 26923
+    },
+    "duplicate_accepted_tasks": 0
+  },
+  "checks": {
+    "http429_payload_limit": true,
+    "no_probe_residue": true,
+    "no_new_batch_or_task": true,
+    "cohort_identity_unchanged": true,
+    "accepted_progress_conserved": true,
+    "ledger_matches_derived": true,
+    "no_budget_released_during_probe": true
+  },
+  "finished_at": "2026-10-24 04:02:57.039037+00:00"
+}

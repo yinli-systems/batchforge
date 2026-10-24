@@ -1,0 +1,55 @@
+from pathlib import Path
+from datetime import datetime, timezone
+import ast, hashlib, json, os, sys
+
+ROOT=Path('/root/batchforge-runtime/app')
+RUN=ROOT/'.runtime/storage-post-v10-5448ee8-v1'
+sys.path.insert(0,str(ROOT));os.umask(0o077)
+def digest(raw):return hashlib.sha256(raw).hexdigest()
+
+def main():
+ from ops.supervise import load_manifest,private_read,Manager
+ from ops.ha.adaptive_qwen235b import identity
+ from ops.ha.finalize_api_policy import values
+ import psycopg
+ approved=json.loads((RUN/'prepared-storage-reference.json').read_bytes())
+ raw=private_read(ROOT/'.runtime/storage-admission-v10-5448ee8-v1/report.json',512*1024)
+ expected='1ae36514cfb4dcc6d4e47ba04400c0915fc717d71845040b82bd9d41867e3995'
+ if digest(raw)!=expected:raise RuntimeError('Completed rollout report hash differs')
+ doc=json.loads(raw)
+ if doc['binding']!=approved['binding']:raise RuntimeError('Prepared rollout binding changed')
+ if doc['phase']!='complete' or not doc['watchdog_restored'] or not doc['non_api_identities_unchanged']:raise RuntimeError('Incomplete storage rollout')
+ for key in ('retention_ledger_mismatches','retention_undercharged_tasks','retention_missing_tenant_ledgers','auxiliary_ledger_mismatches'):
+  if doc['migration_invariants'][key]!=0:raise RuntimeError('Storage rollout ledger mismatch')
+ if doc['gateway_observation']['schema_prefix']!=10 or not doc['gateway_observation']['retention_enabled']:raise RuntimeError('Gateway is not schema10')
+ manifest,services,_=load_manifest(ROOT/'.runtime/services-primary.json')
+ watchdog={'role':'supervisor','name':'primary','env_file':str(ROOT.parent/'supervisor.env'),'python':str(ROOT.parent/'venv/bin/python')}
+ all_services=services+[watchdog]
+ observed={s['role']+'-'+s['name']:identity(ROOT,s) for s in all_services}
+ pairs={'api-a':(192561,'33692110'),'api-b':(192581,'33692386'),'gateway-edge':(162130,'32805671'),
+  'engine-qwen235b':(188251,'33599375'),'worker-qwen235b':(190897,'33605683'),'supervisor-primary':(192589,'33692616')}
+ wanted={key:{'pid':pid,'start_ticks':ticks,'cwd':str(ROOT)} for key,(pid,ticks) in pairs.items()}
+ if observed!=wanted:raise RuntimeError('Live service identities differ from completed release')
+ protected={str(manifest):digest(private_read(manifest))}
+ for service in all_services:
+  path=Path(service['env_file']);envraw=private_read(path);protected[str(path)]=digest(envraw)
+  if service['role']=='api':
+   env=values(envraw)
+   if env.get('RESULT_ARCHIVE_ENABLED','').lower()!='false' or env.get('RETENTION_ADMISSION_ENABLED','').lower()!='true':raise RuntimeError('Policy release changed')
+   with psycopg.connect(env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=5000') as conn:
+    if conn.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]:raise RuntimeError('Platform is not drained')
+ for name,sha in doc['binding']['protected_environment_sha256'].items():
+  if protected[name]!=sha:raise RuntimeError('Protected GPU/gateway environment changed')
+ if not all(Manager(root=ROOT).readiness(s) for s in services):raise RuntimeError('Service readiness gate failed')
+ source_pins={**doc['binding']['guard_sources'],**doc['binding']['source_sha256']}
+ for name,sha in source_pins.items():
+  if digest((ROOT/name).read_bytes())!=sha:raise RuntimeError('Actual source differs from completed storage release')
+ prep={'phase':'prepared','schema_version':10,'prepared_at':datetime.now(timezone.utc).isoformat(),
+  'storage_report_sha256':expected,'prepared_storage_report_sha256':'6fbfa45c274e815e2675e93e97769e45ca3bdb9f9d22a4e4762c4ba3f481740f',
+  'bundle_sha256':doc['binding']['bundle_sha256'],'owned_identities':observed,
+  'protected_file_sha256':protected,'live_readiness':True,'global_active_tasks':0,'publisher_enabled':False}
+ with (RUN/'preparation.json').open('x') as out:json.dump(prep,out,indent=2);out.write('\n')
+ with (RUN/'storage-complete-reference.json').open('xb') as out:out.write(raw)
+ print(json.dumps({'phase':'prepared','storage_report_sha256':expected,'identities':observed,'publisher_enabled':False}))
+
+if __name__=='__main__':main()
