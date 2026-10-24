@@ -65,6 +65,27 @@ Deploy compatibility code everywhere before migrating v3; then enable the flag.
 
 ## Operational guarantees and current limits
 
+Schema v7 adds opt-in `SCHEDULER_POLICY=fair|cost_aware`, with authenticated
+operator profiles, batch/task runtime fingerprints and durable attempt decision
+records. Both policies require v7; rollback retains `fair` to preserve runtime
+fences. See `docs/scheduling.md` for estimator assumptions and bounded candidate
+selection. `min_tokens` is an optional engine extension, an integer from zero to
+the selected output cap; controlled length benchmarks are distinct from output
+quality evaluation.
+
+`SQL_RECOVERY_ENABLED=true` requires v4 and executes bounded failure/lease expiry
+transitions in a single SQL statement. `RECOVERY_TASK_LIMIT` bounds all task
+transitions in a sweep, including deadline cancellation; large expired batches
+drain over multiple sweeps. Equal retry jitter spreads synchronized failures.
+
+`BLOB_STORAGE_BACKEND=s3|local` requires v5. New input uploads reserve tenant byte
+and unsubmitted-task credits before object I/O. S3 configuration uses private
+`AWS_*` environment variables and a private `BLOB_STORAGE_BUCKET`; no credentials
+are returned to clients. Legacy inline inputs remain readable. Input expiry is
+reported as 410 and integrity/unavailable storage failures as 503 before download
+headers. `BLOB_GC_ENABLED` enables bounded retention/orphan sweeps. Local storage
+alone cannot survive Pod/disk loss. See `docs/storage.md` for storage boundaries.
+
 - `/metrics` requires the **worker** Bearer token. Tenant credentials cannot read global metrics. Health endpoints expose no database details.
 - Batch resources also expose `usage:{prompt_tokens,completion_tokens}`. Metering counts accepted successful results exactly once. Computation can run more than once after a lost lease; external side effects are not exactly-once.
 - Supported response formats in v1 are `{type:"text"}` and `{type:"json_object"}`. Tool calls, image input, JSON Schema constrained output, and streaming are rejected. Exact context/tokenizer limits are enforced by the worker's inference engine, while API admission bounds UTF-8 bytes and output token budgets.

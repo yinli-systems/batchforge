@@ -9,5 +9,8 @@ GRANT SELECT ON tenants,api_keys TO bf_runtime;
 -- FOR NO KEY UPDATE on this row; tenant/key creation remains operator-only.
 GRANT UPDATE(name) ON tenants TO bf_runtime;
 GRANT SELECT,INSERT,UPDATE ON workers,files,batches,tasks,attempts,idempotency,tenant_queues TO bf_runtime;
--- Do not grant ALTER/CREATE, tenant/key administration, DELETE or replication.
+-- v5 catalog lifecycle deletes only ephemeral reservation/read-lease rows.
+GRANT SELECT,INSERT,UPDATE ON tenant_blob_usage,blob_objects TO bf_runtime;
+GRANT SELECT,INSERT,UPDATE,DELETE ON blob_upload_reservations,blob_read_leases TO bf_runtime;
+-- Do not grant ALTER/CREATE, tenant/key administration, task/result DELETE or replication.
 -- Existing deployment-wide PUBLIC grants must also be reviewed separately.

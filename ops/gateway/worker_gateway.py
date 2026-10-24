@@ -46,7 +46,10 @@ def create_app(upstreams: list[str] | None = None, *, mode: str | None = None,
 
     @asynccontextmanager
     async def lifespan(app):
-        app.state.client = httpx.AsyncClient(timeout=httpx.Timeout(15, connect=1, pool=2),
+        upstream_timeout = float(os.environ.get('GATEWAY_UPSTREAM_TIMEOUT_SECONDS', '120'))
+        if not 5 <= upstream_timeout <= 600:
+            raise ValueError('GATEWAY_UPSTREAM_TIMEOUT_SECONDS must be between 5 and 600')
+        app.state.client = httpx.AsyncClient(timeout=httpx.Timeout(upstream_timeout, connect=1, pool=2),
             limits=httpx.Limits(max_connections=256, max_keepalive_connections=64),
             trust_env=False, transport=transport, follow_redirects=False)
         app.state.healthy = set()

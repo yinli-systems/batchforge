@@ -143,6 +143,8 @@ class Worker:
 
     async def register(self) -> None:
         ready_engine_count = self._ready_engine_count
+        scheduling_metadata = ({"scheduling_profile": self.config.scheduling_profile}
+                               if self.config.scheduling_profile is not None else {})
         result = await self._post("/internal/workers/register", {
             "worker_id": self.config.worker_id,
             "name": self.config.name,
@@ -151,7 +153,7 @@ class Worker:
             "metadata": {"engine_count": len(self.engines), "ready_engine_count": ready_engine_count,
                          "max_model_len": self.config.max_model_len,
                          "token_budget": self.config.token_budget, "version": "0.1.0",
-                         "control_origin_count": len(self._control_origins)},
+                         "control_origin_count": len(self._control_origins), **scheduling_metadata},
         })
         if result["worker_id"] != self.config.worker_id:
             raise ValueError("Control plane changed the worker identity")
@@ -242,7 +244,7 @@ class Worker:
         # SDK tool, or executable code. Streaming is disabled for durable results.
         if body.get("model") != self.config.model:
             raise InferenceError("unsupported_model", "Task model does not match worker", False)
-        allowed = {"model", "messages", "max_tokens", "max_completion_tokens", "temperature", "top_p", "seed", "stop", "response_format", "stream", "n", "reasoning_effort"}
+        allowed = {"model", "messages", "max_tokens", "max_completion_tokens", "min_tokens", "temperature", "top_p", "seed", "stop", "response_format", "stream", "n", "reasoning_effort"}
         if set(body) - allowed:
             raise InferenceError("unsupported_parameter", "Task contains unsupported inference parameters", False)
         if "reasoning_effort" in body and (not isinstance(body["reasoning_effort"], str) or body["reasoning_effort"] not in {"low", "medium", "high"}):
@@ -253,6 +255,8 @@ class Worker:
         body["max_tokens"] = body.pop("max_completion_tokens", body.get("max_tokens", 256))
         if type(body["max_tokens"]) is not int or not 0 < body["max_tokens"] <= self.config.max_model_len:
             raise InferenceError("context_limit", "max_tokens exceeds the configured context bound", False)
+        if 'min_tokens' in body and (type(body['min_tokens']) is not int or not 0 <= body['min_tokens'] <= body['max_tokens']):
+            raise InferenceError('unsupported_parameter', 'min_tokens must fit the output limit', False)
         started = time.monotonic()
         try:
             response = await self.inference.post(engine.url + "/v1/chat/completions", json=body)

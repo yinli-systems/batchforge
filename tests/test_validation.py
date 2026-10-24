@@ -70,3 +70,13 @@ def test_reasoning_effort_is_optional_strict_and_preserved():
     for invalid in (None, True, 1, [], {}, "", "LOW", "none", "minimal"):
         with pytest.raises(InvalidInput, match="reasoning_effort"):
             validate_rows(encoded(row(reasoning_effort=invalid)), settings)
+
+
+def test_min_tokens_is_bounded_by_the_actual_output_cap():
+    settings = Settings(model_name='model',max_output_tokens=512)
+    for minimum in (0,32):
+        assert validate_rows(encoded(row(max_tokens=32,min_tokens=minimum)), settings)[0]['body']['min_tokens']==minimum
+    assert validate_rows(encoded(row(max_completion_tokens=32,min_tokens=32)),settings)[0]['body']['min_tokens']==32
+    for minimum in (-1,33,True,1.5,'32'):
+        with pytest.raises(InvalidInput,match='min_tokens'):
+            validate_rows(encoded(row(max_tokens=32,min_tokens=minimum)),settings)

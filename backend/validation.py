@@ -87,7 +87,9 @@ def validate_rows(data: bytes, settings) -> list[dict]:
         tokens = body.get("max_tokens", body.get("max_completion_tokens", min(256, settings.max_output_tokens)))
         if type(tokens) is not int or not 1 <= tokens <= settings.max_output_tokens:
             raise InvalidInput(f"Line {number}: output tokens must be 1 to {settings.max_output_tokens}")
-        allowed = {"model", "messages", "max_tokens", "max_completion_tokens", "temperature", "top_p", "seed", "stop", "response_format", "stream", "n", "reasoning_effort"}
+        if 'min_tokens' in body and (type(body['min_tokens']) is not int or not 0 <= body['min_tokens'] <= tokens):
+            raise InvalidInput(f'Line {number}: min_tokens must be an integer between zero and the output limit')
+        allowed = {"model", "messages", "max_tokens", "max_completion_tokens", "min_tokens", "temperature", "top_p", "seed", "stop", "response_format", "stream", "n", "reasoning_effort"}
         unknown = set(body) - allowed
         if unknown:
             raise InvalidInput(f"Line {number}: unsupported request fields: {', '.join(sorted(unknown))}")

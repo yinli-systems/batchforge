@@ -1,5 +1,6 @@
 from functools import lru_cache
 import json
+from typing import Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -33,6 +34,19 @@ class Settings(BaseSettings):
     readiness_timeout_seconds: float = Field(default=2, ge=0.1, le=10)
     sql_completion_enabled: bool = False
     sql_claim_enabled: bool = False
+    sql_recovery_enabled: bool = False
+    recovery_task_limit: int = Field(default=100, ge=1, le=1000)
+    recovery_batch_limit: int = Field(default=8, ge=1, le=64)
+    scheduler_policy: Literal['legacy', 'fair', 'cost_aware'] = 'legacy'
+    scheduler_aging_seconds: int = Field(default=60, ge=1, le=86400)
+    scheduler_worker_freshness_seconds: int = Field(default=60, ge=1, le=3600)
+    blob_storage_backend: Literal['inline', 'local', 's3'] = 'inline'
+    blob_storage_root: str = '.runtime/blobs'
+    blob_storage_bucket: str = ''
+    max_stored_input_bytes_per_tenant: int = Field(default=256 * 1024 * 1024, ge=1024)
+    upload_reservation_seconds: int = Field(default=300, ge=30, le=3600)
+    input_retention_seconds: int = Field(default=86400, ge=60, le=2592000)
+    blob_gc_enabled: bool = False
     frontend_dir: str = "frontend"
 
     @model_validator(mode="after")
@@ -55,6 +69,15 @@ class Settings(BaseSettings):
         if len(names) > 16 or any(not isinstance(name, str) or not 1 <= len(name) <= 256 for name in names):
             raise ValueError("Configure at most sixteen nonempty model IDs of at most 256 characters")
         return tuple(dict.fromkeys(names))
+
+    def minimum_schema_version(self) -> int:
+        if self.scheduler_policy != 'legacy':
+            return 7
+        if self.blob_storage_backend != 'inline':
+            return 5
+        if self.sql_recovery_enabled:
+            return 4
+        return 3 if self.sql_claim_enabled else 2 if self.sql_completion_enabled else 1
 
     def worker_tokens(self) -> tuple[str, ...]:
         tokens = [self.batchforge_worker_token] if self.batchforge_worker_token else []

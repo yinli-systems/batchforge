@@ -2,6 +2,7 @@
 import asyncio
 import contextlib
 import logging
+import random
 import secrets
 import time
 from contextlib import asynccontextmanager
@@ -21,12 +22,14 @@ from .config import Settings, get_settings
 from .migrate import verify_schema
 from .store import APIError, Store, one
 from .validation import InvalidInput, strict_json
+from .blob_storage import BlobStorageError, BlobQuotaExceeded, BlobNotFound, BlobExpired
 
 logger = logging.getLogger("batchforge")
 HTTP_REQUESTS = Counter("batchforge_http_requests_total", "HTTP requests", ["method", "route", "status"])
 HTTP_DURATION = Histogram("batchforge_http_request_duration_seconds", "HTTP request duration", ["method", "route"])
 RECOVERED_LEASES = Counter("batchforge_recovered_leases_total", "Expired leases recovered by this API process")
 RECOVERY_ERRORS = Counter("batchforge_recovery_errors_total", "Recovery sweep errors")
+STORAGE_ERRORS = Counter('batchforge_storage_maintenance_errors_total', 'Storage retention/GC sweep errors')
 
 
 class StrictModel(BaseModel):
@@ -90,7 +93,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 RECOVERY_ERRORS.inc()
                 # Database diagnostics can contain query parameters or DSNs.
                 logger.warning("Lease recovery unavailable: %s", type(exc).__name__)
-            await asyncio.sleep(min(5, max(1, settings.lease_seconds // 3)))
+            # Independent replicas should not synchronize database recovery work.
+            await asyncio.sleep(min(5, max(1, settings.lease_seconds // 3)) * random.uniform(.8, 1.2))
+
+    async def storage_loop(store):
+        while True:
+            try:
+                await store.blobs.expire_inputs(limit=100)
+                await store.blobs.collect_orphans(limit=100, grace_seconds=300)
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                STORAGE_ERRORS.inc()
+                logger.warning('Storage maintenance unavailable: %s', type(exc).__name__)
+            await asyncio.sleep(random.uniform(25, 35))
 
     @asynccontextmanager
     async def lifespan(app):
@@ -101,16 +117,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         await pool.open(wait=True, timeout=30)
         try:
             async with pool.connection() as conn:
-                await verify_schema(conn, minimum_version=3 if settings.sql_claim_enabled else 2 if settings.sql_completion_enabled else 1)
-            app.state.pool, app.state.store, app.state.settings = pool, Store(pool, settings), settings
+                schema_version = await verify_schema(conn, minimum_version=settings.minimum_schema_version())
+            app.state.pool, app.state.store, app.state.settings = pool, Store(pool, settings, schema_version=schema_version), settings
             app.state.worker_tokens = worker_tokens
             reaper = asyncio.create_task(recovery_loop(app.state.store), name="lease-recovery")
+            collector = (asyncio.create_task(storage_loop(app.state.store), name='storage-maintenance')
+                         if settings.blob_gc_enabled and app.state.store.blobs else None)
             try:
                 yield
             finally:
                 reaper.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
                     await reaper
+                if collector:
+                    collector.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await collector
         finally:
             await pool.close()
 
@@ -119,6 +141,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.exception_handler(APIError)
     async def api_error(request, exc):
         return error_response(exc.status, exc.message, exc.code)
+
+    @app.exception_handler(BlobStorageError)
+    async def storage_error(request, exc):
+        if isinstance(exc, BlobQuotaExceeded):
+            return error_response(429, str(exc), exc.code)
+        if isinstance(exc, BlobExpired):
+            return error_response(410, 'Input retention expired', 'input_expired')
+        if isinstance(exc, BlobNotFound):
+            return error_response(404, 'Input file not found', 'not_found')
+        response = error_response(503, 'Artifact storage temporarily unavailable', 'storage_unavailable')
+        response.headers['Retry-After'] = '1'
+        return response
+
+    @app.exception_handler(psycopg.Error)
+    async def fenced_database_error(request, exc):
+        # v6 dispatch guards also fence legacy Python claim transactions during
+        # rolling upgrades. Match the status of the SQL-call translation.
+        if exc.sqlstate == 'BF409':
+            return error_response(409, 'Lease or runtime identity changed; discard this attempt', 'stale_attempt')
+        logger.error('Database operation failed: %s', type(exc).__name__)
+        return error_response(500, 'Database operation failed', 'internal_error')
 
     async def database_unavailable(request, exc):
         logger.warning("Database request unavailable: %s", type(exc).__name__)
@@ -193,7 +236,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         try:
             async with asyncio.timeout(settings.readiness_timeout_seconds):
                 async with request.app.state.pool.connection() as conn:
-                    await verify_schema(conn, minimum_version=3 if settings.sql_claim_enabled else 2 if settings.sql_completion_enabled else 1)
+                    await verify_schema(conn, minimum_version=settings.minimum_schema_version())
                     row = await one(conn, "SELECT NOT pg_is_in_recovery() AND current_setting('transaction_read_only')='off' AS writable")
                     if not row["writable"]:
                         raise RuntimeError("Primary database is not writable")
@@ -222,8 +265,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def file_content(fid: str, request: Request, tenant_id: str = Depends(tenant)):
         store = request.app.state.store
         file = await store.file(tenant_id, fid)
+        chunks = store.file_chunks(tenant_id, file)
+        sentinel = object()
+        try:
+            first = await anext(chunks, sentinel)
+        except BaseException:
+            await chunks.aclose()
+            raise
+
+        async def stream():
+            try:
+                if first is not sentinel:
+                    yield first
+                async for chunk in chunks:
+                    yield chunk
+            finally:
+                await chunks.aclose()
         # Never interpolate the untrusted upload filename into response headers.
-        return StreamingResponse(store.file_chunks(tenant_id, file), media_type="application/x-ndjson", headers={"Content-Disposition": f'attachment; filename="{fid}.jsonl"'})
+        return StreamingResponse(stream(), media_type="application/x-ndjson", headers={"Content-Disposition": f'attachment; filename="{fid}.jsonl"'})
 
     @app.post("/v1/batches")
     async def create_batch(body: CreateBatch, request: Request, tenant_id: str = Depends(tenant), idempotency_key: str | None = Header(default=None)):

@@ -17,7 +17,7 @@ from psycopg.rows import dict_row
 
 from .config import get_settings
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 7
 MIGRATION_LOCK = 1936150117
 SCHEMA_SQL = Path(__file__).with_name("schema.sql").read_text()
 SCHEMA_CHECKSUM = hashlib.sha256(SCHEMA_SQL.encode()).hexdigest()
@@ -26,6 +26,11 @@ SQL_CLAIM_SQL = Path(__file__).with_name("migrations").joinpath("0003_sql_claim.
 MIGRATIONS = ((1, SCHEMA_SQL, SCHEMA_CHECKSUM),
               (2, SQL_COMPLETION_SQL, hashlib.sha256(SQL_COMPLETION_SQL.encode()).hexdigest()),
               (3, SQL_CLAIM_SQL, hashlib.sha256(SQL_CLAIM_SQL.encode()).hexdigest()))
+for version, filename in ((4, '0004_sql_failure_recovery.sql'),
+                          (5, '0005_blob_storage.sql'), (6, '0006_cost_scheduler.sql'),
+                          (7, '0007_runtime_registration_guard.sql')):
+    statement = Path(__file__).with_name('migrations').joinpath(filename).read_text()
+    MIGRATIONS += ((version, statement, hashlib.sha256(statement.encode()).hexdigest()),)
 
 
 class SchemaMismatch(RuntimeError):

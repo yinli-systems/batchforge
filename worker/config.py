@@ -1,11 +1,14 @@
 """Validated worker configuration. No tenant-controlled inference destinations."""
 from __future__ import annotations
 
+import json
 import os
 import socket
 import uuid
 from dataclasses import dataclass
 from urllib.parse import urlsplit
+
+from backend.scheduling import validate_profile
 
 
 def _int(name: str, default: int) -> int:
@@ -43,6 +46,7 @@ class Settings:
     metrics_host: str = "127.0.0.1"
     metrics_port: int = 9101
     inference_api_key: str = ""
+    scheduling_profile: dict | None = None
 
     @property
     def control_origins(self) -> tuple[str, ...]:
@@ -93,6 +97,8 @@ class Settings:
             metrics_host=os.environ.get("WORKER_METRICS_HOST", "127.0.0.1"),
             metrics_port=_int("WORKER_METRICS_PORT", 9101),
             inference_api_key=os.environ.get("INFERENCE_API_KEY", ""),
+            scheduling_profile=(validate_profile(json.loads(os.environ["SCHEDULER_PROFILE_JSON"]))
+                                if os.environ.get("SCHEDULER_PROFILE_JSON", "").strip() else None),
         )
         if settings.slots < 1:
             raise ValueError("WORKER_TOKEN_BUDGET must fit at least one ENGINE_MAX_MODEL_LEN")

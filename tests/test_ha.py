@@ -22,7 +22,7 @@ import pytest
 
 from backend.app import create_app
 from backend.config import Settings
-from backend.migrate import SchemaMismatch, migrate_database
+from backend.migrate import SchemaMismatch, migrate_database, SCHEMA_VERSION
 
 DSN = os.getenv("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not DSN, reason="Set TEST_DATABASE_URL for real PostgreSQL HA tests")
@@ -63,13 +63,13 @@ def settings(database, **extra):
 def test_serialized_migration_and_verify_only_api_startup(database):
     with ThreadPoolExecutor(max_workers=2) as pool:
         applied = list(pool.map(lambda _: migrate_database(database, API_KEY), range(2)))
-    assert sorted(applied) == [[], [1, 2, 3]]
+    assert sorted(applied) == [[], list(range(1, SCHEMA_VERSION + 1))]
     # API replicas need no tenant bootstrap secret and do no DDL or key writes.
     with TestClient(create_app(settings(database))) as first, TestClient(create_app(settings(database))) as second:
         assert first.get("/readyz").status_code == second.get("/readyz").status_code == 200
         assert second.get("/v1/models", headers=PUBLIC).status_code == 200
     with psycopg.connect(database) as conn:
-        assert conn.execute("SELECT count(*) FROM batchforge_schema_migrations").fetchone()[0] == 3
+        assert conn.execute("SELECT count(*) FROM batchforge_schema_migrations").fetchone()[0] == SCHEMA_VERSION
         assert conn.execute("SELECT count(*) FROM api_keys").fetchone()[0] == 1
 
 

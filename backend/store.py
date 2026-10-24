@@ -5,6 +5,8 @@ The attempt token is a fencing token, not a request authentication credential.
 """
 import hashlib
 import json
+import logging
+import os
 import secrets
 from datetime import datetime, timezone
 
@@ -12,6 +14,8 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from .validation import body_hash, validate_rows, validate_usage
+from .scheduling import estimate_work, profile_from_metadata
+from .blob_storage import BlobCatalog, LocalBlobStore, S3BlobStore, BlobExpired
 
 
 class APIError(Exception):
@@ -62,8 +66,23 @@ async def one(conn, sql, params=()):
 
 
 class Store:
-    def __init__(self, pool, settings):
+    def __init__(self, pool, settings, *, schema_version=None):
         self.pool, self.settings = pool, settings
+        self.schema_version = schema_version or settings.minimum_schema_version()
+        self.blobs = None
+        if settings.blob_storage_backend != 'inline':
+            if settings.blob_storage_backend == 'local':
+                adapter = LocalBlobStore(settings.blob_storage_root)
+            else:
+                adapter = S3BlobStore.from_credentials(
+                    endpoint_url=os.environ['AWS_ENDPOINT_URL_S3'], region=os.environ['AWS_REGION'],
+                    bucket=settings.blob_storage_bucket, access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                    secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+            self.blobs = BlobCatalog(pool, adapter,
+                max_stored_input_bytes_per_tenant=settings.max_stored_input_bytes_per_tenant,
+                max_queued_tasks_per_tenant=settings.max_queued_tasks_per_tenant,
+                upload_reservation_seconds=settings.upload_reservation_seconds,
+                input_retention_seconds=settings.input_retention_seconds)
 
     async def tenant(self, key: str):
         digest = hashlib.sha256(key.encode()).hexdigest()
@@ -74,7 +93,9 @@ class Store:
         return row["tenant_id"]
 
     async def upload(self, tenant, filename, content):
-        validate_rows(content, self.settings)
+        rows = validate_rows(content, self.settings)
+        if self.blobs:
+            return file_view(await self.blobs.put_input(tenant, filename[:255], content, len(rows)))
         async with self.pool.connection() as conn:
             row = await one(conn, "INSERT INTO files(id,tenant_id,filename,kind,content,bytes) VALUES(%s,%s,%s,'input',%s,%s) RETURNING *", (identifier("file"), tenant, filename[:255], content, len(content)))
         return file_view(row)
@@ -95,7 +116,19 @@ class Store:
         if key:
             await conn.execute("UPDATE idempotency SET response=%s WHERE tenant_id=%s AND scope=%s AND key=%s", (Jsonb(response), tenant, scope, key))
 
-    async def create_rows(self, conn, tenant, input_file_id, rows, metadata):
+    async def committed_response(self, tenant, scope, key, body):
+        """Fast replay before external I/O; the write transaction rechecks it."""
+        if key is None:
+            return None
+        if not 1 <= len(key) <= 128:
+            raise APIError(400, 'Idempotency-Key must contain 1 to 128 characters')
+        async with self.pool.connection() as conn:
+            row = await one(conn, 'SELECT body_hash,response FROM idempotency WHERE tenant_id=%s AND scope=%s AND key=%s', (tenant, scope, key))
+        if row and row['body_hash'] != body_hash(body):
+            raise APIError(409, 'Idempotency key was used with a different request', 'idempotency_conflict')
+        return row['response'] if row else None
+
+    async def create_rows(self, conn, tenant, input_file_id, rows, metadata, runtime_source=None):
         model = rows[0]["body"]["model"] if rows else None
         if model not in self.settings.served_models() or any(task["body"]["model"] != model for task in rows):
             raise APIError(400, "Batch must use one configured model")
@@ -112,12 +145,31 @@ class Store:
         await conn.execute("UPDATE tenant_queues SET pending_count=pending_count+%s,next_ready_at=LEAST(next_ready_at,clock_timestamp()) WHERE tenant_id=%s AND model=%s", (len(rows), tenant, model))
         bid = identifier("batch")
         row = await one(conn, "INSERT INTO batches(id,tenant_id,input_file_id,model,status,metadata,total_count,pending_count) VALUES(%s,%s,%s,%s,'in_progress',%s,%s,%s) RETURNING *", (bid, tenant, input_file_id, model, Jsonb(metadata), len(rows), len(rows)))
+        if self.schema_version >= 6 and runtime_source is not None:
+            await conn.execute('UPDATE batches SET runtime_fingerprint=%s,runtime_compatibility_scope=%s WHERE id=%s',
+                (runtime_source.get('runtime_fingerprint'), runtime_source.get('runtime_compatibility_scope', 'legacy_unverified'), bid))
         async with conn.cursor() as cursor:
-            await cursor.executemany("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts) VALUES(%s,%s,%s,%s,%s,%s,'pending',%s)", [(identifier("task"), tenant, bid, task["custom_id"], model, Jsonb(task["body"]), self.settings.max_attempts) for task in rows])
+            if self.settings.scheduler_policy == 'legacy':
+                await cursor.executemany("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts) VALUES(%s,%s,%s,%s,%s,%s,'pending',%s)", [(identifier("task"), tenant, bid, task["custom_id"], model, Jsonb(task["body"]), self.settings.max_attempts) for task in rows])
+            else:
+                values = []
+                for task in rows:
+                    work = estimate_work(task['body'])
+                    values.append((identifier('task'), tenant, bid, task['custom_id'], model,
+                        Jsonb(task['body']), self.settings.max_attempts, work['estimated_input_tokens'],
+                        work['estimated_output_tokens'], work['estimate_source']))
+                await cursor.executemany("INSERT INTO tasks(id,tenant_id,batch_id,custom_id,model,body,status,max_attempts,estimated_input_tokens,estimated_output_tokens,estimate_source) VALUES(%s,%s,%s,%s,%s,%s,'pending',%s,%s,%s,%s)", values)
         return batch_view(row)
 
     async def create(self, tenant, body, key):
         scope = "/v1/batches"
+        external_rows = None
+        if self.blobs:
+            previous = await self.committed_response(tenant, scope, key, body)
+            if previous is not None:
+                return previous
+            # Network object I/O must not hold an idempotency lock or pool slot.
+            external_rows = validate_rows(await self.blobs.read_input(tenant, body['input_file_id']), self.settings)
         async with self.pool.connection() as conn, conn.transaction():
             previous = await self.idempotency(conn, tenant, scope, key, body)
             if previous is not None:
@@ -125,7 +177,9 @@ class Store:
             file = await one(conn, "SELECT * FROM files WHERE id=%s AND tenant_id=%s AND kind='input'", (body["input_file_id"], tenant))
             if not file:
                 raise APIError(404, "Input file not found", "not_found")
-            rows = validate_rows(bytes(file["content"]), self.settings)
+            rows = external_rows if external_rows is not None else validate_rows(bytes(file['content']), self.settings)
+            if self.blobs:
+                await self.blobs.admit_batch(conn, tenant, file['id'], len(rows))
             result = await self.create_rows(conn, tenant, file["id"], rows, body.get("metadata", {}))
             await self.remember(conn, tenant, scope, key, result)
             return result
@@ -200,6 +254,46 @@ class Store:
 
     async def retry(self, tenant, bid, key):
         scope = f"/v1/batches/{bid}/retry"
+        if self.blobs:
+            previous = await self.committed_response(tenant, scope, key, {})
+            if previous is not None:
+                return previous
+            async with self.pool.connection() as conn:
+                source = await one(conn, "SELECT * FROM batches WHERE id=%s AND tenant_id=%s", (bid, tenant))
+                if not source:
+                    raise APIError(404, 'Batch not found', 'not_found')
+                if source['status'] == 'in_progress':
+                    raise APIError(409, 'Wait until source batch is terminal before retrying', 'batch_not_terminal')
+                if source['model'] not in self.settings.served_models():
+                    raise APIError(409, 'Source model is not currently served', 'model_unavailable')
+                rows = await (await conn.execute("SELECT custom_id,body FROM tasks WHERE batch_id=%s AND status='failed' ORDER BY id", (bid,))).fetchall()
+            if not rows:
+                raise APIError(409, 'Source batch has no failed tasks', 'no_failed_tasks')
+            content = b''.join((json.dumps({'custom_id': r['custom_id'], 'method': 'POST',
+                'url': '/v1/chat/completions', 'body': r['body']}, ensure_ascii=False)+'\n').encode() for r in rows)
+            file = await self.blobs.put_input(tenant, f'{bid}-retry.jsonl', content, len(rows))
+            submitted = False
+            try:
+                async with self.pool.connection() as conn, conn.transaction():
+                    previous = await self.idempotency(conn, tenant, scope, key, {})
+                    if previous is not None:
+                        result = previous
+                    else:
+                        await self.blobs.admit_batch(conn, tenant, file['id'], len(rows))
+                        result = await self.create_rows(conn, tenant, file['id'], rows, {'retry_of': bid}, runtime_source=source)
+                        await self.remember(conn, tenant, scope, key, result)
+                submitted = result['input_file_id'] == file['id']
+                return result
+            finally:
+                # Only unsubmitted staging files qualify. An uncertain COMMIT
+                # is safe: a committed batch reference prevents cleanup.
+                if not submitted:
+                    try:
+                        await self.blobs.discard_unsubmitted(tenant, file['id'])
+                    except Exception as exc:
+                        # Bounded retention cleans up later; cleanup must not
+                        # hide a committed idempotent response or original error.
+                        logging.getLogger('batchforge').warning('Staged input cleanup unavailable: %s', type(exc).__name__)
         async with self.pool.connection() as conn, conn.transaction():
             previous = await self.idempotency(conn, tenant, scope, key, {})
             if previous is not None:
@@ -217,7 +311,7 @@ class Store:
             content = b"".join((json.dumps({"custom_id": row["custom_id"], "method": "POST", "url": "/v1/chat/completions", "body": row["body"]}, ensure_ascii=False) + "\n").encode() for row in rows)
             fid = identifier("file")
             await conn.execute("INSERT INTO files(id,tenant_id,filename,kind,content,bytes) VALUES(%s,%s,%s,'input',%s,%s)", (fid, tenant, f"{bid}-retry.jsonl", content, len(content)))
-            result = await self.create_rows(conn, tenant, fid, rows, {"retry_of": bid})
+            result = await self.create_rows(conn, tenant, fid, rows, {"retry_of": bid}, runtime_source=source)
             await self.remember(conn, tenant, scope, key, result)
             return result
 
@@ -226,10 +320,17 @@ class Store:
             row = await one(conn, "SELECT * FROM files WHERE id=%s AND tenant_id=%s", (fid, tenant))
         if not row:
             raise APIError(404, "File not found", "not_found")
+        if row.get('storage_deleted_at'):
+            raise BlobExpired('Input retention expired')
         return row
 
     async def file_chunks(self, tenant, file):
         if file["kind"] == "input":
+            if self.blobs:
+                async with self.blobs.open_input(tenant, file['id']) as chunks:
+                    async for chunk in chunks:
+                        yield chunk
+                return
             data = bytes(file["content"])
             for offset in range(0, len(data), 65536):
                 yield data[offset:offset + 65536]
@@ -249,11 +350,26 @@ class Store:
 
     async def register(self, body):
         worker_id = body.get("worker_id") or identifier("worker")
+        try:
+            profile = profile_from_metadata(body.get('metadata', {}))
+        except ValueError as exc:
+            raise APIError(400, str(exc), 'invalid_scheduler_profile') from None
+        if self.settings.scheduler_policy == 'cost_aware' and profile is None:
+            raise APIError(400, 'Cost-aware workers require an operator scheduling profile', 'scheduler_profile_required')
         async with self.pool.connection() as conn:
-            await conn.execute("INSERT INTO workers(id,name,model,concurrency,metadata) VALUES(%s,%s,%s,%s,%s) ON CONFLICT(id) DO UPDATE SET name=excluded.name,model=excluded.model,concurrency=excluded.concurrency,metadata=excluded.metadata,last_seen_at=clock_timestamp()", (worker_id, body["name"], body["model"], body["concurrency"], Jsonb(body.get("metadata", {}))))
+            async with conn.transaction():
+                await conn.execute("INSERT INTO workers(id,name,model,concurrency,metadata) VALUES(%s,%s,%s,%s,%s) ON CONFLICT(id) DO UPDATE SET name=excluded.name,model=excluded.model,concurrency=excluded.concurrency,metadata=excluded.metadata,last_seen_at=clock_timestamp()", (worker_id, body["name"], body["model"], body["concurrency"], Jsonb(body.get("metadata", {}))))
+                if self.schema_version >= 6:
+                    profile = profile or {}
+                    await conn.execute("UPDATE workers SET scheduler_profile_id=%s,runtime_fingerprint=%s,prefill_tokens_per_second=%s,decode_tokens_per_second=%s,hourly_cost_usd=%s WHERE id=%s",
+                        tuple(profile.get(key) for key in ('profile_id','runtime_fingerprint','prefill_tokens_per_second','decode_tokens_per_second','hourly_cost_usd')) + (worker_id,))
         return {"worker_id": worker_id, "heartbeat_interval_seconds": max(1, self.settings.lease_seconds // 3), "lease_seconds": self.settings.lease_seconds}
 
     async def claim(self, worker_id, model, limit):
+        if self.settings.scheduler_policy != 'legacy':
+            return await self.sql_attempt('claim_scheduled', (worker_id, model, limit,
+                self.settings.lease_seconds, self.settings.scheduler_policy,
+                self.settings.scheduler_aging_seconds, self.settings.scheduler_worker_freshness_seconds))
         if self.settings.sql_claim_enabled:
             return await self.sql_attempt("claim", (worker_id, model, limit, self.settings.lease_seconds))
         async with self.pool.connection() as conn, conn.transaction():
@@ -345,6 +461,9 @@ class Store:
             "heartbeat": "SELECT public.batchforge_heartbeat(%s,%s,%s,%s) AS result",
             "complete": "SELECT public.batchforge_complete(%s,%s,%s,%s,%s,%s) AS result",
             "claim": "SELECT public.batchforge_claim(%s,%s,%s,%s) AS result",
+            "claim_scheduled": "SELECT public.batchforge_claim_scheduled(%s,%s,%s,%s,%s,%s,%s) AS result",
+            "fail": "SELECT public.batchforge_fail(%s,%s,%s,%s,%s,%s) AS result",
+            "recover": "SELECT public.batchforge_recover(%s,%s,%s) AS result",
         }
         try:
             async with self.pool.connection() as conn:
@@ -373,6 +492,8 @@ class Store:
         return target
 
     async def fail(self, tid, worker_id, token, error, retryable):
+        if self.settings.sql_recovery_enabled:
+            return await self.sql_attempt('fail', (tid, worker_id, token, Jsonb(error), retryable, self.settings.retry_base_seconds))
         async with self.pool.connection() as conn, conn.transaction():
             await conn.execute("UPDATE workers SET last_seen_at=clock_timestamp() WHERE id=%s", (worker_id,))
             task = await self.locked_task(conn, tid)
@@ -383,6 +504,10 @@ class Store:
 
     async def recover(self):
         """Bounded, indexed sweep; safe in every API replica."""
+        if self.settings.sql_recovery_enabled:
+            result = await self.sql_attempt('recover', (self.settings.recovery_task_limit,
+                self.settings.recovery_batch_limit, self.settings.retry_base_seconds))
+            return result['recovered']
         recovered = 0
         async with self.pool.connection() as conn, conn.transaction():
             expired_batches = await (await conn.execute("SELECT id,tenant_id,model FROM batches WHERE status='in_progress' AND expires_at<=clock_timestamp() ORDER BY expires_at LIMIT 8")).fetchall()
