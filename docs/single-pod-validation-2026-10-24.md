@@ -167,6 +167,48 @@ by 73.6%, reduced P95 by 30.1% and P99 by 40.5%, and reduced allocated cost by
 The concurrency and fitted scheduler profile both changed; this is not an
 isolated kernel improvement or a replicated statistical estimate.
 
+Exact-token admission then raised the claim limit to 64 while reserving each
+request's actual rendered prompt plus its maximum output, rounded to 16-token
+blocks. Fresh startup measured 314,096 KV tokens; the 95% guard selected a
+298,384-token worker budget. The same fixed100 completed in 244.281180 seconds,
+100/100 accepted once, with the same exact input/output totals and no retries.
+
+| Qwen235B configuration | Seconds / 100 | Tasks/s | Completion P50 | P95 | P99 | Allocated $ / million |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Static8 | 809.616 | 0.123515 | 71.077 | 650.589 | 767.970 | 36,207.82 |
+| Static16 | 466.369 | 0.214423 | 52.915 | 454.555 | 456.580 | 20,857.04 |
+| Adaptive64, custom collective | 244.281 | 0.409364 | 54.408 | 220.535 | 240.953 | 10,924.80 |
+
+The process-lifetime reservation peak was 298,240 tokens, within the budget;
+239 worker samples reported no pause or observation error. Claimed work peaked
+at 64, while sampled engine-running work peaked at 51 and physical KV cache
+usage at 83.01%. These are different populations. Compared with static16,
+throughput improved 1.909x and P95/P99 fell 51.5%/47.2%, but P50 increased 2.8%
+and mean engine TTFT rose from 0.942 to 4.243 seconds. More batching favors
+batch makespan and tail completion here, not every interactive latency metric.
+The copied static16 scheduling rates and slot-hour price were not recalibrated
+or divided by 64; allocated costs use measured whole-Pod elapsed time.
+
+A separate natural-output public SQuAD answer cohort completed 20/20 in
+7.956454 seconds, using 21,783 input and 267 output tokens with no truncation.
+All 20 satisfied the JSON contract; exact match was 16/20 (80%) and token F1
+87.397%. The public dataset can be training-contaminated, the sample is small,
+and this is not an official SQuAD score or general customer-quality guarantee.
+It is independent of the fixed-length throughput measurements and future
+automatic archive validation.
+
+An untimed four-request CUDA capture verified all four TP ranks and physical
+CUDA devices. The original capture's strict file mapper rejected a small,
+CPU-only engine-leader trace; the original failed report remains preserved.
+An offline continuation analyzed those same five hash-pinned files, with no
+new inference/profile calls. Overlap-aware per-rank unions show substantial
+custom-collective activity (about 0.919/3.734/2.894/3.025 seconds across the four
+ranks), including possible waiting/spin. These are neither Tensor Core
+utilization nor measured network bandwidth. The separate four-GPU MoE search
+rejected every alternate tiling at its strict BF16 bit-identity gate, before
+timing alternatives. No tuned kernel configuration was installed; ratios of
+1.0 represent the remaining default, not evidence that alternatives were slower.
+
 The 120B and 235B matrices use different tokenizer-specific text boundaries and
 therefore different input bytes, although their requested token-length grid
 and the fixed100 actual input/output totals match. Comparing the optimized
@@ -190,6 +232,13 @@ At 52 constantly billed Pods this would be $20,092.80/day before database,
 storage, networking and operational overhead. The $16.10 figure is not a current
 invoice, marginal inference cost or sales price. A measured duty cycle and an
 actual provider quote are needed before making a spend commitment.
+
+For the larger Qwen235B adaptive100 workload, the same arithmetic gives about
+35,369 tasks/day at 100% duty. Ten million would require 283 four-GPU Pods under
+ideal linear scaling, or 354 at 80% duty, before control-plane/storage/network
+constraints. This is a finite-burst extrapolation, not measured daily or
+multi-Pod capacity. Its much larger allocation per million also shows why task
+token distribution and model choice must accompany every capacity claim.
 
 The next scalability requirements are independently deployed compute and entry
 points, multiple calibrated GPU pools, per-tenant admission and retention,

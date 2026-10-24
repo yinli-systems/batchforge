@@ -112,6 +112,9 @@ def command(args, env: dict) -> list[str]:
     chunked_prefill = env.get("ENGINE_ENABLE_CHUNKED_PREFILL", "0")
     if chunked_prefill not in ("0", "1"):
         raise ValueError("ENGINE_ENABLE_CHUNKED_PREFILL must be 0 or 1")
+    disable_custom_reduce = env.get("ENGINE_DISABLE_CUSTOM_ALL_REDUCE", "0")
+    if disable_custom_reduce not in ("0", "1"):
+        raise ValueError("ENGINE_DISABLE_CUSTOM_ALL_REDUCE must be 0 or 1")
     # vLLM allocates only the configured fraction of *total* memory. The default
     # is deliberately small for shared Runpod hosts; inspect free memory first.
     result = [python, "-m", "vllm.entrypoints.openai.api_server",
@@ -131,6 +134,8 @@ def command(args, env: dict) -> list[str]:
         result.extend(["--generation-config", env["ENGINE_GENERATION_CONFIG"]])
     if chunked_prefill == "1":
         result.append("--enable-chunked-prefill")
+    if disable_custom_reduce == "1":
+        result.append("--disable-custom-all-reduce")
     if env.get("ENGINE_ENABLE_PREFIX_CACHING", "0") == "1":
         result.append("--enable-prefix-caching")
     else:

@@ -117,7 +117,14 @@ def test_readonly_run_snapshot_captured_lease_and_accepted_usage_invariant():
             # Simulate an externally corrupted accepted-attempt ledger in this
             # disposable DB: the observer must detect it, not declare success.
             with psycopg.connect(dsn, autocommit=True) as owner:
-                owner.execute("INSERT INTO attempts(token,task_id,batch_id,tenant_id,worker_id,number,status,prompt_tokens,completion_tokens,finished_at) SELECT 'corruption-test-token',task_id,batch_id,tenant_id,worker_id,999,'completed',prompt_tokens,completion_tokens,clock_timestamp() FROM attempts WHERE token=%s", (secondary["attempt_token"],))
+                # v9 now prevents this corruption through the normal SQL path.
+                # Only this disposable owner fixture disables that guard to
+                # exercise the observer's independent detection capability.
+                owner.execute('ALTER TABLE attempts DISABLE TRIGGER retention_attempt_guard')
+                try:
+                    owner.execute("INSERT INTO attempts(token,task_id,batch_id,tenant_id,worker_id,number,status,prompt_tokens,completion_tokens,finished_at) SELECT 'corruption-test-token',task_id,batch_id,tenant_id,worker_id,999,'completed',prompt_tokens,completion_tokens,clock_timestamp() FROM attempts WHERE token=%s", (secondary["attempt_token"],))
+                finally:
+                    owner.execute('ALTER TABLE attempts ENABLE TRIGGER retention_attempt_guard')
             with pytest.raises(ProbeFailure, match="duplicate_or_missing_accepted_usage"):
                 progress.snapshot()
     finally:

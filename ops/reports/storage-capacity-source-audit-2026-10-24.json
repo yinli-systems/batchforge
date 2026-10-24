@@ -1,0 +1,178 @@
+{
+  "arithmetic_only": {
+    "average_accepted_completions_per_second": 115.74074074074075,
+    "maximum_mean_serialized_work_seconds_for_one_dominant_hot_key_before_competing_operations": 0.00864,
+    "minimum_new_attempt_rows_per_day_without_retirement": 10000000,
+    "minimum_new_task_rows_per_day_without_retirement": 10000000,
+    "not_measured": [
+      "actual lock hold time",
+      "physical bytes per row",
+      "sustainable completion throughput",
+      "archiver drain throughput"
+    ],
+    "tasks_per_24_hours": 10000000
+  },
+  "audit_type": "read-only source architecture/capacity audit; no new benchmark or database observation",
+  "base_commit": "3d172cfde6369631834e36ec43d9c0b36f08e174",
+  "captured_at": "2026-10-24T02:46:51.453890+00:00",
+  "code_defaults_not_deployed_values": {
+    "archive_purge_rows": 1000,
+    "input_retention_seconds": 86400,
+    "max_archived_bytes_per_tenant": 1073741824,
+    "max_attempts": 3,
+    "max_output_tokens": 4096,
+    "max_queued_tasks_per_tenant": 100000,
+    "max_request_bytes": 131072,
+    "max_stored_input_bytes_per_tenant": 268435456,
+    "max_tasks_per_batch": 10000,
+    "max_upload_bytes": 10485760
+  },
+  "gaps": [
+    {
+      "evidence": [
+        "backend/result_archival.py:164-165",
+        "backend/result_archival.py:403-413",
+        "backend/app.py:137-152",
+        "backend/store.py:137-190",
+        "backend/store.py:447-459",
+        "backend/migrations/0008_result_archival.sql:85"
+      ],
+      "finding": "Archive quota is checked only during background chunk publication, never as future-output credit in upload/create/complete. Ready archives have no automatic expiry; full archive quota can leave accepted body/response payload accumulating in PostgreSQL while more work is admitted.",
+      "id": "result-admission-gap",
+      "priority": 1
+    },
+    {
+      "evidence": [
+        "backend/result_archival.py:304-311",
+        "backend/schema.sql:60-110",
+        "backend/migrations/0005_blob_storage.sql:68-69",
+        "backend/migrations/0008_result_archival.sql:84-85",
+        "backend/blob_storage.py:519",
+        "backend/result_archival.py:445-448"
+      ],
+      "finding": "Successful purge preserves all task/attempt rows, batch/file/idempotency history and generation/chunk tombstones. Failed/cancelled bodies and errors are not cleared. There is no retained-history count/age cap.",
+      "id": "history-growth",
+      "priority": 1
+    },
+    {
+      "evidence": [
+        "backend/app.py:112-152",
+        "backend/result_archival.py:259",
+        "backend/result_archival.py:304"
+      ],
+      "finding": "Publisher selects at most4 batches per API sweep, processes serially then sleeps25-35s; each purge call is one bounded page. No unarchived-byte/age/global-DB-high-water submission gate or measured backlog-drain capacity is implemented.",
+      "id": "maintenance-throughput",
+      "priority": 2
+    },
+    {
+      "evidence": [
+        "backend/migrations/0002_sql_completion.sql:59-85",
+        "backend/migrations/0002_sql_completion.sql:19-36",
+        "backend/migrations/0006_cost_scheduler.sql:125-156"
+      ],
+      "finding": "Completion still serializes per worker row, tenant/model queue row and batch counter row. Additional API replicas do not shard these locks. One-statement WAN transit is not itself the server lock hold time.",
+      "id": "single-primary-hot-keys",
+      "priority": 2,
+      "validation_needed": "Disposable real-PG rate test with completion+claim+heartbeat+archiver/readers, one hot key vs many keys, observe lock/WAL/pool statistics; no115.74/s qualification was run for this audit"
+    },
+    {
+      "evidence": [
+        "backend/config.py:36-38",
+        "backend/store.py:447-461"
+      ],
+      "finding": "SQL feature flags defaultFalse; the fallback completion uses multiple awaited SQL statements inside an explicit transaction. Runtime activation must be confirmed separately before applying SQL-path claims.",
+      "id": "legacy-feature-path",
+      "priority": 2
+    },
+    {
+      "evidence": [
+        "worker/runtime.py:331-364",
+        "backend/app.py:235-255"
+      ],
+      "finding": "The worker buffers the engine HTTP response before JSON/usage validation. General internal HTTP byte limits bound a DB completion write but do not cap the preceding engine-to-worker response buffer.",
+      "id": "engine-response-buffering",
+      "priority": 3
+    }
+  ],
+  "implemented": [
+    {
+      "evidence": [
+        "backend/app.py:235-255",
+        "backend/validation.py:43-57",
+        "backend/validation.py:87-89"
+      ],
+      "property": "Per-request limits apply before writes, including completion report body",
+      "scope": "HTTP bytes/file row count/output cap; not aggregate completed-result bytes"
+    },
+    {
+      "evidence": [
+        "backend/blob_storage.py:278-296",
+        "backend/blob_storage.py:383-399",
+        "backend/store.py:141-151"
+      ],
+      "property": "External input quota and live task credits are transactionally reserved before object I/O",
+      "scope": "tenant serialized input stored+reserved bytes and pending/running+held tasks; inline backend bypasses external input bytes quota"
+    },
+    {
+      "evidence": [
+        "backend/blob_storage.py:507-523",
+        "backend/blob_storage.py:525-567",
+        "backend/migrations/0005_blob_storage.sql:68-69"
+      ],
+      "property": "External input expiry and fenced object GC are bounded and read/upload-lease aware",
+      "scope": "object storage quota can be released; SQL file/tombstone rows remain; maintenance enable flag/availability required"
+    },
+    {
+      "evidence": [
+        "backend/result_archival.py:157-173",
+        "backend/result_archival.py:235-247",
+        "backend/result_archival.py:276-312"
+      ],
+      "property": "Archive object bytes are reserved transactionally and completed-payload purge is verified and paged",
+      "scope": "bounded object bytes; safe offload only of completed body/response after ready manifest and reader checks"
+    },
+    {
+      "evidence": [
+        "backend/store.py:447-450",
+        "backend/store.py:464-481",
+        "backend/app.py:159",
+        "backend/app.py:270-277"
+      ],
+      "property": "Enabled SQL completion is one autocommit statement transaction",
+      "scope": "worker authentication adds no DB round trip; SQL completion flag controls selection of this path"
+    }
+  ],
+  "proposed_v9_not_implemented_or_approved": {
+    "atomicity": "Database-owned counters/triggers in the task insert transaction cover concurrent/mixed APIs; over-cap insertion aborts whole batch/idempotency transaction.",
+    "bootstrap": "Exact retained count and existing actual payload plus active response reservations; permit existing totals over limits while refusing new insert, leaving reads/reserved completions/purge available.",
+    "completion": "Server canonical response-size check against pre-reserved bound; no ledger update or extra tenant lock on normal completion.",
+    "lock_order": "Supported creation and archive purge already hold tenant lock first. Keep normal completion worker->queue->batch->task without ledger update; explicit admin deletion must prelock tenant/ledger before rows.",
+    "no_physical_storage_claim": "Canonical JSON quota is a logical admission bound, not exact PostgreSQL heap/TOAST/index/WAL or provider physical-storage accounting.",
+    "payload_bound": "Before task insertion charge exact canonical body bytes plus a fixed maximum response reservation; keep charge on complete/fail/cancel, release only proven cleared body/response or explicit deletion.",
+    "remaining_metadata_boundaries": [
+      "standalone input file metadata",
+      "idempotency operations without new tasks",
+      "archive-generation retry tombstones",
+      "task/attempt error JSON must have an explicit byte cap or separate charge"
+    ],
+    "task_metadata_bound": "Per-tenant retained_tasks hard cap counts active+success+failed+cancelled; only explicit approved deletion releases count."
+  },
+  "remote_database_operations": false,
+  "runtime_configuration_read": false,
+  "source_sha256": {
+    "backend/app.py": "23414b31cfa9059db4971ff5454d1c16dd668ce5147ed5fc5966c6a755f81270",
+    "backend/blob_storage.py": "807e55b40e5a805052c92828358c50d17b932a1320e0bdefaf12160ac894789d",
+    "backend/config.py": "3a3c5b50ebfce51387b3c3064b16e83bc7c1c876f38db3808fc4bd55b15cb6a6",
+    "backend/migrations/0002_sql_completion.sql": "68969dd3e9025787fc27e300674f9498f4065c35a8c4e1cf62f7bbfc67a9fc7b",
+    "backend/migrations/0004_sql_failure_recovery.sql": "5c401e019eaec4491b281169522febe94878cb2c465242820d88d761eeb83fb0",
+    "backend/migrations/0005_blob_storage.sql": "424e4e0426f6bb456c503fd731e3d1e717f3a8485c28256f38d6608dbbdf9339",
+    "backend/migrations/0006_cost_scheduler.sql": "a44389417577344ef85745e5e299b35a764b40483983197993eeafe6904e90e3",
+    "backend/migrations/0008_result_archival.sql": "5ffedba95c7147bdf973052fea000bf268a852e9136f5b2e9e66740040f3727d",
+    "backend/result_archival.py": "bf32cbe1f4d4d7d2bb1e9e731a0e6e7e0649974bb2e4fb6b25e48fb3984a78be",
+    "backend/schema.sql": "9dbdaa87eaac5ceb91caf1062f6d0d92c519fa661db667b5f334691659c2b219",
+    "backend/store.py": "83cd4732a3dda3cd6147c4c5d48012db9d7c0283861230e897a8b5c4cd7b4aa1",
+    "backend/validation.py": "c5ab5a80c7c5c8792856a8ce237eca12b4e795ed66610d2d4dc00d98cc16bac3",
+    "worker/runtime.py": "7f9356671ba03e2ce04316942e016cfbd15fb2b0624d865d67785fa8670507c7"
+  },
+  "workloads_started": 0
+}

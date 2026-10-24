@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     result_archive_min_age_seconds: int = Field(default=3600, ge=0, le=2592000)
     result_archive_after: datetime | None = None
     result_archive_purge_rows: int = Field(default=1000, ge=1, le=10000)
+    retention_admission_enabled: bool = False
     frontend_dir: str = "frontend"
 
     @model_validator(mode="after")
@@ -82,6 +83,8 @@ class Settings(BaseSettings):
         return tuple(dict.fromkeys(names))
 
     def minimum_schema_version(self) -> int:
+        if self.retention_admission_enabled:
+            return 9
         if self.result_readers_enabled:
             return 8
         if self.scheduler_policy != 'legacy':

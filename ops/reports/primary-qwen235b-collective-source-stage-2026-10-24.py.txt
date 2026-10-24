@@ -1,0 +1,68 @@
+from pathlib import Path
+from datetime import datetime, timezone
+import ast, hashlib, json, os, tarfile
+import psycopg
+from ops.supervise import load_manifest, private_read, private_write, Manager
+from ops.ha.adaptive_qwen235b import identity
+from ops.ha.finalize_api_policy import values
+from ops.ha.set_scheduler_policy import atomic_bytes
+
+ROOT = Path('/root/batchforge-runtime/app')
+RUN = ROOT / '.runtime/collective-source-v1'
+EXPECTED = {
+ 'ops/manage.py': 'c2d9f7fbe09638f03576bc62b9749b8edf33b441a1a7021b27068de3575a2cfd',
+ 'ops/ha/collective_qwen235b.py': 'c6f928562d99c3eccf66db8ad6d6926f19f475a8ed30b4fb79d64b6a99fdb8f4',
+ 'ops/ha/restore_collective_qwen235b.py': 'e95a06ab89b00739df5adbfb340b8e6faf74c37944b0c6a363ed05d80445e3a9'}
+IDENTITIES = {'api-a': (169861,'33062349'), 'api-b': (169870,'33062526'),
+ 'gateway-edge': (162130,'32805671'), 'engine-qwen235b': (182158,'33391611'),
+ 'worker-qwen235b': (183179,'33398027'), 'supervisor-primary': (183182,'33398187')}
+
+def digest(raw): return hashlib.sha256(raw).hexdigest()
+def main():
+ os.umask(0o077)
+ archive = RUN / 'sources.tar.gz'
+ if archive.is_symlink() or archive.stat().st_mode & 0o077: raise RuntimeError('Private archive required')
+ with tarfile.open(archive, 'r:gz') as tar:
+  entries = tar.getmembers()
+  if {m.name for m in entries} != set(EXPECTED) or len(entries) != len(EXPECTED): raise RuntimeError('Unexpected source archive set')
+  payload = {}
+  for member in entries:
+   if not member.isfile() or member.size > 256*1024: raise RuntimeError('Unexpected source member')
+   raw = tar.extractfile(member).read()
+   if digest(raw) != EXPECTED[member.name]: raise RuntimeError('Reviewed source hash differs')
+   ast.parse(raw); payload[member.name] = raw
+ manifest, services, _ = load_manifest(ROOT / '.runtime/services-primary.json')
+ watchdog = {'role':'supervisor','name':'primary','env_file':str(ROOT.parent/'supervisor.env'),'python':str(ROOT.parent/'venv/bin/python')}
+ all_services = services + [watchdog]
+ before = {s['role']+'-'+s['name']:identity(ROOT,s) for s in all_services}
+ wanted = {key:{'pid':pid,'start_ticks':ticks,'cwd':str(ROOT)} for key,(pid,ticks) in IDENTITIES.items()}
+ if before != wanted: raise RuntimeError('Live PID/start identities changed')
+ manifest_raw = private_read(manifest)
+ environments = {Path(s['env_file']):private_read(Path(s['env_file'])) for s in all_services}
+ api = next(s for s in services if s['role']=='api')
+ env = values(environments[Path(api['env_file'])])
+ with psycopg.connect(env['DATABASE_URL'],connect_timeout=5,options='-c default_transaction_read_only=on -c statement_timeout=5000') as conn:
+  if conn.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]: raise RuntimeError('Platform not drained')
+ if not all(Manager(root=ROOT).readiness(s) for s in services): raise RuntimeError('Services not ready')
+ original = (ROOT/'ops/manage.py').read_bytes()
+ if digest(original) != 'cd15563e36f8a0a269378aff74e1b7bc42e575cb7a9062a73d28519bca3bcd85': raise RuntimeError('Original manager source differs')
+ if any((ROOT/name).exists() for name in EXPECTED if name != 'ops/manage.py'): raise RuntimeError('New controller path already exists')
+ marker = RUN/'once.json'
+ with marker.open('x') as f: json.dump({'started_at':datetime.now(timezone.utc).isoformat(),'pid':os.getpid()}, f)
+ atomic_bytes(RUN/'original-manage.py',original)
+ report = {'phase':'staging','source_before_sha256':digest(original),'source_after_sha256':EXPECTED,
+   'identities_before':before,'manifest_sha256':digest(manifest_raw),
+   'environment_sha256':{str(path):digest(raw) for path,raw in environments.items()},'pyc_evicted':[]}
+ private_write(RUN/'report.json',report)
+ for name,raw in payload.items(): atomic_bytes(ROOT/name,raw)
+ for path in (ROOT/'ops/__pycache__').glob('manage.*.pyc'):
+  if path.is_symlink() or not path.is_file() or path.stat().st_uid != os.geteuid(): raise RuntimeError('Unexpected cached bytecode ownership')
+  path.unlink(); report['pyc_evicted'].append(str(path.relative_to(ROOT)))
+ if private_read(manifest) != manifest_raw or any(private_read(path)!=raw for path,raw in environments.items()): raise RuntimeError('Live configuration changed while staging')
+ if {s['role']+'-'+s['name']:identity(ROOT,s) for s in all_services} != before: raise RuntimeError('Process identity changed while staging')
+ if any(digest((ROOT/name).read_bytes())!=checksum for name,checksum in EXPECTED.items()): raise RuntimeError('Installed source mismatch')
+ report.update(phase='complete',completed_at=datetime.now(timezone.utc).isoformat(),services_unchanged=True)
+ private_write(RUN/'report.json',report)
+ print(json.dumps({'phase':'complete','services_unchanged':True,'report':str(RUN/'report.json')}))
+
+if __name__=='__main__': main()

@@ -14,6 +14,7 @@ import json
 
 from .blob_storage import (BlobRef, BlobStorageError, BlobIntegrityError,
     BlobNotFound, BlobQuotaExceeded, BlobBusy, _id, _one)
+from .auxiliary_admission import collect_expired_read_leases, release_read_lease
 
 
 class ResultQuotaExceeded(BlobQuotaExceeded):
@@ -397,8 +398,7 @@ class ResultArchiver:
                 await renewal
             except Exception:
                 pass
-            async with self.pool.connection() as conn:
-                await conn.execute('DELETE FROM result_read_leases WHERE id=%s', (lease,))
+            await release_read_lease(self.pool, 'result_read_leases', tenant, lease)
 
     async def discard_unpurged(self, tenant, batch_id):
         """Explicit repair: retire a corrupt generation only while DB is intact."""
@@ -415,8 +415,8 @@ class ResultArchiver:
     async def collect_orphans(self, limit=100, grace_seconds=300):
         if not 1 <= limit <= 1000 or not 0 <= grace_seconds <= 604800:
             raise ValueError('Invalid bounded archive GC limits')
+        await collect_expired_read_leases(self.pool, 'result_read_leases', limit)
         async with self.pool.connection() as conn:
-            await conn.execute('DELETE FROM result_read_leases WHERE id IN (SELECT id FROM result_read_leases WHERE expires_at<=clock_timestamp() ORDER BY expires_at,id LIMIT %s FOR UPDATE SKIP LOCKED)', (limit,))
             runs = await (await conn.execute("SELECT id,tenant_id,batch_id FROM result_archive_runs WHERE backend=%s AND state='building' AND lease_expires_at<=clock_timestamp() ORDER BY lease_expires_at,id LIMIT %s", (self.adapter.backend, limit))).fetchall()
         for run in runs:
             async with self.pool.connection() as conn, conn.transaction():

@@ -47,3 +47,17 @@ def test_individual_kernel_union_preserves_overlap_and_bounded_name_evidence():
     assert len(top['full_name_sha256']) == 64
     assert top['interval_union_seconds'] == pytest.approx(15e-6)
     assert top['summed_durations_seconds_not_wall_time'] == pytest.approx(20e-6)
+
+
+def test_observed_vllm_custom_collectives_are_separate_from_nccl_and_local_reduction():
+    first = 'void vllm::cross_device_reduce_1stage<__nv_bfloat16, 4>(vllm::RankData*)'
+    second = 'void vllm::cross_device_reduce_2stage<__nv_bfloat16, 4>(vllm::RankData*)'
+    assert category(first) == category(second) == 'communication_custom_collective'
+    assert category('ncclDevKernel_AllReduce_Sum_bf16_RING_LL') == 'communication'
+    assert category('void at::native::reduce_kernel<128,4>') == 'other'
+    result = summarize_events([event(0, 10, first), event(5, 10, second), event(10, 10, 'nccl')])
+    custom = result['categories']['communication_custom_collective']
+    assert custom['interval_union_seconds'] == pytest.approx(15e-6)
+    assert custom['summed_kernel_durations_seconds_not_wall_time'] == pytest.approx(20e-6)
+    assert result['any_kernel_interval_union_seconds'] == pytest.approx(20e-6)
+    assert result['cross_category_overlap_union_seconds'] == pytest.approx(5e-6)

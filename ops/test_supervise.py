@@ -137,6 +137,28 @@ def test_engine_restart_generation_config_is_opt_in_and_preserves_other_flags(tm
     assert command(args, load_env(environment)) == baseline
 
 
+def test_custom_collective_switch_survives_restart_without_other_argv_changes(tmp_path, monkeypatch):
+    from ops.manage import command, load_env
+
+    monkeypatch.delenv("ENGINE_DISABLE_CUSTOM_ALL_REDUCE", raising=False)
+    environment = tmp_path / "engine.env"
+    original = "ENGINE_TENSOR_PARALLEL_SIZE=4\nENGINE_ENABLE_CHUNKED_PREFILL=1\n"
+    args = SimpleNamespace(role="engine", python="/owned/python", port=8300, gpu="0,1,2,3")
+    environment.write_text(original)
+    baseline = command(args, load_env(environment))
+    flag = "--disable-custom-all-reduce"
+    assert flag not in baseline
+    environment.write_text(original + "ENGINE_DISABLE_CUSTOM_ALL_REDUCE=1\n")
+    restarted = command(args, load_env(environment))
+    assert restarted.count(flag) == 1
+    assert [part for part in restarted if part != flag] == baseline
+    environment.write_text(original + "ENGINE_DISABLE_CUSTOM_ALL_REDUCE=0\n")
+    assert command(args, load_env(environment)) == baseline
+    for invalid in ("true", "false", "", "2", "1 --unsafe-extra-argument"):
+        with pytest.raises(ValueError, match="ENGINE_DISABLE_CUSTOM_ALL_REDUCE"):
+            command(args, {"ENGINE_DISABLE_CUSTOM_ALL_REDUCE": invalid})
+
+
 class FakeManager:
     def __init__(self, *, running=False, ready=False, start_error=None, status_error=None):
         self.running, self.ready, self.start_error, self.status_error = running, ready, start_error, status_error

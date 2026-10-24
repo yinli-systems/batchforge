@@ -22,6 +22,7 @@ from .config import Settings, get_settings
 from .migrate import verify_schema
 from .store import APIError, Store, one
 from .validation import InvalidInput, strict_json
+from .retention import retention_error
 from .blob_storage import BlobStorageError, BlobQuotaExceeded, BlobNotFound, BlobExpired, BlobBusy
 
 logger = logging.getLogger("batchforge")
@@ -209,6 +210,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # rolling upgrades. Match the status of the SQL-call translation.
         if exc.sqlstate == 'BF409':
             return error_response(409, 'Lease or runtime identity changed; discard this attempt', 'stale_attempt')
+        translated = retention_error(exc)
+        if translated is not None:
+            return error_response(*translated)
         logger.error('Database operation failed: %s', type(exc).__name__)
         return error_response(500, 'Database operation failed', 'internal_error')
 

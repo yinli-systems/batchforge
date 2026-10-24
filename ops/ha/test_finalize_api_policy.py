@@ -26,7 +26,7 @@ def proofs(tmp_path):
     records={'backup':{'snapshot_sha256':snapshot,'archive_list_verified':True,'database_modified':False},
         'restore':{'passed':True,'restore_verified':True,'schema_version':8,'snapshot_sha256':snapshot,
             'temporary_cluster_stopped':True,'temporary_cluster_removed':True,
-            'migration_checksums':{str(v):sha for v,_,sha in MIGRATIONS},
+            'migration_checksums':{str(v):sha for v,_,sha in MIGRATIONS if v<=8},
             **{k:0 for k in ['batch_count_state_usage_mismatches','accepted_attempt_count_usage_mismatches',
                 'tenant_queue_pending_mismatches','unvalidated_constraints']}},
         'production':{'passed':True,'restore_verified_before_purge':True,'backup_sha256':snapshot,
@@ -34,9 +34,16 @@ def proofs(tmp_path):
             'batch_counters_and_identity_unchanged':True,'byte_identical_on_ports':[8080,8082,8083],
             'download_bytes':52200,'output_sha256':'b'*64,'output_file_id':'file-old20',
             'archive_publication_still_disabled':True,'steps':[{'purged':True,'rows_purged':20}]}}
+    if MIGRATIONS[-1][0]>8:
+        records['current_backup']={'snapshot_sha256':'c'*64,'archive_list_verified':True,'database_modified':False}
+        records['current_restore']=dict(records['restore'],schema_version=MIGRATIONS[-1][0],
+            snapshot_sha256='c'*64,migration_checksums={str(v):sha for v,_,sha in MIGRATIONS},
+            retention_ledger_mismatches=0,retention_undercharged_tasks=0,
+            retention_missing_tenant_ledgers=0,auxiliary_ledger_mismatches=0)
     paths={name:tmp_path/(name+'.json') for name in records}
     for name,path in paths.items():private_write(path,records[name])
-    hashes={name:hashlib.sha256(paths[name].read_bytes()).hexdigest() for name in ['restore','production']}
+    names=['restore','production']+(['current_restore'] if MIGRATIONS[-1][0]>8 else [])
+    hashes={name:hashlib.sha256(paths[name].read_bytes()).hexdigest() for name in names}
     return paths,hashes
 
 
@@ -71,6 +78,19 @@ def test_hash_pinned_proofs_crosscheck_snapshot_and_completed_exact20_purge(tmp_
     with pytest.raises(ValueError,match='SHA differs'):validate_proofs(paths,hashes)
     hashes['production']=hashlib.sha256(paths['production'].read_bytes()).hexdigest()
     with pytest.raises(ValueError,match='production archival'):validate_proofs(paths,hashes)
+
+
+def test_new_schema_requires_an_independently_verified_current_restore(tmp_path):
+    if MIGRATIONS[-1][0]<=8:pytest.skip('Requires an additive schema after the archival proof')
+    paths,hashes=proofs(tmp_path)
+    assert validate_proofs(paths,hashes)['current_schema_snapshot_sha256']=='c'*64
+    old_only={k:v for k,v in paths.items() if not k.startswith('current_')}
+    with pytest.raises(ValueError,match='reviewed'):validate_proofs(old_only,hashes)
+    current=json.loads(paths['current_restore'].read_text())
+    current['migration_checksums'].pop(str(MIGRATIONS[-1][0]))
+    private_write(paths['current_restore'],current)
+    hashes['current_restore']=hashlib.sha256(paths['current_restore'].read_bytes()).hexdigest()
+    with pytest.raises(ValueError,match='current-schema'):validate_proofs(paths,hashes)
 
 
 class Manager:

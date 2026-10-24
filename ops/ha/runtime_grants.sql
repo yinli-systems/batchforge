@@ -14,5 +14,12 @@ GRANT SELECT,INSERT,UPDATE ON tenant_blob_usage,blob_objects TO bf_runtime;
 GRANT SELECT,INSERT,UPDATE,DELETE ON blob_upload_reservations,blob_read_leases TO bf_runtime;
 GRANT SELECT,INSERT,UPDATE ON tenant_result_usage,result_archive_runs,result_archive_files,result_archive_chunks TO bf_runtime;
 GRANT SELECT,INSERT,UPDATE,DELETE ON result_read_leases TO bf_runtime;
+-- v9 admission policy is persisted and operator-managed; the runtime can only
+-- read limits. Derived usage updates are protected by nested accounting triggers.
+GRANT SELECT ON tenant_retention_limits TO bf_runtime;
+GRANT SELECT,UPDATE ON tenant_retention_usage TO bf_runtime;
+-- v10 private SECURITY DEFINER triggers maintain auxiliary counters. The API
+-- has no direct counter/policy mutation or internal-function EXECUTE privilege.
+GRANT SELECT ON tenant_auxiliary_limits,tenant_auxiliary_usage TO bf_runtime;
 -- Do not grant ALTER/CREATE, tenant/key administration, task/result DELETE or replication.
 -- Existing deployment-wide PUBLIC grants must also be reviewed separately.

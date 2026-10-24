@@ -1,0 +1,596 @@
+{
+  "schema_version": 1,
+  "experiment": "235B FP8 adaptive exact-token KV admission fixed100 durable cohort, once only",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "revision": "e156cb4efae43fbee1a1ab073f946a1377e6b969",
+  "source_sha256": "52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f",
+  "actual_engine": {
+    "MODEL_NAME": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "ENGINE_MODEL_PATH": "/root/batchforge-runtime/models/qwen3-235b-fp8",
+    "ENGINE_REVISION": "e156cb4efae43fbee1a1ab073f946a1377e6b969",
+    "ENGINE_GPU_MEMORY_UTILIZATION": ".90",
+    "ENGINE_MAX_MODEL_LEN": "18440",
+    "ENGINE_MAX_NUM_SEQS": "64",
+    "ENGINE_MAX_NUM_BATCHED_TOKENS": "4096",
+    "ENGINE_ENABLE_PREFIX_CACHING": "0",
+    "ENGINE_ENABLE_CHUNKED_PREFILL": "1",
+    "ENGINE_DTYPE": "bfloat16",
+    "ENGINE_TENSOR_PARALLEL_SIZE": "4",
+    "enforce_eager": true,
+    "enforce_eager_basis": "fixed managed engine command and activation proof"
+  },
+  "hardware": "one four-H100 TP4 engine",
+  "worker": {
+    "claim_limit": 64,
+    "logical_block_rounded_token_budget": 298384,
+    "block_tokens": 16,
+    "measured_cache_tokens": 314096,
+    "budget_rule": "min(300000, floor(0.95*314096/16)*16)",
+    "runtime_profile": {
+      "profile_id": "primary-h100-tp4-qwen235b-fp8-adaptive64",
+      "runtime_fingerprint": "sha256:62fdcd18e5c2fb3a3c9cb1be1e2a8ed1bda02f728ff6f705189e0eed8bf8dca3",
+      "prefill_tokens_per_second": 5573.560941602189,
+      "decode_tokens_per_second": 11.775313909354303,
+      "hourly_cost_usd": 1.00625,
+      "calibration_label": "projected-from-static16;claimlimit64-not-newpricedexecutioncapacity;rates-not-recalibrated;source:primary-h100-tp4-qwen235b-fp8-seq16",
+      "cost_source": "operator-allocation-16.1-USD-hour-divided-by-16-slots;assumes-full-occupancy;adaptive64-claimlimit-not-new-priced-execution-capacity"
+    },
+    "profile_scope": "Static16 measured HTTP proxy rates and hourly slot price preserved; not recalibrated as64 execution slots.",
+    "observations": {
+      "valid_samples": 239,
+      "error_samples": 0,
+      "sampled_maxima": {
+        "batchforge_worker_adaptive_kv_budget_tokens": 298384.0,
+        "batchforge_worker_capacity": 64.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0,
+        "batchforge_worker_adaptive_kv_peak_tokens": 298240.0,
+        "batchforge_worker_ready_engines": 1.0,
+        "batchforge_worker_inflight": 64.0,
+        "batchforge_worker_reserved_context_tokens": 297856.0,
+        "batchforge_worker_adaptive_kv_waiting": 21.0
+      },
+      "scope": "single worker logical exact-token reservations, not physical GPU KV occupancy; inflight includes tokenization, reserve waiters, inference and reporting; no stage counts inferred by subtraction",
+      "peak_scope": "adaptive_kv_peak_tokens is process-lifetime cumulative; reserved_context_tokens sampled maximum is the observed workload peak, not a guaranteed continuous maximum",
+      "before": {
+        "at": "2026-10-24T02:59:03.840656+00:00",
+        "gauges": {
+          "batchforge_worker_inflight": 0.0,
+          "batchforge_worker_reserved_context_tokens": 0.0,
+          "batchforge_worker_capacity": 64.0,
+          "batchforge_worker_adaptive_kv_budget_tokens": 298384.0,
+          "batchforge_worker_adaptive_kv_waiting": 0.0,
+          "batchforge_worker_adaptive_kv_peak_tokens": 0.0,
+          "batchforge_worker_adaptive_kv_paused": 0.0,
+          "batchforge_worker_ready_engines": 1.0
+        }
+      },
+      "after": {
+        "at": "2026-10-24T03:03:10.261794+00:00",
+        "gauges": {
+          "batchforge_worker_inflight": 0.0,
+          "batchforge_worker_reserved_context_tokens": 0.0,
+          "batchforge_worker_capacity": 64.0,
+          "batchforge_worker_adaptive_kv_budget_tokens": 298384.0,
+          "batchforge_worker_adaptive_kv_waiting": 0.0,
+          "batchforge_worker_adaptive_kv_peak_tokens": 298240.0,
+          "batchforge_worker_adaptive_kv_paused": 0.0,
+          "batchforge_worker_ready_engines": 1.0
+        }
+      }
+    },
+    "claim_vs_execution": "64 includes tokenization, logical-reservation waiters, engine requests and reporting; no separate admitted/tokenizing/reporting count exists. Engine sampled running peak51, separate from worker claimed peak64."
+  },
+  "fixed100": {
+    "run_id": "bench-279d39d6683e",
+    "measurement_started_at": "2026-10-24T02:59:04.361208+00:00",
+    "terminal_observation_ended_at": "2026-10-24T03:03:08.642425+00:00",
+    "elapsed_seconds": 244.28118,
+    "completed": 100,
+    "failed": 0,
+    "cancelled": 0,
+    "completed_tasks_per_second": 0.409364,
+    "observed_prompt_tokens": 545280,
+    "observed_completion_tokens": 68000,
+    "observed_prompt_tokens_per_second": 2232.1817833039777,
+    "observed_completion_tokens_per_second": 278.3677399953611,
+    "task_completion_seconds": {
+      "samples": 100,
+      "p50": 54.408186,
+      "p95": 220.534685,
+      "p99": 240.95315,
+      "max": 241.703832,
+      "mean": 84.186554
+    },
+    "task_first_queue_seconds": {
+      "samples": 100,
+      "p50": 1.771529,
+      "p95": 27.665301,
+      "p99": 30.882774,
+      "max": 31.612056,
+      "mean": 8.684268
+    },
+    "by_class": {
+      "decode_heavy": {
+        "tasks": 50,
+        "completion_seconds": {
+          "samples": 50,
+          "p50": 79.72952,
+          "p95": 220.575842,
+          "p99": 230.637556,
+          "max": 238.817917,
+          "mean": 113.681802
+        },
+        "prompt_tokens": 71680,
+        "completion_tokens": 50080
+      },
+      "prefill_heavy": {
+        "tasks": 45,
+        "completion_seconds": {
+          "samples": 45,
+          "p50": 27.793991,
+          "p95": 80.918245,
+          "p99": 89.47867,
+          "max": 89.774453,
+          "mean": 36.751563
+        },
+        "prompt_tokens": 391680,
+        "completion_tokens": 7680
+      },
+      "balanced": {
+        "tasks": 5,
+        "completion_seconds": {
+          "samples": 5,
+          "p50": 202.838808,
+          "p95": 241.552179,
+          "p99": 241.673501,
+          "max": 241.703832,
+          "mean": 216.148987
+        },
+        "prompt_tokens": 81920,
+        "completion_tokens": 10240
+      }
+    },
+    "prompt_tokens_per_task": {
+      "samples": 100,
+      "p50": 2048.0,
+      "p95": 16384.0,
+      "p99": 16384.0,
+      "max": 16384,
+      "mean": 5452.8
+    },
+    "completion_tokens_per_task": {
+      "samples": 100,
+      "p50": 320.0,
+      "p95": 2048.0,
+      "p99": 2048.0,
+      "max": 2048,
+      "mean": 680.0
+    },
+    "output_finish_reasons": {
+      "length": 100
+    },
+    "output_content": {
+      "rows_with_valid_content_shape": 100,
+      "final_text_present": 100,
+      "reasoning_only": 0,
+      "no_final_text": 0,
+      "length_capped": 100,
+      "final_text_codepoints": 284142,
+      "reasoning_text_codepoints": 0,
+      "population": "Durable output rows with valid choice/message shapes; length_capped means any choice ended with length",
+      "quality_evaluated": false,
+      "durable_completion_distinct_from_final_answer": true
+    },
+    "gpu_observation": {
+      "samples": 224,
+      "measurement_seconds_including_validation": 245.6778147169971,
+      "engine_maxima": {
+        "vllm:num_requests_running": 51.0,
+        "vllm:num_requests_waiting": 40.0,
+        "vllm:gpu_cache_usage_perc": 0.8301069791136017,
+        "vllm:kv_cache_usage_perc": 0.8301069791136017
+      },
+      "physical_device_utilization": {
+        "0": {
+          "samples": 224,
+          "p50": 96.0,
+          "p95": 100.0,
+          "p99": 100.0,
+          "max": 100.0,
+          "mean": 93.709821
+        },
+        "1": {
+          "samples": 224,
+          "p50": 40.0,
+          "p95": 100.0,
+          "p99": 100.0,
+          "max": 100.0,
+          "mean": 47.96875
+        },
+        "2": {
+          "samples": 224,
+          "p50": 90.0,
+          "p95": 100.0,
+          "p99": 100.0,
+          "max": 100.0,
+          "mean": 82.892857
+        },
+        "3": {
+          "samples": 224,
+          "p50": 95.0,
+          "p95": 100.0,
+          "p99": 100.0,
+          "max": 100.0,
+          "mean": 91.53125
+        }
+      }
+    },
+    "cost": {
+      "assumed_whole_pod_usd_per_hour": 16.1,
+      "basis": "operator supplied whole-Pod allocation scenario; not current invoice or marginal inference cost",
+      "run_allocation_usd": 1.0924797216666668,
+      "usd_per_million_durable_completions": 10924.79721666667
+    }
+  },
+  "phase_histograms": {
+    "before_at": "2026-10-24T02:59:04.023694+00:00",
+    "after_at": "2026-10-24T03:03:10.116582+00:00",
+    "histograms": {
+      "vllm:e2e_request_latency_seconds": {
+        "count": 100.0,
+        "sum_seconds": 6841.272198915482,
+        "mean_seconds": 68.41272198915482,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 30.0,
+          "0.95": 240.0,
+          "0.99": 240.0
+        },
+        "delta_buckets": {
+          "0.3": 0.0,
+          "0.5": 0.0,
+          "0.8": 0.0,
+          "1.0": 0.0,
+          "1.5": 0.0,
+          "2.0": 0.0,
+          "2.5": 0.0,
+          "5.0": 9.0,
+          "10.0": 15.0,
+          "15.0": 27.0,
+          "20.0": 35.0,
+          "30.0": 50.0,
+          "40.0": 50.0,
+          "50.0": 60.0,
+          "60.0": 62.0,
+          "120.0": 75.0,
+          "240.0": 100.0,
+          "480.0": 100.0,
+          "960.0": 100.0,
+          "1920.0": 100.0,
+          "7680.0": 100.0,
+          "inf": 100.0
+        }
+      },
+      "vllm:request_decode_time_seconds": {
+        "count": 100.0,
+        "sum_seconds": 6416.949194941379,
+        "mean_seconds": 64.16949194941378,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 30.0,
+          "0.95": 240.0,
+          "0.99": 240.0
+        },
+        "delta_buckets": {
+          "0.3": 0.0,
+          "0.5": 0.0,
+          "0.8": 0.0,
+          "1.0": 0.0,
+          "1.5": 0.0,
+          "2.0": 0.0,
+          "2.5": 0.0,
+          "5.0": 10.0,
+          "10.0": 25.0,
+          "15.0": 35.0,
+          "20.0": 45.0,
+          "30.0": 50.0,
+          "40.0": 50.0,
+          "50.0": 60.0,
+          "60.0": 75.0,
+          "120.0": 75.0,
+          "240.0": 100.0,
+          "480.0": 100.0,
+          "960.0": 100.0,
+          "1920.0": 100.0,
+          "7680.0": 100.0,
+          "inf": 100.0
+        }
+      },
+      "vllm:request_inference_time_seconds": {
+        "count": 100.0,
+        "sum_seconds": 6463.5220867987955,
+        "mean_seconds": 64.63522086798795,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 30.0,
+          "0.95": 240.0,
+          "0.99": 240.0
+        },
+        "delta_buckets": {
+          "0.3": 0.0,
+          "0.5": 0.0,
+          "0.8": 0.0,
+          "1.0": 0.0,
+          "1.5": 0.0,
+          "2.0": 0.0,
+          "2.5": 0.0,
+          "5.0": 9.0,
+          "10.0": 25.0,
+          "15.0": 35.0,
+          "20.0": 44.0,
+          "30.0": 50.0,
+          "40.0": 50.0,
+          "50.0": 60.0,
+          "60.0": 74.0,
+          "120.0": 75.0,
+          "240.0": 100.0,
+          "480.0": 100.0,
+          "960.0": 100.0,
+          "1920.0": 100.0,
+          "7680.0": 100.0,
+          "inf": 100.0
+        }
+      },
+      "vllm:request_prefill_time_seconds": {
+        "count": 100.0,
+        "sum_seconds": 46.572891857416835,
+        "mean_seconds": 0.46572891857416837,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 0.3,
+          "0.95": 1.5,
+          "0.99": 1.5
+        },
+        "delta_buckets": {
+          "0.3": 52.0,
+          "0.5": 60.0,
+          "0.8": 80.0,
+          "1.0": 80.0,
+          "1.5": 100.0,
+          "2.0": 100.0,
+          "2.5": 100.0,
+          "5.0": 100.0,
+          "10.0": 100.0,
+          "15.0": 100.0,
+          "20.0": 100.0,
+          "30.0": 100.0,
+          "40.0": 100.0,
+          "50.0": 100.0,
+          "60.0": 100.0,
+          "120.0": 100.0,
+          "240.0": 100.0,
+          "480.0": 100.0,
+          "960.0": 100.0,
+          "1920.0": 100.0,
+          "7680.0": 100.0,
+          "inf": 100.0
+        }
+      },
+      "vllm:request_queue_time_seconds": {
+        "count": 100.0,
+        "sum_seconds": 367.22695974528324,
+        "mean_seconds": 3.6722695974528325,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 1.5,
+          "0.95": 15.0,
+          "0.99": 15.0
+        },
+        "delta_buckets": {
+          "0.3": 28.0,
+          "0.5": 31.0,
+          "0.8": 33.0,
+          "1.0": 40.0,
+          "1.5": 51.0,
+          "2.0": 52.0,
+          "2.5": 52.0,
+          "5.0": 64.0,
+          "10.0": 89.0,
+          "15.0": 100.0,
+          "20.0": 100.0,
+          "30.0": 100.0,
+          "40.0": 100.0,
+          "50.0": 100.0,
+          "60.0": 100.0,
+          "120.0": 100.0,
+          "240.0": 100.0,
+          "480.0": 100.0,
+          "960.0": 100.0,
+          "1920.0": 100.0,
+          "7680.0": 100.0,
+          "inf": 100.0
+        }
+      },
+      "vllm:time_per_output_token_seconds": {
+        "count": 67900.0,
+        "sum_seconds": 6416.949194941379,
+        "mean_seconds": 0.09450587915966685,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 0.1,
+          "0.95": 0.3,
+          "0.99": 0.3
+        },
+        "delta_buckets": {
+          "0.01": 0.0,
+          "0.025": 0.0,
+          "0.05": 0.0,
+          "0.075": 0.0,
+          "0.1": 63084.0,
+          "0.15": 63598.0,
+          "0.2": 63718.0,
+          "0.3": 67900.0,
+          "0.4": 67900.0,
+          "0.5": 67900.0,
+          "0.75": 67900.0,
+          "1.0": 67900.0,
+          "2.5": 67900.0,
+          "5.0": 67900.0,
+          "7.5": 67900.0,
+          "10.0": 67900.0,
+          "20.0": 67900.0,
+          "40.0": 67900.0,
+          "80.0": 67900.0,
+          "inf": 67900.0
+        }
+      },
+      "vllm:time_to_first_token_seconds": {
+        "count": 100.0,
+        "sum_seconds": 424.34388399124146,
+        "mean_seconds": 4.2434388399124146,
+        "percentile_bucket_upper_seconds": {
+          "0.5": 2.5,
+          "0.95": 20.0,
+          "0.99": 20.0
+        },
+        "delta_buckets": {
+          "0.001": 0.0,
+          "0.005": 0.0,
+          "0.01": 0.0,
+          "0.02": 0.0,
+          "0.04": 0.0,
+          "0.06": 0.0,
+          "0.08": 0.0,
+          "0.1": 0.0,
+          "0.25": 3.0,
+          "0.5": 10.0,
+          "0.75": 19.0,
+          "1.0": 20.0,
+          "2.5": 51.0,
+          "5.0": 62.0,
+          "7.5": 78.0,
+          "10.0": 88.0,
+          "20.0": 100.0,
+          "40.0": 100.0,
+          "80.0": 100.0,
+          "160.0": 100.0,
+          "640.0": 100.0,
+          "2560.0": 100.0,
+          "inf": 100.0
+        }
+      }
+    },
+    "percentile_method": "first cumulative bucket whose delta count >= quantile*delta_count; bucket upper bounds, not interpolated exact percentiles",
+    "limitations": [
+      "Prefill/decode means are engine wall-time stages under continuous batching, not CUDA kernel time.",
+      "Snapshot interval brackets workload submission and output validation. Exact expectedrequest observations and unchanged engine identity are required."
+    ]
+  },
+  "validation": {
+    "all100_accepted_once": true,
+    "all_attempts_one": true,
+    "all_output_lengths_exact": true,
+    "all_request_histogram_counts_100": true,
+    "controller_complete_at": "2026-10-24T03:03:10.267662+00:00",
+    "protected_pid_environment_manifest_and_sources_unchanged": true,
+    "fresh_global_active_tasks": 0,
+    "fresh_global_active_observed_at": "2026-10-24T03:04:27.832862+00:00"
+  },
+  "comparison_to_static16_fixed100": {
+    "source_report": "ops/reports/primary-qwen235b-seq16-platform-analysis-2026-10-24.json",
+    "same_fixture_and_exact_prompt_generated_totals": true,
+    "throughput_ratio": 1.9091469920032316,
+    "metrics": {
+      "elapsed_seconds": {
+        "static16": 466.36868,
+        "adaptive64": 244.28118,
+        "percent_change_adaptive_vs_static16": -47.62058635669959
+      },
+      "completion_p50_seconds": {
+        "static16": 52.915453,
+        "adaptive64": 54.408186,
+        "percent_change_adaptive_vs_static16": 2.820977456245166
+      },
+      "completion_p95_seconds": {
+        "static16": 454.555047,
+        "adaptive64": 220.534685,
+        "percent_change_adaptive_vs_static16": -51.48339316536068
+      },
+      "completion_p99_seconds": {
+        "static16": 456.579551,
+        "adaptive64": 240.95315,
+        "percent_change_adaptive_vs_static16": -47.226469194193065
+      },
+      "engine_decode_mean_seconds": {
+        "static16": 61.12359651134757,
+        "adaptive64": 64.16949194941378,
+        "percent_change_adaptive_vs_static16": 4.983174439842952
+      },
+      "engine_ttft_mean_seconds": {
+        "static16": 0.9416033816337586,
+        "adaptive64": 4.2434388399124146,
+        "percent_change_adaptive_vs_static16": 350.66096009019236
+      }
+    },
+    "interpretation": "Makespan and completion tail percentiles improved, while completion P50 and mean engine TTFT/decode increased. Not a win in every latency metric.",
+    "confounders": [
+      "Single serial run per condition, with no statistical replication.",
+      "Worker exact-token admission and64 claimed limit/engine max-sequences changed together; fresh KV capacity314096 differs from prior316144.",
+      "Adaptive run adds one worker-metrics request per second beyond the existing engine/GPU observer."
+    ]
+  },
+  "activation_proof": {
+    "path": "ops/reports/primary-qwen235b-adaptive64-rollout-2026-10-24.json",
+    "sha256": "f9325671de35fa7b7f99dbb50cde6d62352e2d2e5454020ebd398ab45ab73d28"
+  },
+  "limitations": [
+    "Fixed output lengths and final-text presence are capacity/output-shape evidence, not summary correctness.",
+    "Logical exact-token reservations are not a distributed fence or direct physical GPU KV allocation. Prefix caching stayed off; worker and engine waiting are different populations.",
+    "Worker peaks are sampled except the worker process-lifetime reservation peak; before-peak0 makes that cumulative peak attributable to this cohort.",
+    "Physical nvidia-smi utilization includes other processes and is not model-only SM/FLOP attribution or proof of rank imbalance cause.",
+    "Engine stage histograms are wall-time under continuous batching, not CUDA kernel time; percentile results are bucket upper bounds.",
+    "Whole-Pod16.10USD/hour allocation is applied to measured cohort elapsed time, not provider invoice/marginal cost. No sustainable daily rate is qualified.",
+    "Archive publisher stayed OFF; no source/service/environment changes occurred within the cohort."
+  ],
+  "artifacts": [
+    {
+      "path": "ops/reports/primary-qwen235b-adaptive64-fixed100-2026-10-24.json",
+      "sha256": "5f8e133f488091337fdfd771395925ee253292abef67ffc521e6917b99b7dcef",
+      "bytes": 191569
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-adaptive64-fixed100-observations-2026-10-24.json",
+      "sha256": "3302ebdca88ad1fd9cb2d85030fa997d2048ca39262967f83985840b63dd6609",
+      "bytes": 149206
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-adaptive64-fixed100-phase-before-2026-10-24.json",
+      "sha256": "4deb24125d7c2095a13f06ad0aa0b46381aefb4778c6b1ec460bee47861b523e",
+      "bytes": 25594
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-adaptive64-fixed100-phase-after-2026-10-24.json",
+      "sha256": "32675f32d8f833f83c3296d2672fb3b068e0bb3702f99f82f1fbf15acdcd76b6",
+      "bytes": 25933
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-adaptive64-fixed100-phases-2026-10-24.json",
+      "sha256": "8d8417ec400dd5397717260abd81edec0303dc7d5363addfd351ca0ecc5e79ab",
+      "bytes": 3862
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-adaptive64-fixed100-worker-observations-2026-10-24.json",
+      "sha256": "bd35318aca7583d678e38b6438f30f5bdeccbdbd9736f72e06e9131e5b3cc822",
+      "bytes": 97205
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-adaptive64-fixed100-worker-summary-2026-10-24.json",
+      "sha256": "96ea06a7c7585ec47b21ec12236cb287bdaa7618153624fea78bb89b7096de6a",
+      "bytes": 1609
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-adaptive64-platform-cohorts-2026-10-24.json",
+      "sha256": "9dfc778e3bc30be9d3c8ce381c85a70fc2ee79c190b89eb8a875e38fc81123f6",
+      "bytes": 16351
+    },
+    {
+      "path": "ops/reports/primary-qwen235b-adaptive64-platform-controller-source-2026-10-24.py.txt",
+      "sha256": "19d82d2b5223272b74282a6a5177cbacfe37c2309abfb19058bda270618bed2a",
+      "bytes": 17229
+    }
+  ]
+}

@@ -17,6 +17,7 @@ from .validation import body_hash, validate_rows, validate_usage
 from .scheduling import estimate_work, profile_from_metadata
 from .blob_storage import BlobCatalog, LocalBlobStore, S3BlobStore, BlobExpired
 from .result_archival import ResultArchiver
+from .retention import guard_retention_errors
 
 
 class APIError(Exception):
@@ -112,6 +113,9 @@ class Store:
         if not 1 <= len(key) <= 128:
             raise APIError(400, "Idempotency-Key must contain 1 to 128 characters")
         digest = body_hash(body)
+        # New-key accounting and conflict/replay resolution use the same tenant
+        # umbrella as task/file admission, including during the v8-compatible roll.
+        await conn.execute('SELECT id FROM tenants WHERE id=%s FOR NO KEY UPDATE', (tenant,))
         await conn.execute("INSERT INTO idempotency(tenant_id,scope,key,body_hash) VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING", (tenant, scope, key, digest))
         row = await one(conn, "SELECT * FROM idempotency WHERE tenant_id=%s AND scope=%s AND key=%s FOR UPDATE", (tenant, scope, key))
         if row["body_hash"] != digest:
@@ -134,6 +138,7 @@ class Store:
             raise APIError(409, 'Idempotency key was used with a different request', 'idempotency_conflict')
         return row['response'] if row else None
 
+    @guard_retention_errors(APIError)
     async def create_rows(self, conn, tenant, input_file_id, rows, metadata, runtime_source=None):
         model = rows[0]["body"]["model"] if rows else None
         if model not in self.settings.served_models() or any(task["body"]["model"] != model for task in rows):
@@ -143,6 +148,10 @@ class Store:
         # compatible with KEY SHARE locks acquired by tenant foreign keys
         # (including the preceding idempotency insert).
         await conn.execute("SELECT id FROM tenants WHERE id=%s FOR NO KEY UPDATE", (tenant,))
+        if self.schema_version >= 9:
+            # Limits/counters are database-owned. An API environment flag cannot
+            # disable the installed triggers or widen another replica's policy.
+            await conn.execute('SELECT public.batchforge_retention_lock(%s)', (tenant,))
         queued = await one(conn, "SELECT COALESCE(sum(pending_count+running_count),0) AS n FROM batches WHERE tenant_id=%s AND status='in_progress'", (tenant,))
         if queued["n"] + len(rows) > self.settings.max_queued_tasks_per_tenant:
             raise APIError(429, "Tenant queue limit reached", "queue_limit")
@@ -444,6 +453,7 @@ class Store:
             await conn.execute("UPDATE workers SET last_seen_at=clock_timestamp() WHERE id=%s", (worker_id,))
             return {"ok": True, "lease_expires_at": row["lease_expires_at"].isoformat()}
 
+    @guard_retention_errors(APIError)
     async def complete(self, tid, worker_id, token, response):
         prompt, completion = validate_usage(response)
         if self.settings.sql_completion_enabled:
@@ -502,6 +512,7 @@ class Store:
         await self.finish_batch(conn, task["batch_id"])
         return target
 
+    @guard_retention_errors(APIError)
     async def fail(self, tid, worker_id, token, error, retryable):
         if self.settings.sql_recovery_enabled:
             return await self.sql_attempt('fail', (tid, worker_id, token, Jsonb(error), retryable, self.settings.retry_base_seconds))

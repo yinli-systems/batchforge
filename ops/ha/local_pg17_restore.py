@@ -20,6 +20,60 @@ import sys
 import tempfile
 import time
 
+PRIVATE_AUXILIARY_DEFINERS = {
+    'batchforge_auxiliary_lock': 'text',
+    'batchforge_auxiliary_adjust': 'text,text,bigint,bigint',
+    'batchforge_auxiliary_guard': '', 'batchforge_auxiliary_account': '',
+    'batchforge_archive_metadata_identity': '',
+}
+
+
+def admission_invariants(connection, version):
+    """Recompute counters from restored rows; never repair a broken ledger."""
+    result = {}
+    if version >= 9:
+        mismatch = connection.execute("""WITH actual AS (
+          SELECT tenant_id,count(*) AS n,
+           coalesce(sum(retention_body_bytes+retention_response_bytes+retention_error_bytes),0) AS b
+          FROM tasks GROUP BY tenant_id)
+          SELECT count(*) FROM tenant_retention_usage u FULL JOIN actual a USING(tenant_id)
+          WHERE u.tenant_id IS NULL OR
+           (u.retained_tasks,u.charged_payload_bytes) IS DISTINCT FROM (coalesce(a.n,0),coalesce(a.b,0))""").fetchone()[0]
+        undercharged = connection.execute("""SELECT count(*) FROM tasks t WHERE
+          (NOT retention_payload_cleared AND batchforge_json_bytes(body)>retention_body_bytes)
+          OR (retention_payload_cleared AND (body<>'{}'::jsonb OR response IS NOT NULL))
+          OR batchforge_json_bytes(response)>retention_response_bytes
+          OR batchforge_json_bytes(error)+coalesce((SELECT sum(batchforge_json_bytes(a.error))
+               FROM attempts a WHERE a.task_id=t.id),0)>retention_error_bytes""").fetchone()[0]
+        result.update(retention_ledger_mismatches=mismatch,retention_undercharged_tasks=undercharged)
+        result['retention_missing_tenant_ledgers']=connection.execute("""SELECT count(*) FROM tenants t
+          LEFT JOIN tenant_retention_limits l ON l.tenant_id=t.id
+          LEFT JOIN tenant_retention_usage u ON u.tenant_id=t.id
+          WHERE l.tenant_id IS NULL OR u.tenant_id IS NULL""").fetchone()[0]
+    if version >= 10:
+        expected = {}
+        resources = [('input_files','files',"kind='input'"),
+            ('upload_reservations','blob_upload_reservations','true'),
+            ('idempotency','idempotency','true'),('blob_generations','blob_objects','true'),
+            ('archive_runs','result_archive_runs','true'),('archive_chunks','result_archive_chunks','true'),
+            ('input_read_leases','blob_read_leases','true'),('result_read_leases','result_read_leases','true')]
+        from psycopg import sql
+        for resource,table,predicate in resources:
+            amount = 'coalesce(sum(auxiliary_reserved_bytes),0)' if resource=='idempotency' else '0'
+            query = sql.SQL('SELECT tenant_id,count(*),{} FROM public.{} WHERE {} GROUP BY tenant_id').format(
+                sql.SQL(amount),sql.Identifier(table),sql.SQL(predicate))
+            for tenant,count,byte_count in connection.execute(query).fetchall():
+                expected[(tenant,resource)] = (count,byte_count)
+                if resource=='upload_reservations':
+                    old=expected.get((tenant,'input_files'),(0,0))
+                    expected[(tenant,'input_files')]=(old[0]+count,0)
+        usage={(tenant,resource):(count,byte_count) for tenant,resource,count,byte_count in
+            connection.execute('SELECT tenant_id,resource,rows,bytes FROM tenant_auxiliary_usage').fetchall()}
+        result['auxiliary_ledger_mismatches']=sum(
+            usage.get(key,(0,0))!=expected.get(key,(0,0)) for key in set(usage)|set(expected))
+    if any(result.values()):raise RuntimeError('restored_admission_ledger_mismatch')
+    return result
+
 
 def now():
     return datetime.now(timezone.utc).isoformat()
@@ -58,12 +112,19 @@ def verify_database(connection, expected_migrations):
     invalid = connection.execute("SELECT count(*) FROM pg_constraint WHERE connamespace='public'::regnamespace AND NOT convalidated").fetchone()[0]
     if counts or accepted or queues or invalid:
         raise RuntimeError('restored_invariant_mismatch')
-    functions = connection.execute("""SELECT p.proname,p.prosecdef,p.proconfig
+    functions = connection.execute("""SELECT p.proname,p.prosecdef,p.proconfig,
+      oidvectortypes(p.proargtypes),p.proowner=(SELECT relowner FROM pg_class WHERE oid='public.tasks'::regclass)
       FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
       WHERE n.nspname='public' AND p.proname LIKE 'batchforge_%' ORDER BY p.proname""").fetchall()
     required = {'batchforge_claim','batchforge_complete','batchforge_heartbeat','batchforge_fail','batchforge_recover'}
-    if not required.issubset({r[0] for r in functions}) or any(r[1] or not any(s.startswith('search_path=') for s in (r[2] or [])) for r in functions):
+    allowed_definers=PRIVATE_AUXILIARY_DEFINERS if ledger[-1][0]>=10 else {}
+    if not required.issubset({r[0] for r in functions}) or any(
+            (r[1] and r[0] not in allowed_definers)
+            or (r[0] in allowed_definers and (not r[1] or not r[4]
+                or r[3].replace(' ','')!=allowed_definers[r[0]]))
+            or not any(s.replace(' ','')=='search_path=pg_catalog,public' for s in (r[2] or [])) for r in functions):
         raise RuntimeError('restored_function_security_differs')
+    admission=admission_invariants(connection,ledger[-1][0])
     tables = connection.execute("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename").fetchall()
     digests = {}
     for number, (table,) in enumerate(tables):
@@ -78,7 +139,9 @@ def verify_database(connection, expected_migrations):
     return {'schema_version':ledger[-1][0], 'migration_checksums':dict(ledger),
         'batch_count_state_usage_mismatches':counts,'accepted_attempt_count_usage_mismatches':accepted,
         'tenant_queue_pending_mismatches':queues,'unvalidated_constraints':invalid,
-        'security_invoker_functions':[r[0] for r in functions], 'tables':digests,
+        'security_invoker_functions':[r[0] for r in functions if not r[1]],
+        'private_source_auxiliary_definer_functions':[r[0] for r in functions if r[1]],
+        **admission, 'tables':digests,
         'prompt_tokens':int(totals[0]),'completion_tokens':int(totals[1])}
 
 
@@ -108,6 +171,7 @@ def restore(args):
           'All-table digests describe the restored archive, not equality against a subsequently changing live database.',
           'Functional restore may overlap a real worker-fault drill; timings are not an isolated performance comparison.',
           'External blob objects and provider disaster recovery are outside this database snapshot proof.']}
+    report['limitations'].append('Private auxiliary definer signatures/owner/search_path are checked; --no-acl does not restore their production EXECUTE restrictions.')
     started = time.monotonic();stopped = False
     temporary = Path(tempfile.mkdtemp(prefix='bf-restore-pg17-',dir='/tmp'))
     logpath = temporary/'postgres.log'

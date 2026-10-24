@@ -81,7 +81,11 @@ def policy_bytes(raw, legacy, cutoff):
 
 
 def validate_proofs(paths, expected_hashes):
-    if set(paths)!={'backup','restore','production'} or not {'restore','production'}.issubset(expected_hashes):
+    required={'backup','restore','production'}
+    latest=MIGRATIONS[-1][0]
+    if latest>8:required|={'current_backup','current_restore'}
+    required_hashes={'restore','production'}|({'current_restore'} if latest>8 else set())
+    if set(paths)!=required or not required_hashes.issubset(expected_hashes):
         raise ValueError('Exact reviewed restore and production hashes are required')
     records={};digests={}
     for name,path in paths.items():
@@ -95,7 +99,7 @@ def validate_proofs(paths, expected_hashes):
             or not restore.get('passed') or not restore.get('restore_verified')
             or restore.get('schema_version')!=8 or not restore.get('temporary_cluster_stopped')
             or not restore.get('temporary_cluster_removed') or restore.get('snapshot_sha256')!=snapshot
-            or restore.get('migration_checksums')!={str(v):digest for v,_,digest in MIGRATIONS}
+            or restore.get('migration_checksums')!={str(v):digest for v,_,digest in MIGRATIONS if v<=8}
             or any(restore.get(k)!=0 for k in ['batch_count_state_usage_mismatches',
                 'accepted_attempt_count_usage_mismatches','tenant_queue_pending_mismatches','unvalidated_constraints'])):
         raise ValueError('Passed schema8 backup/restore evidence is required')
@@ -111,8 +115,28 @@ def validate_proofs(paths, expected_hashes):
     steps=production.get('steps',[])
     if not steps or not steps[-1].get('purged') or steps[-1].get('rows_purged')!=20:
         raise ValueError('Production purge proof is incomplete')
+    current_snapshot=None
+    if latest>8:
+        current_backup,current_restore=(records[k] for k in ('current_backup','current_restore'))
+        current_snapshot=current_backup.get('snapshot_sha256','')
+        current_invariants=['batch_count_state_usage_mismatches','accepted_attempt_count_usage_mismatches',
+            'tenant_queue_pending_mismatches','unvalidated_constraints','retention_ledger_mismatches',
+            'retention_undercharged_tasks','retention_missing_tenant_ledgers']
+        if latest>=10:current_invariants.append('auxiliary_ledger_mismatches')
+        if (not re.fullmatch('[0-9a-f]{64}',current_snapshot)
+                or not current_backup.get('archive_list_verified')
+                or current_backup.get('database_modified') is not False
+                or not current_restore.get('passed') or not current_restore.get('restore_verified')
+                or current_restore.get('schema_version')!=latest
+                or current_restore.get('snapshot_sha256')!=current_snapshot
+                or current_restore.get('migration_checksums')!={str(v):digest for v,_,digest in MIGRATIONS}
+                or not current_restore.get('temporary_cluster_stopped')
+                or not current_restore.get('temporary_cluster_removed')
+                or any(current_restore.get(k)!=0 for k in current_invariants)):
+            raise ValueError('Passed current-schema backup/restore evidence is required')
     return {'sha256':digests,'snapshot_sha256':snapshot,'output_file_id':production['output_file_id'],
-            'output_sha256':production['output_sha256'],'output_bytes':production['download_bytes']}
+            'output_sha256':production['output_sha256'],'output_bytes':production['download_bytes'],
+            'current_schema_snapshot_sha256':current_snapshot}
 
 
 class FinalPolicyRoll(PolicyRoll):
@@ -255,9 +279,20 @@ def main():
     parser.add_argument('--restore-sha256',required=True)
     parser.add_argument('--production-proof',type=Path,required=True)
     parser.add_argument('--production-sha256',required=True)
+    parser.add_argument('--current-backup-report',type=Path)
+    parser.add_argument('--current-restore-report',type=Path)
+    parser.add_argument('--current-restore-sha256')
     parser.add_argument('--access-env',type=Path,default=ROOT.parent/'access.env')
     parser.add_argument('--execute',action='store_true')
     args=parser.parse_args();os.umask(0o077)
+    if MIGRATIONS[-1][0]>8 and (not args.current_backup_report or not args.current_restore_report
+            or not re.fullmatch('[0-9a-f]{64}',args.current_restore_sha256 or '')):
+        parser.error('A new schema requires its own exact reviewed current backup and restore proof')
+    proof_paths={'backup':args.backup_report,'restore':args.restore_report,'production':args.production_proof}
+    proof_hashes={'restore':args.restore_sha256,'production':args.production_sha256}
+    if MIGRATIONS[-1][0]>8:
+        proof_paths.update(current_backup=args.current_backup_report,current_restore=args.current_restore_report)
+        proof_hashes['current_restore']=args.current_restore_sha256
     report=args.report.resolve();runtime=ROOT/'.runtime'
     if (not report.is_relative_to(runtime) or report.parent==runtime or report.name!='report.json'
             or any(not re.fullmatch('[0-9a-f]{64}',v) for v in [args.restore_sha256,args.production_sha256])):
@@ -272,8 +307,8 @@ def main():
         manifest,services,_=load_manifest(runtime/'services-primary.json')
         watchdog={'role':'supervisor','name':'primary','env_file':str(ROOT.parent/'supervisor.env'),'python':str(ROOT.parent/'venv/bin/python')}
         roll=FinalPolicyRoll(root=ROOT,services=services,watchdog=watchdog,manifest_path=manifest,
-            report_path=report,cutoff=args.cutoff,proof_paths={'backup':args.backup_report,'restore':args.restore_report,'production':args.production_proof},
-            proof_hashes={'restore':args.restore_sha256,'production':args.production_sha256},access_env=args.access_env)
+            report_path=report,cutoff=args.cutoff,proof_paths=proof_paths,
+            proof_hashes=proof_hashes,access_env=args.access_env)
         if old and (old['manifest_sha256']!=roll.report['manifest_sha256'] or old['api_environment_sha256_before']!=roll.report['api_environment_sha256_before']):
             raise RuntimeError('Prepared environment or manifest drifted')
         for api in roll.apis:

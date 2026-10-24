@@ -16,6 +16,10 @@ from pathlib import Path
 
 def category(name):
     name = name.lower()
+    # These observed vLLM TP kernels perform custom cross-device collectives;
+    # their intervals may include peer waiting/spin, not just data movement.
+    if any(s in name for s in ('vllm::cross_device_reduce_1stage<', 'vllm::cross_device_reduce_2stage<')):
+        return 'communication_custom_collective'
     if any(s in name for s in ('nccl', 'allreduce', 'all_reduce', 'allgather', 'all_gather', 'reducescatter')):
         return 'communication'
     if any(s in name for s in ('attention', 'flashattn', 'flash_attn', 'flash_fwd', 'flash_bwd', 'fmha')):
@@ -134,6 +138,7 @@ def main():
               'limitations': ['Rank mapping must be verified against owned engine PIDs by the caller',
                               'Categories use kernel-name heuristics, not instruction or hardware-counter attribution',
                               'Communication intervals may include waiting or spin kernels',
+                              'Custom vLLM cross-device reduce intervals are separated from NCCL by exact observed kernel names',
                               'Category interval unions overlap; exclusive unions plus cross-category overlap partition total union',
                               'Ranks have independent trace windows; their durations are not summed into global elapsed time',
                               'Activity intervals do not establish Tensor Core utilization, FLOPS or memory bandwidth']}

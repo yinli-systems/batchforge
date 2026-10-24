@@ -23,6 +23,8 @@ import stat
 import tempfile
 from urllib.parse import urlsplit
 
+from .auxiliary_admission import collect_expired_read_leases, release_read_lease
+
 
 class BlobStorageError(RuntimeError):
     pass
@@ -364,9 +366,12 @@ class BlobCatalog:
                 if not ticket or not obj or obj["state"] not in {"writing", "ready"} or (obj["state"] == "writing" and obj["write_token"] != token):
                     raise BlobBusy("Upload generation or reservation lost")
                 await conn.execute("UPDATE blob_objects SET state='ready',write_token=NULL,write_expires_at=NULL,updated_at=clock_timestamp() WHERE id=%s", (ref.id,))
+                # Transfer the pre-PUT future-file metadata credit to the actual
+                # file in this same tenant-locked transaction; rollback restores
+                # the reservation if publication fails.
+                await conn.execute("DELETE FROM blob_upload_reservations WHERE id=%s", (token,))
                 row = await _one(conn, "INSERT INTO files(id,tenant_id,filename,kind,content,bytes,blob_id,storage_expires_at,admission_tasks) VALUES(%s,%s,%s,'input',NULL,%s,%s,clock_timestamp()+make_interval(secs=>%s),%s) RETURNING *", (_id("file"), tenant, str(filename)[:255], len(content), ref.id, self.retention_seconds, task_count))
                 await conn.execute("UPDATE tenant_blob_usage SET reserved_bytes=reserved_bytes-%s,stored_bytes=stored_bytes+%s WHERE tenant_id=%s", (len(content), len(content), tenant))
-                await conn.execute("DELETE FROM blob_upload_reservations WHERE id=%s", (token,))
                 return row
         except BaseException:
             # Cancellation cannot cancel an in-flight SDK thread. Generation
@@ -485,8 +490,7 @@ class BlobCatalog:
                 await renewal
             except Exception:
                 pass
-            async with self.pool.connection() as conn:
-                await conn.execute("DELETE FROM blob_read_leases WHERE id=%s", (lease,))
+            await release_read_lease(self.pool, 'blob_read_leases', tenant, lease)
 
     async def read_input(self, tenant, file_id):
         async with self.open_input(tenant, file_id) as chunks:
@@ -526,10 +530,8 @@ class BlobCatalog:
         if not 1 <= limit <= 1000 or not 0 <= grace_seconds <= 604800:
             raise ValueError("Invalid bounded GC limits")
         # Expired reservation credits are released with the same tenant lock.
+        await collect_expired_read_leases(self.pool, 'blob_read_leases', limit)
         async with self.pool.connection() as conn:
-            # Expired leases cannot be renewed; removing only bounded expired
-            # rows requires no tenant lock and cannot race a live renewal.
-            await conn.execute("DELETE FROM blob_read_leases WHERE id IN (SELECT id FROM blob_read_leases WHERE expires_at<=clock_timestamp() ORDER BY expires_at,id LIMIT %s FOR UPDATE SKIP LOCKED)", (limit,))
             expired = await (await conn.execute("SELECT id,tenant_id FROM blob_upload_reservations WHERE expires_at<=clock_timestamp() ORDER BY expires_at,id LIMIT %s", (limit,))).fetchall()
         for ticket in expired:
             # Recheck inside _abort below is done under the tenant lock.

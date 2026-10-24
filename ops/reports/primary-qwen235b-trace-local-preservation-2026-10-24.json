@@ -1,0 +1,37 @@
+{
+  "all_five_verified": true,
+  "files": [
+    {
+      "name": "a0f61b63d635_176395.1792809912794264165.pt.trace.json.gz",
+      "bytes": 26501763,
+      "sha256": "feb8fd91a705ff0e52aaefc4bca1c896d7226c09534c14ffeb438985ea14c839",
+      "mode": "0o600"
+    },
+    {
+      "name": "a0f61b63d635_175673.async_llm.1792809909062416256.pt.trace.json.gz",
+      "bytes": 1070,
+      "sha256": "d3bb0b99d8e3a5891a617d841f98490d12869f0a248dc699b05fc8d9aebb7581",
+      "mode": "0o600"
+    },
+    {
+      "name": "a0f61b63d635_176398.1792809912786775144.pt.trace.json.gz",
+      "bytes": 26444473,
+      "sha256": "b8e298a120c4e9d1da73dcb024ef93587c985ba54a557cc4d0ce1e059e7ba720",
+      "mode": "0o600"
+    },
+    {
+      "name": "a0f61b63d635_176396.1792809912758769229.pt.trace.json.gz",
+      "bytes": 26434562,
+      "sha256": "40c069c1984e7f018aebc3a74c8cca5545c4377225f1edf18a35257a80582d8f",
+      "mode": "0o600"
+    },
+    {
+      "name": "a0f61b63d635_176397.1792809912784753170.pt.trace.json.gz",
+      "bytes": 26441479,
+      "sha256": "6a57036f1687b8719655961c1faaba3a7aa16f749f5c81c1d6a22bf88ab10af1",
+      "mode": "0o600"
+    }
+  ],
+  "source_analysis_sha256": "ee561afbcf845745f632a31903d93ecee544fb1f56dc38167fd020e5f310cc79",
+  "location": ".runtime/qwen235b-cuda-traces-20261024"
+}

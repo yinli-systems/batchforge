@@ -1,0 +1,29 @@
+{
+  "date_utc": "2026-10-24",
+  "scope": "Read-only production observation in a drained operator window before the adaptive64 timed cohort",
+  "exact_sql_observation_timestamp_recorded": false,
+  "database_modified": false,
+  "database_physical_bytes": 292364288,
+  "retained_tasks": 26603,
+  "active_tasks": 0,
+  "task_body_json_text_bytes": 157675875,
+  "task_response_json_text_bytes": 42172253,
+  "auxiliary_rows": {
+    "files": 845,
+    "idempotency": 403,
+    "blob_objects": 46,
+    "result_archive_runs": 1,
+    "result_archive_chunks": 1
+  },
+  "provider_limit": {
+    "source": "Connected Neon describe_project response for little-math-11178935",
+    "branch_logical_size_limit_bytes": 1073741824,
+    "billing_or_plan_changed": false
+  },
+  "limitations": [
+    "pg_database_size is a PostgreSQL physical allocation observation, not equality with provider logical billing storage.",
+    "JSON text lengths exclude row, index, TOAST, WAL, error and auxiliary metadata overhead.",
+    "A branch limit is not a production SLA or a sufficient application admission policy.",
+    "These are point observations; no storage growth rate or physical worst-case capacity was measured."
+  ]
+}

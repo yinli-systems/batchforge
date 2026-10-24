@@ -1,0 +1,63 @@
+"""Offline-only classification refinement of the locally preserved capture."""
+from pathlib import Path
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+
+from scripts.trace_intervals import analyze
+
+ROOT = Path(__file__).resolve().parents[2]
+REPORTS = ROOT / 'ops/reports'
+RAW = ROOT / '.runtime/qwen235b-cuda-traces-20261024'
+MAXIMUM_BYTES = 1024 * 1024**2
+V1_SHA = 'ee561afbcf845745f632a31903d93ecee544fb1f56dc38167fd020e5f310cc79'
+ORIGINAL_SHA = '9a1160a177e8f5459d7e382670158d2c2af3dfe9989a5df6b343b20cccf8c7c9'
+
+def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
+def now(): return datetime.now(timezone.utc).isoformat()
+
+def main():
+    os.umask(0o077)
+    destination = REPORTS / 'primary-qwen235b-trace-offline-analysis-v2-2026-10-24.json'
+    if destination.exists(): raise RuntimeError('Preserve the existing v2 result; do not overwrite')
+    v1_path = REPORTS / 'primary-qwen235b-trace-offline-analysis-2026-10-24.json'
+    original = REPORTS / 'primary-qwen235b-trace-capture-original-2026-10-24.json'
+    assert sha(v1_path) == V1_SHA and sha(original) == ORIGINAL_SHA
+    v1 = json.loads(v1_path.read_text())
+    assert v1['phase'] == 'complete' and v1['all_four_tp_ranks_present'] and v1['profiler_stop_confirmed']
+    assert len(v1['all_five_files']) == 5 and set(v1['ranks']) == {'0','1','2','3'}
+    for remote, metadata in v1['all_five_files'].items():
+        path = RAW / Path(remote).name
+        assert sha(path) == metadata['compressed_sha256'] and path.stat().st_size == metadata['compressed_bytes']
+    report = {'phase': 'analyzing', 'started_at': now(),
+              'scope': 'CPU-only reclassification of the identical locally preserved capture; no network or inference calls',
+              'v1_report_sha256': V1_SHA, 'original_capture_report_sha256': ORIGINAL_SHA,
+              'v1_analyzer_sha256': v1['analyzer_sha256'],
+              'v2_analyzer_sha256': sha(ROOT / 'scripts/trace_intervals.py'),
+              'continuation_source_sha256': sha(Path(__file__)),
+              'maximum_expanded_bytes_per_file': MAXIMUM_BYTES,
+              'change': 'Observed vllm::cross_device_reduce_1stage/2stage kernels move from other to communication_custom_collective',
+              'all_five_files': v1['all_five_files'], 'leader_cpu_trace': v1['leader_cpu_trace'],
+              'rank_identities_at_capture': v1['rank_identities'], 'capture_guards': v1['guards_after'], 'ranks': {}}
+    for rank, old in sorted(v1['ranks'].items()):
+        path = RAW / Path(old['trace_file']).name
+        current = analyze(path, MAXIMUM_BYTES)
+        invariants = ('kernel_count', 'uncompressed_trace_sha256', 'uncompressed_bytes',
+                      'observed_cuda_device_ids', 'first_kernel_to_last_kernel_span_seconds',
+                      'any_kernel_interval_union_seconds')
+        assert all(current[key] == old[key] for key in invariants)
+        report['ranks'][rank] = {**current, 'compressed_sha256': sha(path),
+                                 'compressed_bytes': path.stat().st_size, 'preserved_trace_basename': path.name,
+                                 'unchanged_capture_invariants_verified': True}
+    assert sha(v1_path) == V1_SHA and sha(original) == ORIGINAL_SHA
+    report.update(phase='complete', finished_at=now(), all_four_tp_ranks_present=True,
+        limitations=['Custom collective intervals include waiting/spin; they are not isolated network transfer time or bandwidth.',
+                    'Category unions may overlap and are never summed as exclusive wall time.',
+                    'Rank windows remain independent; no sum across ranks is global elapsed time.',
+                    'Kernel labels do not measure SM/Tensor Core utilization or FLOPS.',
+                    'The profiled four-request workload differs from the timed mixed-output sixteen-slot cohort.'])
+    with destination.open('x') as file: json.dump(report, file, indent=2); file.write('\n')
+    print(json.dumps({'phase': 'complete', 'report': str(destination), 'report_sha256': sha(destination)}))
+
+if __name__ == '__main__': main()

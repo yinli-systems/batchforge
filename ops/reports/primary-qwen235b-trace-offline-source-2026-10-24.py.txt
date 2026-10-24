@@ -1,0 +1,120 @@
+"""Analyze the unique captured trace, including one proven leader CPU trace.
+
+No inference or profiling RPC is made. The original capture report is immutable.
+"""
+from pathlib import Path
+from datetime import datetime, timezone
+import fcntl
+import gzip
+import hashlib
+import json
+import os
+import re
+
+import httpx
+import psycopg
+
+from ops import engine_members
+from ops.manage import owned_record
+from ops.supervise import ROOT, load_manifest, private_read, private_write
+from ops.ha.retune_full_gpu import file_env
+from ops.ha.profile_qwen235b import COUNTERS, GAUGES, engine_metrics, map_traces
+from scripts.trace_intervals import analyze
+
+LIMIT = 1024 * 1024**2
+
+def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
+def now(): return datetime.now(timezone.utc).isoformat()
+
+def main():
+    os.umask(0o077)
+    run = ROOT / '.runtime/qwen235b-trace-probe-v1'
+    lock = (run / 'offline-analysis-v1.lock').open('a')
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    target = run / 'offline-analysis-v1.json'
+    if target.exists(): raise RuntimeError('Inspect the existing unique continuation instead of overwriting it')
+    original = run / 'report.json'
+    original_sha = sha(original)
+    capture = json.loads(private_read(original))
+    state = json.loads(private_read(ROOT / '.runtime/qwen235b-trace-probe-activation-v1/state.json'))
+    if state['phase'] != 'failed' or capture['phase'] != 'failed' or capture.get('profiler_stop_confirmed') is not True:
+        raise RuntimeError('The original capture must be terminal with profiler stop confirmed')
+    leader = capture['engine_leader_identity']
+    ranks = {int(k): v for k, v in capture['rank_identities'].items()}
+    if set(ranks) != {0, 1, 2, 3}: raise RuntimeError('Four captured rank identities required')
+    if owned_record(ROOT / '.runtime/engine-qwen235b.json') != leader:
+        raise RuntimeError('Engine leader identity changed')
+    if any(engine_members.identity(r['pid']) != r for r in ranks.values()):
+        raise RuntimeError('Captured TP rank identity changed')
+    _, services, _ = load_manifest(ROOT / '.runtime/services-primary.json')
+    engine = next(s for s in services if (s['role'], s['name']) == ('engine', 'qwen235b'))
+    worker = next(s for s in services if (s['role'], s['name']) == ('worker', 'qwen235b'))
+    worker_env = file_env(worker['env_file'])
+    api_env = file_env(next(s for s in services if s['role'] == 'api')['env_file'])
+    headers = {'Authorization': 'Bearer ' + worker_env['INFERENCE_API_KEY']} if worker_env.get('INFERENCE_API_KEY') else {}
+    def guards():
+        with psycopg.connect(api_env['DATABASE_URL'], connect_timeout=10) as conn:
+            active = conn.execute("SELECT count(*) FROM tasks WHERE status IN ('pending','running')").fetchone()[0]
+        if active: raise RuntimeError('Platform is not drained')
+        with httpx.Client(trust_env=False, timeout=20, headers=headers) as client:
+            response = client.get(f'http://127.0.0.1:{engine["port"]}/metrics'); response.raise_for_status()
+        actual = engine_metrics(response.text)
+        delta = {name: actual[name] - capture['metrics_before'][name] for name in COUNTERS}
+        if delta != dict(zip(COUNTERS, (4.0, 26752.0, 128.0))) or any(actual[name] for name in GAUGES):
+            raise RuntimeError('The existing capture does not isolate exactly the four requests')
+        return {'global_active_tasks': active, 'engine_metrics': actual, 'capture_counter_delta': delta}
+    before = guards()
+    directory = Path(capture['profile_directory'])
+    paths = set(directory.glob('*.pt.trace.json.gz'))
+    leader_pattern = re.compile(r'_' + str(leader['pid']) + r'\.async_llm\.([0-9]+)\.pt\.trace\.json\.gz$')
+    cpu = [p for p in paths if leader_pattern.search(p.name)]
+    if len(paths) != 5 or len(cpu) != 1: raise RuntimeError('Only four TP files and one exact owned-leader CPU trace are allowed')
+    mapping = map_traces(paths - set(cpu), ranks)
+    metadata = {str(p): {'compressed_sha256': sha(p), 'compressed_bytes': p.stat().st_size} for p in paths}
+    capture_started = datetime.fromisoformat(capture['capture_started_at']).timestamp()
+    capture_finished = datetime.fromisoformat(capture['capture_finished_at']).timestamp()
+    for p in paths:
+        timestamp_ns = int(re.search(r'\.([0-9]+)\.pt\.trace\.json\.gz$', p.name)[1])
+        if not capture_started <= timestamp_ns / 1e9 <= capture_finished:
+            raise RuntimeError('Trace export timestamp falls outside the unique capture window')
+    with gzip.open(cpu[0], 'rb') as file: raw = file.read(LIMIT + 1)
+    if len(raw) > LIMIT: raise RuntimeError('CPU trace exceeds the explicit expanded byte limit')
+    cpu_data = json.loads(raw)
+    events = cpu_data['traceEvents']
+    if any(event.get('cat') == 'kernel' or event.get('cat', '').startswith('gpu_') for event in events):
+        raise RuntimeError('Excluded leader trace contains CUDA device activity')
+    cpu_evidence = {**metadata[str(cpu[0])], 'trace_file': str(cpu[0]), 'owned_leader_pid': leader['pid'],
+                   'uncompressed_sha256': hashlib.sha256(raw).hexdigest(), 'uncompressed_bytes': len(raw),
+                   'event_count': len(events), 'event_categories': sorted(set(event.get('cat', '') for event in events)),
+                   'cuda_kernel_events': 0, 'excluded_reason': 'Verified engine leader async_llm CPU-only trace'}
+    del raw, cpu_data, events
+    result = {'phase': 'analyzing', 'started_at': now(), 'original_capture_report': str(original),
+              'original_capture_report_sha256': original_sha, 'original_capture_phase': capture['phase'],
+              'profiler_stop_confirmed': True, 'controller_sha256': sha(Path(__file__)),
+              'analyzer_sha256': sha(ROOT / 'scripts/trace_intervals.py'),
+              'scope': 'Offline continuation of the same unique four-request capture; zero new inference/profile RPCs',
+              'maximum_expanded_bytes_per_file': LIMIT, 'all_five_files': metadata, 'leader_cpu_trace': cpu_evidence,
+              'guards_before': before, 'rank_identities': ranks, 'ranks': {}}
+    private_write(target, result)
+    try:
+        for rank, path in sorted(mapping.items()):
+            result['ranks'][rank] = {**analyze(path, LIMIT), **metadata[str(path)], 'trace_file': str(path)}
+            private_write(target, result)
+        result['guards_after'] = guards()
+        if sha(original) != original_sha or any(sha(Path(p)) != m['compressed_sha256'] for p, m in metadata.items()):
+            raise RuntimeError('Original evidence changed during offline analysis')
+        if owned_record(ROOT / '.runtime/engine-qwen235b.json') != leader or any(engine_members.identity(r['pid']) != r for r in ranks.values()):
+            raise RuntimeError('Owned engine identity changed during analysis')
+        result.update(phase='complete', all_four_tp_ranks_present=True, finished_at=now(),
+            limitations=['Kernel-name categories are heuristic, not measured SM/Tensor Core utilization or FLOPS',
+                        'Communication intervals may include waiting or spin kernels',
+                        'Independent rank windows are never summed into global elapsed time',
+                        'Four requests with 32 output tokens differ from the timed mixed-output sixteen-slot benchmark'])
+        private_write(target, result)
+    except BaseException as error:
+        result.update(phase='failed', failure_type=type(error).__name__, finished_at=now())
+        private_write(target, result)
+        raise
+    print(json.dumps({'phase': 'complete', 'report': str(target), 'all_four_tp_ranks_present': True}))
+
+if __name__ == '__main__': main()

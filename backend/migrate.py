@@ -17,7 +17,7 @@ from psycopg.rows import dict_row
 
 from .config import get_settings
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 10
 MIGRATION_LOCK = 1936150117
 SCHEMA_SQL = Path(__file__).with_name("schema.sql").read_text()
 SCHEMA_CHECKSUM = hashlib.sha256(SCHEMA_SQL.encode()).hexdigest()
@@ -29,7 +29,9 @@ MIGRATIONS = ((1, SCHEMA_SQL, SCHEMA_CHECKSUM),
 for version, filename in ((4, '0004_sql_failure_recovery.sql'),
                           (5, '0005_blob_storage.sql'), (6, '0006_cost_scheduler.sql'),
                           (7, '0007_runtime_registration_guard.sql'),
-                          (8, '0008_result_archival.sql')):
+                          (8, '0008_result_archival.sql'),
+                          (9, '0009_retention_admission.sql'),
+                          (10, '0010_auxiliary_metadata_admission.sql')):
     statement = Path(__file__).with_name('migrations').joinpath(filename).read_text()
     MIGRATIONS += ((version, statement, hashlib.sha256(statement.encode()).hexdigest()),)
 
