@@ -14,6 +14,7 @@ import math
 import os
 from pathlib import Path
 import sys
+import tempfile
 
 SELF=Path(__file__).resolve();ROOT=SELF.parent.parent
 sys.path.insert(0,str(ROOT))
@@ -160,19 +161,35 @@ def render(audit):
   artifacts={}
   for format_name in ('png','svg'):
    buffer=io.BytesIO();fig.savefig(buffer,format=format_name,dpi=160,metadata={'Creator':'BatchForge verified workload-regime evidence'})
-   artifacts[format_name]=buffer.getvalue()
+   raw=buffer.getvalue()
+   if format_name=='svg':raw=b'\n'.join(line.rstrip() for line in raw.splitlines())+b'\n'
+   artifacts[format_name]=raw
   return artifacts
  finally:plt.close(fig)
 
 
 def main():
- parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--write',action='store_true');args=parser.parse_args()
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--write',action='store_true')
+ parser.add_argument('--stage',action='store_true',help='Write a new private runtime directory rather than published files')
+ args=parser.parse_args();require(not args.stage or args.write,'stage_requires_write')
  audit=dataset();files={}
  if args.write:
   source=PREFIX.with_suffix('.plot-source.py.txt')
-  require(not source.exists() and not source.is_symlink(),'plot_source_already_exists')
+  if not args.stage:require(not source.exists() and not source.is_symlink(),'plot_source_already_exists')
   artifacts=render(audit);artifacts['plot-source.py.txt']=SELF.read_bytes()
-  files=write_artifacts(PREFIX,artifacts,audit)
+  if args.stage:
+   destination=Path(tempfile.mkdtemp(prefix='qwen235b-regime-svg-clean-',dir=ROOT/'.runtime'))
+   audit['artifacts']={PREFIX.name+'.'+suffix:{'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw)} for suffix,raw in artifacts.items()}
+   artifacts['chart-data.audit.json']=(json.dumps(audit,indent=2,sort_keys=True,allow_nan=False)+'\n').encode()
+   for suffix,raw in artifacts.items():
+    path=destination/(PREFIX.name+'.'+suffix)
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'wb') as handle:handle.write(raw);handle.flush();os.fsync(handle.fileno())
+    files[str(path)]=hashlib.sha256(raw).hexdigest()
+   fd=os.open(destination,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+   try:os.fsync(fd)
+   finally:os.close(fd)
+  else:files=write_artifacts(PREFIX,artifacts,audit)
  print(json.dumps({'validated':True,'artifacts_written':files,'source_inputs_sha256':audit['source_inputs_sha256']},sort_keys=True))
 if __name__=='__main__':
  try:main()

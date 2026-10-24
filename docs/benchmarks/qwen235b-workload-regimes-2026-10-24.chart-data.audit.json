@@ -1,16 +1,16 @@
 {
   "artifacts": {
     "qwen235b-workload-regimes-2026-10-24.plot-source.py.txt": {
-      "bytes": 14178,
-      "sha256": "e318eae4bd8b93bac214693f42946fbc4803ad6fbdaf555ccd272aea37a3e78c"
+      "bytes": 15294,
+      "sha256": "3279ea0bef568ce7b51f489aeb3d256a5fe1ee33d564475a1ce6dd90eec29760"
     },
     "qwen235b-workload-regimes-2026-10-24.png": {
-      "bytes": 326945,
-      "sha256": "9daf169d960d954ae36f51659c18e979817b8be4bc99d9952786276191a47102"
+      "bytes": 327545,
+      "sha256": "b021cf7762bfdba3e655ebcc61168aea8c2a094eb9e73eecff9dae0ccef314f0"
     },
     "qwen235b-workload-regimes-2026-10-24.svg": {
-      "bytes": 43159,
-      "sha256": "eb58a15961abaabee860ce047ad8d0edb50f1e59674dd17372cd3e97cb727af9"
+      "bytes": 42985,
+      "sha256": "9713aeefe5de6a9105c07c409e775aa31d3c9a4e73417f34ee23f33f43eb1f41"
     }
   },
   "business_state_modified": false,
@@ -218,7 +218,7 @@
   "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
   "performance_ab_comparison": false,
   "physical_gpu_count": 4,
-  "plot_source_sha256": "e318eae4bd8b93bac214693f42946fbc4803ad6fbdaf555ccd272aea37a3e78c",
+  "plot_source_sha256": "3279ea0bef568ce7b51f489aeb3d256a5fe1ee33d564475a1ce6dd90eec29760",
   "raw_model_content_included": false,
   "source_inputs_sha256": {
     "controller_source": "d2328ba541a050b20b94c4e669ca1024100a8a548ffdeb6560f2afbec64076fd",
