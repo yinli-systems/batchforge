@@ -80,8 +80,10 @@ The receipt SHA inputs and manifest SHA are operator trust anchors, not digital 
 From the local repository root, run:
 
 ```sh
+BF_LOCAL_META="$(pwd)/.runtime/sustained-v11-export"
+
 .runtime/plot-venv312/bin/python .runtime/verify_matched_v11_receipt.py \
-  --manifest .runtime/sustained-v11-export/receive-manifest.json \
+  --manifest "$BF_LOCAL_META/receive-manifest.json" \
   --manifest-sha256 TRUSTED_LOCAL_MANIFEST_SHA256
 ```
 
@@ -95,11 +97,13 @@ On success, repeat with `--write --receipt-output` pointing to a new file in an 
 One complete invocation is:
 
 ```sh
+BF_LOCAL_META="$(pwd)/.runtime/sustained-v11-export"
+
 .runtime/plot-venv312/bin/python .runtime/verify_matched_v11_receipt.py \
-  --manifest .runtime/sustained-v11-export/receive-manifest.json \
+  --manifest "$BF_LOCAL_META/receive-manifest.json" \
   --manifest-sha256 TRUSTED_LOCAL_MANIFEST_SHA256 \
   --write \
-  --receipt-output .runtime/sustained-v11-export/local-verification-receipt.json \
+  --receipt-output "$BF_LOCAL_META/local-verification-receipt.json" \
   --render \
   --output-prefix docs/benchmarks/qwen235b-v11-response-policy-two-30m-2026-10-24
 ```
