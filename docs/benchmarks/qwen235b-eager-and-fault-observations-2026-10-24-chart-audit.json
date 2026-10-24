@@ -1,0 +1,27 @@
+{
+  "analysis_source_sha256": "6be3d07b84360419b01412e06030c0c26579c231b642781a15117a153c620ca2",
+  "artifacts": {
+    "docs/benchmarks/qwen235b-eager-and-fault-observations-2026-10-24.png": {
+      "bytes": 294013,
+      "sha256": "a93d00a33d2dd7af37ca933bbf1002bb5091cd82f525fc58e5bdbcb4c6393a35"
+    },
+    "docs/benchmarks/qwen235b-eager-and-fault-observations-2026-10-24.svg": {
+      "bytes": 53072,
+      "sha256": "ee93128c85b659ee5b033d7e1bab58917d11421ddd647391651121a032baff90"
+    }
+  },
+  "cohort_count": 5,
+  "dataset_sha256": "1c06afce2abba7172a933a54398eec30b8324dddbb06de7e973030c5933cbd98",
+  "matplotlib_version": "3.11.2",
+  "no_causal_claim": true,
+  "rendered": true,
+  "source_benchmark_sha256": {
+    "capacity2": "c138e5007581d13cec51ff3863f2172af2ef49c7593f8656c9ae6ebb8ceedfba",
+    "eagerB": "c1a933ebc7a6413a5add853e9b8fbbcf94651a005ca915c232e4ba60e5d5eb16",
+    "engine": "b9e4d2a186746c6a32ae2b24167b11fdd30b0e73f60f4d94952bd08d2e410b12",
+    "original": "f2ee958137418c1f0c5db4d450eb621a5269f0bbf267cb43165a19dfb24a1650",
+    "worker": "95d84fcb2aa48740125c1729cd1c4023cab7d8c5100cc851b0460aa39b657b93"
+  },
+  "svg_normalization": "After matplotlib render, strip line trailing whitespace before XML parse and final SHA; no numeric/layout transformation",
+  "version": 1
+}

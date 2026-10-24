@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-24",
+  "status": "LOCAL_CORRECTNESS_QUALIFICATION_ONLY",
+  "source_commit": "8f23c44e5145891b935ea389caa1001854ad36da",
+  "source_sha256": {
+    "backend/admission_metrics.py": "6a8f641a13d0716c0572ff3407aedd68fcc9ea2f7d345ab7679ac98a4d3d1bb0",
+    "backend/store.py": "d90fa5ddfebbe3c3139944f5f7986bd0557a3e107420483d0a29d3a795ee2415",
+    "tests/test_admission_observability.py": "b3fb1f201d28a5c67eb7b9dabededa54b5912b757a21957fc0ae6b748c992938"
+  },
+  "qualification": {
+    "mode": "Private temporary code overlay using canonical backend imports; exact bytes subsequently committed unchanged",
+    "postgres_version": "16.2",
+    "unix_socket_only": true,
+    "passed": 17,
+    "skipped": 0,
+    "elapsed_seconds": 3.28,
+    "temporary_cluster_stopped_and_removed": true,
+    "temporary_code_overlay_removed": true,
+    "production_database_accessed": false,
+    "gpu_or_external_object_service_accessed": false,
+    "without_test_database": {
+      "passed": 10,
+      "skipped": 7,
+      "elapsed_seconds": 0.64,
+      "skip_scope": "Seven explicit PostgreSQL cases require TEST_DATABASE_URL"
+    }
+  },
+  "operator_receipt_scope": "Recorded local qualification by the implementing agent; not a signed independent or production attestation",
+  "linux_pg17_qualification": "NOT_YET_RUN_FOR_THIS_RELEASE",
+  "linux_pg17_source_snapshot": {
+    "status": "STAGED_LOCALLY_NOT_EXECUTED",
+    "commit": "8f23c44e5145891b935ea389caa1001854ad36da",
+    "source_files": 189,
+    "source_bytes": 2271222,
+    "source_tree_sha256": "d877fd766a3cbd13c109319b19ef2b85078c3d15956b506c182468d1637a73f0",
+    "source_manifest_sha256": "103ddf1f0dced62ad803c679888af1ca8a64259335fdb0f662f27d6db842ef51",
+    "validator_sha256": "7c334946871af825e0f11224d878aa13281dbc416fa723784064b54f7ed24fdc",
+    "archive_sha256": "6b11d9f44d02b5e6e65ff22f84afaa5ea80d96b979e9ae8a1e5dab6861aafc9e",
+    "archive_bytes": 566658,
+    "application_configuration_or_reports_included": false,
+    "production_transport_or_execution_performed": false
+  },
+  "production_deployment": "NOT_PERFORMED_BY_THIS_QUALIFICATION",
+  "limitations": [
+    "The earlier693d658 Linux/PG17 result does not validate the newly committed metrics sources.",
+    "A new Linux/PG17 code-only release snapshot and deployment activation proof are required separately.",
+    "No runtime latency, throughput, billing, lock-cause, GPU-kernel or TTFT claim follows from correctness tests.",
+    "Durations preserve commit-unknown behavior; an error metric does not prove rollback."
+  ]
+}

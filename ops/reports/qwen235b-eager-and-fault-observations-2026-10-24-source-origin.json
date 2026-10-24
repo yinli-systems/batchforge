@@ -1,0 +1,395 @@
+{
+  "analysis_source_sha256": "6be3d07b84360419b01412e06030c0c26579c231b642781a15117a153c620ca2",
+  "files": {
+    "docs/benchmarks/qwen235b-eager-and-fault-observations-2026-10-24-chart-audit.json": {
+      "bytes": 1304,
+      "sha256": "892c519350086d619cdeecee0de904a4260a8aad455c8e73f07a3dd9b031b766"
+    },
+    "docs/benchmarks/qwen235b-eager-and-fault-observations-2026-10-24.md": {
+      "bytes": 7859,
+      "sha256": "39b33e71ba2b8c30b8a91828526b3e95acccb4389fa2372577f6e659e55b289f"
+    },
+    "docs/benchmarks/qwen235b-eager-and-fault-observations-2026-10-24.png": {
+      "bytes": 294013,
+      "sha256": "a93d00a33d2dd7af37ca933bbf1002bb5091cd82f525fc58e5bdbcb4c6393a35"
+    },
+    "docs/benchmarks/qwen235b-eager-and-fault-observations-2026-10-24.svg": {
+      "bytes": 53072,
+      "sha256": "ee93128c85b659ee5b033d7e1bab58917d11421ddd647391651121a032baff90"
+    },
+    "ops/reports/qwen235b-eager-and-fault-observations-2026-10-24-analysis-source.py.txt": {
+      "bytes": 33560,
+      "sha256": "6be3d07b84360419b01412e06030c0c26579c231b642781a15117a153c620ca2"
+    },
+    "ops/reports/qwen235b-eager-and-fault-observations-2026-10-24.json": {
+      "bytes": 27449,
+      "sha256": "1c06afce2abba7172a933a54398eec30b8324dddbb06de7e973030c5933cbd98"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-activation-origin-2026-10-24.json": {
+      "bytes": 36044,
+      "sha256": "883bb1458b28db582c248c18d33311e76d9e457127eec7789e803f653bc65672"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-journal-2026-10-24.json": {
+      "bytes": 2866,
+      "sha256": "f07b01b1d99fcebec016b3d9fef2bac2362083264b9601c70e09251829553f1a"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-mixed-after-2026-10-24.json": {
+      "bytes": 12673,
+      "sha256": "c8dc1988bf9adc3927a295fd2bbcb110c3c95b7dbd8d8a18271ad747105e0da9"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-mixed-before-2026-10-24.json": {
+      "bytes": 638,
+      "sha256": "0866ba409bc146629cf18cd47efaa9a331cb5be17ae8cc2e516e2030a11898a8"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-mixed-report-2026-10-24.json": {
+      "bytes": 193689,
+      "sha256": "c1a933ebc7a6413a5add853e9b8fbbcf94651a005ca915c232e4ba60e5d5eb16"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-mixed-stage-delta-2026-10-24.json": {
+      "bytes": 2735,
+      "sha256": "4ef57b4391e3046c64521429bfb8eb171e3b3743ea651978acb04904d210fef3"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-plan-2026-10-24.json": {
+      "bytes": 20806,
+      "sha256": "bc9e6cf7dd78aee7073eb77f0b7a89ed81ed66e115dcae30dc5cd95c0a65bcb3"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-profiler-receipt-2026-10-24.json": {
+      "bytes": 19435,
+      "sha256": "f309e778924bde2ff92b4a7e99a58e8bc8dcf1a146cc50349c5ada425804ec7b"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-qa-after-2026-10-24.json": {
+      "bytes": 12685,
+      "sha256": "8e7cb6db70b36026cbe460f7438905c168c9017136988aaa3ed5114d571ca892"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-qa-before-2026-10-24.json": {
+      "bytes": 12673,
+      "sha256": "2c634a3a1f39fe7ebae78c3c3d121f8081e2461333f934d7e28f2a4d9b0b0c71"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-qa-quality-2026-10-24.json": {
+      "bytes": 1130,
+      "sha256": "8fafd32d0d1dd9df7993aa42ba02acd3a3cadcdc3a1729d7bea2301e19bab25d"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-qa-report-2026-10-24.json": {
+      "bytes": 194218,
+      "sha256": "37aca5e4fa86e0cf3422d4b4f3c4cd188226ac9cf9b11e01b4af557bec1b9054"
+    },
+    "ops/reports/qwen235b-eager-b-cohorts-v1-qa-stage-delta-2026-10-24.json": {
+      "bytes": 2732,
+      "sha256": "b30e2b43f633d7eeb95c9000e671885f74dcd2e35a96a50995bc7c22204a6b78"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-journal-2026-10-24.json": {
+      "bytes": 2873,
+      "sha256": "3e9ca6a6de632a6b6b661c6c8dff0c976c5c9521b8b6dc1315b228b0ae63eaef"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-mixed-after-2026-10-24.json": {
+      "bytes": 12691,
+      "sha256": "6e44840413c53668ea09f191096c0f6187b7255e0ea7d35b087742265d053d54"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-mixed-before-2026-10-24.json": {
+      "bytes": 12691,
+      "sha256": "364903f8054c3ac38cfcd9ed72d06f8f6b351eb806dee47898ec846984ba9864"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-mixed-report-2026-10-24.json": {
+      "bytes": 189594,
+      "sha256": "f2ee958137418c1f0c5db4d450eb621a5269f0bbf267cb43165a19dfb24a1650"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-mixed-stage-delta-2026-10-24.json": {
+      "bytes": 2731,
+      "sha256": "6877034f4eb08e108a9178f39b548ca03f076b09265ecd4ad5a4523567283e9f"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-plan-2026-10-24.json": {
+      "bytes": 20660,
+      "sha256": "e423a988425802293db67c8240b0f3ebca97de9366b7a70ff9a2e69917f99587"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-profiler-receipt-2026-10-24.json": {
+      "bytes": 19400,
+      "sha256": "cd516bd2c33f95db55f0aba06d3694d1f15fbb4afd10c25e9df153e7a1e8f121"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-qa-after-2026-10-24.json": {
+      "bytes": 12691,
+      "sha256": "1af9b863663e4b724487c2bb7bf1d4e1820edcb0f134906ea8e79da1fcacdf24"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-qa-before-2026-10-24.json": {
+      "bytes": 12691,
+      "sha256": "fe1255c2d75f60188f3ae632a80a77a3dab508a48ad929bec79fee91c5ade2c2"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-qa-quality-2026-10-24.json": {
+      "bytes": 1129,
+      "sha256": "dbbc0bd0e32d4a6a5348b6e89ee20fa78aeec9bb30f8106b7bb16da2a863bedd"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-qa-report-2026-10-24.json": {
+      "bytes": 190132,
+      "sha256": "72fd20cf70e0bbc93b0fcc9cdfe68489a174def607892823291e1c2554832a86"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-qa-stage-delta-2026-10-24.json": {
+      "bytes": 2718,
+      "sha256": "5030956d6a765eb291edb4b1dea494559097d5c00a242bb46756264dc460a57b"
+    },
+    "ops/reports/qwen235b-original-eager-cohorts-v1-source-roll-origin-2026-10-24.json": {
+      "bytes": 43802,
+      "sha256": "53f33be3a068a7424cf9a497987e025c76da8c594f6cbc9c328e62c10b9ce444"
+    }
+  },
+  "git_or_index_modified": false,
+  "historical_graph_success_claimed": false,
+  "limitations": [
+    "Serial N=1 per case; no confidence interval or causal fault-overhead/optimizer claim.",
+    "Historical process generations, model reload and cache/warm state were not experimentally matched.",
+    "The same fixed fixture is repeated; output length checks are not answer-quality evaluation.",
+    "Runner wall is client submission through terminal observation; output validation, wrappers, activation and idle intervals are excluded.",
+    "Whole-Pod16.10USD/hour is an allocation scenario, not an invoice or marginal cost.",
+    "Task percentiles are DB batch-created to task-finished, including queueing; not GPU service latency or TTFT.",
+    "NVML means are unweighted physical-device samples over a broader window; missing device samples are not zero.",
+    "Stage histograms overlap tasks and are not durable per-attempt traces, kernel timing or proof of CUDA graph replay.",
+    "Single Pod application recovery does not establish independent HA, hardware GPU reset or cross-node migration.",
+    "235B is MoE total parameters, approximately22B active per token; not a dense235B execution claim."
+  ],
+  "original_metadata_count": 26,
+  "production_access_during_packaging": false,
+  "scope": "Exact26 original metadata copies plus derived local dataset/document/plot; no raw payload/configuration/traces",
+  "source_inputs": {
+    "capacity2": {
+      "files": {
+        "benchmark": {
+          "bytes": 278633,
+          "file": "ops/reports/qwen235b-capacity2-fault100-v1-benchmark-2026-10-24.json",
+          "sha256": "c138e5007581d13cec51ff3863f2172af2ef49c7593f8656c9ae6ebb8ceedfba"
+        },
+        "cohort": {
+          "bytes": 4676,
+          "file": "ops/reports/qwen235b-capacity2-fault100-v1-cohort-2026-10-24.json",
+          "sha256": "09b1206ad9eadd4c4b3945b99f075f774565e16a12ecf4e235b36255c1fe13c0"
+        },
+        "plan": {
+          "bytes": 18984,
+          "file": "ops/reports/qwen235b-capacity2-fault100-v1-plan-2026-10-24.json",
+          "sha256": "79853d1a0f66abbad2735b94b6f6b41509fb8c1f60b05f9488ecc0f79cd17725"
+        },
+        "probe": {
+          "bytes": 343525,
+          "file": "ops/reports/qwen235b-capacity2-fault100-v1-probe-2026-10-24.json",
+          "sha256": "044fd68c3dfb72d6b1c1ca3f276ae22b20cf55888eafdb054f6d6f8d76b20f84"
+        }
+      }
+    },
+    "eagerB": {
+      "anchors_sha256": "3911d3ac5549da9e45907b81b6c190d268c8d31d7517f89ae3397d3176b0dbca",
+      "files": {
+        "journal.json": {
+          "bytes": 2866,
+          "file": "qwen235b-eager-b-cohorts-v1-journal-2026-10-24.json",
+          "sha256": "f07b01b1d99fcebec016b3d9fef2bac2362083264b9601c70e09251829553f1a",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-eager-b-cohorts-v1/journal.json"
+        },
+        "mixed-after.json": {
+          "bytes": 12673,
+          "file": "qwen235b-eager-b-cohorts-v1-mixed-after-2026-10-24.json",
+          "sha256": "c8dc1988bf9adc3927a295fd2bbcb110c3c95b7dbd8d8a18271ad747105e0da9",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-eager-b-cohorts-v1/mixed-after.json"
+        },
+        "mixed-before.json": {
+          "bytes": 638,
+          "file": "qwen235b-eager-b-cohorts-v1-mixed-before-2026-10-24.json",
+          "sha256": "0866ba409bc146629cf18cd47efaa9a331cb5be17ae8cc2e516e2030a11898a8",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-eager-b-cohorts-v1/mixed-before.json"
+        },
+        "mixed/report.json": {
+          "bytes": 193689,
+          "file": "qwen235b-eager-b-cohorts-v1-mixed-report-2026-10-24.json",
+          "sha256": "c1a933ebc7a6413a5add853e9b8fbbcf94651a005ca915c232e4ba60e5d5eb16",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-eager-b-cohorts-v1/mixed/report.json"
+        },
+        "mixed/stage-delta.json": {
+          "bytes": 2735,
+          "file": "qwen235b-eager-b-cohorts-v1-mixed-stage-delta-2026-10-24.json",
+          "sha256": "4ef57b4391e3046c64521429bfb8eb171e3b3743ea651978acb04904d210fef3",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-eager-b-cohorts-v1/mixed/stage-delta.json"
+        },
+        "origin/q235-eagerB-safe-v1-dormant-profiler-v1.json": {
+          "bytes": 19435,
+          "file": "qwen235b-eager-b-cohorts-v1-profiler-receipt-2026-10-24.json",
+          "sha256": "f309e778924bde2ff92b4a7e99a58e8bc8dcf1a146cc50349c5ada425804ec7b",
+          "source_path": "/root/batchforge-runtime/app/.runtime/q235-eagerB-safe-v1-dormant-profiler-v1.json"
+        },
+        "origin/q235-eagerB-safe-v1/report.json": {
+          "bytes": 36044,
+          "file": "qwen235b-eager-b-cohorts-v1-activation-origin-2026-10-24.json",
+          "sha256": "883bb1458b28db582c248c18d33311e76d9e457127eec7789e803f653bc65672",
+          "source_path": "/root/batchforge-runtime/app/.runtime/q235-eagerB-safe-v1/report.json"
+        },
+        "plan.json": {
+          "bytes": 20806,
+          "file": "qwen235b-eager-b-cohorts-v1-plan-2026-10-24.json",
+          "sha256": "bc9e6cf7dd78aee7073eb77f0b7a89ed81ed66e115dcae30dc5cd95c0a65bcb3",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-eager-b-cohorts-v1/plan.json"
+        },
+        "qa-after.json": {
+          "bytes": 12685,
+          "file": "qwen235b-eager-b-cohorts-v1-qa-after-2026-10-24.json",
+          "sha256": "8e7cb6db70b36026cbe460f7438905c168c9017136988aaa3ed5114d571ca892",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-eager-b-cohorts-v1/qa-after.json"
+        },
+        "qa-before.json": {
+          "bytes": 12673,
+          "file": "qwen235b-eager-b-cohorts-v1-qa-before-2026-10-24.json",
+          "sha256": "2c634a3a1f39fe7ebae78c3c3d121f8081e2461333f934d7e28f2a4d9b0b0c71",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-eager-b-cohorts-v1/qa-before.json"
+        },
+        "qa/quality.json": {
+          "bytes": 1130,
+          "file": "qwen235b-eager-b-cohorts-v1-qa-quality-2026-10-24.json",
+          "sha256": "8fafd32d0d1dd9df7993aa42ba02acd3a3cadcdc3a1729d7bea2301e19bab25d",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-eager-b-cohorts-v1/qa/quality.json"
+        },
+        "qa/report.json": {
+          "bytes": 194218,
+          "file": "qwen235b-eager-b-cohorts-v1-qa-report-2026-10-24.json",
+          "sha256": "37aca5e4fa86e0cf3422d4b4f3c4cd188226ac9cf9b11e01b4af557bec1b9054",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-eager-b-cohorts-v1/qa/report.json"
+        },
+        "qa/stage-delta.json": {
+          "bytes": 2732,
+          "file": "qwen235b-eager-b-cohorts-v1-qa-stage-delta-2026-10-24.json",
+          "sha256": "b30e2b43f633d7eeb95c9000e671885f74dcd2e35a96a50995bc7c22204a6b78",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-eager-b-cohorts-v1/qa/stage-delta.json"
+        }
+      },
+      "metadata_validator_sha256": "bfdb18d5af547e64b882b86c46de85be782073a50489a276c576d77b9e3339ed",
+      "transport_manifest_sha256": "e10163af22ba1f3dbebb2da88ffc0cd8c537f6143b90758f2943f6735655532a"
+    },
+    "engine": {
+      "files": {
+        "benchmark": {
+          "bytes": 278741,
+          "file": "ops/reports/qwen235b-engine-fault100-v1-benchmark-2026-10-24.json",
+          "sha256": "b9e4d2a186746c6a32ae2b24167b11fdd30b0e73f60f4d94952bd08d2e410b12"
+        },
+        "cohort": {
+          "bytes": 4667,
+          "file": "ops/reports/qwen235b-engine-fault100-v1-cohort-2026-10-24.json",
+          "sha256": "2b6f4d56b8b851dd9113b41d540f2ab9169d20a53f0bc39a64982344c4fef9c8"
+        },
+        "plan": {
+          "bytes": 18978,
+          "file": "ops/reports/qwen235b-engine-fault100-v1-plan-2026-10-24.json",
+          "sha256": "05963183a384240b595d506cc05adad96a180c4bef8c5f89bbe446584f392d55"
+        },
+        "probe": {
+          "bytes": 287072,
+          "file": "ops/reports/qwen235b-engine-fault100-v1-probe-2026-10-24.json",
+          "sha256": "940e1905ca6888ca83ecdf1b8e938bb7ec70aad70d4d1da68231bcff57ef169b"
+        }
+      }
+    },
+    "original": {
+      "anchors_sha256": "1dc87dc561db8c854582874ce93730cc4cd9ca730c304afbcd34b51a8f32fa5d",
+      "files": {
+        "journal.json": {
+          "bytes": 2873,
+          "file": "qwen235b-original-eager-cohorts-v1-journal-2026-10-24.json",
+          "sha256": "3e9ca6a6de632a6b6b661c6c8dff0c976c5c9521b8b6dc1315b228b0ae63eaef",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-original-eager-cohorts-v1/journal.json"
+        },
+        "mixed-after.json": {
+          "bytes": 12691,
+          "file": "qwen235b-original-eager-cohorts-v1-mixed-after-2026-10-24.json",
+          "sha256": "6e44840413c53668ea09f191096c0f6187b7255e0ea7d35b087742265d053d54",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-original-eager-cohorts-v1/mixed-after.json"
+        },
+        "mixed-before.json": {
+          "bytes": 12691,
+          "file": "qwen235b-original-eager-cohorts-v1-mixed-before-2026-10-24.json",
+          "sha256": "364903f8054c3ac38cfcd9ed72d06f8f6b351eb806dee47898ec846984ba9864",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-original-eager-cohorts-v1/mixed-before.json"
+        },
+        "mixed/report.json": {
+          "bytes": 189594,
+          "file": "qwen235b-original-eager-cohorts-v1-mixed-report-2026-10-24.json",
+          "sha256": "f2ee958137418c1f0c5db4d450eb621a5269f0bbf267cb43165a19dfb24a1650",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-original-eager-cohorts-v1/mixed/report.json"
+        },
+        "mixed/stage-delta.json": {
+          "bytes": 2731,
+          "file": "qwen235b-original-eager-cohorts-v1-mixed-stage-delta-2026-10-24.json",
+          "sha256": "6877034f4eb08e108a9178f39b548ca03f076b09265ecd4ad5a4523567283e9f",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-original-eager-cohorts-v1/mixed/stage-delta.json"
+        },
+        "origin/postpair-source-roll-v1/report.json": {
+          "bytes": 43802,
+          "file": "qwen235b-original-eager-cohorts-v1-source-roll-origin-2026-10-24.json",
+          "sha256": "53f33be3a068a7424cf9a497987e025c76da8c594f6cbc9c328e62c10b9ce444",
+          "source_path": "/root/batchforge-runtime/app/.runtime/postpair-source-roll-v1/report.json"
+        },
+        "origin/qwen235b-original-dormant-profiler-v1.json": {
+          "bytes": 19400,
+          "file": "qwen235b-original-eager-cohorts-v1-profiler-receipt-2026-10-24.json",
+          "sha256": "cd516bd2c33f95db55f0aba06d3694d1f15fbb4afd10c25e9df153e7a1e8f121",
+          "source_path": "/root/batchforge-runtime/app/.runtime/qwen235b-original-dormant-profiler-v1.json"
+        },
+        "plan.json": {
+          "bytes": 20660,
+          "file": "qwen235b-original-eager-cohorts-v1-plan-2026-10-24.json",
+          "sha256": "e423a988425802293db67c8240b0f3ebca97de9366b7a70ff9a2e69917f99587",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-original-eager-cohorts-v1/plan.json"
+        },
+        "qa-after.json": {
+          "bytes": 12691,
+          "file": "qwen235b-original-eager-cohorts-v1-qa-after-2026-10-24.json",
+          "sha256": "1af9b863663e4b724487c2bb7bf1d4e1820edcb0f134906ea8e79da1fcacdf24",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-original-eager-cohorts-v1/qa-after.json"
+        },
+        "qa-before.json": {
+          "bytes": 12691,
+          "file": "qwen235b-original-eager-cohorts-v1-qa-before-2026-10-24.json",
+          "sha256": "fe1255c2d75f60188f3ae632a80a77a3dab508a48ad929bec79fee91c5ade2c2",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-original-eager-cohorts-v1/qa-before.json"
+        },
+        "qa/quality.json": {
+          "bytes": 1129,
+          "file": "qwen235b-original-eager-cohorts-v1-qa-quality-2026-10-24.json",
+          "sha256": "dbbc0bd0e32d4a6a5348b6e89ee20fa78aeec9bb30f8106b7bb16da2a863bedd",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-original-eager-cohorts-v1/qa/quality.json"
+        },
+        "qa/report.json": {
+          "bytes": 190132,
+          "file": "qwen235b-original-eager-cohorts-v1-qa-report-2026-10-24.json",
+          "sha256": "72fd20cf70e0bbc93b0fcc9cdfe68489a174def607892823291e1c2554832a86",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-original-eager-cohorts-v1/qa/report.json"
+        },
+        "qa/stage-delta.json": {
+          "bytes": 2718,
+          "file": "qwen235b-original-eager-cohorts-v1-qa-stage-delta-2026-10-24.json",
+          "sha256": "5030956d6a765eb291edb4b1dea494559097d5c00a242bb46756264dc460a57b",
+          "source_path": "/root/batchforge-runtime/app/.runtime/execution-cohorts/qwen235b-original-eager-cohorts-v1/qa/stage-delta.json"
+        }
+      },
+      "metadata_validator_sha256": "51763045050d37ea031597b82cfded8a930c70a0d6fb753e7c8bcdf4df4cf47b",
+      "transport_manifest_sha256": "cc1b317c79de5657b67418a999dd34233a427ba50f6a651d9aeb565d627d1258"
+    },
+    "worker": {
+      "files": {
+        "benchmark": {
+          "bytes": 278629,
+          "file": "ops/reports/qwen235b-worker-fault100-v1-benchmark-2026-10-24.json",
+          "sha256": "95d84fcb2aa48740125c1729cd1c4023cab7d8c5100cc851b0460aa39b657b93"
+        },
+        "cohort": {
+          "bytes": 4670,
+          "file": "ops/reports/qwen235b-worker-fault100-v1-cohort-2026-10-24.json",
+          "sha256": "b182478825865c6551a66034f4f5631e431eb2260ac5da829bf2451832cd4b22"
+        },
+        "plan": {
+          "bytes": 18978,
+          "file": "ops/reports/qwen235b-worker-fault100-v1-plan-2026-10-24.json",
+          "sha256": "096ce26429d5d468e5de078a886da17ae1ad8c824b6e354141413656211cef1b"
+        },
+        "probe": {
+          "bytes": 333921,
+          "file": "ops/reports/qwen235b-worker-fault100-v1-probe-2026-10-24.json",
+          "sha256": "3dc40eeb599889a31765a345f63d50342e7815f07dfda14674f646853160b388"
+        }
+      }
+    }
+  },
+  "version": 1
+}
