@@ -26,18 +26,30 @@ import psycopg
 from ops.ha.adaptive_qwen235b import identity, private_operation_directory
 from ops.ha.deploy_adaptive_worker_source import atomic_source, source_state
 from ops.ha.finalize_api_policy import values
-from ops.ha.history_maintenance import private_file
 from ops.ha.set_scheduler_policy import PolicyManager, atomic_bytes, timestamp
 from ops.supervise import ROOT, load_manifest, private_write
 
 PATHS=frozenset({'ops/gateway/worker_gateway.py','scripts/sustained_benchmark.py'})
 DEPENDENCIES=('ops/ha/deploy_upload_protocol.py','ops/manage.py','ops/supervise.py',
  'ops/ha/adaptive_qwen235b.py','ops/ha/deploy_adaptive_worker_source.py',
- 'ops/ha/set_scheduler_policy.py','ops/ha/finalize_api_policy.py','ops/ha/history_maintenance.py')
+ 'ops/ha/set_scheduler_policy.py','ops/ha/finalize_api_policy.py')
 TOKEN='BATCHFORGE_WORKER_TOKEN'
 
 
 def digest(raw):return hashlib.sha256(raw).hexdigest()
+
+
+def private_file(path,limit=65536):
+    """Read an owned private file without importing post-v10 history helpers."""
+    fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
+    try:
+        info=os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_uid!=os.geteuid() or info.st_mode&0o077 or info.st_nlink!=1:
+            raise ValueError('Private owned regular file required')
+        raw=os.read(fd,limit+1)
+        if len(raw)>limit:raise ValueError('Private input exceeds byte limit')
+        return raw
+    finally:os.close(fd)
 
 
 def archive_sources(path,expected):

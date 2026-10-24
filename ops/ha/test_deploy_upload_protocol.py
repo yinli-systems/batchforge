@@ -1,8 +1,11 @@
+import ast
 import hashlib
 import io
 import json
 import os
 from pathlib import Path
+import subprocess
+import sys
 import tarfile
 
 import httpx
@@ -13,6 +16,53 @@ from ops.ha import deploy_upload_protocol as deploy
 
 def private(path,raw):
     path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(raw);path.chmod(0o600);return path
+
+
+def test_upload_controller_imports_in_code_only_registry10_without_new_history_dependencies(tmp_path):
+    """A full checkout must not hide a pre-v11 production import dependency."""
+    source=Path(deploy.__file__).resolve().parents[2];old=tmp_path/'old-app';old.mkdir()
+    absent={'backend/history_retirement.py','ops/ha/history_maintenance.py',
+        'backend/migrations/0011_history_retirement.sql'}
+    for directory in ('backend','ops','scripts','worker'):
+        for path in (source/directory).rglob('*'):
+            name=path.relative_to(source).as_posix()
+            if not path.is_file() or path.suffix not in ('.py','.sql') or name in absent or name.startswith('ops/reports/'):
+                continue
+            target=old/name;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(path.read_bytes())
+    registry=old/'backend/migrate.py';tree=ast.parse(registry.read_text())
+    for node in tree.body:
+        if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='SCHEMA_VERSION' for t in node.targets):
+            node.value=ast.Constant(10)
+        if isinstance(node,ast.For) and isinstance(node.iter,ast.Tuple):
+            node.iter.elts=[item for item in node.iter.elts if not (isinstance(item,ast.Tuple)
+                and isinstance(item.elts[0],ast.Constant) and item.elts[0].value==11)]
+    registry.write_text(ast.unparse(ast.fix_missing_locations(tree)))
+    code='''import importlib.abc,sys
+class AbsentHistory(importlib.abc.MetaPathFinder):
+    def find_spec(self,fullname,path=None,target=None):
+        if fullname in {'backend.history_retirement','ops.ha.history_maintenance'}:
+            raise AssertionError('Pre-v11 deployment must not import new history helpers')
+sys.meta_path.insert(0,AbsentHistory())
+from ops.ha import deploy_upload_protocol
+from backend.migrate import SCHEMA_VERSION,MIGRATIONS
+assert SCHEMA_VERSION==10 and MIGRATIONS[-1][0]==10
+assert 'backend.history_retirement' not in sys.modules
+assert 'ops.ha.history_maintenance' not in sys.modules
+'''
+    result=subprocess.run([sys.executable,'-c',code],cwd=old,
+        env={'PATH':os.environ.get('PATH',''),'PYTHONPATH':str(old),'PYTHONDONTWRITEBYTECODE':'1'},
+        capture_output=True,text=True,timeout=30)
+    assert result.returncode==0,result.stderr
+
+
+@pytest.mark.parametrize('kind',['readable_by_group','hardlink','symlink','oversize'])
+def test_self_contained_private_reader_preserves_security_guards(tmp_path,kind):
+    path=private(tmp_path/'private',b'private-data')
+    if kind=='readable_by_group':path.chmod(0o640)
+    elif kind=='hardlink':os.link(path,tmp_path/'second-link')
+    elif kind=='symlink':(tmp_path/'link').symlink_to(path);path=tmp_path/'link'
+    with pytest.raises((ValueError,OSError)):
+        deploy.private_file(path,3 if kind=='oversize' else 65536)
 
 
 def bundle(tmp_path,extra=None):
