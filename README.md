@@ -28,6 +28,16 @@ Public paid ingress was prepared and deferred by the operator; access remains
 private. See [availability](docs/ha.md), [ingress](docs/ingress.md), and
 [second-Pod deployment](docs/pod2.md).
 
+## Platform screenshots
+
+Captured from the running private deployment on October 24, 2026 (Asia/Dubai).
+The overview includes historical runs across models; it is not a 120B-only
+throughput measurement. [View all five screenshots](docs/screenshots/README.md).
+
+![Live workspace overview](docs/screenshots/overview-2026-10-24.jpg)
+
+![Completed GPT-OSS-120B batch](docs/screenshots/batch-120b-completed-2026-10-24.jpg)
+
 ## Features
 
 - Upload JSONL chat-completion requests and submit a batch.
