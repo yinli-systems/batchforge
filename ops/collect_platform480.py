@@ -28,6 +28,9 @@ from datetime import datetime, timezone
 import io, tarfile, base64, hashlib, json, re
 root=Path(root)
 paths=[]
+if root.name.startswith('soak480-agent-runtime-'):
+ p=root/'report.json'
+ if p.is_file() and not p.is_symlink():paths.append(p)
 for name in ['source-receipt.json','storage-preflight.json','launcher-v1.json',
              'launcher.json','deployment.json','sql-validation.json','rollout.json','readback.json',
              'campaign-launcher.json','initial-failure.json','passive-preflight.json',

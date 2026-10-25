@@ -1,5 +1,15 @@
 # Correctness checks and CI availability
 
+Agent runtime source `a39521d` passed actual exact-head push run
+[40234031029](https://github.com/yinli-systems/batchforge/actions/runs/40234031029):
+**1,599 Python tests, zero skips,23 Node tests and compileall**, using isolated
+PostgreSQL17.11, Node24.22.1 and UID65534 on the existing Pod CPU. The ephemeral
+runner exited and GitHub reports success; zero registrations remained. No GPU
+inference, production credentials, paid minutes or billing changes were involved.
+[Source-bound result](../ops/reports/github-native-ci-a39521d-2026-10-25.json).
+This qualifies CPU correctness of the new Agent harness/API/schema/adapter;
+it does not claim an Azure Agent migration or real-GPU Agent task success.
+
 Hosted run [40213979692](https://github.com/yinli-systems/batchforge/actions/runs/40213979692)
 failed before any test step for commit `2872d43`. The authenticated check
 annotation reports an account payment/spending-limit block. This is not a test

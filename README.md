@@ -5,8 +5,8 @@ an OpenAI-shaped batch API, and an operations console backed by live data.
 
 An additive [durable Agent runtime](docs/agent-runtime.md) now implements typed
 planning, capability-checked data tools, tenant memory, fenced coordinator
-leases and receipt-linked model steps through the existing Batch queue. It is
-under native qualification; Azure Agent-schema migration and real-GPU Agent
+leases and receipt-linked model steps through the existing Batch queue. Native
+CPU correctness checks pass; Azure Agent-schema migration and real-GPU Agent
 task-success qualification are still pending. The broader
 [Agent platform implementation map](docs/agent-platform-roadmap.md) tracks
 workflow composition, VectorMatch, isolation, multimodal and learning work
