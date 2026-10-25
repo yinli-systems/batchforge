@@ -1,0 +1,63 @@
+{
+ "schema": "batchforge.capability_catalog/1",
+ "now": "2026-10-25T12:00:00+00:00",
+ "policy": {
+  "stale_after_s": 30.0,
+  "expired_after_s": 120.0
+ },
+ "node": {
+  "node_id": "four-h100-host",
+  "liveness": "unknown",
+  "gpu_count": {
+   "status": "measured",
+   "value": 4,
+   "measured_at": "2026-10-25T00:31:58Z"
+  },
+  "nvlink": {
+   "status": "measured",
+   "value": [
+    "0-1",
+    "0-2",
+    "0-3",
+    "1-2",
+    "1-3",
+    "2-3"
+   ],
+   "measured_at": "2026-10-24T03:28:55.250515+00:00"
+  }
+ },
+ "placement": {
+  "plain_2gpu": {
+   "job_id": "plain_2gpu",
+   "eligible": [],
+   "rejected": {
+    "four-h100-host": "heartbeat unknown"
+   }
+  },
+  "nvlink_2gpu": {
+   "job_id": "nvlink_2gpu",
+   "eligible": [],
+   "rejected": {
+    "four-h100-host": "heartbeat unknown"
+   }
+  },
+  "nvlink_4gpu": {
+   "job_id": "nvlink_4gpu",
+   "eligible": [],
+   "rejected": {
+    "four-h100-host": "heartbeat unknown"
+   }
+  }
+ },
+ "measured_inputs": {
+  "inventory": "docs/evidence/gpu-snapshot-2026-10-25.json",
+  "topology": "ops/reports/primary-qwen235b-gpu-topology-2026-10-24.json",
+  "topology_observed_at": "2026-10-24T03:28:55.250515+00:00"
+ },
+ "not_measured": [
+  "heartbeat for this node (no heartbeat recorded)",
+  "NCCL capability",
+  "network bandwidth",
+  "node availability for scheduling"
+ ]
+}

@@ -24,3 +24,19 @@ python3 ops/evidence/gpu_inventory.py > snapshot.json
 ```
 
 Requires `nvidia-smi` on the path. The script issues only read queries.
+
+## Capability catalog snapshot
+
+- `capability-catalog-2026-10-25.json`: produced by
+  `python -m ops.evidence.catalog_snapshot` from the GPU inventory and the
+  `nvidia-smi topo -m` observation of the four-H100 host. GPU count and NVLink
+  pairs are **measured** (with their times). Liveness is **unknown** because no
+  heartbeat was recorded for the host, so no placement is eligible. This is the
+  intended behaviour: measured facts alone do not make a node schedulable.
+  The inventory and topology were measured on different days (2026-10-25 and
+  2026-10-24). No NCCL, bandwidth or availability claim is made.
+
+## Scale & Chaos Lab
+
+Control-plane runs with simulated workers are under `scale-chaos/`; see its README.
+They make no GPU claim.
