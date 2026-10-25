@@ -75,6 +75,10 @@ async def qualify(settings,key):
                 raise RuntimeError('Unauthenticated list was not rejected')
             if (await client.get('/v1/evaluations',headers={'Authorization':'Bearer invalid-review-key'})).status_code!=401:
                 raise RuntimeError('Invalid key was not rejected')
+            fleet=await client.get('/v1/fleet');fleet.raise_for_status()
+            if fleet.headers.get('Cache-Control')!='no-store':raise RuntimeError('Fleet must not be cached')
+            if (await client.get('/v1/fleet',headers={'Authorization':''})).status_code!=401:
+                raise RuntimeError('Fleet authentication required')
             response=await client.get('/');response.raise_for_status()
             if 'data-view="quality"' not in response.text:raise RuntimeError('Quality console navigation missing')
             response=await client.get('/app.js');response.raise_for_status()
@@ -86,11 +90,12 @@ async def qualify(settings,key):
         except APIError as exc:
             if exc.status!=404:raise
         else:raise RuntimeError('Another owner fetched evidence')
-    paths=['backend/app.py','backend/store.py','backend/evaluations.py','backend/config.py','frontend/app.js']
+    paths=['backend/app.py','backend/store.py','backend/evaluations.py','backend/fleet.py','backend/config.py','frontend/app.js']
     return {'passed':True,'captured_at':datetime.now(timezone.utc).isoformat(),'schema_version':schema,
         'database_read_only_verified':True,'tls_verified_hostname_mode':True,'tls_version':tls['version'],
         'real_owner_authenticated':True,'other_owner_hidden':True,'invalid_key_rejected':True,
         'evidence':checks,'source_sha256':{p:hashlib.sha256((root/p).read_bytes()).hexdigest() for p in paths},
+        'fleet_actual_azure_query_passed':True,'fleet_reported_nodes':len(fleet.json()['data']),
         'services_changed':False,'inference_requests':0,'application_port_opened':False,
         'scope':'Real Azure with source-isolated ASGI requests; production lifespan and background maintenance were not entered; no browser visual claim'}
 
@@ -99,6 +104,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--api-env',type=Path,required=True);p.add_argument('--access-env',type=Path,required=True)
     p.add_argument('--catalogue',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--inventory-device-indices');p.add_argument('--inventory-node-id')
     args=p.parse_args();os.umask(0o077)
     if args.out.exists():p.error('Preserve the closed report; select a new output path')
     try:
@@ -110,6 +116,11 @@ def main():
         async def bounded():
             async with asyncio.timeout(60):return await qualify(settings,key)
         result=asyncio.run(bounded())
+        if args.inventory_device_indices:
+            from worker.inventory import collect,selection
+            if not args.inventory_node_id:raise ValueError('Physical inventory requires explicit operator node identity')
+            result['independent_physical_inventory']=collect(args.inventory_node_id,selection(args.inventory_device_indices))
+            result['physical_inventory_registered']=False
     except Exception as exc:
         result={'passed':False,'error_type':type(exc).__name__,'requested_mode':'Read-only source-isolated ASGI qualification'}
     with args.out.open('x') as f:

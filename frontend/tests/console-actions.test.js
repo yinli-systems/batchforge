@@ -56,7 +56,7 @@ function harness(fetch, sessionStorage = storage(), fixtures = {}) {
     openBatch = async id => observed.opened.push(id);
     const renderDetails = renderDrawer;
     renderDrawer = () => observed.rendered.push(state.detail);
-    globalThis.actions = {state, createBatch, retryBatch, cancelBatch, renderDetails, verifyReceipt, loadEvidence, resetEvidence, renderEvidencePanel, capacityNotice, qualityView, loadEvaluations, resetQualityEvidence, downloadEvaluation};
+    globalThis.actions = {state, renderFleet, loadFleet, createBatch, retryBatch, cancelBatch, renderDetails, verifyReceipt, loadEvidence, resetEvidence, renderEvidencePanel, capacityNotice, qualityView, loadEvaluations, resetQualityEvidence, downloadEvaluation};
   `, context, {filename: 'frontend/app.js'});
   context.actions.state.key = 'test-tenant-key';
   context.actions.state.detailId = 'source-batch';
@@ -87,6 +87,22 @@ function createFixtures() {
     '#create-dialog': {closes:0,close(){this.closes++;}}};
   return fixtures;
 }
+
+test('stale fleet data never appears as current utilization and labels are escaped', () => {
+  const app=harness(async()=>jsonResponse({}));
+  app.state.fleet={rejected_reports:0,data:[{id:'abc',observed_device_count:1,reports:[{inventory_state:'stale',
+    inventory:{observed_at:'2026-10-25T15:00:00Z',devices:[{index:0,name:'<script>bad</script>',memory_total_mib:81920,
+      utilization_percent:100,memory_used_mib:74000,power_watts:690,temperature_celsius:60}],links:[]}}]}]};
+  const html=app.renderFleet();
+  assert.ok(!html.includes('<script>'));assert.ok(html.includes('&lt;script&gt;'));
+  assert.ok(!html.includes('100%'));assert.ok(html.includes('—%'));
+  assert.match(html,/do not reserve GPUs/);
+});
+
+test('fleet responses from an old workspace cannot populate the next workspace', async () => {
+  const app=harness(async()=>{app.state.key='next-workspace';return jsonResponse({data:[{id:'private-node'}]});});
+  await app.loadFleet();assert.equal(app.state.fleet,null);
+});
 
 test('reusing input skips upload and retries lost acknowledgement with the same task-set key', async () => {
   const fixtures=createFixtures(), calls=[];

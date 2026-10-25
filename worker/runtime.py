@@ -86,6 +86,7 @@ class Worker:
             self.metrics.kv_budget.set(settings.token_budget)
         self.lease_seconds = 90.0
         self.heartbeat_seconds = 10.0
+        self._gpu_inventory = None
         self.control = httpx.AsyncClient(
             base_url=settings.control_url,
             headers={"Authorization": f"Bearer {settings.worker_token}"},
@@ -171,6 +172,8 @@ class Worker:
         if self.kv_admission:
             scheduling_metadata['kv_admission'] = {'protocol': KV_PROTOCOL, 'budget': self.config.token_budget,
                 'block_size': 16, 'single_worker_single_engine': True, 'paused': self.kv_admission.paused}
+        if self._gpu_inventory is not None:
+            scheduling_metadata['gpu_inventory'] = self._gpu_inventory
         result = await self._post("/internal/workers/register", {
             "worker_id": self.config.worker_id,
             "name": self.config.name,
@@ -499,12 +502,24 @@ class Worker:
             changed.cancel()
             await asyncio.gather(stopping, changed, return_exceptions=True)
 
+    async def _inventory_loop(self):
+        from worker.inventory import collect
+        while not self.stop.is_set():
+            try:
+                self._gpu_inventory = await asyncio.to_thread(collect,self.config.inventory_node_id,self.config.inventory_gpu_indices)
+            except Exception:
+                # Never print driver command output or invent zero utilization.
+                self._gpu_inventory = None
+            try:await asyncio.wait_for(self.stop.wait(),timeout=30)
+            except asyncio.TimeoutError:pass
+
     async def run(self) -> None:
         backoff = .5
         idle_delay = self.config.poll_seconds
         idle_cap = max(self.config.poll_seconds, 2.0)
         next_registration = 0.0
         probes = asyncio.create_task(self._probe_loop())
+        inventory = asyncio.create_task(self._inventory_loop()) if self.config.inventory_gpu_indices else None
         try:
             while not self.stop.is_set():
                 self._capacity_changed.clear()
@@ -552,6 +567,9 @@ class Worker:
                 await asyncio.gather(*pending, return_exceptions=True)
             probes.cancel()
             await asyncio.gather(probes, return_exceptions=True)
+            if inventory:
+                inventory.cancel()
+                await asyncio.gather(inventory, return_exceptions=True)
             await self.close()
 
 

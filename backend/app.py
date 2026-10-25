@@ -393,6 +393,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def capacity(request: Request, tenant_id: str = Depends(tenant)):
         return await request.app.state.store.capacity(tenant_id)
 
+    @app.get('/v1/fleet')
+    async def fleet(request: Request, tenant_id: str = Depends(tenant)):
+        return JSONResponse(await request.app.state.store.fleet(tenant_id),headers={'Cache-Control':'no-store'})
+
     @app.get("/v1/models")
     async def models(tenant_id: str = Depends(tenant)):
         return {"object": "list", "data": [{"id": name, "object": "model", "owned_by": "batchforge"} for name in settings.served_models()]}

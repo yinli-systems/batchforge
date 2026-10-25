@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 
 from backend.scheduling import validate_profile
 from worker.kv_admission import SUPPORTED_MODELS as ADAPTIVE_MODELS
+from worker.inventory import selection as inventory_selection
 
 
 def _int(name: str, default: int) -> int:
@@ -57,8 +58,14 @@ class Settings:
     inference_api_key: str = ""
     scheduling_profile: dict | None = None
     adaptive_kv_enabled: bool = False
+    inventory_node_id: str = ''
+    inventory_gpu_indices: tuple[int, ...] = ()
 
     def __post_init__(self):
+        if self.inventory_gpu_indices:
+            if not self.inventory_node_id or len(self.inventory_node_id)>256 or any(type(i) is not int for i in self.inventory_gpu_indices):
+                raise ValueError('Inventory needs an explicit node ID and device indices')
+            inventory_selection(','.join(str(i) for i in self.inventory_gpu_indices))
         if type(self.adaptive_kv_enabled) is not bool:
             raise ValueError('Adaptive KV admission requires a boolean operator flag')
         if self.adaptive_kv_enabled:
@@ -127,6 +134,9 @@ class Settings:
             scheduling_profile=(validate_profile(json.loads(os.environ["SCHEDULER_PROFILE_JSON"]))
                                 if os.environ.get("SCHEDULER_PROFILE_JSON", "").strip() else None),
             adaptive_kv_enabled=_bool('WORKER_ADAPTIVE_KV_ENABLED'),
+            inventory_node_id=os.environ.get('WORKER_INVENTORY_NODE_ID',''),
+            inventory_gpu_indices=(inventory_selection(os.environ['WORKER_INVENTORY_GPU_INDICES'])
+                                   if os.environ.get('WORKER_INVENTORY_GPU_INDICES') else ()),
         )
         if settings.slots < 1:
             raise ValueError("WORKER_TOKEN_BUDGET must fit at least one ENGINE_MAX_MODEL_LEN")

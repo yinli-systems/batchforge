@@ -662,6 +662,16 @@ class Store:
                     recovered += 1
         return recovered
 
+    async def fleet(self, tenant):
+        from .fleet import fleet_view
+        async with self.pool.connection() as conn:
+            rows=await (await conn.execute("""SELECT id,model,
+                CASE WHEN octet_length((metadata->'gpu_inventory')::text)<=65536 THEN metadata->'gpu_inventory' END AS inventory,
+                CASE WHEN last_seen_at>clock_timestamp()-(%s*interval '1 second') THEN 'online' ELSE 'offline' END AS status
+                FROM workers WHERE model=ANY(%s) ORDER BY last_seen_at DESC,id LIMIT 100""",
+                (self.settings.lease_seconds*2,list(self.settings.served_models())))).fetchall()
+        return fleet_view(rows,datetime.now(timezone.utc))
+
     async def overview(self, tenant):
         async with self.pool.connection() as conn:
             stats = await one(conn, "SELECT count(*) AS total_batches,COALESCE(sum(total_count),0) AS total_tasks,COALESCE(sum(completed_count),0) AS completed_tasks,COALESCE(sum(failed_count),0) AS failed_tasks,COALESCE(sum(cancelled_count),0) AS cancelled_tasks,COALESCE(sum(pending_count),0) AS queued_tasks,COALESCE(sum(running_count),0) AS running_tasks,COALESCE(sum(prompt_tokens),0) AS prompt_tokens,COALESCE(sum(completion_tokens),0) AS completion_tokens FROM batches WHERE tenant_id=%s", (tenant,))

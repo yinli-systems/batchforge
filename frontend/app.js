@@ -119,6 +119,8 @@ const state = {
   loadedMore: false,
   models: [],
   evaluations: [],
+  fleet: null,
+  fleetError: '',
   qualityLoaded: false,
   qualityLoading: false,
   qualityError: '',
@@ -348,7 +350,35 @@ function batchesView() {
 
 function workersView() {
   const workers = state.overview?.workers || [];
-  return `${pageHeading('Worker cluster','Inspect the workers consuming your durable inference queue.',`<a class="button button-secondary" href="#docs">${icon('code')}Worker setup</a>`)}${connectionBanner()}${errorBanner()}${workers.length?`<div class="workers-grid">${workers.map(workerCard).join('')}</div>`:`<section class="panel">${emptyState('workers',state.connected?'No workers registered':'Connect to inspect your workers',state.connected?'Start a BatchForge worker connected to an OpenAI-compatible inference engine. Registered workers appear here automatically.':'Worker status, serving models, concurrency, and heartbeat health will appear after you connect.',state.connected?'':'Connect workspace','connect')}</section>`}<div class="panel worker-help"><h3>Execution is isolated from orchestration.</h3><p>GPU workers claim leased tasks, heartbeat during execution, and submit fenced results. If a worker disappears, unfinished tasks can be recovered without accepting stale attempts. Connected describes worker process liveness. Engine readiness is reported separately; configured slots do not guarantee available inference capacity. GPU utilization requires separate engine telemetry.</p></div>`
+  return `${pageHeading('Worker cluster','Inspect the workers consuming your durable inference queue.',`<a class="button button-secondary" href="#docs">${icon('code')}Worker setup</a>`)}${connectionBanner()}${errorBanner()}${workers.length?`<div class="workers-grid">${workers.map(workerCard).join('')}</div>`:`<section class="panel">${emptyState('workers',state.connected?'No workers registered':'Connect to inspect your workers',state.connected?'Start a BatchForge worker connected to an OpenAI-compatible inference engine. Registered workers appear here automatically.':'Worker status, serving models, concurrency, and heartbeat health will appear after you connect.',state.connected?'':'Connect workspace','connect')}</section>`}${renderFleet()}<div class="panel worker-help"><h3>Execution is isolated from orchestration.</h3><p>GPU workers claim leased tasks, heartbeat during execution, and submit fenced results. If a worker disappears, unfinished tasks can be recovered without accepting stale attempts. Connected describes worker process liveness. Engine readiness is reported separately; configured slots do not guarantee available inference capacity.</p></div>`
+}
+
+async function loadFleet() {
+  const key=state.key;
+  try {
+    const result=await api('/v1/fleet');
+    if(state.key!==key)return;
+    state.fleet=result;state.fleetError='';
+  } catch(error) {
+    if(state.key!==key)return;
+    state.fleet=null;state.fleetError=error.status===404?'GPU inventory is not enabled in this release.':'GPU inventory is temporarily unavailable.';
+  }
+}
+
+function renderFleet() {
+  const heading='<div class="panel-header"><div class="panel-title"><h2>Physical GPU observations</h2></div></div>';
+  const nodes=state.fleet?.data||[];
+  const note='<p class="drawer-note">Worker-reported devices may be shared. These observations do not reserve GPUs or establish available placement capacity. Link labels describe topology; bandwidth is not measured. Stale readings are hidden.</p>';
+  if(!nodes.length)return `<section class="panel worker-help">${heading}<p>${esc(state.fleetError||'No physical GPU inventory has been reported.')}</p>${note}</section>`;
+  const value=v=>v===null||v===undefined?'—':number(v);
+  return `<section class="panel worker-help">${heading}${nodes.slice(0,20).map(node=>{
+    const reports=node.reports||[];
+    const report=reports.find(r=>r.inventory_state==='fresh')||reports[0];
+    const inventory=report?.inventory;
+    if(!inventory)return '';
+    const fresh=report.inventory_state==='fresh';
+    return `<section class="drawer-section"><h3>Node ${esc(node.id.slice(0,12))} · ${esc(fresh?'fresh':'stale')}</h3><p class="drawer-note">${number(node.observed_device_count)} distinct devices reported · ${esc(dateText(inventory.observed_at))}${node.conflicts?.length?' · identity conflict; verify node configuration':''}</p><dl class="detail-list">${inventory.devices.slice(0,8).map(d=>`<div><dt>GPU ${number(d.index)} · ${esc(d.name)}</dt><dd>${fresh?value(d.utilization_percent):'—'}% · ${fresh?value(d.memory_used_mib):'—'} / ${value(d.memory_total_mib)} MiB · ${fresh?value(d.power_watts):'—'} W · ${fresh?value(d.temperature_celsius):'—'} °C</dd></div>`).join('')}</dl><p class="drawer-note">${(inventory.links||[]).slice(0,28).map(l=>`${number(l.a)} ↔ ${number(l.b)}: ${esc(l.relation)}`).join(' · ')||'Topology unavailable.'}</p></section>`;
+  }).join('')}${note}<p class="drawer-note">Showing up to 20 nodes and eight GPUs from one report per node; API reports retain shared memberships. ${number(state.fleet.rejected_reports)} invalid reports omitted.</p></section>`;
 }
 
 function workerCard(worker) {
@@ -566,6 +596,7 @@ async function refresh({
       if (state.key === key) state.models = models.data || []
     } catch {}
     if (state.key === key && state.view === 'quality') await loadEvaluations();
+    if (state.key === key && state.view === 'workers') await loadFleet();
   } catch (error) {
     if (state.key !== key) return;
     state.error = error.message;
@@ -618,6 +649,8 @@ async function connect(event) {
     state.batches = [];
     state.loadedMore = false;
     state.models = [];
+    state.fleet = null;
+    state.fleetError = '';
     state.createAttempt = null;
     resetQualityEvidence();
     if (state.detailId) closeDrawer();
@@ -648,6 +681,8 @@ function disconnect() {
     overview: null,
     batches: [],
     models: [],
+    fleet: null,
+    fleetError: '',
     error: '',
     updated: null,
     hasMore: false,
@@ -1320,7 +1355,7 @@ document.addEventListener('keydown', event => {
 });
 window.addEventListener('hashchange', () => {
   render();
-  if (['batches', 'quality'].includes(state.view) && state.key) refresh({
+  if (['batches', 'quality', 'workers'].includes(state.view) && state.key) refresh({
     silent: true,
     includeBatches: true
   })
