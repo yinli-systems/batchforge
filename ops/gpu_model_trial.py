@@ -28,6 +28,15 @@ def require(condition, reason):
         raise RuntimeError(reason)
 
 
+def require_managed_controls(manager, services):
+    for service in services:
+        if service['role'] not in {'api', 'gateway'}:
+            continue
+        value, error = manager.delegate.invoke(service, 'status')
+        require(error is None and value.get('running') is True,
+                'control_plane_process_record_must_be_reconciled_before_gpu_swap')
+
+
 def restore_services(manager, engine, worker, supervisor, wait, record):
     """Do not start a worker against an unready engine; always restore supervision."""
     failures = []
@@ -118,13 +127,15 @@ def main():
         require(len([x for x in verified if x['file'].endswith('.safetensors')]) == 51, 'checkpoint_shard_count')
         for entry in verified:
             require((args.model/entry['file']).stat().st_size == entry['bytes'], 'checkpoint_changed_after_verification')
+        manager = Managed()
+        require_managed_controls(manager, services)
         api = next(row for row in services if row['role'] == 'api')
         with psycopg.connect(file_env(api['env_file'])['DATABASE_URL'], connect_timeout=10,
                              options='-c default_transaction_read_only=on -c statement_timeout=10000') as database:
             active = database.execute("SELECT count(*) FROM tasks WHERE model=%s AND status IN ('pending','running')",
                                       (original_env['MODEL_NAME'],)).fetchone()[0]
         require(active == 0, 'serving_queue_must_be_drained')
-        env_path = root/'.runtime/480b-trial-engine.env'
+        env_path = root/'.runtime'/('480b-'+run.name+'-engine.env')
         require(not env_path.exists(), 'candidate_configuration_already_exists')
         write_env(env_path, {'MODEL_NAME':REPO, 'ENGINE_MODEL_PATH':str(args.model), 'ENGINE_REVISION':REVISION,
             'ENGINE_BACKEND':'vllm', 'ENGINE_DTYPE':'half', 'ENGINE_TENSOR_PARALLEL_SIZE':'4',
@@ -170,7 +181,6 @@ def main():
                         manager.invoke(service,'start')
                         event('control_plane_process_recovered')
                 time.sleep(2)
-        manager = Managed()
         altered = False
         campaign_lock = None
         try:
@@ -200,7 +210,10 @@ def main():
                 subprocess.run(command,cwd=args.benchmark_source,check=True,timeout=1800)
                 report['phase']='benchmark_passed'; event('480b_benchmark_passed')
         except Exception as error:
-            report['phase']='failed'; report['error_type']=type(error).__name__; event('trial_failed')
+            report['phase']='failed'; report['error_type']=type(error).__name__
+            if type(error) is RuntimeError:
+                report['error_code']=str(error)
+            event('trial_failed')
         finally:
             if altered:
                 try:

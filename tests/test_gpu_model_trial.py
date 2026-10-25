@@ -1,4 +1,6 @@
-from ops.gpu_model_trial import restore_services
+from ops.gpu_model_trial import restore_services, require_managed_controls
+from types import SimpleNamespace
+import pytest
 
 
 class Manager:
@@ -29,3 +31,14 @@ def test_recovery_starts_worker_only_after_engine_readiness():
     manager = Manager()
     assert restore_services(manager, 'engine', 'worker', 'watchdog', wait, lambda event: None) == []
     assert manager.actions == [('engine', 'start'), ('worker', 'start'), ('watchdog', 'start')]
+
+
+def test_stale_api_record_refuses_gpu_swap_before_any_restart():
+    calls = []
+    class Delegate:
+        def invoke(self, service, action):
+            calls.append(action)
+            return {'running': False}, None
+    with pytest.raises(RuntimeError, match='reconciled_before_gpu_swap'):
+        require_managed_controls(SimpleNamespace(delegate=Delegate()), [{'role': 'api'}])
+    assert calls == ['status']
