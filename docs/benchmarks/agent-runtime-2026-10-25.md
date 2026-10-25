@@ -57,3 +57,13 @@ not an invoice, marginal cost or a large-scale Agent capacity estimate.
 Source: `ops.qualify_agent_runtime`; execute only an immutable source receipt
 whose actual CPU CI passed. The schema/API/harness code is separate from the
 still-serving748dc10 primary. This protocol alone is not a passed GPU result.
+
+The first native canary (`soak480-agent-runtime-20261025-v1`, source90289ea)
+failed its initial managed-identity check: a duplicated identity convention used
+`watchdog-primary.json` while the actual portless daemon uses
+`supervisor-primary.json`. It failed before connecting Azure, starting the test
+database/API or accepting any GPU task. The original failed report and separate
+diagnosis are preserved. The successor reuses the already qualified
+`ops.worker_latch_guard.Pins` for all six actual source/config/process identities;
+it requires a new source receipt, CI qualification and run directory. No original
+failure is rewritten as success.

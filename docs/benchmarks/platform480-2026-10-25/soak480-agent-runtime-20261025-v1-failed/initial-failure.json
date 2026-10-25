@@ -1,0 +1,8 @@
+{
+  "original_report_preserved": true,
+  "diagnosis": "Canary used watchdog-primary.json; actual managed portless record is supervisor-primary.json",
+  "failure_before": "Azure connection, test PostgreSQL startup, Agent API startup or any model submission",
+  "gpu_tasks_accepted": 0,
+  "primary_services_modified": false,
+  "fix": "Reuse qualified ops.worker_latch_guard.Pins; new source and new run required"
+}

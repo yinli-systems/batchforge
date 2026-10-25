@@ -25,6 +25,7 @@ from ops.product_campaign import MODEL,managed_identity
 from ops.supervise import load_manifest
 from ops.ha.set_scheduler_policy import PolicyManager
 from ops.manage import process_identity
+from ops.worker_latch_guard import Pins
 
 FINAL_STOP=datetime(2026,10,26,9,tzinfo=timezone.utc)
 
@@ -184,9 +185,11 @@ def main():
             for name,sha in source_receipt['files'].items():
                 if hashlib.sha256((source/name).read_bytes()).hexdigest()!=sha:raise RuntimeError('Immutable canary source changed')
         verify_source();report['source_commit']=source_receipt['git_commit']
-        _,services,_=load_manifest(root/'.runtime/services-primary.json',root=root)
-        pinned=[*services,{'role':'watchdog','name':'primary'}]
-        identities={s['role']+'-'+s['name']:managed_identity(root,s) for s in pinned}
+        # Reuse the already qualified source/config/process pins, including the
+        # portless supervisor's real managed record name, rather than inventing
+        # a second watchdog identity convention.
+        pins=Pins(root);services=pins.services;pinned=pins.all
+        identities=dict(pins.identities);report['primary_pin_sha256']=pins.check(full=True)
         manager=PolicyManager(root=root,timeout=30)
         if not all(manager.readiness(s) for s in services):raise RuntimeError('Primary readiness failed')
         api=[s for s in services if s['role']=='api'];env=file_env(api[0]['env_file'])
@@ -230,7 +233,7 @@ def main():
         api_env={'PATH':'/usr/bin:/bin','HOME':'/root','LANG':'C.UTF-8','PYTHONDONTWRITEBYTECODE':'1',
             'DATABASE_URL':state_dsn,'MODEL_NAME':MODEL}
         def spawn_api():
-            verify_source()
+            verify_source();pins.check(full=True)
             with (private/'api-private.log').open('ab') as output:
                 child=subprocess.Popen([sys.executable,'-m','agents','api','--executor-keys',str(private/'executors.json'),'--port','18170'],
                     cwd=source,env=api_env,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,start_new_session=True)
@@ -251,7 +254,7 @@ def main():
         cfg=private/'config.json'
         event('running')
         def spawn():
-            verify_source()
+            verify_source();pins.check(full=True)
             with (private/'worker-private.log').open('ab') as output:
                 child=subprocess.Popen([sys.executable,'-m','ops.qualify_agent_runtime','--worker-config',str(cfg)],
                     cwd=Path.cwd(),stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,start_new_session=True)
@@ -315,7 +318,7 @@ def main():
             report['artifact_readbacks']=hashes
         report['primary_identities_after']={s['role']+'-'+s['name']:managed_identity(root,s) for s in pinned}
         if report['primary_identities_after']!=identities:raise RuntimeError('Primary epoch changed')
-        verify_source()
+        verify_source();pins.check(full=True)
         report['headroom_after']=int(azure.execute('''SELECT l.max_retained_tasks-u.retained_tasks AS n
             FROM tenant_retention_limits l JOIN tenant_retention_usage u USING(tenant_id) WHERE l.tenant_id=%s''',(tid,)).fetchone()['n'])
         report['passed']=all(r['passed'] for r in report['task_results']);event('complete' if report['passed'] else 'quality_failed')

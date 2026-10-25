@@ -1,0 +1,24 @@
+{
+  "phase": "failed",
+  "passed": false,
+  "gpu_inference": true,
+  "azure_agent_schema_modified": false,
+  "control_db": "isolated native PG17 on container disk; not Pod-loss durable",
+  "events": [
+    {
+      "phase": "prepared",
+      "at": "2026-10-25T21:23:20.884136+00:00"
+    },
+    {
+      "phase": "failed",
+      "at": "2026-10-25T21:23:20.900265+00:00"
+    }
+  ],
+  "controller_sha256": "11198566717ac7f9a692cba245fadf1355b8fa56fc7d205bc97449d5379cdf67",
+  "source_commit": "90289ea4679787a817011451ea91f5ec436a3caa",
+  "error_type": "FileNotFoundError",
+  "phase_before_failure": "prepared",
+  "whole_controller_seconds": 0.01581153500592336,
+  "whole_pod_allocation_usd": 7.071269822093503e-05,
+  "cost_scope": "Operator-confirmed whole Pod $16.10/hour wall allocation, includes orchestration/fault/readback; not invoice/marginal cost"
+}
