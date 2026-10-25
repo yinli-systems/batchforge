@@ -78,6 +78,7 @@ def started(manager,root,service,*,identity=managed_identity):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path,required=True)
+    p.add_argument('--guard-recovery',action='store_true',help='Qualify the finite guard as the actual automatic recovery caller')
     p.add_argument('--apply',action='store_true');args=p.parse_args();os.umask(0o077)
     base=args.run
     if (base.parent!=ROOT.parent or not base.name.startswith('soak480-latch-qualification-')
@@ -87,6 +88,7 @@ def main():
         'scope':'Application API-parent/transport fault, not a physical GPU fault',
         'planned_tasks':48,'calibration_tasks':8,'fault_tasks':40,
         'temporary_inference_timeout_seconds':30,'maximum_pause_seconds':45,
+        'finite_guard_requested':args.guard_recovery,
         'source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
     def event(phase):
         report['phase']=phase;report['events'].append({'phase':phase,'at':datetime.now(timezone.utc).isoformat()})
@@ -119,7 +121,7 @@ def main():
     db=psycopg.connect(env['DATABASE_URL'],autocommit=True,connect_timeout=5,
         options='-c default_transaction_read_only=on -c statement_timeout=5000')
     http=httpx.Client(trust_env=False,timeout=10,headers={'Authorization':'Bearer '+api_key})
-    manager=PolicyManager(root=ROOT,timeout=30);pause=None;canary=None;touched=False;watch_stopped=False
+    manager=PolicyManager(root=ROOT,timeout=30);pause=None;canary=None;touched=False;watch_stopped=False;guard_child=None;guard_run=None
     accepted=[];all_task_ids=[]
     def request(port,path,method='GET',**kwargs):
         result=http.request(method,f'http://127.0.0.1:{port}'+path,**kwargs);result.raise_for_status();return result
@@ -224,6 +226,27 @@ def main():
         completed=db.execute("SELECT count(*) FROM tasks WHERE batch_id=%s AND status='completed'",(cal,)).fetchone()[0]
         if completed!=8 or calibration_wall>=20:raise RuntimeError('Normal calibration cannot fit temporary timeout safely')
         report['calibration_wall_seconds']=calibration_wall
+        if args.guard_recovery:
+            # Freeze the complete temporary profile before the observer starts.
+            # The observer/helper then own recovery; this controller does not
+            # mutate worker configuration until that finite child has closed.
+            guard_run=ROOT.parent/('evidence-api-worker-latch-guard-qualification-'+base.name.removeprefix('soak480-'))
+            command=[sys.executable,'-m','ops.worker_latch_guard','--run',str(guard_run),
+                '--qualified-trial',str(ROOT.parent/'soak480-latch-qualification-20261025-v2'),
+                '--qualified-audit',str(ROOT.parent/'evidence-api-latch-recovery-audit-20261025-v1'),
+                '--active-campaign',str(base),'--seconds','900','--stop-after-recovery','--apply']
+            fcntl.flock(recovery_lock,fcntl.LOCK_UN)
+            with (base/'guard-private.log').open('xb') as log:
+                guard_child=subprocess.Popen(command,cwd=Path(__file__).resolve().parents[1],stdin=subprocess.DEVNULL,
+                    stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+            from ops.manage import process_identity
+            launch={'identity':process_identity(guard_child.pid),'command':command,'source':'Current immutable operator snapshot'}
+            write_json(base/'guard-launcher.json',launch);report['guard_run']=str(guard_run)
+            def guard_armed():
+                path=guard_run/'validation.json'
+                if guard_child.poll() is not None:raise RuntimeError('Finite guard exited before fault')
+                return path.exists() and json.loads(private_read(path)).get('phase')=='armed'
+            wait_until(guard_armed,45,'Finite guard did not arm; STOP refused')
         pause=BoundedPause(before[key(engine)],45)
         fault_bid=submit(fault,'fault')
         # Only this bounded controller submits to the private canary. Do not
@@ -252,6 +275,10 @@ def main():
         event('sustained_running')
         until=time.monotonic()+120;observations=[]
         while time.monotonic()<until:
+            if args.guard_recovery and (guard_run/'validation.json').exists():
+                seen=json.loads(private_read(guard_run/'validation.json'))
+                if any(x.get('passed') is True for x in seen.get('recoveries',[])):break
+                if seen['phase']=='failed':raise RuntimeError('Finite guard failed; no fallback replay')
             m=metrics();pending,running=counts();em=request(engine['port'],'/metrics').text
             o={'at':datetime.now(timezone.utc).isoformat(),'pending':pending,'running':running,
                'inflight':m.get('batchforge_worker_inflight'),'reserved':m.get('batchforge_worker_reserved_context_tokens'),
@@ -262,16 +289,28 @@ def main():
             time.sleep(2)
         else:raise RuntimeError('A safely recoverable real latch was not established')
         report['recovery_detected_at']=datetime.now(timezone.utc).isoformat();event('sustained_running')
-        # The helper owns the recovery lock; the parent retains the campaign lock.
-        fcntl.flock(recovery_lock,fcntl.LOCK_UN)
-        recovery_run=ROOT.parent/('evidence-api-worker-recovery-'+base.name.removeprefix('soak480-'))
-        child=subprocess.run([sys.executable,'-m','ops.recover_latched_worker','--run',str(recovery_run),
-            '--active-campaign',str(base),'--apply'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,timeout=360)
+        if args.guard_recovery:
+            if guard_child.wait(timeout=400)!=0:raise RuntimeError('Finite guard did not close successfully')
+            gr=json.loads(private_read(guard_run/'validation.json'));write_json(base/'guard-validation.json',gr)
+            if not gr.get('passed') or len(gr['recoveries'])!=1 or not gr['recoveries'][0]['passed']:
+                raise RuntimeError('Finite guard has no unique successful recovery')
+            entry=gr['recoveries'][0];recovery_run=Path(entry['run'])
+            recovery=json.loads(private_read(recovery_run/'validation.json'))
+            report['recovery_detected_at']=entry['detected_at'];report['recovery_finished_at']=entry['finished_at']
+        else:
+            # The helper owns the recovery lock; the parent retains campaign lock.
+            fcntl.flock(recovery_lock,fcntl.LOCK_UN)
+            recovery_run=ROOT.parent/('evidence-api-worker-recovery-'+base.name.removeprefix('soak480-'))
+            child=subprocess.run([sys.executable,'-m','ops.recover_latched_worker','--run',str(recovery_run),
+                '--active-campaign',str(base),'--apply'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,timeout=360)
+            recovery=json.loads(private_read(recovery_run/'validation.json'))
+            if child.returncode:raise RuntimeError('Guarded same-config worker recovery failed')
+            report['recovery_finished_at']=datetime.now(timezone.utc).isoformat()
         fcntl.flock(recovery_lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-        recovery=json.loads(private_read(recovery_run/'validation.json'));write_json(base/'recovery-validation.json',recovery)
-        if child.returncode or not recovery.get('passed'):raise RuntimeError('Guarded same-config worker recovery failed')
-        report['recovery_finished_at']=datetime.now(timezone.utc).isoformat();event('sustained_running')
+        write_json(base/'recovery-validation.json',recovery)
+        if not recovery.get('passed'):raise RuntimeError('Guarded same-config worker recovery failed')
+        event('sustained_running')
         wait_until(lambda:all(done(bid) for bid in accepted),600,'Accepted cohort did not finish')
         if db.execute('SELECT count(*) FROM tasks WHERE id=ANY(%s)',(all_task_ids,)).fetchone()[0]!=40:
             raise RuntimeError('Fault cohort identities disappeared')
@@ -292,8 +331,12 @@ def main():
         try:
             if canary is not None:invoke(canary,'stop')
         except BaseException as exc:restore_errors.append('canary_'+type(exc).__name__)
+        try:
+            if guard_child is not None and guard_child.poll() is None:guard_child.wait(timeout=950)
+        except BaseException as exc:restore_errors.append('guard_close_'+type(exc).__name__)
         if touched:
             try:
+                if guard_child is not None and guard_child.poll() is None:raise RuntimeError('Restore refuses an active recovery observer')
                 # Never change configuration beneath accepted active work.
                 wait_until(drained,900,'Restore refuses undrained accepted work')
                 fcntl.flock(recovery_lock,fcntl.LOCK_EX|fcntl.LOCK_NB)

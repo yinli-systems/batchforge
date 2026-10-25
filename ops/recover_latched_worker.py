@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime,timezone
 import fcntl,hashlib,json,math,os
+import re
 from pathlib import Path
 import time
 from ops.ha.retune_full_gpu import file_env
@@ -16,6 +17,7 @@ from ops.product_campaign import MODEL,managed_identity,wait_until
 from ops.supervise import load_manifest,private_read
 from ops.worker_source import probe_source
 from worker.kv_admission import engine_quiescent
+from ops.recovery_state import state_document,require_expected
 
 ROOT=Path('/root/batchforge-runtime/app')
 EXPECTED={('api','a'),('api','b'),('gateway','edge'),('engine','qwen480bench'),('worker','qwen480')}
@@ -137,8 +139,10 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run',type=Path,required=True)
     parser.add_argument('--active-campaign',type=Path)
+    parser.add_argument('--expected-state',help='Optional SHA256 of the observer pinned state; checked after both locks')
     parser.add_argument('--apply',action='store_true')
     args=parser.parse_args();os.umask(0o077)
+    if args.expected_state is not None and not re.fullmatch('[a-f0-9]{64}',args.expected_state):parser.error('SHA256 expected state required')
     if os.name!='posix' or not Path('/proc/self').exists():parser.error('Linux owned-process manager required')
     base=args.run
     if (base.parent!=ROOT.parent or not base.name.startswith('evidence-api-worker-recovery-')
@@ -173,7 +177,7 @@ def main():
             or source.name!='source' or source.parent.parent!=ROOT.parent
             or not source.parent.name.startswith('evidence-api-') or os.pathsep in str(source)):
             raise ValueError('Current safe-path immutable worker source required')
-        receipt=json.loads(private_read(source.parent/'source-receipt.json'))
+        receipt_raw=private_read(source.parent/'source-receipt.json');receipt=json.loads(receipt_raw)
         if environment.get('MODEL_NAME')!=MODEL or environment.get('WORKER_ADAPTIVE_KV_ENABLED')!='true':raise ValueError('Current adaptive480 worker only')
         probe=probe_source(worker['python'],source,environment,ROOT,receipt['files'])
         if (probe['slots']!=32 or probe['token_budget']!=164256 or probe['max_model_len']!=18440
@@ -181,6 +185,7 @@ def main():
         engine_env=file_env(engine['env_file'])
         if engine_env.get('MODEL_NAME')!=MODEL or engine_env.get('ENGINE_TENSOR_PARALLEL_SIZE')!='4':raise ValueError('Current TP4 engine only')
         manager_sources={p:hashlib.sha256(p.read_bytes()).hexdigest() for p in [ROOT/'ops/manage.py',ROOT/'ops/supervise.py']}
+        report['locked_state_sha256']=require_expected(state_document(manifest_raw,configs,receipt_raw,manager_sources,before),args.expected_state)
         def guard(check_worker=False):
             if private_read(manifest)!=manifest_raw or any(private_read(p)!=raw for p,raw in configs.items()):raise ValueError('Current manifest/environment changed')
             if any(hashlib.sha256((source/n).read_bytes()).hexdigest()!=sha for n,sha in receipt['files'].items()):raise ValueError('Immutable source changed')
