@@ -54,3 +54,14 @@ worker-file key, before observations and after restart. Missing, stale or
 duplicate effective keys fail without logging values. A file-only source probe
 cannot establish what an already running worker loaded. The endpoint/effective
 configuration follow-up passed93 related local tests; it is not deployed.
+
+## Actual native healthy-worker refusal
+
+Immutable candidatef1caf9a passed a read-only native check on the Pod: actual
+engine/metrics binding, definition-only module origins and every effective
+worker-file key matched. The command then refused the healthy200/unlatched
+worker before any service signal; all six managed identities stayed unchanged.
+The [driver, source pins and actual observations](benchmarks/platform480-2026-10-25/evidence-api-worker-recovery-candidate-20261025-v1-native-healthy/validation.json)
+are exported with transfer SHA verification. This verifies healthy-state refusal,
+not a successful recovery, installed daemon or fault-injection qualification.
+The serving worker/API remain immutable748dc10.

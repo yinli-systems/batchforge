@@ -1,0 +1,69 @@
+{
+  "passed": true,
+  "captured_at": "2026-10-25T18:20:51.008477+00:00",
+  "source_commit": "f1caf9ae966d969f059719f52608b8982ad63836",
+  "driver_sha256": "0466db6eb8e10c4309eb2cbc8acdb4e33a5a035d0c38cf1f385abd354e1c9cc9",
+  "module_sha256": "1e89c41e687249411c83e64872b57fdff7e8d931bbc08d39c67767ace758849a",
+  "checks": [
+    {
+      "check": "require_engine_binding",
+      "passed": true
+    },
+    {
+      "check": "probe_source",
+      "passed": true
+    },
+    {
+      "check": "require_effective_configuration",
+      "passed": true
+    }
+  ],
+  "observations": [
+    {
+      "captured_at": "2026-10-25T18:20:50.913648+00:00",
+      "db_running": 0,
+      "db_pending": 0,
+      "worker_ready_status": 200,
+      "worker_metrics": {
+        "batchforge_worker_adaptive_kv_paused": 0.0,
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0
+      },
+      "model_ids": [
+        "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ"
+      ],
+      "engine_version": "0.10.2",
+      "engine_quiescent": true
+    }
+  ],
+  "healthy_refusal_receipt_sha256": "27a757f43303dbd8d10ed02b3ff7d117ac474293c7a328307369c1f7b7803b4a",
+  "expected_refusal": {
+    "phase": "failed",
+    "passed": false,
+    "events": [
+      {
+        "phase": "preflight",
+        "at": "2026-10-25T18:20:49.979188+00:00"
+      },
+      {
+        "phase": "failed",
+        "at": "2026-10-25T18:20:51.004650+00:00"
+      }
+    ],
+    "apply_requested": false,
+    "service_mutation_attempted": false,
+    "worker_restarted": false,
+    "new_cloud_resources": false,
+    "engine_actions": false,
+    "api_actions": false,
+    "source_or_environment_changed": false,
+    "controller_sha256": "1e89c41e687249411c83e64872b57fdff7e8d931bbc08d39c67767ace758849a",
+    "error_type": "ValueError",
+    "phase_before_failure": "preflight"
+  },
+  "managed_identities_unchanged": true,
+  "services_changed": false,
+  "inference_submissions": 0,
+  "scope": "Actual healthy-worker refusal after immutable source/effective config/engine binding checks; no fault injected, no recovery or daemon enabled"
+}

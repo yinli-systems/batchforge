@@ -1,0 +1,2 @@
+{"phase": "failed", "passed": false, "apply_requested": false, "service_mutation_attempted": false, "worker_restarted": false, "error_type": "ValueError", "engine_actions": false, "api_actions": false}
+{"native_healthy_refusal_verified": true, "checks": [{"check": "require_engine_binding", "passed": true}, {"check": "probe_source", "passed": true}, {"check": "require_effective_configuration", "passed": true}]}

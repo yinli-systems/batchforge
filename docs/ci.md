@@ -61,3 +61,8 @@ Recovery-command source `b7a1a50` passed [native run40219250865](https://github.
 **1,456 Python tests, zero skipped;23 console tests**, PostgreSQL17.11.
 Its command is not deployed; a subsequent endpoint/effective-config safety
 follow-up requires its own native check and real fault qualification.
+
+The endpoint/effective-configuration follow-up **f1caf9a** passed [native run40220516759](https://github.com/yinli-systems/batchforge/actions/runs/40220516759):
+**1,467 Python tests, zero skipped;23 console tests**, PostgreSQL17.11.
+[Authenticated result and log hash](../ops/reports/github-native-ci-f1caf9a-2026-10-25.json).
+No serving source changed, and recovery fault qualification remains outstanding.
