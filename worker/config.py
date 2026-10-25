@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from urllib.parse import urlsplit
 
 from backend.scheduling import validate_profile
-from worker.kv_admission import MODEL as ADAPTIVE_MODEL
+from worker.kv_admission import SUPPORTED_MODELS as ADAPTIVE_MODELS
 
 
 def _int(name: str, default: int) -> int:
@@ -62,8 +62,8 @@ class Settings:
         if type(self.adaptive_kv_enabled) is not bool:
             raise ValueError('Adaptive KV admission requires a boolean operator flag')
         if self.adaptive_kv_enabled:
-            if self.model != ADAPTIVE_MODEL or len(self.inference_urls) != 1:
-                raise ValueError('Adaptive KV admission supports one exact Qwen235B engine only')
+            if self.model not in ADAPTIVE_MODELS or len(self.inference_urls) != 1:
+                raise ValueError('Adaptive KV admission requires one explicitly qualified Qwen engine')
             if type(self.max_model_len) is not int or self.max_model_len < 1:
                 raise ValueError('Adaptive context must be a positive integer')
             if not math.isfinite(self.request_timeout) or not 0 < self.request_timeout <= 3600:

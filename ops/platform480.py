@@ -33,15 +33,20 @@ def require(condition, reason):
     if not condition: raise RuntimeError(reason)
 
 
-def experiment_plan(repeats):
+def experiment_plan(repeats, studies=('capacity', 'policy')):
     if type(repeats) is not int or not 1 <= repeats <= 3:
         raise ValueError('Require one through three preregistered ABBA repetitions')
+    if (not studies or len(set(studies)) != len(studies)
+            or any(study not in {'capacity', 'policy', 'kv'} for study in studies)):
+        raise ValueError('Require distinct qualified experiment studies')
     phases = []
-    for study in ['capacity', 'policy']:
+    for study in studies:
         for repeat in range(repeats):
             for treatment in 'ABBA':
                 phases.append({'study':study,'repeat':repeat,'treatment':treatment,
-                    'slots':4 if study=='capacity' and treatment=='A' else 8,
+                    'slots':(32 if study=='kv' and treatment=='B' else
+                             4 if study=='capacity' and treatment=='A' else 8),
+                    'adaptive':study=='kv' and treatment=='B',
                     'policy':'cost_aware' if study=='policy' and treatment=='B' else 'fair'})
     return phases
 
@@ -51,6 +56,18 @@ def check_capacity(tokens, slots):
     reserved=slots*((CONTEXT+15)//16)*16
     require(reserved <= math.floor(tokens*.95), 'full_context_reservations_exceed_fresh_physical_cache')
     return reserved
+
+
+def admission_budget(tokens, slots, adaptive):
+    require(type(adaptive) is bool, 'admission_mode_must_be_boolean')
+    if not adaptive:
+        return check_capacity(tokens, slots)
+    require(type(tokens) is int and tokens > 0 and slots == 32,
+            'adaptive_requires_qualified_32_sequence_engine')
+    # A block-aligned 5% margin below the minimum fresh per-rank cache.
+    budget = (math.floor(tokens*.95)//16)*16
+    require(budget >= ((CONTEXT+15)//16)*16, 'adaptive_cache_cannot_fit_one_full_context')
+    return budget
 
 
 def audit_metering(tasks, attempts, batches):
@@ -72,6 +89,8 @@ class Canary:
     def __init__(self, args):
         self.root,self.run=args.root.resolve(),args.run.resolve()
         require(self.root==Path('/root/batchforge-runtime/app') and self.run.is_relative_to(self.root.parent), 'owned_runtime_required')
+        from ops.storage_semantics import require_journal_filesystem
+        require_journal_filesystem(self.run)
         self.run.mkdir(mode=0o700,parents=True,exist_ok=False)
         os.umask(0o077)
         sys.path.insert(0,str(self.root))
@@ -120,10 +139,15 @@ class Canary:
             'dtype':'half','tp':4,'vllm':'0.10.2','context':CONTEXT,'eager':True,'prefix_cache':False,'batch_tokens':4096})
         self.validate_profile=validate_profile
         self.tag='p480-'+uuid.uuid4().hex[:12]
+        require(type(args.workload_repeats) is int and 1<=args.workload_repeats<=3,'invalid_workload_repeat_bound')
+        self.workload_repeats=args.workload_repeats
+        self.fault_adaptive='kv' in args.studies
         self.sampler_stop=threading.Event();self.sampler=None
         self.labels=[];self.batch_ids=[];self.worker_id=''
         self.report={'schema_version':1,'tag':self.tag,'started_at':datetime.now(timezone.utc).isoformat(),
-            'model':REPO,'revision':REVISION,'runtime_fingerprint':self.fingerprint,'plan':experiment_plan(args.repeats),
+            'model':REPO,'revision':REVISION,'runtime_fingerprint':self.fingerprint,
+            'plan':experiment_plan(args.repeats, args.studies),
+            'workload_repeats':self.workload_repeats,
             'phases':[],'events':[],'passed':False,'cost':None,
             'limitations':['One four-H100 Pod; application fault tests are not whole-Pod or cross-node HA',
               'Profile rates projected from the qualified concurrency16 engine burst; not calibrated physical fleet prices',
@@ -131,7 +155,8 @@ class Canary:
               'SQuAD fixed-length capacity workload, not a response quality evaluation']}
         self.report['source_sha256']={'experiment':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             **{name:hashlib.sha256((self.root/name).read_bytes()).hexdigest()
-               for name in ['worker/runtime.py','backend/result_archival.py','backend/store.py']}}
+               for name in ['worker/runtime.py','worker/config.py','worker/kv_admission.py',
+                            'backend/result_archival.py','backend/store.py']}}
         self.client=httpx.Client(base_url='http://127.0.0.1:18148',headers={'Authorization':'Bearer '+self.key},timeout=60,trust_env=False)
         self.worker_client=httpx.Client(base_url='http://127.0.0.1:18148',headers={'Authorization':'Bearer '+self.worker_base['BATCHFORGE_WORKER_TOKEN']},timeout=30,trust_env=False)
 
@@ -171,38 +196,48 @@ class Canary:
             return engine_quiescent(r.text)
         except self.httpx.HTTPError:return False
 
-    def configure(self, policy, slots, worker_id=None):
+    def configure(self, policy, slots, worker_id=None, *, adaptive=False):
         # No overlapping generations, including orphaned requests from a lost
         # worker. Full-context reservations cannot depend on body heuristics.
         self.action(self.service_worker,'stop')
         self.wait(self.quiescent,90,'engine_not_quiescent_between_cohorts')
         self.action(self.service_api,'stop');self.start_api(policy)
         self.worker_id=worker_id or self.tag+'-worker'
-        profile=self.validate_profile({'profile_id':f'480b-static{slots}-projected-c16',
+        # More admitted claims do not create additional priced execution slots.
+        # The KV study keeps the exact same baseline8 price and rate projection.
+        priced_slots=8 if adaptive else slots
+        profile=self.validate_profile({'profile_id':f'480b-priced{priced_slots}-projected-c16',
             'runtime_fingerprint':self.fingerprint,'prefill_tokens_per_second':self.rates[0],
-            'decode_tokens_per_second':self.rates[1],'hourly_cost_usd':16.10/slots,
+            'decode_tokens_per_second':self.rates[1],'hourly_cost_usd':16.10/priced_slots,
             'calibration_label':'projection-from-qualified-480B-c16-fixed20;rates-not-recalibrated-for-worker-slots',
-            'cost_source':f'historical-16.10-USD-pod-hour-scenario/{slots}-full-context-slots;not-current-invoice'})
-        reservation=check_capacity(self.cache_tokens,slots)
+            'cost_source':f'historical-16.10-USD-pod-hour-scenario/{priced_slots}-full-context-slots;not-current-invoice'})
+        reservation=admission_budget(self.cache_tokens,slots,adaptive)
         env={**self.worker_base,'MODEL_NAME':REPO,'WORKER_ID':self.worker_id,'WORKER_NAME':self.worker_id,
             'CONTROL_PLANE_URL':'http://127.0.0.1:18148','CONTROL_PLANE_URLS':'http://127.0.0.1:18148',
             'INFERENCE_BASE_URLS':'http://127.0.0.1:8348','INFERENCE_API_KEY':'',
             'WORKER_MAX_INFLIGHT':str(slots),'WORKER_TOKEN_BUDGET':str(reservation),'ENGINE_MAX_MODEL_LEN':str(CONTEXT),
-            'WORKER_ADAPTIVE_KV_ENABLED':'false','INFERENCE_TIMEOUT_SECONDS':'1200','WORKER_SHUTDOWN_SECONDS':'15',
+            'WORKER_ADAPTIVE_KV_ENABLED':str(adaptive).lower(),'INFERENCE_TIMEOUT_SECONDS':'1200','WORKER_SHUTDOWN_SECONDS':'15',
             'WORKER_METRICS_HOST':'127.0.0.1','WORKER_METRICS_PORT':'9118',
             'SCHEDULER_PROFILE_JSON':json.dumps(profile)}
         self.write_env(Path(self.service_worker['env_file']),env)
         self.action(self.service_worker,'start')
         self.wait(lambda:self.manager.readiness(self.service_worker),60,'canary_worker_not_ready')
+        self.event('worker_configured', policy=policy, slots=slots, adaptive=adaptive,
+                   token_budget=reservation, priced_slots=priced_slots)
 
     def workload(self):
         source=self.root.parent/'gpu-takeover-20261025/trial480-v2/workload.jsonl'
-        rows=[json.loads(line) for line in source.read_text().splitlines()]
-        for row in rows:row['body']['min_tokens']=row['body']['max_tokens']
+        original=[json.loads(line) for line in source.read_text().splitlines()]
+        require(len(original)==20 and all(r['body']['model']==REPO for r in original),'fixed_20_cell_workload_required')
+        rows=[]
+        for repeat in range(self.workload_repeats):
+            for item in original:
+                row=json.loads(json.dumps(item));row['custom_id']=f'r{repeat}-'+row['custom_id']
+                row['body']['min_tokens']=row['body']['max_tokens'];rows.append(row)
         path=self.run/'workload.jsonl';path.write_text(''.join(json.dumps(r)+'\n' for r in rows))
-        require(len(rows)==20 and all(r['body']['model']==REPO for r in rows),'fixed_20_cell_workload_required')
+        self.task_count=len(rows)
         self.report['workload_sha256']=hashlib.sha256(path.read_bytes()).hexdigest()
-        self.expected_inputs=109056;self.expected_outputs=13600
+        self.expected_inputs=109056*self.workload_repeats;self.expected_outputs=13600*self.workload_repeats
         return path
 
     def audit(self, ids):
@@ -215,6 +250,7 @@ class Canary:
         from scripts.benchmark import distribution
         audit['task_completion_seconds']=distribution([r['completion'] for r in times])
         rows=self.db.execute("""SELECT t.id,t.custom_id,
+            extract(epoch FROM(t.finished_at-t.created_at))::float8 AS completion_seconds,
             extract(epoch FROM(a.started_at-t.created_at))::float8 AS queue_seconds,
             extract(epoch FROM(a.finished_at-a.started_at))::float8 AS accepted_attempt_seconds,
             a.scheduling_decision FROM tasks t JOIN attempts a ON a.task_id=t.id AND a.status='completed'
@@ -231,7 +267,7 @@ class Canary:
         require(previous==actual_hash,'benchmark_source_changed_during_experiment')
         label=self.tag+'-'+str(index);self.labels.append(label)
         phase_dir=self.run/f'{index:02d}-{phase["study"]}-{phase["treatment"]}';phase_dir.mkdir()
-        args=SimpleNamespace(url='http://127.0.0.1:18148',model=REPO,tasks=20,batches=1,max_tokens=2048,
+        args=SimpleNamespace(url='http://127.0.0.1:18148',model=REPO,tasks=self.task_count,batches=1,max_tokens=2048,
             temperature=0,prompt='',engine_label=label,deadline=1200,request_timeout=90,poll=.5,
             workload_dir=phase_dir/'inputs',input_jsonl=path,output_dir=phase_dir/'outputs',submission_concurrency=1)
         os.environ['BATCHFORGE_API_KEY']=self.key
@@ -242,6 +278,19 @@ class Canary:
         audit=self.audit(result['batch_ids'])
         require(audit['prompt_tokens']==self.expected_inputs and audit['completion_tokens']==self.expected_outputs,
                 'observed_token_work_differs_from_preregistered_cells')
+        response=self.client.get('http://127.0.0.1:9118/metrics');response.raise_for_status()
+        metrics=response.text
+        if phase['adaptive']:
+            def gauge(name):
+                values=re.findall(r'^'+re.escape(name)+r' ([^\n]+)$',metrics,re.M)
+                require(len(values)==1 and math.isfinite(float(values[0])), 'worker_kv_metric_invalid')
+                return float(values[0])
+            budget=gauge('batchforge_worker_adaptive_kv_budget_tokens')
+            peak=gauge('batchforge_worker_adaptive_kv_peak_tokens')
+            require(budget==admission_budget(self.cache_tokens,32,True) and 0<peak<=budget
+                    and gauge('batchforge_worker_adaptive_kv_paused')==0,
+                    'adaptive_admission_budget_or_protocol_failed')
+        (phase_dir/'worker-metrics.txt').write_text(metrics)
         stage={**phase,'index':index,'batch_ids':result['batch_ids'],'elapsed_seconds':result['elapsed_seconds'],
             'generated_tokens_per_second':result['observed_completion_tokens']/result['elapsed_seconds'],
             'admission_upload_seconds':result['submission']['upload_latency_seconds'],
@@ -250,27 +299,29 @@ class Canary:
 
     def execute(self):
         from ops.gpu_campaign import sample
-        self.sampler=threading.Thread(target=sample,args=('http://127.0.0.1:8348',self.run/'gpu-engine-samples.jsonl',self.sampler_stop),daemon=True)
+        self.sampler=threading.Thread(target=sample,args=('http://127.0.0.1:8348',self.run/'gpu-engine-samples.jsonl',
+            self.sampler_stop,'http://127.0.0.1:9118'),daemon=True)
         self.sampler.start()
-        identity,error=self.manager.invoke(self.engine,'status');require(error is None and identity['running'],'engine_identity_missing')
-        log=(self.root/'.runtime'/('engine-'+self.engine['name']+'.log')).read_text(errors='replace')
-        marker=f'APIServer pid={identity["pid"]}'
-        require(marker in log,'fresh_engine_startup_marker_missing');log=log[log.rfind(marker):]
-        # The most recent API line may follow the startup cache lines. Use the
-        # first marker for this unique PID, which cannot span another launch.
-        full_log=(self.root/'.runtime'/('engine-'+self.engine['name']+'.log')).read_text(errors='replace')
-        log=full_log[full_log.index(marker):]
-        values=re.findall(r'GPU KV cache size: ([0-9,]+) tokens',log)
-        require(values,'fresh_engine_cache_evidence_missing');self.cache_tokens=int(values[-1].replace(',',''))
-        check_capacity(self.cache_tokens,8)
+        self.refresh_cache()
         self.report['physical_cache_tokens']=self.cache_tokens;self.save()
         path=self.workload()
         for index,phase in enumerate(self.report['plan']):
-            self.configure(phase['policy'],phase['slots']);self.run_phase(phase,index,path)
+            self.configure(phase['policy'],phase['slots'],adaptive=phase['adaptive']);self.run_phase(phase,index,path)
         self.fault_test(path,engine_loss=False)
         self.fault_test(path,engine_loss=True)
         self.persistence_test()
         self.report['passed']=True;self.event('platform_campaign_passed')
+
+    def refresh_cache(self):
+        identity,error=self.manager.invoke(self.engine,'status');require(error is None and identity['running'],'engine_identity_missing')
+        full_log=(self.root/'.runtime'/('engine-'+self.engine['name']+'.log')).read_text(errors='replace')
+        marker=f'APIServer pid={identity["pid"]}'
+        require(marker in full_log,'fresh_engine_startup_marker_missing')
+        log=full_log[full_log.index(marker):]
+        values=re.findall(r'GPU KV cache size: ([0-9,]+) tokens',log)
+        require(values,'fresh_engine_cache_evidence_missing');self.cache_tokens=min(int(v.replace(',','')) for v in values)
+        check_capacity(self.cache_tokens,8)
+        self.event('fresh_engine_cache_verified',engine_pid=identity['pid'],physical_cache_tokens=self.cache_tokens)
 
     def submit_fault(self,path,label):
         rows=[json.loads(line) for line in path.read_text().splitlines()]
@@ -289,7 +340,8 @@ class Canary:
         return batch['id']
 
     def fault_test(self,path,*,engine_loss):
-        self.configure('fair',8)
+        slots=32 if self.fault_adaptive else 8
+        self.configure('fair',slots,adaptive=self.fault_adaptive)
         label=self.tag+('-engine-fault' if engine_loss else '-worker-fault');self.labels.append(label)
         bid=self.submit_fault(path,label)
         captured=[]
@@ -306,6 +358,7 @@ class Canary:
             self.wait(lambda:self.manager.start_gate(self.engine)[0],120,'fault_engine_memory_not_released')
             self.action(self.engine,'start')
             self.wait(lambda:self.manager.readiness(self.engine),1200,'fault_engine_reload_failed')
+            self.refresh_cache()
         else:self.wait(self.quiescent,90,'orphaned_engine_requests_not_quiescent')
         tokens=[row['attempt_token'] for row in captured]
         def expired():
@@ -315,14 +368,15 @@ class Canary:
         stale=self.worker_client.post('/internal/tasks/'+captured[0]['id']+'/heartbeat',
             json={'worker_id':old_worker,'attempt_token':tokens[0]})
         require(stale.status_code==409,'stale_heartbeat_was_not_fenced')
-        self.configure('fair',8,worker_id=self.tag+('-engine-recovered' if engine_loss else '-worker-recovered'))
+        self.configure('fair',slots,worker_id=self.tag+('-engine-recovered' if engine_loss else '-worker-recovered'),
+                       adaptive=self.fault_adaptive)
         service_recovered=time.monotonic()-down
         def terminal():
             response=self.client.get('/v1/batches/'+bid);response.raise_for_status()
             return response.json()['status']!='in_progress'
         self.wait(terminal,1200,'fault_cohort_not_terminal')
         audit=self.audit([bid])
-        require(audit['tasks']==20 and audit['prompt_tokens']==self.expected_inputs and audit['completion_tokens']==self.expected_outputs,
+        require(audit['tasks']==self.task_count and audit['prompt_tokens']==self.expected_inputs and audit['completion_tokens']==self.expected_outputs,
                 'fault_cohort_work_or_metering_differs')
         reclaimed=self.db.execute("SELECT t.id,t.worker_id,t.attempt_token FROM tasks t WHERE t.id=ANY(%s) AND t.tenant_id=%s AND t.status='completed'",([r['id'] for r in captured],self.tenant)).fetchall()
         require(len(reclaimed)==len(captured) and all(r['worker_id']==self.worker_id and r['attempt_token'] not in tokens for r in reclaimed),
@@ -336,6 +390,7 @@ class Canary:
                 'usage':{'prompt_tokens':0,'completion_tokens':0,'total_tokens':0}}})
         require(stale.status_code==409 and self.audit([bid])==audit,'stale_completion_changed_metering')
         proof={'scope':'engine_and_worker_process_loss' if engine_loss else 'worker_process_loss',
+            'adaptive':self.fault_adaptive,'slots':slots,
             'batch_id':bid,'captured_leases':len(captured),'service_recovery_seconds':service_recovered,
             'all_captured_reclaimed_seconds':time.monotonic()-down,'replacement_worker':self.worker_id,
             'stale_heartbeat_status':409,'stale_completion_status':409,'metering':audit}
@@ -408,6 +463,8 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root',type=Path,required=True);parser.add_argument('--run',type=Path,required=True)
     parser.add_argument('--engine-service',required=True);parser.add_argument('--repeats',type=int,default=3)
+    parser.add_argument('--studies',nargs='+',choices=['capacity','policy','kv'],default=['capacity','policy'])
+    parser.add_argument('--workload-repeats',type=int,choices=range(1,4),default=1)
     args=parser.parse_args()
     def stop(number, frame):raise RuntimeError('canary_interrupted')
     signal.signal(signal.SIGTERM,stop);signal.signal(signal.SIGINT,stop)

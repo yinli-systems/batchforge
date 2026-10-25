@@ -68,6 +68,8 @@ def main():
     parser.add_argument('--benchmark-source', type=Path, required=True)
     parser.add_argument('--platform-canary', action='store_true')
     parser.add_argument('--abba-repeats', type=int, choices=range(1, 4), default=3)
+    parser.add_argument('--studies', nargs='+', choices=['capacity','policy','kv'], default=['capacity','policy'])
+    parser.add_argument('--workload-repeats', type=int, choices=range(1,4), default=1)
     args = parser.parse_args()
     class TrialInterrupted(RuntimeError):
         pass
@@ -203,7 +205,8 @@ def main():
                 if args.platform_canary:
                     command=[str(root.parent/'venv/bin/python'),'-m','ops.platform480',
                         '--root',str(root),'--run',str(run/'platform'),
-                        '--engine-service',json.dumps(candidate),'--repeats',str(args.abba_repeats)]
+                        '--engine-service',json.dumps(candidate),'--repeats',str(args.abba_repeats),
+                        '--workload-repeats',str(args.workload_repeats),'--studies',*args.studies]
                     child=subprocess.Popen(command,cwd=args.benchmark_source)
                     try:
                         wait(lambda:child.poll() is not None,7200,'platform_canary_deadline')

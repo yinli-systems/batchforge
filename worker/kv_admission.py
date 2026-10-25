@@ -14,6 +14,8 @@ import math
 
 
 MODEL = 'Qwen/Qwen3-235B-A22B-Instruct-2507-FP8'
+CODER480_MODEL = 'QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ'
+SUPPORTED_MODELS = frozenset({MODEL, CODER480_MODEL})
 PROTOCOL = 'vllm-0.10.2-qwen-chat'
 
 
@@ -106,7 +108,7 @@ an HTTP disconnect synchronously freed engine KV blocks.
 
 
 def tokenizer_body(body, model):
-    if model != MODEL or body.get('model') != model:
+    if model not in SUPPORTED_MODELS or body.get('model') != model:
         raise TokenizerProtocolError('Unsupported exact tokenizer model')
     messages = body.get('messages')
     if not isinstance(messages, list) or not 1 <= len(messages) <= 128:

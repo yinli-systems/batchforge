@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from worker.config import Settings
-from worker.kv_admission import (AdmissionPaused, MODEL, TokenizerProtocolError,
+from worker.kv_admission import (AdmissionPaused, MODEL, CODER480_MODEL, TokenizerProtocolError,
     WeightedLimiter, engine_quiescent, reservation, token_count)
 from worker.runtime import InferenceError, Worker
 
@@ -17,8 +17,8 @@ def configuration(**changes):
         max_model_len=128, token_budget=256, max_inflight=8, adaptive_kv_enabled=True), **changes)
 
 
-def task(identifier='task', prompt='hello', cap=16):
-    return {'id':identifier,'attempt_token':identifier+'-token','body':{'model':MODEL,
+def task(identifier='task', prompt='hello', cap=16, model=MODEL):
+    return {'id':identifier,'attempt_token':identifier+'-token','body':{'model':model,
         'messages':[{'role':'user','content':prompt}],'max_tokens':cap}}
 
 
@@ -133,11 +133,12 @@ async def test_pause_wakes_waiters_and_does_not_reset_on_release():
 
 
 @pytest.mark.asyncio
-async def test_startup_requires_exact_version_tokenizer_and_idle_engine_before_registration():
+@pytest.mark.parametrize('model',[MODEL,CODER480_MODEL])
+async def test_startup_requires_exact_version_tokenizer_and_idle_engine_before_registration(model):
     calls=[]
     async def engine(request):
         calls.append(request.url.path)
-        value={'/v1/models':{'data':[{'id':MODEL}]},'/version':{'version':'0.10.2'},
+        value={'/v1/models':{'data':[{'id':model}]},'/version':{'version':'0.10.2'},
             '/tokenize':{'count':8,'tokens':list(range(8)),'max_model_len':128}}
         if request.url.path=='/metrics':
             return httpx.Response(200,text='vllm:num_requests_running 0\nvllm:num_requests_waiting 0')
@@ -146,13 +147,14 @@ async def test_startup_requires_exact_version_tokenizer_and_idle_engine_before_r
     async def control(request):
         registrations.append(json.loads(request.content))
         return httpx.Response(200,json={'worker_id':'worker','lease_seconds':90,'heartbeat_interval_seconds':10})
-    worker=Worker(configuration(),control_transport=httpx.MockTransport(control),inference_transport=httpx.MockTransport(engine))
+    worker=Worker(configuration(model=model),control_transport=httpx.MockTransport(control),inference_transport=httpx.MockTransport(engine))
     try:
         with pytest.raises(ValueError):await worker.register()
         assert not registrations
         await worker.probe_engines();await worker.register()
         assert worker.metrics.engine_ready and worker._adaptive_validated
         assert registrations[0]['concurrency']==8
+        assert registrations[0]['model']==model
         assert registrations[0]['metadata']['kv_admission']['single_worker_single_engine']
         assert '/v1/chat/completions' not in calls
     finally:await worker.close()
@@ -175,19 +177,21 @@ async def test_invalid_startup_cannot_register_optimistic_capacity(problem):
 
 
 @pytest.mark.asyncio
-async def test_tokenizer_and_inference_share_messages_defaults_count_and_reservation():
+@pytest.mark.parametrize('model',[MODEL,CODER480_MODEL])
+async def test_tokenizer_and_inference_share_messages_defaults_count_and_reservation(model):
     calls=[]
     async def engine(request):
         body=json.loads(request.content);calls.append((request.url.path,body))
         if request.url.path=='/tokenize':
             return httpx.Response(200,json={'count':17,'tokens':list(range(17)),'max_model_len':128})
         assert worker.kv_admission.used==48
-        return httpx.Response(200,json=generated(17))
-    worker=prepared(engine)
+        return httpx.Response(200,json=generated(17,model=model))
+    worker=prepared(engine,model=model)
     try:
-        value=await worker._invoke_available(task())
+        value=await worker._invoke_available(task(model=model))
         assert value['usage']['prompt_tokens']==17 and worker.kv_admission.used==0
         assert calls[0][1]['messages']==calls[1][1]['messages']
+        assert calls[0][1]['model']==calls[1][1]['model']==model
         assert calls[0][1]['add_generation_prompt'] and not calls[0][1]['add_special_tokens']
         assert calls[1][1]['max_tokens']==16 and worker.kv_admission.peak==48
     finally:await worker.close()

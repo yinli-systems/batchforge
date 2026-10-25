@@ -57,7 +57,7 @@ class Journal:
         self.output.close()
 
 
-def sample(url, path, stop):
+def sample(url, path, stop, worker_url=None):
     http = build_opener(ProxyHandler({}))
     with path.open('x') as output:
         while not stop.is_set():
@@ -79,6 +79,16 @@ def sample(url, path, stop):
                         'prompt_tokens_total', 'generation_tokens_total', 'request_success_total', 'num_preemptions'))]
             except Exception as error:
                 row['metrics_error'] = type(error).__name__
+            if worker_url is not None:
+                try:
+                    with http.open(worker_url + '/metrics', timeout=3) as response:
+                        body = response.read(262145)
+                    if len(body) > 262144:
+                        raise ValueError('worker metrics size exceeded')
+                    row['worker_metrics'] = [line for line in body.decode().splitlines()
+                        if not line.startswith('#') and line.startswith(('batchforge_worker_'))]
+                except Exception as error:
+                    row['worker_metrics_error'] = type(error).__name__
             output.write(json.dumps(row) + '\n')
             output.flush()
             os.fsync(output.fileno())
