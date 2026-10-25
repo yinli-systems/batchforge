@@ -171,7 +171,7 @@ def summarize(records, elapsed, *, hourly_cost=None):
     return result
 
 
-async def run(args, *, transport=None):
+async def run(args, *, transport=None, event_sink=None):
     payload = args.workload.read_bytes()
     manifest = json.loads(args.manifest.read_text())
     if hashlib.sha256(payload).hexdigest() != manifest["workload_sha256"]:
@@ -207,8 +207,13 @@ async def run(args, *, transport=None):
             while pending:
                 index, row = pending.popleft()
                 # Exactly one request. An uncertain stream is never replayed.
-                records.append(await invoke(client, row, examples[row["custom_id"]], offered=offered,
-                    dispatch=index, force_length=args.force_length, request_timeout=args.request_timeout))
+                if event_sink is not None:
+                    event_sink({"event": "intent", "custom_id": row["custom_id"], "dispatch_index": index})
+                record = await invoke(client, row, examples[row["custom_id"]], offered=offered,
+                    dispatch=index, force_length=args.force_length, request_timeout=args.request_timeout)
+                if event_sink is not None:
+                    event_sink({"event": "terminal", "record": record})
+                records.append(record)
         await asyncio.gather(*(consumer() for _ in range(min(args.concurrency, len(rows)))))
         elapsed = time.monotonic()-offered
     summary = summarize(records, elapsed, hourly_cost=args.hourly_cost)

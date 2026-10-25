@@ -122,6 +122,34 @@ async def test_hash_and_context_gates_fail_before_inference(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_durable_intent_precedes_inference_and_http_failure_has_a_terminal(tmp_path):
+    events = []
+    requests = []
+    async def handler(request):
+        if request.url.path == '/v1/models':
+            return httpx.Response(200, json={'data': [{'id': 'test-model', 'max_model_len': 256}]})
+        assert events == [{'event': 'intent', 'custom_id': 'a', 'dispatch_index': 0}]
+        requests.append(request)
+        return httpx.Response(503)
+    report = await run(arguments(tmp_path), transport=httpx.MockTransport(handler), event_sink=events.append)
+    assert len(requests) == 1  # Uncertain/failed inference is not retried.
+    assert not report['passed']
+    assert events[-1]['event'] == 'terminal'
+    assert events[-1]['record']['status'] == 'error'
+
+
+@pytest.mark.asyncio
+async def test_failed_intent_fsync_prevents_inference(tmp_path):
+    def unavailable(event):
+        raise OSError('test disk full')
+    async def handler(request):
+        assert request.url.path == '/v1/models', 'Inference was sent before a durable intent'
+        return httpx.Response(200, json={'data': [{'id': 'test-model', 'max_model_len': 256}]})
+    with pytest.raises(OSError, match='test disk full'):
+        await run(arguments(tmp_path), transport=httpx.MockTransport(handler), event_sink=unavailable)
+
+
+@pytest.mark.asyncio
 async def test_harmony_reasoning_only_is_inference_success_without_a_final_answer(tmp_path):
     report = await run(arguments(tmp_path), transport=transport(
         deltas=[{"reasoning_content": "Think through this"}, {"reasoning_content": "."}], finish="length"))
