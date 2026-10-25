@@ -1,10 +1,74 @@
 # Operations
 
-The exercised deployment is native Linux on two existing Runpod Pods. Both run
-independent loopback API replicas against the same managed Neon PostgreSQL 17
-instance in Frankfurt. GPU workers call their own Pod's API gateway. Disconnecting
-the operator laptop does not interrupt this path. The selected access policy is
-private SSH ingress; the paid public ingress proposal was deferred by the owner.
+## Current deployment — October 25, 2026
+
+There is **one existing Pod with four H100 80GB GPUs**, serving
+`QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ` on TP4: 480B total / about
+35B active MoE parameters. The second Pod and Neon database configurations
+below are historical. Do not run their restart examples against the current
+primary. Azure PostgreSQL 17, schema 11, holds task identities, attempts and
+metering; the existing private S3 endpoint holds verified input/result archives.
+
+| Service | Active configuration |
+| --- | --- |
+| API replicas | `api-a` / `api-b`, loopback 8082 / 8083, immutable API source `831b839` |
+| Private gateway | `gateway-edge`, loopback 8080 |
+| Engine | `engine-qwen480bench`, loopback 8348, TP4 |
+| Worker | `worker-qwen480`, health/metrics 9105, exact-token admission, 32 slots |
+| KV admission | 164,256-token budget; last qualified physical KV 172,912 tokens |
+| Context / durable lease | 18,440 tokens / 15 seconds |
+| Supervision | `supervisor-primary`, exact PID/start-time/cwd checks |
+| GPU Fleet reporting | Candidate qualified; **not enabled on the serving worker** |
+
+Worker and API source selection differ: `UVICORN_APP_DIR` selects API source,
+not `python -m worker`. A worker candidate requires the source-origin probe,
+`PYTHONSAFEPATH=1` and a single immutable `PYTHONPATH`; never copy over a live
+package. Check the live manifest and source receipts before maintenance.
+
+Connect through the already authorized RunPod SSH proxy:
+
+```sh
+ssh -tt -i ~/.ssh/id_ed25519 -o BatchMode=yes \
+  4x7ej43hrqznjn-64410eb2@ssh.runpod.io
+```
+
+Send commands through interactive stdin and read their actual output: this proxy
+can ignore command arguments. Historical direct host/port mappings and local
+SSH tunnels below are not verified current access paths. Tenant keys belong in
+the console key field, never URLs or logs. Inference and database traffic stay
+on the Pod-to-service path when the laptop disconnects.
+
+Before changing an application service, coordinate with the existing campaign
+lock, pause both API create/retry admission paths, drain accepted work, verify
+fresh engine/worker quiescence and exact managed identities, and preserve a
+compatible rollback. Do not re-execute a historical experiment directory.
+
+A live PID or API HTTP 200 is insufficient. Probe worker `/readyz` and
+`batchforge_worker_adaptive_kv_paused`, active/reserved/waiting work, engine
+running/waiting and durable completion progress. The current worker needed a
+[bounded recovery from a KV safety latch](benchmarks/reuse480-latch-incident-2026-10-25.md).
+The watchdog does not recover a live but latched worker automatically. Preserve
+accepted identities and metering across recovery; never simply clear its latch.
+
+`/workspace` is an unhealthy FUSE mount (observed ENOMEM). Mutable source,
+virtual environments, logs and locks use the existing container disk. Export
+allowlisted evidence to the Mac and private repository with SHA verification.
+Container fsync does not survive Pod loss. Do not export environments, keys,
+weights or raw tenant responses. Input retention remains 24h and output
+archiving starts after the existing 120-second interval; do not silently change
+retention or quotas. There is **no whole-Pod compute failover**.
+
+The operator confirmed **$16.10 per whole-Pod hour** on October 25. This is not
+an invoice. See the source-bound [quality allocation](benchmarks/quality480-cost-allocation-2026-10-25.json)
+and [endurance allocation](benchmarks/endurance480-cost-allocation-2026-10-25.json).
+No paid upgrade, new GPU, public ingress or other paid resource is authorized.
+
+## Historical runbook — earlier two-Pod Neon / 120B deployment
+
+The following record describes the earlier deployment only. It is preserved for
+reproducing old evidence, **not as a current maintenance procedure**. Its names,
+paths, model settings, lease lengths and network mappings must not be applied
+to the current 480B deployment.
 
 ## Runtime inventory
 

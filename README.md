@@ -18,7 +18,7 @@ measured **EM 53.82% / F1 75.82%**, below the predeclared 70% / 80% gates.
 The separate 2,400-task sustained compute workload completed with all checks
 passing: 336.499 completion tokens/s over 80.8 minutes, durable-acceptance P95
 103.648 s / P99 108.762 s. A separately preregistered 3,600-task input-reuse
-endurance is running and has required an
+endurance completed delivery, but failed continuity after an
 [unplanned worker recovery](docs/benchmarks/reuse480-latch-incident-2026-10-25.md);
 it is not an uninterrupted endurance pass. [Closed study and release](docs/benchmarks/endurance480-2026-10-25.md). Delivery,
 answer quality and capacity are reported separately; original failures remain
@@ -44,7 +44,11 @@ run. Those measurements remain in [100B validation](docs/100b-validation.md),
 [evidence index](ops/reports/100b-release-evidence-2026-10-24.json).
 The current single Pod has no whole-Pod compute failover. Physical GPU reset,
 whole-Pod replacement and live KV migration remain untested.
-Current monetary costs are unmeasured; no new resource or paid upgrade is authorized by this campaign.
+The operator confirmed $16.10 per whole-Pod hour on October 25. The measured
+SQuAD interval allocates $11.75 ($2.07 per thousand on-time reference-exact
+answers), while its cohort quality gate still fails. This is a time allocation,
+not a reconciled invoice or marginal cost. See [cost evidence](docs/benchmarks/quality480-cost-allocation-2026-10-25.json).
+No new resource or paid upgrade is authorized by this campaign.
 Public paid ingress was prepared and deferred by the operator; access remains
 private. See [availability](docs/ha.md), [ingress](docs/ingress.md), and
 [second-Pod deployment](docs/pod2.md).

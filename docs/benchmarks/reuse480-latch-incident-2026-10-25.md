@@ -73,3 +73,28 @@ A permanent bounded, independently quiescence-validated recovery path remains
 follow-up work. Merely toggling the latch after a health probe would weaken the
 safety invariant and is not implemented. This incident is evidence against a
 production-HA or uninterrupted-stability claim.
+
+## Closed successor — delivery passed, continuity failed
+
+The original run closed at **17:15:52 UTC**. Its [unaltered child report](platform480-2026-10-25/soak480-reuse-20261025-v1-closed/run/report.json)
+records 3,600/3,600 completed, 0 failed, exactly-once accepted results and usage
+conservation, 3,602 attempt records and zero new input uploads. It includes all
+6,898.730 seconds of wall time, 19,630,080 prompt / 2,448,000 output tokens,
+whole-window output throughput **354.848 token/s** and DB-acceptance completion
+P50/P95/P99 **161.820 / 263.203 / 1,531.789 seconds**. The tail includes the
+unplanned latch outage; it must not be filtered away.
+
+The [parent campaign](platform480-2026-10-25/soak480-reuse-20261025-v1-closed/campaign.json)
+correctly remains **failed**, after detecting the changed worker identity.
+Child `passed: true` means delivery/integrity checks passed, not continuous
+service stability. The manually recovered worker is not an unchanged process.
+All four GPUs had 1,079 samples; mean device utilization including the outage
+was 77.593 / 78.713 / 74.855 / 72.875%, all max100, zero sample errors, maximum
+gap7.467s. Offered load/order differ from the earlier study, so this is not a
+controlled speedup.
+
+The separate [confirmed-rate overlay](reuse480-cost-allocation-2026-10-25.json)
+allocates **$30.85**, or **$0.00857 per delivered compute task**, including the
+outage. Forced outputs have no reference quality grade and this is not a bill.
+The next release requires a separate post-incident qualification and fresh
+quiescence checks; the original successful-endurance gate must not be bypassed.

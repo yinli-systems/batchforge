@@ -1,0 +1,25 @@
+{
+  "currency": "USD",
+  "hourly_rate": "16.10",
+  "measured_wall_seconds": "6898.730129957199",
+  "pod_window_allocation_usd": "30.85265419230858441666666667",
+  "delivered_results": 3600,
+  "allocation_usd_per_delivered_result": "0.008570181720085717893518518519",
+  "quality_scored": false,
+  "quality_cohort_gate_passed": null,
+  "on_time_reference_exact_results": null,
+  "allocation_usd_per_on_time_reference_exact_result": null,
+  "gate_passing_cohorts": null,
+  "allocation_usd_per_gate_passing_cohort": null,
+  "measured_invoice_usd": null,
+  "basis": "Operator-confirmed hourly rate assumed constant over the measured whole-Pod window; not an invoice, marginal cost or additive allocation across overlapping workloads",
+  "excluded_or_unverified": [
+    "Provider billing rounding, discounts, taxes, separate storage/network charges and time outside the stated measurement interval"
+  ],
+  "captured_at": "2026-10-25T17:17:21.298384+00:00",
+  "rate_source": "User confirmed existing four-H100 Pod hourly rate on 2026-10-25; assumed constant, downtime included",
+  "source_report_sha256": "d55e7130b56360289077e1607a3e1c8e7d164f7075541a0d6d52402e3538a951",
+  "source_scores_sha256": null,
+  "allocator_sha256": "fcd564f5c87bace3c1ad69c91cbfb167b0fc6a5e4a10e08ea3eda254d2b35f10",
+  "original_report_modified": false
+}

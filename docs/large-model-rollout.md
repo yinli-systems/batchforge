@@ -1,5 +1,12 @@
 # Four-H100 large-model validation
 
+> Historical design and experiments: the current October 25 deployment uses
+> one four-H100 Pod, 480B-total / 35B-active AWQ MoE, Azure PostgreSQL 17/schema 11
+> and existing S3. See [current operations](operations.md). Old Neon, 120B/235B,
+> two-Pod and migration-version examples below are not current settings or safe
+> restart commands for the 480B primary. No whole-Pod compute HA is established.
+
+
 The running model is the official
 [Qwen3-235B-A22B-Instruct-2507-FP8](https://huggingface.co/Qwen/Qwen3-235B-A22B-Instruct-2507-FP8),
 revision `e156cb4efae43fbee1a1ab073f946a1377e6b969`, on four H100 80GB devices.

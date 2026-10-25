@@ -1,8 +1,14 @@
 # Capacity and the ten-million-task target
 
-The multi-Pod 7B and 120B configurations below are historical. The current run
-has one four-H100 Pod; see [single-Pod validation](single-pod-validation-2026-10-24.md)
-for the latest equal-work policy comparison and larger-token capacity scenario.
+The current deployment is one four-H100 Pod with Qwen3-Coder-480B-A35B AWQ,
+Azure schema 11 and existing S3 artifacts. See [closed 2,400-task endurance](benchmarks/endurance480-2026-10-25.md)
+and the [unplanned successor recovery](benchmarks/reuse480-latch-incident-2026-10-25.md).
+The following multi-Pod 7B/120B rates, Neon plan and second-Pod prices are
+historical October 23–24 observations, not current capacity or availability.
+The current whole-Pod hourly rate is operator-confirmed $16.10; its
+[source-bound allocation](benchmarks/endurance480-cost-allocation-2026-10-25.json)
+is not a reconciled bill. The current durable lease is 15 seconds; lease values
+in old experiment descriptions remain those of their original runs.
 
 Ten million completed tasks per day means **115.74 accepted completions/second
 for a full day**. With a 70% average utilization target, provisioned sustainable

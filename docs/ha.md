@@ -1,5 +1,12 @@
 # Availability, migrations, and database failover
 
+> Historical design and experiments: the current October 25 deployment uses
+> one four-H100 Pod, 480B-total / 35B-active AWQ MoE, Azure PostgreSQL 17/schema 11
+> and existing S3. See [current operations](operations.md). Old Neon, 120B/235B,
+> two-Pod and migration-version examples below are not current settings or safe
+> restart commands for the 480B primary. No whole-Pod compute HA is established.
+
+
 API processes are stateless replicas of one PostgreSQL state machine. Killing
 one API process must not lose an accepted batch, accepted result, usage row, or
 lease. More API processes on one Pod improve process availability; they do not

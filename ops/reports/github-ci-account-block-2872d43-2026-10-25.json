@@ -1,0 +1,27 @@
+{
+  "captured_at": "2026-10-25T17:15:13.986987+00:00",
+  "commit": "2872d434fc4fda1c80f4147b607ffea70702e59e",
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40213979692",
+  "job": {
+    "id": 121231016185,
+    "name": "postgres-and-worker",
+    "conclusion": "failure",
+    "steps": []
+  },
+  "failure_annotations": [
+    "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+  ],
+  "classification": "Hosted runner did not start; account billing/spending block, not a failed test result",
+  "account_billing_modified": false,
+  "independent_local_validation": {
+    "command": "python devtools/run_checks.py",
+    "postgres_version": "16.2",
+    "platform": "Mac",
+    "passed": 1363,
+    "skipped": 5,
+    "warnings": 1,
+    "elapsed_seconds": 41.82,
+    "log_sha256": "15feb5a4b0068c4f0e954def13ab856146a723563afda6afd227599f38330317",
+    "hosted_ci_green": false
+  }
+}

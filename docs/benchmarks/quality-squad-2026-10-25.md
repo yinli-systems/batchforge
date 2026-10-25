@@ -151,3 +151,13 @@ After that closure, API source `831b839` published the authenticated Quality
 evidence page and stronger task-history receipts at 15:20:51 UTC. Worker and
 engine identities stayed unchanged. A 3,600-task reusable-input saturation study
 then started at 15:20:53 UTC; it has a separate protocol and no final result yet.
+
+## Confirmed-rate cost overlay
+
+On October 25 the operator confirmed $16.10 per whole-Pod hour. The separate
+[source-bound allocation](quality480-cost-allocation-2026-10-25.json) applies that rate to this measured wall
+interval; original reports remain unchanged. The overlay is not an invoice and
+excludes unverified billing rounding, taxes, storage/network and time outside
+the interval. Overlapping whole-Pod allocations must not be added together.
+Forced-output delivery does not establish answer quality; the SQuAD cohort
+still fails its quality gate even when individual answers match references.

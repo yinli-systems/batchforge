@@ -1,11 +1,18 @@
 name: correctness
 on:
   push:
+    paths-ignore:
+      - 'docs/**'
+      - 'ops/reports/**'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'ops/reports/**'
 permissions:
   contents: read
 jobs:
   postgres-and-worker:
+    if: github.event_name == 'pull_request' || github.ref != 'refs/heads/codex/gpu-campaign-300b-evidence'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -42,3 +49,20 @@ jobs:
         run: node --test frontend/tests/*.test.js
       - name: Compile Python source
         run: python -m compileall -q backend worker ops scripts devtools
+  existing-pod-cpu:
+    # One reviewed private-branch push, on an operator-staged ephemeral runner.
+    # No fork PR code or production credentials are passed to the Pod runner.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/codex/gpu-campaign-300b-evidence' && github.repository == 'yinli-systems/batchforge'
+    runs-on: [self-hosted, linux, x64, batchforge-cpu-ephemeral]
+    timeout-minutes: 15
+    concurrency:
+      group: batchforge-existing-pod-cpu
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Locked CPU dependencies
+        run: python -m pip install --require-hashes -r requirements.lock
+      - name: Native PostgreSQL17, worker failures and console regressions
+        run: python devtools/run_native_ci.py

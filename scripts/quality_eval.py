@@ -22,6 +22,7 @@ from types import SimpleNamespace
 
 from ops.gpu_campaign import write_json
 from scripts import benchmark
+from scripts.answer_contract import CONTRACTS, messages, parse_answer
 
 DATASET_SHA256='95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9'
 MODEL='QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ'
@@ -43,12 +44,14 @@ def score(prediction, answers):
     return {'exact_match':max(x[0] for x in matches),'f1':max(x[1] for x in matches)}
 
 
-def examples(dataset, count, seed):
+def examples(dataset, count, seed, exclude=()):
     rows=[{'id':qa['id'],'context':p['context'],'question':qa['question'],
            'answers':[a['text'] for a in qa['answers']]}
           for article in dataset['data'] for p in article['paragraphs'] for qa in p['qas']]
     if len({r['id'] for r in rows})!=len(rows) or any(not r['answers'] for r in rows):
         raise ValueError('Dataset has duplicate IDs or missing answers')
+    if not set(exclude).issubset({r['id'] for r in rows}):raise ValueError('Unknown excluded evaluation ID')
+    rows=[r for r in rows if r['id'] not in set(exclude)]
     if not 1<=count<=len(rows):raise ValueError('Requested count exceeds dataset')
     rows.sort(key=lambda row:row['id'])
     if count<len(rows):rows=random.Random(seed).sample(rows,count)
@@ -60,18 +63,23 @@ def evaluate(args):
     if hashlib.sha256(content).hexdigest()!=DATASET_SHA256:raise ValueError('Pinned public dev set differs')
     dataset=json.loads(content)
     if dataset.get('version')!='1.1':raise ValueError('SQuAD 1.1 required')
-    rows=examples(dataset,args.tasks,args.seed)
+    excluded=json.loads(args.exclude_ids.read_text()) if getattr(args,'exclude_ids',None) else []
+    if type(excluded) is not list or any(type(v) is not str for v in excluded) or len(set(excluded))!=len(excluded):
+        raise ValueError('Exclusions must be a unique ID list')
+    rows=examples(dataset,args.tasks,args.seed,excluded)
+    contract=getattr(args,'answer_contract','span-v1')
     args.out.mkdir(mode=0o700,parents=True,exist_ok=False);os.umask(0o077)
     workload=args.out/'workload.jsonl'
     requests=[{'custom_id':'squad-'+r['id'],'method':'POST','url':'/v1/chat/completions','body':{
-        'model':args.model,'temperature':0,'max_tokens':128,'messages':[
-            {'role':'system','content':'Answer the question using the passage. Return only the shortest answer span from the passage. Do not explain or add a prefix.'},
-            {'role':'user','content':'Passage:\n'+r['context']+'\n\nQuestion: '+r['question']}]}}
+        'model':args.model,'temperature':0,'max_tokens':128,'messages':messages(r['context'],r['question'],contract)}}
         for r in rows]
     workload.write_text(''.join(json.dumps(r,ensure_ascii=False)+'\n' for r in requests))
     plan={'protocol':'squad-1.1-em-f1-v1','dataset_sha256':DATASET_SHA256,'tasks':len(rows),
         'scope':'complete dev set' if len(rows)==10570 else 'seeded dev subset','seed':args.seed,
         'model':args.model,'runtime_fingerprint':args.runtime_fingerprint,
+        'answer_contract':contract,'answer_contract_sha256':hashlib.sha256(Path(__file__).with_name('answer_contract.py').read_bytes()).hexdigest(),
+        'excluded_ids_sha256':hashlib.sha256(json.dumps(sorted(excluded),separators=(',',':')).encode()).hexdigest(),
+        'selected_ids_sha256':hashlib.sha256(json.dumps(sorted(r['id'] for r in rows),separators=(',',':')).encode()).hexdigest(),
         'max_tokens':128,'min_tokens':None,'temperature':0,'deadline_seconds':args.deadline,
         'batch_size':64,'max_inflight_batches':2,'submission_concurrency':1,'create_retries':5,'admission_wait_seconds':300,
         'quality_gate':{'minimum_exact_match':args.min_em,'minimum_f1':args.min_f1},
@@ -91,6 +99,8 @@ def evaluate(args):
         prior=json.loads(args.resume.read_bytes());old_plan=json.loads((args.resume.parent/'plan.json').read_bytes())
         if old_plan['runtime_fingerprint']!=args.runtime_fingerprint or old_plan['dataset_sha256']!=DATASET_SHA256:
             raise ValueError('Resume requires the same pinned runtime and dataset')
+        if old_plan.get('answer_contract','span-v1')!=contract or (excluded and old_plan.get('excluded_ids_sha256')!=plan['excluded_ids_sha256']):
+            raise ValueError('Resume must preserve answer contract and cohort')
         origin=datetime.fromisoformat(prior.get('original_measurement_started_at',prior['measurement_started_at']))
         run_args.run_deadline=args.deadline-(datetime.now(timezone.utc)-origin).total_seconds()
         if run_args.run_deadline<=0:raise ValueError('Original cohort deadline already exceeded')
@@ -113,7 +123,11 @@ def evaluate(args):
             if qid not in references or qid in grades:raise ValueError('Duplicate or unknown prediction')
             body=result['response']['body'];answer=body['choices'][0]['message'].get('content') or ''
             if not isinstance(answer,str):raise ValueError('Prediction is not final text')
-            grades[qid]={'id':qid,**score(answer,references[qid]['answers']),
+            valid=True
+            try:scored_answer=parse_answer(answer,references[qid]['context'],contract)
+            except (ValueError,TypeError):scored_answer='';valid=False
+            grades[qid]={'id':qid,**score(scored_answer,references[qid]['answers']),
+                'answer_contract_valid':valid,'scored_answer_sha256':hashlib.sha256(scored_answer.encode()).hexdigest(),
                 'prediction_sha256':hashlib.sha256(answer.encode()).hexdigest(),
                 'finish_reason':body['choices'][0].get('finish_reason'),
                 'prompt_tokens':body['usage']['prompt_tokens'],'completion_tokens':body['usage']['completion_tokens']}
@@ -128,6 +142,7 @@ def evaluate(args):
     report={**plan,'passed':delivered and on_time and em>=args.min_em and f1>=args.min_f1,
         'delivery_passed':delivered,'deadline_met':on_time,'evaluation_valid':delivered,
         'predictions':len(grades),'missing':len(rows)-len(grades),
+        'invalid_answer_contracts':sum(not g['answer_contract_valid'] for g in grades.values()),
         'exact_match_percent':100*em if delivered else None,'f1_percent':100*f1 if delivered else None,
         'elapsed_seconds':cohort_elapsed,'observation_segment_seconds':measured['elapsed_seconds'],
         'exact_results_per_second':sum(g['exact_match'] for g in grades.values())/cohort_elapsed if delivered else None,
@@ -146,6 +161,8 @@ def main():
     p.add_argument('--deadline',type=int,default=1200);p.add_argument('--runtime-fingerprint',required=True)
     p.add_argument('--min-em',type=float,default=.70);p.add_argument('--min-f1',type=float,default=.80)
     p.add_argument('--resume',type=Path,help='Prior benchmark.json; preserve accepted batches, input IDs, idempotency keys and original deadline')
+    p.add_argument('--answer-contract',choices=CONTRACTS,default='span-v1')
+    p.add_argument('--exclude-ids',type=Path,help='Predeclared calibration IDs excluded from a separate holdout')
     args=p.parse_args()
     if not 0<=args.min_em<=1 or not 0<=args.min_f1<=1 or not 60<=args.deadline<=3600:p.error('Invalid finite quality gate')
     evaluate(args)

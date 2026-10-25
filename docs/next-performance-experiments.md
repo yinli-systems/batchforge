@@ -1,5 +1,12 @@
 # Next four-H100 performance experiments
 
+> Historical design and experiments: the current October 25 deployment uses
+> one four-H100 Pod, 480B-total / 35B-active AWQ MoE, Azure PostgreSQL 17/schema 11
+> and existing S3. See [current operations](operations.md). Old Neon, 120B/235B,
+> two-Pod and migration-version examples below are not current settings or safe
+> restart commands for the 480B primary. No whole-Pod compute HA is established.
+
+
 This is a read-only review of the `71629cf` evidence, dated October 24, 2026.
 It neither changes the live engine nor establishes another performance result.
 The pinned model is **Qwen3-235B-A22B-Instruct-2507-FP8**, revision

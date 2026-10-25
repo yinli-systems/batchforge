@@ -1,0 +1,31 @@
+{
+  "collected_at": "2026-10-25T17:16:36.429170+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-reuse-20261025-v1",
+  "files": {
+    "admission-observation.json": {
+      "bytes": 2565,
+      "sha256": "6b32b0c373971ba9b2f644a4cdedf1d968c038a07affba6439866604cbb8db27",
+      "source_relative_path": "admission-observation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 23351,
+      "sha256": "3d0e20d43145901e68652eb3d3d445c7c6808220e85a9e2b2dcfcc54433835cc",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/report.json": {
+      "bytes": 1684490,
+      "sha256": "d55e7130b56360289077e1607a3e1c8e7d164f7075541a0d6d52402e3538a951",
+      "source_relative_path": ".runtime/run/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/observations.jsonl": {
+      "bytes": 12677313,
+      "sha256": "804aa2b6bb80007e4a9f5cc8adef633dc55764df7f944c47157c68959f2a64a4",
+      "source_relative_path": ".runtime/run/observations.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}
