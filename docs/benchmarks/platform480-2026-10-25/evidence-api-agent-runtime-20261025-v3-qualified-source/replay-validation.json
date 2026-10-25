@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "source_commit": "2c3a57fdf9ec0047ecfa203b90ecf9271c4a63e9",
+  "prior_report_sha256": "167f70e3ca1d399a8955e287c4a637b18445ee89b6b49e48e9a2ff059186007b",
+  "prior_case": "math-0",
+  "prior_batch_id": "batch_d04b7ef5584569245c66c723d4fb77fa",
+  "prior_input_request_sha256": "a0256f566914469a8c6f30a06f9e245877e08bf0835ea16442ec22beb708c24a",
+  "current_default_input_request_sha256": "a0256f566914469a8c6f30a06f9e245877e08bf0835ea16442ec22beb708c24a",
+  "default_request_unchanged": true,
+  "schema_sql_unchanged": true,
+  "service_mutation": false,
+  "gpu_tasks_submitted": 0
+}

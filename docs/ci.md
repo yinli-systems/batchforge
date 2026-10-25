@@ -17,6 +17,15 @@ and zero remaining registrations. Its separate real-model canary delivered all
 20 Agent runs and passed recovery/storage, but strict answer quality was16/20;
 that GPU quality failure remains independent of the passed CPU check.
 
+Output-contract source2c3a57f passed actual
+[run40237177488](https://github.com/yinli-systems/batchforge/actions/runs/40237177488),
+**1,623 Python/zero skips,23 Node tests and compileall**. The same-source native
+probe also matched an actual prior Batch input SHA to the upgraded default
+request and kept Agent SQLv1 unchanged. The disjoint real-model20-case trial
+still failed its quality gate at15/20. CPU correctness does not certify model
+protocol compliance. The run spent longer in checkout/package setup; tests
+themselves took90.55s. No new paid resource or billing change was made.
+
 Hosted run [40213979692](https://github.com/yinli-systems/batchforge/actions/runs/40213979692)
 failed before any test step for commit `2872d43`. The authenticated check
 annotation reports an account payment/spending-limit block. This is not a test

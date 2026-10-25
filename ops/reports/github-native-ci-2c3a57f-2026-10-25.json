@@ -1,0 +1,93 @@
+{
+  "captured_at": "2026-10-25T22:11:07.138709+00:00",
+  "commit": "2c3a57fdf9ec0047ecfa203b90ecf9271c4a63e9",
+  "run_id": 40237177488,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40237177488",
+  "conclusion": "success",
+  "job": {
+    "completedAt": "2026-10-25T21:55:11Z",
+    "conclusion": "success",
+    "databaseId": 121301115418,
+    "name": "existing-pod-cpu",
+    "startedAt": "2026-10-25T21:49:09Z",
+    "status": "completed",
+    "steps": [
+      {
+        "completedAt": "2026-10-25T21:49:12Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-25T21:49:10Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:49:12Z",
+        "conclusion": "success",
+        "name": "Set up runner",
+        "number": 2,
+        "startedAt": "2026-10-25T21:49:12Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:50:12Z",
+        "conclusion": "success",
+        "name": "Run actions/checkout@v4",
+        "number": 3,
+        "startedAt": "2026-10-25T21:49:12Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:53:34Z",
+        "conclusion": "success",
+        "name": "Locked CPU dependencies",
+        "number": 4,
+        "startedAt": "2026-10-25T21:50:12Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:55:07Z",
+        "conclusion": "success",
+        "name": "Native PostgreSQL17, worker failures and console regressions",
+        "number": 5,
+        "startedAt": "2026-10-25T21:53:34Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:55:08Z",
+        "conclusion": "success",
+        "name": "Post Run actions/checkout@v4",
+        "number": 10,
+        "startedAt": "2026-10-25T21:55:07Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:55:08Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 11,
+        "startedAt": "2026-10-25T21:55:08Z",
+        "status": "completed"
+      }
+    ],
+    "url": "https://github.com/yinli-systems/batchforge/actions/runs/40237177488/job/121301115418"
+  },
+  "registration_remaining": 0,
+  "new_cloud_resources": false,
+  "billing_settings_changed": false,
+  "production_credentials_transferred": false,
+  "python_tests": {
+    "passed": 1623,
+    "skipped": 0,
+    "warnings": 1,
+    "elapsed_seconds": 90.55
+  },
+  "node_tests": {
+    "passed": 23,
+    "failed": 0
+  },
+  "postgres_version": "17.11",
+  "node_version": "24.22.1",
+  "runner_os_uid": 65534,
+  "full_log_sha256": "ddc8cded007506cc67585c80bf39aea33461d22dca526c6602a7db67a2d8edf0",
+  "scope": "CPU correctness success; separate real-Agent quality result remains failed"
+}

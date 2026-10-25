@@ -37,3 +37,27 @@ The changed inputs/contracts prevent treating it as a matched performance gain.
 Whole-controller cost includes setup, fault wait and audit at$16.10/Pod-hour;
 invoice and marginal cost remain unmeasured. Stop/recover before09:00UTC on
 2026-10-26. A preregistration or passed CPU test is not a passed GPU result.
+
+## Closed v3: quality gate remains failed
+
+Source2c3a57f passed actual CI40237177488 with1,623 Python/zero skips and23 Node
+tests. The disjoint20-case trial then completed with **15 successful Agent runs
+and5 failed runs**,41 accepted model tasks/41 attempts,21,377 prompt and1,503
+completion tokens. No output-contract correction was recorded because failures
+occurred before that branch: three tool decisions failed the discriminated JSON
+protocol and two final decisions passed structural parsing but failed later
+runtime validation. The shape diagnostic explicitly preserves that distinction.
+
+All82 artifact reads passed; Agent API restart/event-head readback and original
+child-ID recovery passed, all primary epochs stayed unchanged, and the native
+test PG/API/coordinators stopped. Remaining task headroom was202. Its350.217s
+whole-controller window allocates$1.566247, not invoice or qualified-cohort price.
+The parent remains `quality_failed`; different cases/contracts also prevent a
+matched performance interpretation against v2. This result is not a passed
+Azure Agent deployment or a passed independent quality gate.
+
+See the [unmodified report](platform480-2026-10-25/soak480-agent-runtime-20261025-v3-closed-quality-failed/report.json),
+[source-bound summary](../../ops/reports/agent-runtime-v3-summary-2026-10-25.json),
+and [shape diagnostics](platform480-2026-10-25/soak480-agent-runtime-20261025-v3-shape-diagnostics/quality-diagnostics-v1.json).
+The successor qualifies a policy-derived JSON Schema at the engine boundary
+while keeping strict runtime parsing/authorization and metered bounded retries.

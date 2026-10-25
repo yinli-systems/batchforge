@@ -10,7 +10,7 @@ but it does not establish Agent task success or every advertised capability.
 | Agent harness | Additive typed sequential planner/tool loop, strict protocol and budget/fencing implementation | Real480B goal→tool→verified answer with resumed coordinator and stable child IDs |
 | Durable workflows | DB leases, revisions, event chain, uncertain-I/O outbox | DAG dependencies, fan-out/join, child cancellation, bounded retries and recovery under coordinator loss |
 | Multi-Agent | Not implemented | Bounded delegated child runs, capability intersection, durable joins, no recursive budget escape |
-| Memory/context/RAG | Versioned tenant/namespace PostgreSQL memory and full-text adapter | VectorMatch adapter with actual index identity, retrieval/citation checks, bounded context and frozen retrieval eval |
+| Memory/context/RAG | Versioned tenant/namespace PostgreSQL memory and full-text adapter | Qualified vector backend/index identity, retrieval/citation checks, bounded context and frozen retrieval eval; VectorMatch currently supplies matching/replication patterns and needs a distinct domain-data read adapter |
 | GPU serving | Real exact-token admission, fair/cost-aware scheduling, Fleet, qualified finite latch guard | Agent interactive vs batch workload SLO/goodput under a preregistered matched study |
 | Evaluation | Existing SQuAD baseline failure and improved1000-case public holdout; new CPU Agent correctness tests | Frozen Agent success/tool-correctness/security cases; independently scored results and accepted-cost accounting |
 | Observability | Existing GPU/queue/Fleet evidence; new paged Agent events/SSE | Workflow spans, step-level goodput/P99, explicit missing telemetry and receipt-linked costs |

@@ -1,0 +1,27 @@
+{
+  "source_report": "docs/benchmarks/platform480-2026-10-25/soak480-agent-runtime-20261025-v3-closed-quality-failed/report.json",
+  "source_report_sha256": "68745b94e47832d368c14e8a304a446534af9d2d8c0b0d19e937cd46d7e8b025",
+  "source_commit": "2c3a57fdf9ec0047ecfa203b90ecf9271c4a63e9",
+  "phase": "quality_failed",
+  "cohort_passed": false,
+  "delivered_agent_runs": 15,
+  "strict_quality_passed_runs": 15,
+  "cases": 20,
+  "accepted_model_tasks": 41,
+  "observed_attempts": 41,
+  "accepted_tokens": {
+    "prompt_tokens": 21377,
+    "completion_tokens": 1503
+  },
+  "artifact_reads": 82,
+  "distinct_artifact_ids": 82,
+  "agent_api_restart_state_readback": true,
+  "primary_epoch_unchanged": true,
+  "isolated_pg_stopped": true,
+  "remaining_task_headroom": 202,
+  "whole_controller_seconds": 350.21672646299703,
+  "whole_pod_allocation_usd": 1.566247026681737,
+  "invoice": null,
+  "qualified_cohort_cost": null,
+  "scope": "20 disjoint synthetic value-contract cases; 15 successful/5 protocol failures; native Agent state, not Azure Agent rollout"
+}

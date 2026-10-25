@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-25T22:21:36.831409+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-agent-runtime-20261025-v3",
+  "files": {
+    "report.json": {
+      "bytes": 174074,
+      "sha256": "68745b94e47832d368c14e8a304a446534af9d2d8c0b0d19e937cd46d7e8b025",
+      "source_relative_path": "report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "quality-diagnostics-v1.json": {
+      "bytes": 2719,
+      "sha256": "266dd9cf3a0a75827a20a8abe83c5f0338825941e6b950b31ec706a70af70773",
+      "source_relative_path": "quality-diagnostics-v1.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

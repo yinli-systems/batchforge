@@ -1,0 +1,22 @@
+{
+  "identity": {
+    "pid": 671726,
+    "start_ticks": 48888694,
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261025-v3/source"
+  },
+  "command": [
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "ops.qualify_agent_runtime",
+    "--run",
+    "/root/batchforge-runtime/soak480-agent-runtime-20261025-v3",
+    "--fixture-set",
+    "value-contract-heldout-v1",
+    "--apply"
+  ],
+  "source_commit": "2c3a57fdf9ec0047ecfa203b90ecf9271c4a63e9",
+  "ci_run": 40237177488,
+  "ci_actual_conclusion": "success",
+  "fixture_sha256": "19382f4e66b1a2c959c4e2532bc590907688da06ab72fadd8dc10d11e85894ec",
+  "scope": "Disjoint value-contract holdout; isolated native Agent state and real Azure/S3/480B children"
+}

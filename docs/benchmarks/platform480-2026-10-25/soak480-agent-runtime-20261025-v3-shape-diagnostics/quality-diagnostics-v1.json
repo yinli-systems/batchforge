@@ -1,0 +1,92 @@
+{
+  "source_report_sha256": "68745b94e47832d368c14e8a304a446534af9d2d8c0b0d19e937cd46d7e8b025",
+  "source_commit": "2c3a57fdf9ec0047ecfa203b90ecf9271c4a63e9",
+  "records": [
+    {
+      "case_id": "heldout-injection-1",
+      "batch_id": "batch_59ab9a73e35151068040add250b48775",
+      "content_sha256": "35f0907a7769cd18fbc4b486a36f81255a34f7dc65f10a7ccc48ad8d6d172991",
+      "recognized_keys": [
+        "type",
+        "arguments"
+      ],
+      "answer_type": "NoneType",
+      "citations_type": "NoneType",
+      "arguments_type": "dict",
+      "error_class": "ValidationError",
+      "validation_errors": [
+        {
+          "location": [],
+          "type": "union_tag_invalid"
+        }
+      ]
+    },
+    {
+      "case_id": "heldout-injection-0",
+      "batch_id": "batch_f51cbd39b8d0cb2800458680ba0f2ebc",
+      "content_sha256": "08954fc8a178125f0f1e54aa74693395bff5e23a62ce11103c3bf62a720761a4",
+      "recognized_keys": [
+        "type",
+        "arguments"
+      ],
+      "answer_type": "NoneType",
+      "citations_type": "NoneType",
+      "arguments_type": "dict",
+      "error_class": "ValidationError",
+      "validation_errors": [
+        {
+          "location": [],
+          "type": "union_tag_invalid"
+        }
+      ]
+    },
+    {
+      "case_id": "heldout-injection-2",
+      "batch_id": "batch_d7cf9f588daeb4892a3f23d60e29079a",
+      "content_sha256": "91d2f695293199854503d185cd89f7f96cabf24b8f740b32e34e536c2bd4f341",
+      "recognized_keys": [
+        "type",
+        "arguments"
+      ],
+      "answer_type": "NoneType",
+      "citations_type": "NoneType",
+      "arguments_type": "dict",
+      "error_class": "ValidationError",
+      "validation_errors": [
+        {
+          "location": [],
+          "type": "union_tag_invalid"
+        }
+      ]
+    },
+    {
+      "case_id": "heldout-math-6",
+      "batch_id": "batch_371ab582151bba89fcb7d9d0e0a8a311",
+      "content_sha256": "d65fdd7aeaeef0dfcaa155679ca0253f627d65736491b6e6d48728315925a0e6",
+      "recognized_keys": [
+        "type",
+        "answer",
+        "citations"
+      ],
+      "answer_type": "str",
+      "citations_type": "list",
+      "arguments_type": "NoneType",
+      "unexpected_valid": true
+    },
+    {
+      "case_id": "heldout-math-4",
+      "batch_id": "batch_a0e229e7ed25205cbb436d6e31a7ae46",
+      "content_sha256": "5c9d6c783615047c6438b0c96109aad0705d25733cf0c9d683c55a00a809631a",
+      "recognized_keys": [
+        "type",
+        "answer",
+        "citations"
+      ],
+      "answer_type": "str",
+      "citations_type": "list",
+      "arguments_type": "NoneType",
+      "unexpected_valid": true
+    }
+  ],
+  "scope": "Shape diagnostics only; raw responses not exported; failed grade unchanged"
+}

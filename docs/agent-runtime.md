@@ -40,8 +40,11 @@ process isolation backend.
 
 Memory writes are explicit authenticated API operations with optimistic versions.
 Reads return versioned citations and the full document SHA; excerpts identify
-truncation. Search is PostgreSQL full-text retrieval. VectorMatch is a future
-qualified adapter, not a hidden substitute for this implementation. Retrieved
+truncation. Search is PostgreSQL full-text retrieval. The user's current
+VectorMatch repository implements order matching, journals and replicated
+execution. Its future integration needs an observed domain-data read adapter;
+dense-vector retrieval needs its own qualified backend and index identity.
+See [integration boundaries](vector-retrieval-integration.md). Retrieved
 text is marked untrusted. A model following malicious text still cannot acquire
 ungranted tool capabilities; this alone does not guarantee semantic correctness.
 
