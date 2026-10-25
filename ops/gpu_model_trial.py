@@ -66,6 +66,8 @@ def main():
     parser.add_argument('--run', type=Path, required=True)
     parser.add_argument('--model', type=Path, required=True)
     parser.add_argument('--benchmark-source', type=Path, required=True)
+    parser.add_argument('--platform-canary', action='store_true')
+    parser.add_argument('--abba-repeats', type=int, choices=range(1, 4), default=3)
     args = parser.parse_args()
     class TrialInterrupted(RuntimeError):
         pass
@@ -198,17 +200,32 @@ def main():
                 manager.invoke(candidate,'start'); event('480b_engine_loading')
                 wait(lambda:manager.ready(candidate),1200,'candidate_engine_readiness_timeout')
                 event('480b_engine_ready')
-                command=[str(root.parent/'engine-venv/bin/python'),'-m','scripts.token_workload',
+                if args.platform_canary:
+                    command=[str(root.parent/'venv/bin/python'),'-m','ops.platform480',
+                        '--root',str(root),'--run',str(run/'platform'),
+                        '--engine-service',json.dumps(candidate),'--repeats',str(args.abba_repeats)]
+                    child=subprocess.Popen(command,cwd=args.benchmark_source)
+                    try:
+                        wait(lambda:child.poll() is not None,7200,'platform_canary_deadline')
+                        require(child.returncode==0,'platform_canary_failed')
+                    finally:
+                        if child.poll() is None:
+                            child.terminate()
+                            try:child.wait(90)
+                            except subprocess.TimeoutExpired:child.kill();child.wait()
+                    report['phase']='platform_canary_passed';event('480b_platform_canary_passed')
+                else:
+                    command=[str(root.parent/'engine-venv/bin/python'),'-m','scripts.token_workload',
                     '--dataset',str(root/'.runtime/public-data/dev-v1.1.json'),'--tokenizer',str(args.model),
                     '--revision',REVISION,'--model',REPO,'--repeats','1','--context-limit','18440',
                     '--output',str(run/'workload.jsonl'),'--manifest',str(run/'manifest.json')]
-                subprocess.run(command,cwd=root,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=True,timeout=180)
-                command=[str(root.parent/'engine-venv/bin/python'),'-m','ops.gpu_campaign',
+                    subprocess.run(command,cwd=root,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=True,timeout=180)
+                    command=[str(root.parent/'engine-venv/bin/python'),'-m','ops.gpu_campaign',
                     '--url','http://127.0.0.1:8348','--workload',str(run/'workload.jsonl'),
                     '--manifest',str(run/'manifest.json'),'--out',str(run/'benchmark'),
                     '--engine-label','480B-A35B-AWQ-TP4-eager','--policies','fifo','--concurrency','16']
-                subprocess.run(command,cwd=args.benchmark_source,check=True,timeout=1800)
-                report['phase']='benchmark_passed'; event('480b_benchmark_passed')
+                    subprocess.run(command,cwd=args.benchmark_source,check=True,timeout=1800)
+                    report['phase']='benchmark_passed'; event('480b_benchmark_passed')
         except Exception as error:
             report['phase']='failed'; report['error_type']=type(error).__name__
             if type(error) is RuntimeError:
@@ -226,7 +243,7 @@ def main():
             write_json(run/'trial.json',report)
             if campaign_lock is not None:
                 campaign_lock.close()
-        require(report['phase']=='benchmark_passed' and not report.get('restore_failures')
+        require(report['phase'] in {'benchmark_passed','platform_canary_passed'} and not report.get('restore_failures')
                 and not report.get('candidate_stop_failed'), 'trial_or_recovery_failed_inspect_private_logs')
 
 

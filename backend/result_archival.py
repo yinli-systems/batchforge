@@ -195,8 +195,10 @@ class ResultArchiver:
         chunks = await (await conn.execute('SELECT * FROM result_archive_chunks WHERE archive_id=%s ORDER BY file_id,ordinal', (archive_id,))).fetchall()
         return files, chunks
 
-    async def archive_batch(self, tenant, batch_id):
+    async def archive_batch(self, tenant, batch_id, *, purge_payloads=True):
         """Explicit policy action; never invoked by a migration or constructor."""
+        if type(purge_payloads) is not bool:
+            raise ValueError('purge_payloads must be boolean')
         run, token = await self._begin(tenant, batch_id)
         if token:
             stopped = asyncio.Event()
@@ -257,7 +259,9 @@ class ResultArchiver:
                     await renewal
                 except Exception:
                     pass
-        purged = await self.purge_batch(tenant, batch_id)
+        # Archive-only qualification can prove object readback while retaining
+        # the database copy until every serving reader is known compatible.
+        purged = await self.purge_batch(tenant, batch_id) if purge_payloads else 0
         async with self.pool.connection() as conn:
             files, _ = await self._rows(conn, run['id'])
             progress = await _one(conn, 'SELECT rows_purged FROM result_archive_runs WHERE id=%s', (run['id'],))
