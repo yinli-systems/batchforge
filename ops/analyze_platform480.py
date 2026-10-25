@@ -4,8 +4,26 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import re
 
 from scripts.benchmark import distribution
+
+
+def workload_strata(observations):
+    groups={};unknown=0
+    for row in observations:
+        cell=re.search(r'-mix-\d+-(128|512|2048|8192|16384)-(32|128|512|2048)$',row.get('custom_id',''))
+        if not cell:unknown+=1;continue
+        prompt,output=map(int,cell.groups())
+        label=('prefill_heavy' if prompt>=8192 and output<=128 else
+               'decode_heavy' if prompt<=512 and output>=512 else 'other')
+        groups.setdefault(label,[]).append(row)
+    return {'population':'Requested token cells within the same mixed-arrival bursts; not isolated workload-class trials',
+        'unclassified_observations':unknown,'classes':[{ 'class':label,'tasks':len(rows),
+            'task_completion_seconds':distribution([r.get('completion_seconds',r['queue_seconds']+r['accepted_attempt_seconds']) for r in rows]),
+            'queue_seconds':distribution([r['queue_seconds'] for r in rows]),
+            'accepted_attempt_seconds':distribution([r['accepted_attempt_seconds'] for r in rows])}
+            for label,rows in sorted(groups.items())]}
 
 
 def summarize(report):
@@ -41,6 +59,7 @@ def summarize(report):
             'task_completion_seconds':distribution(completion),
             'queue_seconds':distribution([t['queue_seconds'] for t in observations]),
             'accepted_attempt_seconds':distribution([t['accepted_attempt_seconds'] for t in observations]),
+            'workload_strata':workload_strata(observations),
             'completion_population':'DB task created through accepted completion; legacy packs sum queue and accepted attempt'})
     for study in sorted({p['study'] for p in phases}):
         for repeat in sorted({p['repeat'] for p in phases if p['study']==study}):

@@ -81,6 +81,17 @@ def test_analysis_weights_phase_walls_and_uses_pooled_observations():
     assert not summarize({**report,'finished_at':None})['campaign_passed']
 
 
+def test_requested_workload_classes_are_reported_separately_and_unknown_ids_are_counted():
+    from ops.analyze_platform480 import workload_strata
+    rows=[{'custom_id':'bench-r1-mix-0-'+cell,'queue_seconds':1,'accepted_attempt_seconds':2}
+          for cell in ['16384-32','8192-128','128-2048','512-512','2048-128']]
+    rows.append({'custom_id':'unknown','queue_seconds':1,'accepted_attempt_seconds':2})
+    result=workload_strata(rows)
+    assert result['unclassified_observations']==1
+    assert {r['class']:r['tasks'] for r in result['classes']}=={'prefill_heavy':2,'decode_heavy':2,'other':1}
+    assert all(r['task_completion_seconds']['p95']==3 for r in result['classes'])
+
+
 def test_duplicate_accepted_result_or_drifted_metering_cannot_pass():
     tasks=[{'id':'t','status':'completed','prompt_tokens':128,'completion_tokens':32}]
     attempts=[{'task_id':'t','status':'completed','prompt_tokens':128,'completion_tokens':32},

@@ -20,7 +20,7 @@ HOST = '4x7ej43hrqznjn-64410eb2@ssh.runpod.io'
 
 
 def remote_script(remote_run):
-    if not re.fullmatch(r'/root/batchforge-runtime/platform480-[a-zA-Z0-9-]+', remote_run):
+    if not re.fullmatch(r'/root/batchforge-runtime/(?:platform480|promotion480)-[a-zA-Z0-9-]+', remote_run):
         raise ValueError('Only an owned platform480 experiment may be collected')
     return "stty -echo\npython3 - <<'BF_COLLECT_PY'\n" + f"root={remote_run!r}\n" + '''
 from pathlib import Path
@@ -30,6 +30,8 @@ root=Path(root)
 paths=[]
 for name in ['source-receipt.json','storage-preflight.json','launcher-v1.json',
              'hardware-topology.json',
+             'source-deploy.json','rollout/report.json','rollout/original-manifest.json',
+             'legacy-readback.json','primary-smoke.json','post-rollout-health.json',
              'launcher-v2.json','queue-report.json','queue.py','queue-v2.py',
              'controller-v1.log','queue-v2.log',
              'launcher-v3.json','successor-v3.py','successor-v3.log',
@@ -54,8 +56,12 @@ with tarfile.open(fileobj=buf,mode='w:gz') as tar:
   if p.stat().st_size>limit:raise RuntimeError('evidence_file_exceeds_bound')
   data=p.read_bytes();total+=len(data)
   if total>limit:raise RuntimeError('evidence_snapshot_exceeds_bound')
-  name=str(p.relative_to(root))
-  manifest['files'][name]={'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
+  source_name=str(p.relative_to(root));name=source_name+'.txt' if p.suffix=='.log' else source_name
+  removed=0
+  if p.suffix=='.jsonl' and data and not data.endswith(b'\\n'):
+   end=data.rfind(b'\\n')+1;removed=len(data)-end;data=data[:end]
+  manifest['files'][name]={'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),
+                         'source_relative_path':source_name,'trailing_partial_jsonl_bytes_removed':removed}
   info=tarfile.TarInfo(name);info.size=len(data);info.mode=0o600
   tar.addfile(info,io.BytesIO(data))
  data=(json.dumps(manifest,indent=2)+'\\n').encode()
