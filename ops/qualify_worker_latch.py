@@ -197,7 +197,9 @@ def main():
         event('prepared')
         if not args.apply:return
         if not all(manager.readiness(s) for s in services):raise RuntimeError('Primary not ready')
-        stop_watch();touched=True
+        # A stop may succeed remotely and still lose its acknowledgement.
+        # Mark maintenance intent first so finally always attempts watchdog start.
+        touched=True;stop_watch()
         for s in apis:
             e=environments[key(s)].copy();e['BATCH_SUBMISSION_ENABLED']='false';configure(s,e)
             probe=http.post(f"http://127.0.0.1:{s['port']}/v1/batches",json={'input_file_id':'maintenance-probe'})
