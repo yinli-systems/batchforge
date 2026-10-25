@@ -22,6 +22,7 @@ from urllib.parse import urlparse
 from urllib.request import ProxyHandler, build_opener
 
 from scripts import engine_matrix
+from ops.storage_semantics import require_journal_filesystem
 
 
 def now():
@@ -88,6 +89,7 @@ def execute(args):
     endpoint = urlparse(args.url)
     if endpoint.scheme != 'http' or endpoint.hostname not in {'127.0.0.1', 'localhost', '::1'} or endpoint.username:
         raise ValueError('Only an existing Pod-local HTTP engine is allowed')
+    require_journal_filesystem(args.out)
     args.out.mkdir(mode=0o700, parents=True, exist_ok=False)
     os.umask(0o077)
     lock_name = hashlib.sha256(args.url.encode()).hexdigest()[:16]
