@@ -157,7 +157,7 @@ async def run(args, *, transport=None) -> dict:
     started = time.monotonic()
     headers = {"Authorization": f"Bearer {key}"}
     async with httpx.AsyncClient(base_url=args.url.rstrip("/"), headers=headers,
-                                timeout=args.request_timeout, transport=transport) as client:
+                                timeout=args.request_timeout, transport=transport, trust_env=False) as client:
         async def monitor(item: Submission) -> None:
             deadline = item.accepted_at + args.deadline
             while time.monotonic() < deadline:
@@ -198,7 +198,7 @@ async def run(args, *, transport=None) -> dict:
                 try:
                     response = await client.post("/v1/batches", json={"input_file_id": item.file_id,
                         "endpoint": "/v1/chat/completions", "completion_window": "24h",
-                        "metadata": {"benchmark_run": run_id, "engine_label": args.engine_label}},
+                        "metadata": {**getattr(args,'metadata',{}), "benchmark_run": run_id, "engine_label": args.engine_label}},
                         headers={"Idempotency-Key": f"{run_id}-{item.index}"})
                     response.raise_for_status()
                     item.batch = checked_batch(response.json())
