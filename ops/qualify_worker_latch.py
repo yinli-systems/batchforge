@@ -24,7 +24,7 @@ from ops.gpu_campaign import write_json
 from ops.ha.retune_full_gpu import file_env
 from ops.ha.set_scheduler_policy import PolicyManager, atomic_bytes
 from ops.product_campaign import MODEL, managed_identity, wait_until
-from ops.recover_latched_worker import EXPECTED, require_effective_configuration, require_engine_binding
+from ops.recover_latched_worker import EXPECTED, RUNTIME, require_effective_configuration, require_engine_binding
 from ops.supervise import load_manifest, private_read
 from worker.kv_admission import engine_quiescent
 
@@ -54,6 +54,18 @@ def inference_confirmed(worker, engine_metrics, running):
         and worker.get('batchforge_worker_inflight',0)>0
         and worker.get('batchforge_worker_reserved_context_tokens',0)>0
         and worker.get('batchforge_worker_adaptive_kv_paused')==0)
+
+
+def strict_receipt(envelope, count):
+    from backend.receipts import verify
+    r=envelope.get('receipt',{})
+    if (not verify(envelope) or r.get('model')!=MODEL or r.get('ledger_state')!='consistent_ledger'
+        or r.get('counts')!={'total':count,'pending':0,'running':0,'completed':count,'failed':0,'cancelled':0}
+        or not r.get('checks') or any(v is not True for v in r['checks'].values())
+        or r.get('accepted_usage',{}).get('completion_tokens')!=count*64
+        or r.get('history',{}).get('observed_accepted_attempts')!=count
+        or r.get('runtime_fingerprint')!=RUNTIME):
+        raise RuntimeError('Strict acceptance, attempt, usage or runtime receipt failed')
 
 
 def main():
@@ -152,15 +164,20 @@ def main():
     def done(bid):
         return db.execute("SELECT count(*) FROM tasks WHERE batch_id=%s AND status NOT IN ('completed','failed','cancelled')",(bid,)).fetchone()[0]==0
     def read_receipt(bid):
-        from backend.receipts import verify
         envelope=request(apis[0]['port'],'/v1/batches/'+bid+'/receipt').json()
-        if not verify(envelope):raise RuntimeError('Receipt byte digest failed')
+        strict_receipt(envelope,8 if accepted.index(bid)==0 else 40)
         write_json(base/('receipt-'+str(accepted.index(bid))+'.json'),envelope)
         return envelope
     try:
         from ops.worker_source import probe_source
         live_source=Path(we['PYTHONPATH']);source_receipt=json.loads(private_read(live_source.parent/'source-receipt.json'))
         report['live_worker_source_probe']=probe_source(worker['python'],live_source,we,ROOT,source_receipt['files'])
+        probe=report['live_worker_source_probe']
+        if (probe['model']!=MODEL or probe['slots']!=32 or probe['token_budget']!=164256
+            or probe['max_model_len']!=18440 or probe['runtime_fingerprint']!=RUNTIME
+            or environments[key(engine)].get('MODEL_NAME')!=MODEL
+            or environments[key(engine)].get('ENGINE_TENSOR_PARALLEL_SIZE')!='4'):
+            raise RuntimeError('Current480B TP4 exact-token32 profile required')
         tenant=db.execute('SELECT tenant_id FROM api_keys WHERE key_hash=%s AND NOT revoked',(hashlib.sha256(api_key.encode()).hexdigest(),)).fetchone()[0]
         headroom=db.execute('SELECT max_retained_tasks-retained_tasks FROM tenant_retention_limits JOIN tenant_retention_usage USING(tenant_id) WHERE tenant_id=%s',(tenant,)).fetchone()[0]
         if headroom<48:raise RuntimeError('Existing tenant has insufficient headroom')
@@ -283,7 +300,7 @@ def main():
             try:start_watch()
             except BaseException as exc:restore_errors.append('watchdog_'+type(exc).__name__)
         report['restore_errors']=restore_errors
-        report['passed']=report.get('qualified_recovery',False) and not restore_errors
+        report['passed']=report.get('qualified_recovery',False) and not restore_errors and 'error_type' not in report
         report['final_identities']={key(s):managed_identity(ROOT,s) for s in [*services,watchdog]}
         event('prepared' if not args.apply and 'error_type' not in report else 'complete' if report['passed'] else 'failed')
         http.close();db.close()

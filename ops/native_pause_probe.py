@@ -52,6 +52,7 @@ def run():
         elapsed=time.monotonic()-began
         if elapsed>=2:raise RuntimeError('Caller death did not trigger early resume')
         results.append({'case':'caller_os_exit_without_cleanup','passed':True,'resume_wait_seconds':elapsed})
+        if process_identity(target.pid)!=identity:raise RuntimeError('Disposable target changed identity')
         return {'passed':True,'scope':'Only disposable CPU children; no service or GPU actions',
                 'cases':results,'target_identity_unchanged':process_identity(target.pid)==identity}
     finally:
