@@ -11,6 +11,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import time
 import uuid
 
@@ -91,7 +92,13 @@ def generate_workload(args, run_id: str) -> list[Submission]:
 def request_error(exc: Exception, stage: str) -> dict:
     # Keep safe diagnosis fields; full server diagnostics belong in private logs.
     status = exc.response.status_code if isinstance(exc, httpx.HTTPStatusError) else None
-    return {"stage": stage, "type": type(exc).__name__, "http_status": status,
+    code=None
+    if isinstance(exc,httpx.HTTPStatusError):
+        try:
+            candidate=exc.response.json().get('error',{}).get('code')
+            if isinstance(candidate,str) and re.fullmatch('[a-z_]{1,64}',candidate):code=candidate
+        except (ValueError,AttributeError,TypeError):pass
+    return {"stage": stage, "type": type(exc).__name__, "http_status": status,"error_code":code,
             "create_outcome_uncertain": stage == "create" and (status is None or status >= 500)}
 
 
@@ -140,13 +147,27 @@ async def run(args, *, transport=None) -> dict:
     key = os.environ.get("BATCHFORGE_API_KEY", "")
     if not key:
         raise SystemExit("BATCHFORGE_API_KEY is required (never pass secrets on the command line)")
-    run_id = "bench-" + uuid.uuid4().hex[:12]
+    resume_path=getattr(args,'resume_from',None)
+    previous=json.loads(resume_path.read_bytes()) if resume_path else None
+    run_id = previous['run_id'] if previous else "bench-" + uuid.uuid4().hex[:12]
+    if not re.fullmatch('bench-[a-f0-9]{12}',run_id):raise ValueError('Invalid benchmark identity')
     generation_started = time.monotonic()
     submissions = generate_workload(args, run_id)
     digest = hashlib.sha256()
     for item in submissions:
         digest.update(item.data)
     workload_hash = digest.hexdigest()
+    restored_batches={}
+    if previous:
+        if (previous['workload']['sha256']!=workload_hash or previous['model']!=args.model
+            or previous['engine_label']!=args.engine_label or previous['requested_tasks']!=args.tasks
+            or previous['batches']!=args.batches):raise ValueError('Resume requires identical workload, model, metadata label and cohort shape')
+        restored_batches={o['index']:o['batch_id'] for o in previous['batch_observations'] if o.get('batch_id')}
+        if len(set(restored_batches.values()))!=len(restored_batches):raise ValueError('Duplicate restored batch identity')
+        for error in previous['submission_errors']:
+            if error['stage']=='upload' and (error.get('http_status') is None or error['http_status']>=500):
+                raise ValueError('Uncertain upload requires operator reconciliation; never automatically re-upload')
+            if error.get('input_file_id'):submissions[error['batch_index']].file_id=error['input_file_id']
     generation_seconds = time.monotonic() - generation_started
     if args.workload_dir:
         args.workload_dir.mkdir(parents=True, exist_ok=True)
@@ -190,16 +211,25 @@ async def run(args, *, transport=None) -> dict:
             stage = "upload"
             request_started = item.started_at
             try:
-                attempted_requests += 1
-                try:
-                    response = await client.post("/v1/files", data={"purpose": "batch"},
-                        timeout=min(args.request_timeout,max(.1,global_deadline-time.monotonic())),
-                        files={"file": (f"{run_id}-{item.index}.jsonl", item.data, "application/jsonl")})
-                    response.raise_for_status()
-                    item.file_id = response.json()["id"]
-                    successful_requests += 1
-                finally:
-                    item.upload_seconds = time.monotonic() - request_started
+                if item.index in restored_batches:
+                    stage='resume'
+                    response=await client.get('/v1/batches/'+restored_batches[item.index])
+                    response.raise_for_status();item.batch=checked_batch(response.json(),restored_batches[item.index])
+                    item.file_id=item.batch.get('input_file_id')
+                    item.accepted_at=item.create_started_at=time.monotonic()
+                    task=asyncio.create_task(monitor(item));monitors.append(task);monitor_by_index[item.index]=task
+                    return
+                if not item.file_id:
+                    attempted_requests += 1
+                    try:
+                        response = await client.post("/v1/files", data={"purpose": "batch"},
+                            timeout=min(args.request_timeout,max(.1,global_deadline-time.monotonic())),
+                            files={"file": (f"{run_id}-{item.index}.jsonl", item.data, "application/jsonl")})
+                        response.raise_for_status()
+                        item.file_id = response.json()["id"]
+                        successful_requests += 1
+                    finally:
+                        item.upload_seconds = time.monotonic() - request_started
                 stage = "create"
                 if time.monotonic()>=global_deadline:
                     item.error={'stage':'create','type':'RunDeadlineExceeded','http_status':None,'create_outcome_uncertain':False}
@@ -213,7 +243,12 @@ async def run(args, *, transport=None) -> dict:
                             "benchmark_run":run_id,"engine_label":args.engine_label}}
                     retries=getattr(args,'create_retries',0)
                     if type(retries) is not int or not 0<=retries<=5:raise ValueError('create_retries must be between 0 and 5')
-                    for retry in range(retries+1):
+                    retry=quota_retry=0
+                    quota_wait=getattr(args,'admission_wait_seconds',0)
+                    if type(quota_wait) not in (int,float) or not math.isfinite(quota_wait) or not 0<=quota_wait<=600:
+                        raise ValueError('admission_wait_seconds must be finite and between 0 and 600')
+                    quota_deadline=min(global_deadline,time.monotonic()+quota_wait)
+                    while True:
                         attempted_requests += 1
                         try:
                             response=await client.post('/v1/batches',
@@ -224,10 +259,16 @@ async def run(args, *, transport=None) -> dict:
                         except httpx.HTTPError as exc:
                             transient=isinstance(exc,httpx.TransportError) or (
                                 isinstance(exc,httpx.HTTPStatusError) and exc.response.status_code in (502,503,504))
-                            if not transient or retry==retries:raise
-                            delay=min(2,.5*2**retry)
+                            error=request_error(exc,'create')
+                            waitable=error['http_status']==429 and error['error_code'] in ('retained_payload_limit','queue_limit')
+                            if waitable and quota_wait:
+                                delay=min(5,.5*2**min(quota_retry,4));quota_retry+=1
+                                if time.monotonic()+delay>=quota_deadline:raise
+                            elif transient and retry<retries:
+                                delay=min(2,.5*2**retry);retry+=1
+                            else:raise
                             if time.monotonic()+delay>=global_deadline:raise
-                            item.create_retry_errors.append({**request_error(exc,'create'),'retry':retry+1})
+                            item.create_retry_errors.append({**error,'transient_retry':retry,'quota_wait_retry':quota_retry})
                             await asyncio.sleep(delay)
                     item.batch = checked_batch(response.json())
                     successful_requests += 1
@@ -330,9 +371,13 @@ async def run(args, *, transport=None) -> dict:
     passed = len(accepted) == args.batches and completed == args.tasks and not unfinished and not failed and not cancelled and integrity
     return {
         "schema_version": 2, "run_id": run_id, "observed_at": datetime.now(timezone.utc).isoformat(),
+        "resume":{'prior_report_sha256':hashlib.sha256(resume_path.read_bytes()).hexdigest(),
+                  'restored_accepted_batches':len(restored_batches),
+                  'timing_scope':'Current observation segment only; previous accepted tasks are re-observed, not rerun'} if previous else None,
         "max_inflight_batches":window_size,
         "submission_rate_scope":"Includes completion-credit waits when max_inflight_batches is set",
         "measurement_started_at": measurement_started_at,
+        "original_measurement_started_at":previous.get('original_measurement_started_at',previous['measurement_started_at']) if previous else measurement_started_at,
         "terminal_observation_ended_at": terminal_observation_ended_at,
         "passed": passed, "measurement": "client observed submission through terminal observation; output validation measured separately",
         "engine_label": args.engine_label, "test_fixture_detected": simulated,

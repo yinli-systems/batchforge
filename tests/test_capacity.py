@@ -8,12 +8,14 @@ from backend.config import Settings
 def test_reservations_are_included_and_over_limit_history_never_becomes_negative_headroom():
     row=dict(max_retained_tasks=50000,retained_tasks=50001,max_payload_bytes=320*1024**2,
         charged_payload_bytes=300*1024**2,max_response_bytes=65536,max_error_bytes=32768,
-        input_stored_bytes=250*1024**2,input_reserved_bytes=7*1024**2)
+        input_stored_bytes=250*1024**2,input_reserved_bytes=7*1024**2,held_tasks=900,queued_tasks=100)
     result=capacity_view(row,Settings(max_attempts=3))
     assert result['retained_tasks']['available']==0 and result['retained_tasks']['over_limit']
     assert result['input_bytes']['available']==0 and result['input_bytes']['over_limit']
     assert result['task_payload_bytes']['available']==20*1024**2
     assert result['new_task_reservation']['fixed_bytes_per_task']==196608
+    assert result['queue_tasks']['used']==100 and result['queue_tasks']['reserved']==900
+    assert 'after completion' in result['reservation_release']
     assert result['advisory'] is True and 'not disk' in result['snapshot_scope']
 
 

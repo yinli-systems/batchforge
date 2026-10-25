@@ -632,7 +632,7 @@ async function openCreate() {
 
 function capacityNotice(capacity) {
   const mib = value => (Number(value) / 1048576).toFixed(1);
-  return `Available: ${number(capacity.retained_tasks.available)} task records · ${mib(capacity.task_payload_bytes.available)} MiB task payload · ${mib(capacity.input_bytes.available)} MiB input storage. Each new task reserves at least ${mib(capacity.new_task_reservation.fixed_bytes_per_task)} MiB plus its request body until completion. This is a snapshot; concurrent submissions can use it.`;
+  return `Available: ${number(capacity.retained_tasks.available)} task records · ${mib(capacity.task_payload_bytes.available)} MiB task payload · ${mib(capacity.input_bytes.available)} MiB input storage. Each new task reserves at least ${mib(capacity.new_task_reservation.fixed_bytes_per_task)} MiB plus its request body until verified archival and payload purge. Completion alone does not release it. This is a snapshot; concurrent submissions can use it.`;
 }
 
 function loadSample() {

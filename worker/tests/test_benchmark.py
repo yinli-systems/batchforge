@@ -239,3 +239,43 @@ async def test_transient_create_reuses_exact_key_and_body_after_lost_ack(monkeyp
     assert len(calls) == 2 and calls[0] == calls[1]
     assert report['submission']['attempted_http_requests'] == 3
     assert report['batch_observations'][0]['create_retry_errors'][0]['http_status'] == 503
+
+
+@pytest.mark.asyncio
+async def test_retained_payload_429_waits_for_archive_with_same_file_and_key(monkeypatch, tmp_path):
+    monkeypatch.setenv('BATCHFORGE_API_KEY', 'test-only-key')
+    args = arguments(tmp_path);args.tasks=args.batches=1;args.admission_wait_seconds=3
+    base=fixture_transport();calls=[]
+    async def handle(request):
+        if request.url.path=='/v1/batches' and request.method=='POST':
+            calls.append((request.headers['Idempotency-Key'],request.content))
+            if len(calls)==1:return httpx.Response(429,json={'error':{'code':'retained_payload_limit'}})
+        return await base.handle_async_request(request)
+    report=await run(args,transport=httpx.MockTransport(handle))
+    assert report['passed'] and calls[0]==calls[1]
+    assert report['batch_observations'][0]['create_retry_errors'][0]['quota_wait_retry']==1
+
+
+@pytest.mark.asyncio
+async def test_resume_reobserves_accepted_batches_and_reuses_unaccepted_input_without_upload(monkeypatch,tmp_path):
+    monkeypatch.setenv('BATCHFORGE_API_KEY','test-only-key')
+    args=arguments(tmp_path);base=fixture_transport();fail=True;creates={};uploads=[]
+    async def handle(request):
+        if request.url.path=='/v1/files' and request.method=='POST':uploads.append(request.content)
+        if request.url.path=='/v1/batches' and request.method=='POST':
+            key=request.headers['Idempotency-Key'];creates[key]=creates.get(key,0)+1
+            if fail and key.endswith('-1'):return httpx.Response(429,json={'error':{'code':'retained_payload_limit'}})
+        return await base.handle_async_request(request)
+    transport=httpx.MockTransport(handle)
+    prior=await run(args,transport=transport)
+    assert prior['completed']==2 and not prior['passed']
+    args.resume_from=tmp_path/'prior.json';args.resume_from.write_text(json.dumps(prior))
+    fail=False
+    resumed=await run(args,transport=transport)
+    assert resumed['passed'] and resumed['completed']==4
+    assert resumed['run_id']==prior['run_id'] and len(uploads)==2
+    assert creates[prior['run_id']+'-0']==1 and creates[prior['run_id']+'-1']==2
+    assert resumed['original_measurement_started_at']==prior['measurement_started_at']
+    assert resumed['resume']['restored_accepted_batches']==1
+    args.prompt='changed prompt'
+    with pytest.raises(ValueError,match='identical workload'):await run(args,transport=transport)

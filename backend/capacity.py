@@ -3,7 +3,8 @@
 CAPACITY_SQL="""
 SELECT l.max_retained_tasks,l.max_payload_bytes,l.max_response_bytes,l.max_error_bytes,
        u.retained_tasks,u.charged_payload_bytes,
-       b.stored_bytes AS input_stored_bytes,b.reserved_bytes AS input_reserved_bytes
+       b.stored_bytes AS input_stored_bytes,b.reserved_bytes AS input_reserved_bytes,b.held_tasks,
+       (SELECT coalesce(sum(pending_count+running_count),0) FROM batches WHERE tenant_id=l.tenant_id AND status='in_progress') AS queued_tasks
 FROM tenant_retention_limits l JOIN tenant_retention_usage u USING(tenant_id)
 JOIN tenant_blob_usage b USING(tenant_id) WHERE l.tenant_id=%s
 """
@@ -18,12 +19,14 @@ def capacity_view(row, settings):
         'retained_tasks':quota(row['max_retained_tasks'],row['retained_tasks']),
         'task_payload_bytes':quota(row['max_payload_bytes'],row['charged_payload_bytes']),
         'input_bytes':quota(settings.max_stored_input_bytes_per_tenant,row['input_stored_bytes'],row['input_reserved_bytes']),
+        'queue_tasks':quota(settings.max_queued_tasks_per_tenant,row['queued_tasks'],row['held_tasks']),
         'new_task_reservation':{
             'response_bytes':row['max_response_bytes'],
             'error_bytes_per_attempt':row['max_error_bytes'],
             'max_attempts':settings.max_attempts,
             'fixed_bytes_per_task':row['max_response_bytes']+(settings.max_attempts+1)*row['max_error_bytes'],
             'additional_body_bytes':'PostgreSQL canonical JSON bytes of each task body'},
+        'reservation_release':'Task payload reservations remain charged after completion until verified archival and payload purge',
         'snapshot_scope':'Logical tenant admission counters in one statement; not disk, WAL, object-store or GPU capacity',
         'advisory':True,
         'admission_note':'Concurrent submissions can consume headroom. The transaction at submission is authoritative.'}

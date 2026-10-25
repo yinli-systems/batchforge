@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 from collections import Counter
+from datetime import datetime,timezone
 import hashlib
 import json
 import math
@@ -72,7 +73,7 @@ def evaluate(args):
         'scope':'complete dev set' if len(rows)==10570 else 'seeded dev subset','seed':args.seed,
         'model':args.model,'runtime_fingerprint':args.runtime_fingerprint,
         'max_tokens':128,'min_tokens':None,'temperature':0,'deadline_seconds':args.deadline,
-        'batch_size':64,'max_inflight_batches':2,'submission_concurrency':1,'create_retries':5,
+        'batch_size':64,'max_inflight_batches':2,'submission_concurrency':1,'create_retries':5,'admission_wait_seconds':300,
         'quality_gate':{'minimum_exact_match':args.min_em,'minimum_f1':args.min_f1},
         'workload_sha256':hashlib.sha256(workload.read_bytes()).hexdigest(),
         'source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
@@ -85,7 +86,17 @@ def evaluate(args):
         metadata={'name':'SQuAD 1.1 quality evaluation','evaluation_protocol':plan['protocol'],
                   'dataset_sha256':DATASET_SHA256},
         deadline=args.deadline,run_deadline=args.deadline,max_inflight_batches=2,request_timeout=90,poll=1,workload_dir=args.out/'inputs',
-        input_jsonl=workload,output_dir=args.out/'outputs',submission_concurrency=1,create_retries=5)
+        input_jsonl=workload,output_dir=args.out/'outputs',submission_concurrency=1,create_retries=5,admission_wait_seconds=300)
+    if getattr(args,'resume',None):
+        prior=json.loads(args.resume.read_bytes());old_plan=json.loads((args.resume.parent/'plan.json').read_bytes())
+        if old_plan['runtime_fingerprint']!=args.runtime_fingerprint or old_plan['dataset_sha256']!=DATASET_SHA256:
+            raise ValueError('Resume requires the same pinned runtime and dataset')
+        origin=datetime.fromisoformat(prior.get('original_measurement_started_at',prior['measurement_started_at']))
+        run_args.run_deadline=args.deadline-(datetime.now(timezone.utc)-origin).total_seconds()
+        if run_args.run_deadline<=0:raise ValueError('Original cohort deadline already exceeded')
+        run_args.resume_from=args.resume
+        plan['resume']={'prior_report_sha256':hashlib.sha256(args.resume.read_bytes()).hexdigest(),
+                        'original_cohort_started_at':origin.isoformat(),'remaining_seconds':run_args.run_deadline}
     payloads=benchmark.generate_workload(run_args,'bench-000000000000')
     plan['input_bytes']=sum(len(p.data) for p in payloads)
     plan['max_batch_input_bytes']=max(len(p.data) for p in payloads)
@@ -109,16 +120,18 @@ def evaluate(args):
     em=sum(g['exact_match'] for g in grades.values())/len(rows)
     f1=sum(g['f1'] for g in grades.values())/len(rows)
     delivered=measured['passed'] and not measured['test_fixture_detected'] and len(grades)==len(rows)
-    on_time=delivered and measured['elapsed_seconds']<=args.deadline
+    cohort_elapsed=(datetime.fromisoformat(measured['terminal_observation_ended_at'])-
+                    datetime.fromisoformat(measured['original_measurement_started_at'])).total_seconds()
+    on_time=delivered and cohort_elapsed<=args.deadline
     with (args.out/'scores.jsonl').open('x') as out:
         for qid in sorted(references):out.write(json.dumps(grades.get(qid,{'id':qid,'exact_match':0,'f1':0,'missing':True}))+'\n')
     report={**plan,'passed':delivered and on_time and em>=args.min_em and f1>=args.min_f1,
         'delivery_passed':delivered,'deadline_met':on_time,'evaluation_valid':delivered,
         'predictions':len(grades),'missing':len(rows)-len(grades),
         'exact_match_percent':100*em if delivered else None,'f1_percent':100*f1 if delivered else None,
-        'elapsed_seconds':measured['elapsed_seconds'],
-        'exact_results_per_second':sum(g['exact_match'] for g in grades.values())/measured['elapsed_seconds'] if delivered else None,
-        'on_time_exact_results_per_second':sum(g['exact_match'] for g in grades.values())/measured['elapsed_seconds'] if on_time else None,
+        'elapsed_seconds':cohort_elapsed,'observation_segment_seconds':measured['elapsed_seconds'],
+        'exact_results_per_second':sum(g['exact_match'] for g in grades.values())/cohort_elapsed if delivered else None,
+        'on_time_exact_results_per_second':sum(g['exact_match'] for g in grades.values())/cohort_elapsed if on_time else None,
         'batch_ids':measured['batch_ids'],'prompt_tokens':measured['observed_prompt_tokens'],
         'completion_tokens':measured['observed_completion_tokens'],'cost':None}
     write_json(args.out/'report.json',report)
@@ -132,6 +145,7 @@ def main():
     p.add_argument('--tasks',type=int,choices=[100,1000,10570],default=10570);p.add_argument('--seed',type=int,default=20261025)
     p.add_argument('--deadline',type=int,default=1200);p.add_argument('--runtime-fingerprint',required=True)
     p.add_argument('--min-em',type=float,default=.70);p.add_argument('--min-f1',type=float,default=.80)
+    p.add_argument('--resume',type=Path,help='Prior benchmark.json; preserve accepted batches, input IDs, idempotency keys and original deadline')
     args=p.parse_args()
     if not 0<=args.min_em<=1 or not 0<=args.min_f1<=1 or not 60<=args.deadline<=3600:p.error('Invalid finite quality gate')
     evaluate(args)
