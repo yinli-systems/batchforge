@@ -1,7 +1,7 @@
 import pytest
 import datetime as dt
 
-from ops.evidence.capability_catalog import Job, Node, Policy, describe, liveness, place_check
+from backend.placement import Job, Node, Policy, describe, liveness, place_check
 from ops.evidence.topology import nvlink_pairs, parse_topo_matrix
 
 NOW = dt.datetime(2026, 10, 25, 12, 0, 0, tzinfo=dt.timezone.utc)

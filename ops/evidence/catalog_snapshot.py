@@ -12,7 +12,7 @@ import datetime as dt
 import json
 from pathlib import Path
 
-from .capability_catalog import Job, Node, Policy, describe, place_check
+from backend.placement import Job, Node, Policy, describe, place_check
 from .topology import nvlink_pairs, parse_topo_matrix
 
 
