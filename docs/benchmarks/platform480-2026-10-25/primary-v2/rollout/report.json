@@ -1,0 +1,30 @@
+{
+  "phase": "complete",
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "revision": "9ce3eaa67fe88609afec235117e97eb03d9b3cda",
+  "qualification_sha256": "83c961dee34583cb8fd02ff1f0d054b48e551bd5cb1b14c8f0d1a1ce964bdebe",
+  "events": [
+    {
+      "at": "2026-10-25T11:49:29.703641+00:00",
+      "event": "batch_admission_closed_on_all_replicas"
+    },
+    {
+      "at": "2026-10-25T11:50:47.682438+00:00",
+      "event": "qualified_480b_worker_and_watchdog_ready_before_admission"
+    },
+    {
+      "at": "2026-10-25T11:50:51.130755+00:00",
+      "event": "primary_480b_catalog_and_worker_activated"
+    }
+  ],
+  "cost": null,
+  "limitations": [
+    "One existing Pod; no independent-node HA",
+    "No new cloud resources or pricing claim"
+  ],
+  "checkpoint_reverified_sha256": true,
+  "checkpoint_verified_bytes": 252341633360,
+  "physical_kv_tokens": 172912,
+  "admission_budget_tokens": 164256,
+  "finished_at": "2026-10-25T11:50:51.130725+00:00"
+}

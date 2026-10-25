@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import argparse
+import csv
+from datetime import datetime
 import json
+import math
 from pathlib import Path
 import re
 
@@ -24,6 +27,54 @@ def workload_strata(observations):
             'queue_seconds':distribution([r['queue_seconds'] for r in rows]),
             'accepted_attempt_seconds':distribution([r['accepted_attempt_seconds'] for r in rows])}
             for label,rows in sorted(groups.items())]}
+
+
+def telemetry_by_phase(root, report):
+    """NVML samples inside measured request windows; never fill gaps with zero."""
+    path=root/'gpu-engine-samples.jsonl'
+    if not path.exists():return []
+    samples=[json.loads(line) for line in path.read_text().splitlines()]
+    result=[]
+    for phase in report['phases']:
+        label=f'{phase["index"]:02d}-{phase["study"]}-{phase["treatment"]}'
+        bench=json.loads((root/label/'benchmark.json').read_text())
+        start=datetime.fromisoformat(bench['measurement_started_at'])
+        end=datetime.fromisoformat(bench['terminal_observation_ended_at'])
+        selected=[s for s in samples if start<=datetime.fromisoformat(s['at'])<=end]
+        devices={};invalid=0;running=[];kv=[];paused=[];preemptions=[]
+        for row in selected:
+            for line in row.get('gpu_csv',[]):
+                try:
+                    fields=next(csv.reader([line],skipinitialspace=True))
+                    index=int(fields[0]);memory,util,power=map(float,[fields[4],fields[5],fields[6]])
+                    if not all(math.isfinite(v) for v in [memory,util,power]) or not 0<=util<=100:
+                        raise ValueError('invalid NVML sample')
+                    devices.setdefault(index,[]).append((memory,util,power))
+                except (ValueError,IndexError):invalid+=1
+            for field,prefix,output in [('engine_metrics','vllm:num_requests_running',running),
+                    ('engine_metrics','vllm:num_preemptions_total',preemptions),
+                    ('worker_metrics','batchforge_worker_reserved_context_tokens',kv),
+                    ('worker_metrics','batchforge_worker_adaptive_kv_paused',paused)]:
+                for line in row.get(field,[]):
+                    parts=line.split()
+                    if len(parts)==2 and parts[0].split('{')[0]==prefix:
+                        try:value=float(parts[1])
+                        except ValueError:continue
+                        if math.isfinite(value):output.append(value)
+        intervals=[b['monotonic']-a['monotonic'] for a,b in zip(selected,selected[1:])]
+        result.append({'index':phase['index'],'study':phase['study'],'treatment':phase['treatment'],
+            'samples':len(selected),'invalid_gpu_rows':invalid,
+            'sampling_gaps_over_5_seconds':sum(v>5 for v in intervals),
+            'max_sampling_interval_seconds':max(intervals,default=None),
+            'max_engine_running_requests':max(running,default=None),
+            'engine_preemptions_first_counter':preemptions[0] if preemptions else None,
+            'engine_preemptions_last_counter':preemptions[-1] if preemptions else None,
+            'peak_worker_reserved_tokens':max(kv,default=None),'peak_worker_admission_paused':max(paused,default=None),
+            'gpu':[{'index':index,'samples':len(rows),'mean_utilization_percent':sum(r[1] for r in rows)/len(rows),
+                    'max_utilization_percent':max(r[1] for r in rows),'peak_memory_mib':max(r[0] for r in rows),
+                    'mean_power_watts':sum(r[2] for r in rows)/len(rows)} for index,rows in sorted(devices.items())],
+            'scope':'Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate'})
+    return result
 
 
 def summarize(report):
@@ -78,7 +129,8 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('report',type=Path);parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args()
-    result=summarize(json.loads(args.report.read_text()))
+    report=json.loads(args.report.read_text());result=summarize(report)
+    result['telemetry_by_phase']=telemetry_by_phase(args.report.parent,report)
     with args.output.open('x') as stream:json.dump(result,stream,indent=2);stream.write('\n')
 
 

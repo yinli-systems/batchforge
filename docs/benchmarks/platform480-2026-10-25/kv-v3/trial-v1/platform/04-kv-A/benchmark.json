@@ -1,0 +1,165 @@
+{
+  "schema_version": 2,
+  "run_id": "bench-4089f6542e4e",
+  "observed_at": "2026-10-25T11:14:40.321594+00:00",
+  "measurement_started_at": "2026-10-25T11:10:25.656341+00:00",
+  "terminal_observation_ended_at": "2026-10-25T11:14:39.886983+00:00",
+  "passed": true,
+  "measurement": "client observed submission through terminal observation; output validation measured separately",
+  "engine_label": "p480-f083a9f3bc83-4",
+  "test_fixture_detected": false,
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "requested_tasks": 60,
+  "submitted_tasks": 60,
+  "batches": 1,
+  "accepted_batches": 1,
+  "terminal_batches": 1,
+  "requested_max_output_tokens": 2048,
+  "elapsed_seconds": 254.230625,
+  "completed": 60,
+  "failed": 0,
+  "cancelled": 0,
+  "unfinished_batch_ids": [],
+  "submission_errors": [],
+  "output_validation_errors": [],
+  "completed_tasks_per_second": 0.236006,
+  "observed_prompt_tokens": 327168,
+  "observed_completion_tokens": 40800,
+  "prompt_tokens_per_task": {
+    "samples": 60,
+    "p50": 2048.0,
+    "p95": 16384.0,
+    "p99": 16384.0,
+    "max": 16384,
+    "mean": 5452.8
+  },
+  "completion_tokens_per_task": {
+    "samples": 60,
+    "p50": 320.0,
+    "p95": 2048.0,
+    "p99": 2048.0,
+    "max": 2048,
+    "mean": 680.0
+  },
+  "output_finish_reasons": {
+    "length": 60
+  },
+  "output_content": {
+    "rows_with_valid_content_shape": 60,
+    "final_text_present": 60,
+    "reasoning_only": 0,
+    "no_final_text": 0,
+    "length_capped": 60,
+    "final_text_codepoints": 199463,
+    "reasoning_text_codepoints": 0,
+    "population": "Durable output rows with valid choice/message shapes; length_capped means any choice ended with length",
+    "quality_evaluated": false,
+    "durable_completion_distinct_from_final_answer": true
+  },
+  "output_custom_ids_unique": true,
+  "output_custom_ids_known": true,
+  "output_rows_match_completed": true,
+  "batch_counts_match_submission": true,
+  "batch_ids": [
+    "batch_94c2748f0beec0e869a1ff4e40a478c5"
+  ],
+  "workload": {
+    "sha256": "971d4d09155240c8d3c32c80c7b6f49bb829fd9b957776a28be5a43b0ff172d1",
+    "hash_definition": "concatenated exact JSONL bytes in batch_index order",
+    "provided_source_sha256": "1f3623874b50b1115a4be51c88a011a028b889b626a671ffb278996a11089631",
+    "bytes": 1552407,
+    "generation_seconds": 0.035378,
+    "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+    "prompt": null,
+    "generation_mode": "provided-jsonl",
+    "message_template": "exact provided messages; run_id prepended to custom_id",
+    "max_tokens": 2048,
+    "temperature": 0,
+    "tasks_per_batch": [
+      60
+    ]
+  },
+  "submission": {
+    "elapsed_seconds": 17.112874,
+    "attempted_http_requests": 2,
+    "successful_http_requests": 2,
+    "requests_per_second": 0.116871,
+    "successful_requests_per_second": 0.116871,
+    "accepted_batches_per_second": 0.058436,
+    "accepted_tasks_per_second": 3.506132,
+    "upload_latency_seconds": {
+      "samples": 1,
+      "p50": 2.089768,
+      "p95": 2.089768,
+      "p99": 2.089768,
+      "max": 2.089768,
+      "mean": 2.089768
+    },
+    "create_latency_seconds": {
+      "samples": 1,
+      "p50": 14.997765,
+      "p95": 14.997765,
+      "p99": 14.997765,
+      "max": 14.997765,
+      "mean": 14.997765
+    },
+    "latency_population": "all attempted requests, including failures",
+    "request_population": "POST /v1/files and POST /v1/batches only; excludes polling and downloads"
+  },
+  "batch_turnaround_seconds": {
+    "samples": 1,
+    "p50": 252.116075,
+    "p95": 252.116075,
+    "p99": 252.116075,
+    "max": 252.116075,
+    "mean": 252.116075
+  },
+  "batch_after_acceptance_seconds": {
+    "samples": 1,
+    "p50": 237.118311,
+    "p95": 237.118311,
+    "p99": 237.118311,
+    "max": 237.118311,
+    "mean": 237.118311
+  },
+  "batch_upload_to_terminal_seconds": {
+    "samples": 1,
+    "p50": 254.205844,
+    "p95": 254.205844,
+    "p99": 254.205844,
+    "max": 254.205844,
+    "mean": 254.205844
+  },
+  "percentile_method": "linear interpolation at (n-1)*p",
+  "output_validation_seconds": 0.434285,
+  "poll_interval_seconds": 0.5,
+  "per_batch_deadline_seconds": 1200,
+  "batch_observations": [
+    {
+      "index": 0,
+      "tasks": 60,
+      "batch_id": "batch_94c2748f0beec0e869a1ff4e40a478c5",
+      "status": "completed",
+      "upload_seconds": 2.089768,
+      "create_seconds": 14.997765,
+      "turnaround_seconds": 252.116075,
+      "request_counts": {
+        "total": 60,
+        "completed": 60,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": []
+    }
+  ],
+  "limitations": [
+    "Not a daily capacity forecast",
+    "Token lengths are measured from outputs, not guaranteed by the prompt",
+    "Batch turnaround starts before POST /v1/batches and ends at first client-observed terminal response; polling adds observation delay",
+    "No per-task inference latency or quality evaluation; final text presence is counted separately from durable completion",
+    "Reported generated tokens can include reasoning and control tokens; reasoning-only length-capped outputs remain durable completions",
+    "Accepted counts require a received create acknowledgement; uncertain create errors may have committed server-side"
+  ]
+}

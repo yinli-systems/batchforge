@@ -92,6 +92,24 @@ def test_requested_workload_classes_are_reported_separately_and_unknown_ids_are_
     assert all(r['task_completion_seconds']['p95']==3 for r in result['classes'])
 
 
+def test_gpu_statistics_exclude_other_phases_and_report_sampling_gaps(tmp_path):
+    from ops.analyze_platform480 import telemetry_by_phase
+    d=tmp_path/'00-kv-A';d.mkdir()
+    (d/'benchmark.json').write_text(json.dumps({'measurement_started_at':'2026-10-25T10:00:00+00:00',
+        'terminal_observation_ended_at':'2026-10-25T10:00:20+00:00'}))
+    samples=[]
+    for second,util in [(1,25),(11,75),(30,100)]:
+        samples.append({'at':f'2026-10-25T10:00:{second:02d}+00:00','monotonic':second,
+            'gpu_csv':[f'0, uuid, H100, 81559, 74000, {util}, 500'],
+            'engine_metrics':['vllm:num_requests_running{engine="0"} 22'],
+            'worker_metrics':['batchforge_worker_reserved_context_tokens 164256']})
+    (tmp_path/'gpu-engine-samples.jsonl').write_text(''.join(json.dumps(s)+'\n' for s in samples))
+    result=telemetry_by_phase(tmp_path,{'phases':[{'index':0,'study':'kv','treatment':'A'}]})[0]
+    assert result['samples']==2 and result['gpu'][0]['mean_utilization_percent']==50
+    assert result['max_engine_running_requests']==22 and result['peak_worker_reserved_tokens']==164256
+    assert result['sampling_gaps_over_5_seconds']==1
+
+
 def test_duplicate_accepted_result_or_drifted_metering_cannot_pass():
     tasks=[{'id':'t','status':'completed','prompt_tokens':128,'completion_tokens':32}]
     attempts=[{'task_id':'t','status':'completed','prompt_tokens':128,'completion_tokens':32},

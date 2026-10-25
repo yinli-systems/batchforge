@@ -1,0 +1,900 @@
+{
+  "campaign_passed": true,
+  "completed_phases": 12,
+  "planned_phases": 12,
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "revision": "9ce3eaa67fe88609afec235117e97eb03d9b3cda",
+  "cost": null,
+  "groups": [
+    {
+      "study": "kv",
+      "treatment": "A",
+      "phases": 6,
+      "tasks": 360,
+      "slots": [
+        8
+      ],
+      "policy": [
+        "fair"
+      ],
+      "adaptive": [
+        false
+      ],
+      "phase_wall_seconds": 1414.827652,
+      "output_tokens": 244800,
+      "output_tokens_per_second": 173.02460808844864,
+      "allocation_wall_hours_per_million_output_tokens": 1.6054235339506173,
+      "tasks_per_second": 0.254447953071248,
+      "task_completion_seconds": {
+        "samples": 360,
+        "p50": 107.013411,
+        "p95": 205.480429,
+        "p99": 234.285059,
+        "max": 239.049509,
+        "mean": 104.251884
+      },
+      "queue_seconds": {
+        "samples": 360,
+        "p50": 85.299221,
+        "p95": 170.013764,
+        "p99": 184.668305,
+        "max": 190.111231,
+        "mean": 77.584287
+      },
+      "accepted_attempt_seconds": {
+        "samples": 360,
+        "p50": 16.012613,
+        "p95": 79.924787,
+        "p99": 84.722659,
+        "max": 87.083801,
+        "mean": 26.668658
+      },
+      "workload_strata": {
+        "population": "Requested token cells within the same mixed-arrival bursts; not isolated workload-class trials",
+        "unclassified_observations": 0,
+        "classes": [
+          {
+            "class": "decode_heavy",
+            "tasks": 72,
+            "task_completion_seconds": {
+              "samples": 72,
+              "p50": 120.16704,
+              "p95": 223.437148,
+              "p99": 236.172777,
+              "max": 236.950615,
+              "mean": 126.984525
+            },
+            "queue_seconds": {
+              "samples": 72,
+              "p50": 82.372313,
+              "p95": 166.991056,
+              "p99": 174.821821,
+              "max": 182.327099,
+              "mean": 78.415739
+            },
+            "accepted_attempt_seconds": {
+              "samples": 72,
+              "p50": 51.50237,
+              "p95": 80.28399,
+              "p99": 83.586684,
+              "max": 84.862324,
+              "mean": 48.569713
+            }
+          },
+          {
+            "class": "other",
+            "tasks": 216,
+            "task_completion_seconds": {
+              "samples": 216,
+              "p50": 107.246171,
+              "p95": 206.414611,
+              "p99": 226.342041,
+              "max": 239.049509,
+              "mean": 105.940738
+            },
+            "queue_seconds": {
+              "samples": 216,
+              "p50": 88.002308,
+              "p95": 167.687373,
+              "p99": 186.298348,
+              "max": 190.111231,
+              "mean": 79.545145
+            },
+            "accepted_attempt_seconds": {
+              "samples": 216,
+              "p50": 15.287172,
+              "p95": 79.402304,
+              "p99": 85.174937,
+              "max": 87.083801,
+              "mean": 26.396661
+            }
+          },
+          {
+            "class": "prefill_heavy",
+            "tasks": 72,
+            "task_completion_seconds": {
+              "samples": 72,
+              "p50": 60.194092,
+              "p95": 184.249285,
+              "p99": 189.41821,
+              "max": 192.248033,
+              "mean": 76.452683
+            },
+            "queue_seconds": {
+              "samples": 72,
+              "p50": 55.784711,
+              "p95": 178.578149,
+              "p99": 184.778608,
+              "max": 188.805504,
+              "mean": 70.87026
+            },
+            "accepted_attempt_seconds": {
+              "samples": 72,
+              "p50": 5.17232,
+              "p95": 10.925736,
+              "p99": 13.824262,
+              "max": 14.952931,
+              "mean": 5.583593
+            }
+          }
+        ]
+      },
+      "completion_population": "DB task created through accepted completion; legacy packs sum queue and accepted attempt"
+    },
+    {
+      "study": "kv",
+      "treatment": "B",
+      "phases": 6,
+      "tasks": 360,
+      "slots": [
+        32
+      ],
+      "policy": [
+        "fair"
+      ],
+      "adaptive": [
+        true
+      ],
+      "phase_wall_seconds": 754.167064,
+      "output_tokens": 244800,
+      "output_tokens_per_second": 324.5965140689305,
+      "allocation_wall_hours_per_million_output_tokens": 0.8557632806826433,
+      "tasks_per_second": 0.47734781480725075,
+      "task_completion_seconds": {
+        "samples": 360,
+        "p50": 45.609918,
+        "p95": 111.23192,
+        "p99": 122.619208,
+        "max": 123.870891,
+        "mean": 55.049445
+      },
+      "queue_seconds": {
+        "samples": 360,
+        "p50": 2.812477,
+        "p95": 42.467344,
+        "p99": 44.041536,
+        "max": 45.521626,
+        "mean": 13.84432
+      },
+      "accepted_attempt_seconds": {
+        "samples": 360,
+        "p50": 28.609873,
+        "p95": 98.957884,
+        "p99": 99.412772,
+        "max": 99.903748,
+        "mean": 41.206311
+      },
+      "workload_strata": {
+        "population": "Requested token cells within the same mixed-arrival bursts; not isolated workload-class trials",
+        "unclassified_observations": 0,
+        "classes": [
+          {
+            "class": "decode_heavy",
+            "tasks": 72,
+            "task_completion_seconds": {
+              "samples": 72,
+              "p50": 90.97889,
+              "p95": 117.635651,
+              "p99": 122.566945,
+              "max": 122.876167,
+              "mean": 76.873868
+            },
+            "queue_seconds": {
+              "samples": 72,
+              "p50": 2.129046,
+              "p95": 38.035088,
+              "p99": 43.521172,
+              "max": 43.640432,
+              "mean": 10.722582
+            },
+            "accepted_attempt_seconds": {
+              "samples": 72,
+              "p50": 63.509408,
+              "p95": 99.229244,
+              "p99": 99.646091,
+              "max": 99.68108,
+              "mean": 66.152214
+            }
+          },
+          {
+            "class": "other",
+            "tasks": 216,
+            "task_completion_seconds": {
+              "samples": 216,
+              "p50": 46.52648,
+              "p95": 110.302293,
+              "p99": 122.814044,
+              "max": 123.870891,
+              "mean": 55.103912
+            },
+            "queue_seconds": {
+              "samples": 216,
+              "p50": 2.812477,
+              "p95": 42.668747,
+              "p99": 44.06016,
+              "max": 45.521626,
+              "mean": 14.303374
+            },
+            "accepted_attempt_seconds": {
+              "samples": 216,
+              "p50": 27.411915,
+              "p95": 98.976432,
+              "p99": 99.305286,
+              "max": 99.903748,
+              "mean": 40.801749
+            }
+          },
+          {
+            "class": "prefill_heavy",
+            "tasks": 72,
+            "task_completion_seconds": {
+              "samples": 72,
+              "p50": 26.415703,
+              "p95": 65.521784,
+              "p99": 71.352495,
+              "max": 71.490738,
+              "mean": 33.061621
+            },
+            "queue_seconds": {
+              "samples": 72,
+              "p50": 17.39646,
+              "p95": 41.18042,
+              "p99": 44.08318,
+              "max": 44.513322,
+              "mean": 15.588896
+            },
+            "accepted_attempt_seconds": {
+              "samples": 72,
+              "p50": 17.606465,
+              "p95": 27.363135,
+              "p99": 30.534011,
+              "max": 31.046993,
+              "mean": 17.474095
+            }
+          }
+        ]
+      },
+      "completion_population": "DB task created through accepted completion; legacy packs sum queue and accepted attempt"
+    }
+  ],
+  "abba_blocks": [
+    {
+      "study": "kv",
+      "repeat": 0,
+      "a_output_tokens_per_second": 178.90269571173855,
+      "b_output_tokens_per_second": 335.29802498574315,
+      "b_over_a_throughput": 1.8741921336165919
+    },
+    {
+      "study": "kv",
+      "repeat": 1,
+      "a_output_tokens_per_second": 165.70020835603123,
+      "b_output_tokens_per_second": 328.1075570347738,
+      "b_over_a_throughput": 1.9801276068994826
+    },
+    {
+      "study": "kv",
+      "repeat": 2,
+      "a_output_tokens_per_second": 175.01034191015555,
+      "b_output_tokens_per_second": 311.32853101952344,
+      "b_over_a_throughput": 1.7789150493709056
+    }
+  ],
+  "limitations": [
+    "One existing four-H100 Pod; no heterogeneous hardware or cross-node HA claim",
+    "Task quantiles are descriptive mixed-workload quantiles; tasks within a burst are correlated",
+    "Throughput is sum of accepted output tokens divided by sum of measured platform phase walls",
+    "Allocation wall hours cover phase measurement windows, excluding model loading, inter-phase setup and faults",
+    "No confidence interval, independent run significance, monetary savings or daily SLA is claimed"
+  ],
+  "telemetry_by_phase": [
+    {
+      "index": 0,
+      "study": "kv",
+      "treatment": "A",
+      "samples": 201,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.6496267520124093,
+      "max_engine_running_requests": 8.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 147520.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 201,
+          "mean_utilization_percent": 91.58208955223881,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74601.0,
+          "mean_power_watts": 344.85805970149255
+        },
+        {
+          "index": 1,
+          "samples": 201,
+          "mean_utilization_percent": 60.90547263681592,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74601.0,
+          "mean_power_watts": 351.0881592039801
+        },
+        {
+          "index": 2,
+          "samples": 201,
+          "mean_utilization_percent": 92.85572139303483,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74092.0,
+          "mean_power_watts": 346.75194029850746
+        },
+        {
+          "index": 3,
+          "samples": 201,
+          "mean_utilization_percent": 94.53731343283582,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 353.05114427860696
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    },
+    {
+      "index": 1,
+      "study": "kv",
+      "treatment": "B",
+      "samples": 108,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.1422910479595885,
+      "max_engine_running_requests": 30.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 164256.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 108,
+          "mean_utilization_percent": 92.61111111111111,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 448.95379629629633
+        },
+        {
+          "index": 1,
+          "samples": 108,
+          "mean_utilization_percent": 73.74074074074075,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 454.3664814814815
+        },
+        {
+          "index": 2,
+          "samples": 108,
+          "mean_utilization_percent": 93.6574074074074,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 449.96527777777777
+        },
+        {
+          "index": 3,
+          "samples": 108,
+          "mean_utilization_percent": 93.4074074074074,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 456.5761111111111
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    },
+    {
+      "index": 2,
+      "study": "kv",
+      "treatment": "B",
+      "samples": 113,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.1141382120549679,
+      "max_engine_running_requests": 27.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 162496.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 113,
+          "mean_utilization_percent": 92.7433628318584,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 442.9413274336283
+        },
+        {
+          "index": 1,
+          "samples": 113,
+          "mean_utilization_percent": 72.92035398230088,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 447.7656637168141
+        },
+        {
+          "index": 2,
+          "samples": 113,
+          "mean_utilization_percent": 93.65486725663717,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 444.0508849557522
+        },
+        {
+          "index": 3,
+          "samples": 113,
+          "mean_utilization_percent": 94.24778761061947,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 451.0869911504425
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    },
+    {
+      "index": 3,
+      "study": "kv",
+      "treatment": "A",
+      "samples": 215,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.150948119990062,
+      "max_engine_running_requests": 8.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 147520.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 215,
+          "mean_utilization_percent": 89.30232558139535,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 334.2618604651163
+        },
+        {
+          "index": 1,
+          "samples": 215,
+          "mean_utilization_percent": 59.80930232558139,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 340.91418604651165
+        },
+        {
+          "index": 2,
+          "samples": 215,
+          "mean_utilization_percent": 93.34418604651162,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 336.8435813953488
+        },
+        {
+          "index": 3,
+          "samples": 215,
+          "mean_utilization_percent": 93.68837209302326,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 342.7802325581395
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    },
+    {
+      "index": 4,
+      "study": "kv",
+      "treatment": "A",
+      "samples": 232,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.149588134023361,
+      "max_engine_running_requests": 8.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 147520.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 232,
+          "mean_utilization_percent": 84.22413793103448,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 319.8490517241379
+        },
+        {
+          "index": 1,
+          "samples": 232,
+          "mean_utilization_percent": 56.025862068965516,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 326.6405172413793
+        },
+        {
+          "index": 2,
+          "samples": 232,
+          "mean_utilization_percent": 88.22413793103448,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 322.43767241379305
+        },
+        {
+          "index": 3,
+          "samples": 232,
+          "mean_utilization_percent": 88.68103448275862,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74073.0,
+          "mean_power_watts": 328.40202586206897
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    },
+    {
+      "index": 5,
+      "study": "kv",
+      "treatment": "B",
+      "samples": 117,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.4162224599858746,
+      "max_engine_running_requests": 27.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 164000.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 117,
+          "mean_utilization_percent": 89.25641025641026,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74601.0,
+          "mean_power_watts": 426.4162393162393
+        },
+        {
+          "index": 1,
+          "samples": 117,
+          "mean_utilization_percent": 68.12820512820512,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74601.0,
+          "mean_power_watts": 431.19888888888886
+        },
+        {
+          "index": 2,
+          "samples": 117,
+          "mean_utilization_percent": 89.71794871794872,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74601.0,
+          "mean_power_watts": 427.74709401709407
+        },
+        {
+          "index": 3,
+          "samples": 117,
+          "mean_utilization_percent": 89.94871794871794,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74601.0,
+          "mean_power_watts": 434.52572649572653
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    },
+    {
+      "index": 6,
+      "study": "kv",
+      "treatment": "B",
+      "samples": 109,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.163049153983593,
+      "max_engine_running_requests": 30.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 163936.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 109,
+          "mean_utilization_percent": 92.63302752293578,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 446.8192660550459
+        },
+        {
+          "index": 1,
+          "samples": 109,
+          "mean_utilization_percent": 72.11926605504587,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 451.15532110091743
+        },
+        {
+          "index": 2,
+          "samples": 109,
+          "mean_utilization_percent": 93.25688073394495,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 447.6359633027523
+        },
+        {
+          "index": 3,
+          "samples": 109,
+          "mean_utilization_percent": 93.11009174311927,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 455.447247706422
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    },
+    {
+      "index": 7,
+      "study": "kv",
+      "treatment": "A",
+      "samples": 217,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.1485664609936066,
+      "max_engine_running_requests": 8.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 147520.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 217,
+          "mean_utilization_percent": 93.42857142857143,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 332.7071889400922
+        },
+        {
+          "index": 1,
+          "samples": 217,
+          "mean_utilization_percent": 57.51152073732719,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 338.77391705069124
+        },
+        {
+          "index": 2,
+          "samples": 217,
+          "mean_utilization_percent": 93.6221198156682,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 334.8547926267281
+        },
+        {
+          "index": 3,
+          "samples": 217,
+          "mean_utilization_percent": 94.42857142857143,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 340.6821658986175
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    },
+    {
+      "index": 8,
+      "study": "kv",
+      "treatment": "A",
+      "samples": 216,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.1130849680048414,
+      "max_engine_running_requests": 8.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 147520.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 216,
+          "mean_utilization_percent": 94.98611111111111,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 337.00087962962965
+        },
+        {
+          "index": 1,
+          "samples": 216,
+          "mean_utilization_percent": 57.236111111111114,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 343.2169907407407
+        },
+        {
+          "index": 2,
+          "samples": 216,
+          "mean_utilization_percent": 94.72685185185185,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 339.4031018518519
+        },
+        {
+          "index": 3,
+          "samples": 216,
+          "mean_utilization_percent": 95.0925925925926,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74075.0,
+          "mean_power_watts": 345.3406018518519
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    },
+    {
+      "index": 9,
+      "study": "kv",
+      "treatment": "B",
+      "samples": 120,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.2043629760155454,
+      "max_engine_running_requests": 32.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 164128.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 120,
+          "mean_utilization_percent": 78.675,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74077.0,
+          "mean_power_watts": 416.14116666666666
+        },
+        {
+          "index": 1,
+          "samples": 120,
+          "mean_utilization_percent": 69.18333333333334,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74077.0,
+          "mean_power_watts": 420.53425
+        },
+        {
+          "index": 2,
+          "samples": 120,
+          "mean_utilization_percent": 82.475,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74077.0,
+          "mean_power_watts": 417.2790833333333
+        },
+        {
+          "index": 3,
+          "samples": 120,
+          "mean_utilization_percent": 83.25,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74077.0,
+          "mean_power_watts": 423.52116666666666
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    },
+    {
+      "index": 10,
+      "study": "kv",
+      "treatment": "B",
+      "samples": 117,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.650026885967236,
+      "max_engine_running_requests": 31.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 164192.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 117,
+          "mean_utilization_percent": 83.67521367521367,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74605.0,
+          "mean_power_watts": 424.8386324786325
+        },
+        {
+          "index": 1,
+          "samples": 117,
+          "mean_utilization_percent": 72.93162393162393,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74605.0,
+          "mean_power_watts": 430.55384615384617
+        },
+        {
+          "index": 2,
+          "samples": 117,
+          "mean_utilization_percent": 87.82051282051282,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74117.0,
+          "mean_power_watts": 426.891282051282
+        },
+        {
+          "index": 3,
+          "samples": 117,
+          "mean_utilization_percent": 87.19658119658119,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74077.0,
+          "mean_power_watts": 433.8705982905983
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    },
+    {
+      "index": 11,
+      "study": "kv",
+      "treatment": "A",
+      "samples": 209,
+      "invalid_gpu_rows": 0,
+      "sampling_gaps_over_5_seconds": 0,
+      "max_sampling_interval_seconds": 1.1433124100440182,
+      "max_engine_running_requests": 8.0,
+      "engine_preemptions_first_counter": 0.0,
+      "engine_preemptions_last_counter": 0.0,
+      "peak_worker_reserved_tokens": 147520.0,
+      "peak_worker_admission_paused": 0.0,
+      "gpu": [
+        {
+          "index": 0,
+          "samples": 209,
+          "mean_utilization_percent": 94.26315789473684,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74077.0,
+          "mean_power_watts": 340.95832535885165
+        },
+        {
+          "index": 1,
+          "samples": 209,
+          "mean_utilization_percent": 58.39712918660287,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74077.0,
+          "mean_power_watts": 348.0355023923445
+        },
+        {
+          "index": 2,
+          "samples": 209,
+          "mean_utilization_percent": 93.4066985645933,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74077.0,
+          "mean_power_watts": 343.50047846889953
+        },
+        {
+          "index": 3,
+          "samples": 209,
+          "mean_utilization_percent": 93.17703349282297,
+          "max_utilization_percent": 100.0,
+          "peak_memory_mib": 74077.0,
+          "mean_power_watts": 349.88516746411483
+        }
+      ],
+      "scope": "Arithmetic sample means; no gap imputation, SM occupancy, wall-time energy or billing estimate"
+    }
+  ]
+}

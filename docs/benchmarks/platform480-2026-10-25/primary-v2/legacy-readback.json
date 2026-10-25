@@ -1,0 +1,36 @@
+{
+  "batches": [
+    "batch_c939f0d48e2665d6bde96ffbc77b8f9f",
+    "batch_7591f789f6644ff499e79ec7d1990eaa",
+    "batch_3ec94a71f9f1a35551ac3ee758067070"
+  ],
+  "files": {
+    "file_fbd0553135b4c16f1121ec9a336653fc": {
+      "sha256": "5b736b7429c104d27bf1190fd616d286d1d90fe1b7e8d3bad354fdd6d7c12d9d",
+      "bytes": 313
+    },
+    "file_0a5c3c575f2245fe88131bd02d4047ca": {
+      "sha256": "4f3501472ca6da411933e9a39abc8fa052c27e474762571a3ac460273ebc4614",
+      "bytes": 865
+    },
+    "file_bf00f62684d205410879e0f4a15e747c": {
+      "sha256": "0361d7f70206dcf66656442da695d930f42a13cee8a832615deb8ac7f2f1c269",
+      "bytes": 878
+    },
+    "file_2a19248efe754702bb987cd1f34bb297": {
+      "sha256": "cf995ad7b287f0343c0a49580afdca66bae7e916a1834af8df64a6767baed2a2",
+      "bytes": 2911
+    },
+    "file_5250f075333c6ec918074555732c5e82": {
+      "sha256": "fdbc33d581d6106fa17bc20658a6ffde00dc1a9546b6a700da1f1d5603e37231",
+      "bytes": 1176
+    },
+    "file_bebd8a3be80539c123a0f3825d9d53e7": {
+      "sha256": "25753ec000495609e29a755a5b3bf64f338cd642df3d956ff8957d992e4a1d82",
+      "bytes": 2780
+    }
+  },
+  "verified_after_primary_cutover": true,
+  "verified_files": 6,
+  "observed_at": "2026-10-25T12:01:38.991702+00:00"
+}

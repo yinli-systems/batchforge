@@ -1,0 +1,47 @@
+watchdog_paused
+original_worker_drained
+original_engine_stopped
+480b_engine_loading
+480b_engine_ready
+{"event": "fresh_engine_cache_verified", "engine_pid": 560694, "physical_cache_tokens": 172912}
+{"event": "worker_configured", "policy": "fair", "slots": 8, "adaptive": false, "token_budget": 147584, "priced_slots": 8}
+{"event": "phase_passed", "index": 0, "study": "kv", "treatment": "A"}
+{"event": "worker_configured", "policy": "fair", "slots": 32, "adaptive": true, "token_budget": 164256, "priced_slots": 8}
+{"event": "phase_passed", "index": 1, "study": "kv", "treatment": "B"}
+{"event": "worker_configured", "policy": "fair", "slots": 32, "adaptive": true, "token_budget": 164256, "priced_slots": 8}
+{"event": "phase_passed", "index": 2, "study": "kv", "treatment": "B"}
+{"event": "worker_configured", "policy": "fair", "slots": 8, "adaptive": false, "token_budget": 147584, "priced_slots": 8}
+{"event": "phase_passed", "index": 3, "study": "kv", "treatment": "A"}
+{"event": "worker_configured", "policy": "fair", "slots": 8, "adaptive": false, "token_budget": 147584, "priced_slots": 8}
+{"event": "phase_passed", "index": 4, "study": "kv", "treatment": "A"}
+{"event": "worker_configured", "policy": "fair", "slots": 32, "adaptive": true, "token_budget": 164256, "priced_slots": 8}
+{"event": "phase_passed", "index": 5, "study": "kv", "treatment": "B"}
+{"event": "worker_configured", "policy": "fair", "slots": 32, "adaptive": true, "token_budget": 164256, "priced_slots": 8}
+{"event": "phase_passed", "index": 6, "study": "kv", "treatment": "B"}
+{"event": "worker_configured", "policy": "fair", "slots": 8, "adaptive": false, "token_budget": 147584, "priced_slots": 8}
+{"event": "phase_passed", "index": 7, "study": "kv", "treatment": "A"}
+{"event": "worker_configured", "policy": "fair", "slots": 8, "adaptive": false, "token_budget": 147584, "priced_slots": 8}
+{"event": "phase_passed", "index": 8, "study": "kv", "treatment": "A"}
+{"event": "worker_configured", "policy": "fair", "slots": 32, "adaptive": true, "token_budget": 164256, "priced_slots": 8}
+{"event": "phase_passed", "index": 9, "study": "kv", "treatment": "B"}
+{"event": "worker_configured", "policy": "fair", "slots": 32, "adaptive": true, "token_budget": 164256, "priced_slots": 8}
+{"event": "phase_passed", "index": 10, "study": "kv", "treatment": "B"}
+{"event": "worker_configured", "policy": "fair", "slots": 8, "adaptive": false, "token_budget": 147584, "priced_slots": 8}
+{"event": "phase_passed", "index": 11, "study": "kv", "treatment": "A"}
+{"event": "worker_configured", "policy": "fair", "slots": 32, "adaptive": true, "token_budget": 164256, "priced_slots": 8}
+{"event": "submission_intent", "label": "p480-f083a9f3bc83-worker-fault", "input_sha256": "fbbc9a509176e2c2e700fb03d4ced424d9971a8f7fb59e800118bd74cc056b3d"}
+{"event": "fault_injected", "scope": "worker", "captured_leases": 32}
+{"event": "worker_configured", "policy": "fair", "slots": 32, "adaptive": true, "token_budget": 164256, "priced_slots": 8}
+{"event": "fault_recovery_passed", "scope": "worker_process_loss"}
+{"event": "worker_configured", "policy": "fair", "slots": 32, "adaptive": true, "token_budget": 164256, "priced_slots": 8}
+{"event": "submission_intent", "label": "p480-f083a9f3bc83-engine-fault", "input_sha256": "a30d44b7627fede5a307e419a550397f222151aebe4cd35c2f0d121798acd648"}
+{"event": "fault_injected", "scope": "engine_and_worker", "captured_leases": 32}
+{"event": "fresh_engine_cache_verified", "engine_pid": 570053, "physical_cache_tokens": 172912}
+{"event": "worker_configured", "policy": "fair", "slots": 32, "adaptive": true, "token_budget": 164256, "priced_slots": 8}
+{"event": "fault_recovery_passed", "scope": "engine_and_worker_process_loss"}
+{"event": "durable_input_and_archived_output_restart_readback_passed", "files": 28}
+{"event": "platform_campaign_passed"}
+480b_platform_canary_passed
+candidate_stopped
+serving_pair_restored
+watchdog_restored

@@ -90,12 +90,13 @@ def test_process_only_watchdog_readiness_uses_owned_identity_not_a_missing_http_
 def test_promotion_uses_qualified_fair_policy_and_rollback_preserves_original_settings():
     roll=object.__new__(Promotion);written=[]
     roll.apis=[{'name':'a','env_file':'/private/test-api.env'}]
-    original={'MODEL_NAME':'235b','SCHEDULER_POLICY':'cost_aware','BATCH_SUBMISSION_ENABLED':'true'}
+    original={'MODEL_NAME':'235b','SCHEDULER_POLICY':'cost_aware','BATCH_SUBMISSION_ENABLED':'true','LEASE_SECONDS':'90'}
     roll.api_envs={'a':dict(original)}
     roll.write_env=lambda path,env:written.append(dict(env))
     roll.invoke=lambda *args:None;roll.ready=lambda *args:None
     roll.apis_config(enabled=False,model=REPO)
     assert written[-1]['SCHEDULER_POLICY']=='fair' and written[-1]['BATCH_SUBMISSION_ENABLED']=='false'
+    assert written[-1]['LEASE_SECONDS']=='15'
     assert roll.api_envs['a']==original
     roll.apis_config(enabled=True,restore=True)
     assert written[-1]==original

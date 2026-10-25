@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-25T11:48:39.333397+00:00",
+  "source_commit": "1a68dd944e07242f8a17f0a496256af87a4a6236",
+  "updates": {
+    "backend/config.py": {
+      "before_sha256": "40f7e080750f32531de79e72eb29b6361fc54f69828177036b24a1d447a4ba61",
+      "after_sha256": "519ba3b9cb88904558463800d2527a0baae279681b8d37efce84a04c02e398c7"
+    },
+    "backend/app.py": {
+      "before_sha256": "bccab8acbab54fc5024aa1cb11868af22f1fce0b9223b80c869591dbac20b875",
+      "after_sha256": "a8c0ae8ede355eee107266990104d4a9dbfe93727a8bc280964dbee6a9ea470b"
+    }
+  },
+  "legacy_files_hashed_before_cutover": 6,
+  "private_backups_retained": true
+}

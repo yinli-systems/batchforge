@@ -1,0 +1,5 @@
+{
+  "pid": 574413,
+  "validator_sha256": "9ea5b1687e7275c8b13ad9ce9f4727ac56c8ee2422f625451e3fe219e2a52123",
+  "scope": "One bounded 20-task real primary API validation; no inference replay"
+}

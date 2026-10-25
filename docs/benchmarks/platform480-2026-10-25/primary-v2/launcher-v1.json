@@ -1,0 +1,14 @@
+{
+  "pid": 572941,
+  "command": [
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "ops.promote480",
+    "--qualification",
+    "/root/batchforge-runtime/platform480-20261025-v3/trial-v1",
+    "--run",
+    "/root/batchforge-runtime/promotion480-20261025-v2/rollout",
+    "--apply"
+  ],
+  "source_commit": "1a68dd944e07242f8a17f0a496256af87a4a6236"
+}

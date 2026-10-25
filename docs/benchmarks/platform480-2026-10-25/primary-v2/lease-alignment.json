@@ -1,0 +1,22 @@
+{
+  "before_lease_seconds": {
+    "a": "90",
+    "b": "90"
+  },
+  "after_lease_seconds": 15,
+  "passed": true,
+  "events": [
+    {
+      "at": "2026-10-25T12:00:36.083711+00:00",
+      "event": "admission_closed_and_global_queue_drained"
+    },
+    {
+      "at": "2026-10-25T12:00:40.770791+00:00",
+      "event": "worker_reregistered_against_qualified_15_second_apis"
+    },
+    {
+      "at": "2026-10-25T12:00:44.744905+00:00",
+      "event": "qualified_lease_policy_activated"
+    }
+  ]
+}

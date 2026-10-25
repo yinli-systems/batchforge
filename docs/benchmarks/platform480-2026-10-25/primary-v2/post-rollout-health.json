@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "observed_at": "2026-10-25T12:03:04.947471+00:00",
+  "services": [
+    {
+      "role": "api",
+      "name": "a",
+      "port": 8082,
+      "pid": 574321,
+      "ready": true
+    },
+    {
+      "role": "api",
+      "name": "b",
+      "port": 8083,
+      "pid": 574329,
+      "ready": true
+    },
+    {
+      "role": "gateway",
+      "name": "edge",
+      "port": 8080,
+      "pid": 219738,
+      "ready": true
+    },
+    {
+      "role": "engine",
+      "name": "qwen480bench",
+      "port": 8348,
+      "pid": 573119,
+      "ready": true
+    },
+    {
+      "role": "worker",
+      "name": "qwen480",
+      "port": 9105,
+      "pid": 574316,
+      "ready": true
+    }
+  ],
+  "primary_metering": {
+    "tasks": 20,
+    "attempts": 20,
+    "accepted_attempts": 20,
+    "prompt_tokens": 109056,
+    "completion_tokens": 13600,
+    "one_accepted_attempt_per_task": true,
+    "batch_task_attempt_metering_match": true
+  },
+  "legacy_files_verified": 6,
+  "benchmark_sha256": "7a8015f42b4e5dbeef0918e5f08a3387e2288360a69923fbb7fdaec9ea3bcc4e",
+  "validator_sha256": "9ea5b1687e7275c8b13ad9ce9f4727ac56c8ee2422f625451e3fe219e2a52123",
+  "cost": null,
+  "limitations": [
+    "Finite functional smoke; not an additional controlled performance comparison",
+    "Private existing ingress, one four-H100 Pod"
+  ]
+}

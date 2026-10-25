@@ -1,0 +1,193 @@
+{
+  "collected_at": "2026-10-25T11:47:20.449130+00:00",
+  "source_run": "/root/batchforge-runtime/platform480-20261025-v3",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 17274,
+      "sha256": "f042f54797a0cfea0967700998754300a190c2963a46913c01b25596a6a653dd",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "launcher-v1.json": {
+      "bytes": 591,
+      "sha256": "3712b8611f5304ab53b82b290190864f543645de7b84609f5c839cb7fc19fb76",
+      "source_relative_path": "launcher-v1.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "hardware-topology.json": {
+      "bytes": 3152,
+      "sha256": "93e4a0f8d7ee5dafb201e60c79378bd383a4c53a67506fe49f1b27d0454f21dd",
+      "source_relative_path": "hardware-topology.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "controller-v1.log.txt": {
+      "bytes": 3936,
+      "sha256": "56ef37b8bb7b81212c4bc236f52eeba2311f10843ecc346d1ee4bbee5524a62e",
+      "source_relative_path": "controller-v1.log",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/trial.json": {
+      "bytes": 2187,
+      "sha256": "0c7bd5f7d2829c18e8a671d1b666c802277fcf6e9d5e231a5ae34375e0561453",
+      "source_relative_path": "trial-v1/trial.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/report.json": {
+      "bytes": 1308495,
+      "sha256": "83c961dee34583cb8fd02ff1f0d054b48e551bd5cb1b14c8f0d1a1ce964bdebe",
+      "source_relative_path": "trial-v1/platform/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/gpu-engine-samples.jsonl": {
+      "bytes": 26203706,
+      "sha256": "76fd43e8c6eacb22a4d5c5d6cd6cda8ddcd0c7e62b7ffb18cb12536bfe5907ae",
+      "source_relative_path": "trial-v1/platform/gpu-engine-samples.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/00-kv-A/benchmark.json": {
+      "bytes": 5262,
+      "sha256": "080cbd13173c02433ccd71a052a79eef895ee43dd83d0ed0a9e8095a9cd7f9dc",
+      "source_relative_path": "trial-v1/platform/00-kv-A/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/00-kv-A/worker-metrics.txt": {
+      "bytes": 11746,
+      "sha256": "38897c481c6cb40440ec9e94900e0aca8aeba7d4c4bb631db50e563e339b9383",
+      "source_relative_path": "trial-v1/platform/00-kv-A/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/01-kv-B/benchmark.json": {
+      "bytes": 5261,
+      "sha256": "f49573871bf8e84224f5189ee61d554fdafee4e9e04905d8f2abba9246c03d1f",
+      "source_relative_path": "trial-v1/platform/01-kv-B/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/01-kv-B/worker-metrics.txt": {
+      "bytes": 16425,
+      "sha256": "69d4d2d8859ae1825377ae80ff04898f06022973e19edc70e5437aeee763dba4",
+      "source_relative_path": "trial-v1/platform/01-kv-B/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/02-kv-B/benchmark.json": {
+      "bytes": 5260,
+      "sha256": "8de7bdc5241e55194985eebde79403d2fafc14486e3898a7d6bb7f8b78e041d0",
+      "source_relative_path": "trial-v1/platform/02-kv-B/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/02-kv-B/worker-metrics.txt": {
+      "bytes": 16238,
+      "sha256": "abace79d82e23913a4af296be7c188d5bc19dfa7059b2b63594237aac3901a59",
+      "source_relative_path": "trial-v1/platform/02-kv-B/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/03-kv-A/benchmark.json": {
+      "bytes": 5254,
+      "sha256": "2f29e85994b28215e3fb485a53d873926e6053f33348e264f407a5855b3e14f2",
+      "source_relative_path": "trial-v1/platform/03-kv-A/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/03-kv-A/worker-metrics.txt": {
+      "bytes": 11746,
+      "sha256": "e27b311ab8441d9116100be94a715592b8b1783939f21af8bf4bb4d11ae1426d",
+      "source_relative_path": "trial-v1/platform/03-kv-A/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/04-kv-A/benchmark.json": {
+      "bytes": 5268,
+      "sha256": "89ab2d36004ef8ba174683f69012122fa3fc3cf27e054f3030da8446aa12fb34",
+      "source_relative_path": "trial-v1/platform/04-kv-A/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/04-kv-A/worker-metrics.txt": {
+      "bytes": 11935,
+      "sha256": "57ff9a8508d9b51e4c471eb037d6de44dcd5a01ea4945b3d96b368552eeb6908",
+      "source_relative_path": "trial-v1/platform/04-kv-A/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/05-kv-B/benchmark.json": {
+      "bytes": 5260,
+      "sha256": "49dd47e02611c187c4f637410b80670ed51a7ed508b228809b68984332f070e3",
+      "source_relative_path": "trial-v1/platform/05-kv-B/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/05-kv-B/worker-metrics.txt": {
+      "bytes": 16233,
+      "sha256": "51356448e376645924b3f3bdcef4c279d11d3035a9a5ba3045979307dfe914f2",
+      "source_relative_path": "trial-v1/platform/05-kv-B/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/06-kv-B/benchmark.json": {
+      "bytes": 5246,
+      "sha256": "364a0e58573db7eea5c6696244faea7be20de02973ec2c25746aad7709433f28",
+      "source_relative_path": "trial-v1/platform/06-kv-B/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/06-kv-B/worker-metrics.txt": {
+      "bytes": 16235,
+      "sha256": "e803a736f969456cc571bb28f2472a5fb98b5a15c8f76f35c3b90c1c95dbcbf2",
+      "source_relative_path": "trial-v1/platform/06-kv-B/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/07-kv-A/benchmark.json": {
+      "bytes": 5262,
+      "sha256": "a79f813cb4348f284d92d06182100c7d15bb1a496f16db8bed4bcec89445ac90",
+      "source_relative_path": "trial-v1/platform/07-kv-A/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/07-kv-A/worker-metrics.txt": {
+      "bytes": 11747,
+      "sha256": "f44a90a7dd82d8d0bfe35f0cbb028d3ed4a09f8cb946e0a85cc3de2819c6db3a",
+      "source_relative_path": "trial-v1/platform/07-kv-A/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/08-kv-A/benchmark.json": {
+      "bytes": 5251,
+      "sha256": "bf2ab10ac5c3bb21e5d741fb3608c9fa4dce6695bf9c9af0c45df1866c6704ab",
+      "source_relative_path": "trial-v1/platform/08-kv-A/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/08-kv-A/worker-metrics.txt": {
+      "bytes": 11930,
+      "sha256": "28211a42f31d7658290030ec981de9b0f33e9dada885facea82cbe04a483c5e9",
+      "source_relative_path": "trial-v1/platform/08-kv-A/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/09-kv-B/benchmark.json": {
+      "bytes": 5268,
+      "sha256": "012a6877fc5b5c332ab9e1c94b3b8636869fb8dccb938d82ebca15b9f077fa10",
+      "source_relative_path": "trial-v1/platform/09-kv-B/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/09-kv-B/worker-metrics.txt": {
+      "bytes": 16233,
+      "sha256": "f88911f8511df50d131241dbd49f29d8fa0234dda399f386a5e0e6908f9989a0",
+      "source_relative_path": "trial-v1/platform/09-kv-B/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/10-kv-B/benchmark.json": {
+      "bytes": 5255,
+      "sha256": "d399fb0a7448d973a1ddb8bbe0bb9fbcdc71a87cc0c4bd05a717dd6d97dbcf4d",
+      "source_relative_path": "trial-v1/platform/10-kv-B/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/10-kv-B/worker-metrics.txt": {
+      "bytes": 16236,
+      "sha256": "b3119cb5be84ce235649645f760832cc23a7c93965d0a8478fa3f52cf8497768",
+      "source_relative_path": "trial-v1/platform/10-kv-B/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/11-kv-A/benchmark.json": {
+      "bytes": 5262,
+      "sha256": "40dd1abbee084c6fe33e92e56c25f315a4f83dc69e2de78640f488c0cfc424f5",
+      "source_relative_path": "trial-v1/platform/11-kv-A/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "trial-v1/platform/11-kv-A/worker-metrics.txt": {
+      "bytes": 11744,
+      "sha256": "446caeb4d82cb63252086d0d3b7d1d28fd64d49223dd022690837face2d1ca64",
+      "source_relative_path": "trial-v1/platform/11-kv-A/worker-metrics.txt",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

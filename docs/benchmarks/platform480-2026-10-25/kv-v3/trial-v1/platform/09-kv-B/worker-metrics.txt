@@ -1,0 +1,205 @@
+# HELP batchforge_worker_inflight Currently executing or reporting tasks
+# TYPE batchforge_worker_inflight gauge
+batchforge_worker_inflight 0.0
+# HELP batchforge_worker_reserved_context_tokens Conservative total context reservations
+# TYPE batchforge_worker_reserved_context_tokens gauge
+batchforge_worker_reserved_context_tokens 0.0
+# HELP batchforge_worker_capacity Effective task capacity after token bound
+# TYPE batchforge_worker_capacity gauge
+batchforge_worker_capacity 32.0
+# HELP batchforge_worker_adaptive_kv_budget_tokens Operator budget for this single worker; not physical GPU allocation
+# TYPE batchforge_worker_adaptive_kv_budget_tokens gauge
+batchforge_worker_adaptive_kv_budget_tokens 164256.0
+# HELP batchforge_worker_adaptive_kv_waiting Claimed tasks waiting for exact-token admission
+# TYPE batchforge_worker_adaptive_kv_waiting gauge
+batchforge_worker_adaptive_kv_waiting 0.0
+# HELP batchforge_worker_adaptive_kv_peak_tokens Peak block-rounded admission reservations
+# TYPE batchforge_worker_adaptive_kv_peak_tokens gauge
+batchforge_worker_adaptive_kv_peak_tokens 164128.0
+# HELP batchforge_worker_adaptive_kv_paused Latched uncertainty; operator intervention required before new admissions
+# TYPE batchforge_worker_adaptive_kv_paused gauge
+batchforge_worker_adaptive_kv_paused 0.0
+# HELP batchforge_worker_ready_engines Configured engines advertising the registered model
+# TYPE batchforge_worker_ready_engines gauge
+batchforge_worker_ready_engines 1.0
+# HELP batchforge_worker_tasks_total Observed task outcomes
+# TYPE batchforge_worker_tasks_total counter
+batchforge_worker_tasks_total{outcome="completed"} 60.0
+# HELP batchforge_worker_tasks_created Observed task outcomes
+# TYPE batchforge_worker_tasks_created gauge
+batchforge_worker_tasks_created{outcome="completed"} 1.7929276608637066e+09
+# HELP batchforge_worker_control_requests_total Control plane requests
+# TYPE batchforge_worker_control_requests_total counter
+batchforge_worker_control_requests_total{operation="register",outcome="ok"} 35.0
+batchforge_worker_control_requests_total{operation="claim",outcome="ok"} 111.0
+batchforge_worker_control_requests_total{operation="heartbeat",outcome="ok"} 587.0
+batchforge_worker_control_requests_total{operation="complete",outcome="ok"} 60.0
+# HELP batchforge_worker_control_requests_created Control plane requests
+# TYPE batchforge_worker_control_requests_created gauge
+batchforge_worker_control_requests_created{operation="register",outcome="ok"} 1.7929276297280028e+09
+batchforge_worker_control_requests_created{operation="claim",outcome="ok"} 1.7929276297691228e+09
+batchforge_worker_control_requests_created{operation="heartbeat",outcome="ok"} 1.7929276502419798e+09
+batchforge_worker_control_requests_created{operation="complete",outcome="ok"} 1.7929276608635578e+09
+# HELP batchforge_worker_control_failovers_total Control origin changes for subsequent requests
+# TYPE batchforge_worker_control_failovers_total counter
+batchforge_worker_control_failovers_total 0.0
+# HELP batchforge_worker_control_failovers_created Control origin changes for subsequent requests
+# TYPE batchforge_worker_control_failovers_created gauge
+batchforge_worker_control_failovers_created 1.792927628934464e+09
+# HELP batchforge_worker_control_origin_index Index of the selected configured control origin
+# TYPE batchforge_worker_control_origin_index gauge
+batchforge_worker_control_origin_index 0.0
+# HELP batchforge_worker_inference_seconds Complete model request duration
+# TYPE batchforge_worker_inference_seconds histogram
+batchforge_worker_inference_seconds_bucket{le="0.1"} 0.0
+batchforge_worker_inference_seconds_bucket{le="0.25"} 0.0
+batchforge_worker_inference_seconds_bucket{le="0.5"} 0.0
+batchforge_worker_inference_seconds_bucket{le="1.0"} 0.0
+batchforge_worker_inference_seconds_bucket{le="2.0"} 0.0
+batchforge_worker_inference_seconds_bucket{le="5.0"} 5.0
+batchforge_worker_inference_seconds_bucket{le="10.0"} 14.0
+batchforge_worker_inference_seconds_bucket{le="20.0"} 24.0
+batchforge_worker_inference_seconds_bucket{le="40.0"} 36.0
+batchforge_worker_inference_seconds_bucket{le="80.0"} 49.0
+batchforge_worker_inference_seconds_bucket{le="160.0"} 60.0
+batchforge_worker_inference_seconds_bucket{le="320.0"} 60.0
+batchforge_worker_inference_seconds_bucket{le="+Inf"} 60.0
+batchforge_worker_inference_seconds_count 60.0
+batchforge_worker_inference_seconds_sum 2258.9523283791495
+# HELP batchforge_worker_inference_seconds_created Complete model request duration
+# TYPE batchforge_worker_inference_seconds_created gauge
+batchforge_worker_inference_seconds_created 1.7929276289344976e+09
+# HELP batchforge_worker_stage_seconds Worker monotonic stage duration; includes waits and is not GPU kernel time
+# TYPE batchforge_worker_stage_seconds histogram
+batchforge_worker_stage_seconds_bucket{le="0.001",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="0.005",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="0.01",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="0.025",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="0.05",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="0.1",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="0.25",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="0.5",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="1.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="2.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="5.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="10.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="20.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="40.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="80.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="160.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="320.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="640.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="1280.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="2560.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="4096.0",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="+Inf",outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_count{outcome="ok",stage="engine_ready_wait"} 60.0
+batchforge_worker_stage_seconds_sum{outcome="ok",stage="engine_ready_wait"} 0.000809262041002512
+batchforge_worker_stage_seconds_bucket{le="0.001",outcome="ok",stage="tokenize"} 0.0
+batchforge_worker_stage_seconds_bucket{le="0.005",outcome="ok",stage="tokenize"} 0.0
+batchforge_worker_stage_seconds_bucket{le="0.01",outcome="ok",stage="tokenize"} 3.0
+batchforge_worker_stage_seconds_bucket{le="0.025",outcome="ok",stage="tokenize"} 11.0
+batchforge_worker_stage_seconds_bucket{le="0.05",outcome="ok",stage="tokenize"} 17.0
+batchforge_worker_stage_seconds_bucket{le="0.1",outcome="ok",stage="tokenize"} 26.0
+batchforge_worker_stage_seconds_bucket{le="0.25",outcome="ok",stage="tokenize"} 28.0
+batchforge_worker_stage_seconds_bucket{le="0.5",outcome="ok",stage="tokenize"} 56.0
+batchforge_worker_stage_seconds_bucket{le="1.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="2.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="5.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="10.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="20.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="40.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="80.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="160.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="320.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="640.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="1280.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="2560.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="4096.0",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_bucket{le="+Inf",outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_count{outcome="ok",stage="tokenize"} 60.0
+batchforge_worker_stage_seconds_sum{outcome="ok",stage="tokenize"} 16.503712462086696
+batchforge_worker_stage_seconds_bucket{le="0.001",outcome="ok",stage="kv_admission_wait"} 41.0
+batchforge_worker_stage_seconds_bucket{le="0.005",outcome="ok",stage="kv_admission_wait"} 41.0
+batchforge_worker_stage_seconds_bucket{le="0.01",outcome="ok",stage="kv_admission_wait"} 41.0
+batchforge_worker_stage_seconds_bucket{le="0.025",outcome="ok",stage="kv_admission_wait"} 41.0
+batchforge_worker_stage_seconds_bucket{le="0.05",outcome="ok",stage="kv_admission_wait"} 41.0
+batchforge_worker_stage_seconds_bucket{le="0.1",outcome="ok",stage="kv_admission_wait"} 41.0
+batchforge_worker_stage_seconds_bucket{le="0.25",outcome="ok",stage="kv_admission_wait"} 41.0
+batchforge_worker_stage_seconds_bucket{le="0.5",outcome="ok",stage="kv_admission_wait"} 41.0
+batchforge_worker_stage_seconds_bucket{le="1.0",outcome="ok",stage="kv_admission_wait"} 42.0
+batchforge_worker_stage_seconds_bucket{le="2.0",outcome="ok",stage="kv_admission_wait"} 45.0
+batchforge_worker_stage_seconds_bucket{le="5.0",outcome="ok",stage="kv_admission_wait"} 52.0
+batchforge_worker_stage_seconds_bucket{le="10.0",outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="20.0",outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="40.0",outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="80.0",outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="160.0",outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="320.0",outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="640.0",outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="1280.0",outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="2560.0",outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="4096.0",outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_bucket{le="+Inf",outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_count{outcome="ok",stage="kv_admission_wait"} 60.0
+batchforge_worker_stage_seconds_sum{outcome="ok",stage="kv_admission_wait"} 97.45727047079708
+batchforge_worker_stage_seconds_bucket{le="0.001",outcome="ok",stage="report_ack"} 0.0
+batchforge_worker_stage_seconds_bucket{le="0.005",outcome="ok",stage="report_ack"} 0.0
+batchforge_worker_stage_seconds_bucket{le="0.01",outcome="ok",stage="report_ack"} 0.0
+batchforge_worker_stage_seconds_bucket{le="0.025",outcome="ok",stage="report_ack"} 0.0
+batchforge_worker_stage_seconds_bucket{le="0.05",outcome="ok",stage="report_ack"} 45.0
+batchforge_worker_stage_seconds_bucket{le="0.1",outcome="ok",stage="report_ack"} 56.0
+batchforge_worker_stage_seconds_bucket{le="0.25",outcome="ok",stage="report_ack"} 57.0
+batchforge_worker_stage_seconds_bucket{le="0.5",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="1.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="2.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="5.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="10.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="20.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="40.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="80.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="160.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="320.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="640.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="1280.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="2560.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="4096.0",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_bucket{le="+Inf",outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_count{outcome="ok",stage="report_ack"} 60.0
+batchforge_worker_stage_seconds_sum{outcome="ok",stage="report_ack"} 3.59823125397088
+# HELP batchforge_worker_stage_seconds_created Worker monotonic stage duration; includes waits and is not GPU kernel time
+# TYPE batchforge_worker_stage_seconds_created gauge
+batchforge_worker_stage_seconds_created{outcome="ok",stage="engine_ready_wait"} 1.7929276464331963e+09
+batchforge_worker_stage_seconds_created{outcome="ok",stage="tokenize"} 1.7929276468902404e+09
+batchforge_worker_stage_seconds_created{outcome="ok",stage="kv_admission_wait"} 1.7929276468904045e+09
+batchforge_worker_stage_seconds_created{outcome="ok",stage="report_ack"} 1.792927660863605e+09
+# HELP batchforge_worker_prompt_tokens_total Reported model prompt tokens
+# TYPE batchforge_worker_prompt_tokens_total counter
+batchforge_worker_prompt_tokens_total 327168.0
+# HELP batchforge_worker_prompt_tokens_created Reported model prompt tokens
+# TYPE batchforge_worker_prompt_tokens_created gauge
+batchforge_worker_prompt_tokens_created 1.7929276289345675e+09
+# HELP batchforge_worker_completion_tokens_total Reported model completion tokens
+# TYPE batchforge_worker_completion_tokens_total counter
+batchforge_worker_completion_tokens_total 40800.0
+# HELP batchforge_worker_completion_tokens_created Reported model completion tokens
+# TYPE batchforge_worker_completion_tokens_created gauge
+batchforge_worker_completion_tokens_created 1.7929276289345775e+09
+# HELP batchforge_worker_invalid_outputs_total Observed engine responses rejected for invalid JSON-object output
+# TYPE batchforge_worker_invalid_outputs_total counter
+batchforge_worker_invalid_outputs_total 0.0
+# HELP batchforge_worker_invalid_outputs_created Observed engine responses rejected for invalid JSON-object output
+# TYPE batchforge_worker_invalid_outputs_created gauge
+batchforge_worker_invalid_outputs_created 1.792927628934586e+09
+# HELP batchforge_worker_rejected_prompt_tokens_total Observed engine prompt tokens for rejected outputs; excluded from accepted usage
+# TYPE batchforge_worker_rejected_prompt_tokens_total counter
+batchforge_worker_rejected_prompt_tokens_total 0.0
+# HELP batchforge_worker_rejected_prompt_tokens_created Observed engine prompt tokens for rejected outputs; excluded from accepted usage
+# TYPE batchforge_worker_rejected_prompt_tokens_created gauge
+batchforge_worker_rejected_prompt_tokens_created 1.792927628934595e+09
+# HELP batchforge_worker_rejected_generated_tokens_total Observed engine completion tokens for rejected outputs; excluded from accepted usage
+# TYPE batchforge_worker_rejected_generated_tokens_total counter
+batchforge_worker_rejected_generated_tokens_total 0.0
+# HELP batchforge_worker_rejected_generated_tokens_created Observed engine completion tokens for rejected outputs; excluded from accepted usage
+# TYPE batchforge_worker_rejected_generated_tokens_created gauge
+batchforge_worker_rejected_generated_tokens_created 1.792927628934604e+09

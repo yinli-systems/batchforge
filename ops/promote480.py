@@ -184,7 +184,7 @@ class Promotion:
             if not restore:
                 env['BATCH_SUBMISSION_ENABLED']=str(enabled).lower()
                 if model:env.update(MODEL_NAME=model,MODEL_NAMES_JSON=json.dumps([model]))
-                if model==REPO:env['SCHEDULER_POLICY']='fair'
+                if model==REPO:env.update(SCHEDULER_POLICY='fair',LEASE_SECONDS='15')
             self.write_env(Path(service['env_file']),env)
             self.invoke(service,'stop');self.invoke(service,'start');self.ready(service)
 
