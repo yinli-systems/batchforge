@@ -1,0 +1,87 @@
+{
+ "schema": "batchforge.gpu_inventory/1",
+ "host": "a0f61b63d635",
+ "collected_at": "2026-10-25T00:31:58Z",
+ "gpu_count": 4,
+ "gpu_models": [
+  "NVIDIA H100 80GB HBM3"
+ ],
+ "memory_total_mib": 326236.0,
+ "memory_used_mib": 296820.0,
+ "gpus": [
+  {
+   "index": 0,
+   "name": "NVIDIA H100 80GB HBM3",
+   "uuid": "GPU-c43133f3-8aec-31fb-3ccd-06cc7b64de08",
+   "memory.total": 81559.0,
+   "memory.used": 74205.0,
+   "utilization.gpu": 0.0,
+   "power.draw": 125.68,
+   "temperature.gpu": 38.0,
+   "pstate": "P0"
+  },
+  {
+   "index": 1,
+   "name": "NVIDIA H100 80GB HBM3",
+   "uuid": "GPU-635baa6f-767c-a497-55ba-c5e9b453131e",
+   "memory.total": 81559.0,
+   "memory.used": 74205.0,
+   "utilization.gpu": 0.0,
+   "power.draw": 135.4,
+   "temperature.gpu": 44.0,
+   "pstate": "P0"
+  },
+  {
+   "index": 2,
+   "name": "NVIDIA H100 80GB HBM3",
+   "uuid": "GPU-8d6feb38-a161-e269-a1de-39c63eef2699",
+   "memory.total": 81559.0,
+   "memory.used": 74205.0,
+   "utilization.gpu": 0.0,
+   "power.draw": 130.43,
+   "temperature.gpu": 43.0,
+   "pstate": "P0"
+  },
+  {
+   "index": 3,
+   "name": "NVIDIA H100 80GB HBM3",
+   "uuid": "GPU-04ad4dbe-0838-169d-b041-42126335b711",
+   "memory.total": 81559.0,
+   "memory.used": 74205.0,
+   "utilization.gpu": 0.0,
+   "power.draw": 129.23,
+   "temperature.gpu": 35.0,
+   "pstate": "P0"
+  }
+ ],
+ "processes": [
+  {
+   "pid": 492873,
+   "process_name": "VLLM::Worker_TP0",
+   "gpu_uuid": "GPU-c43133f3-8aec-31fb-3ccd-06cc7b64de08",
+   "used_memory": 74196.0,
+   "gpu_known": true
+  },
+  {
+   "pid": 492874,
+   "process_name": "VLLM::Worker_TP1",
+   "gpu_uuid": "GPU-635baa6f-767c-a497-55ba-c5e9b453131e",
+   "used_memory": 74196.0,
+   "gpu_known": true
+  },
+  {
+   "pid": 492875,
+   "process_name": "VLLM::Worker_TP2",
+   "gpu_uuid": "GPU-8d6feb38-a161-e269-a1de-39c63eef2699",
+   "used_memory": 74196.0,
+   "gpu_known": true
+  },
+  {
+   "pid": 492876,
+   "process_name": "VLLM::Worker_TP3",
+   "gpu_uuid": "GPU-04ad4dbe-0838-169d-b041-42126335b711",
+   "used_memory": 74196.0,
+   "gpu_known": true
+  }
+ ]
+}
