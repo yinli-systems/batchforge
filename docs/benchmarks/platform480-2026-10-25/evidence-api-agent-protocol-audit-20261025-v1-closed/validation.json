@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "source_report_sha256": "68745b94e47832d368c14e8a304a446534af9d2d8c0b0d19e937cd46d7e8b025",
+  "records": [
+    {
+      "case_id": "heldout-math-6",
+      "step": 1,
+      "content_sha256": "2eb548faafca1619539b50327e333d3e0df6d1ca976ab5f88902946db49439ef",
+      "is_calculator_tool": true,
+      "is_final": false,
+      "citation_count": 0,
+      "cites_calculator_name": false
+    },
+    {
+      "case_id": "heldout-math-6",
+      "step": 2,
+      "content_sha256": "d65fdd7aeaeef0dfcaa155679ca0253f627d65736491b6e6d48728315925a0e6",
+      "is_calculator_tool": false,
+      "is_final": true,
+      "citation_count": 1,
+      "cites_calculator_name": false
+    },
+    {
+      "case_id": "heldout-math-4",
+      "step": 1,
+      "content_sha256": "20bc402186123eefed4ded3604ef10db269c89873af5bdc9d2c65bd395e91456",
+      "is_calculator_tool": true,
+      "is_final": false,
+      "citation_count": 0,
+      "cites_calculator_name": false
+    },
+    {
+      "case_id": "heldout-math-4",
+      "step": 2,
+      "content_sha256": "5c9d6c783615047c6438b0c96109aad0705d25733cf0c9d683c55a00a809631a",
+      "is_calculator_tool": false,
+      "is_final": true,
+      "citation_count": 1,
+      "cites_calculator_name": false
+    }
+  ],
+  "scope": "Read-only response classification, raw values not exported; prior failed grades unchanged"
+}

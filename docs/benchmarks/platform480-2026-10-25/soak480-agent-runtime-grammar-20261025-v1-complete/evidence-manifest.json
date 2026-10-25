@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-25T23:13:19.005115+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-agent-runtime-grammar-20261025-v1",
+  "files": {
+    "report.json": {
+      "bytes": 4968,
+      "sha256": "f15a7e3483e3ee40c744770a322e6c2eeaaf3474484a33c8ac06452661242993",
+      "source_relative_path": "report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

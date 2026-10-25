@@ -18,7 +18,7 @@ class RetryLater(Exception):pass
 class DeliveryError(Exception):pass
 
 
-def policy_from(value):return Policy(**{**value,'allowed_tools':tuple(value['allowed_tools'])})
+def policy_from(value):return Policy(**{**value,'allowed_tools':tuple(value['allowed_tools']),'tool_sequence':tuple(value.get('tool_sequence',()))})
 
 
 def citations(observations):
@@ -79,7 +79,7 @@ class Coordinator:
             from .structured import response_format
             body={'model':run['model'],'messages':planner_messages(run['goal'],policy,SPECS,observations,output_feedback=state.get('output_feedback')),
                   'max_tokens':min(512,remaining),'temperature':0,
-                  'response_format':response_format(policy,observed_citations=citations(observations),remaining_tools=run['max_tool_calls']-run['tool_calls'])}
+                  'response_format':response_format(policy,observed_citations=citations(observations),remaining_tools=run['max_tool_calls']-run['tool_calls'],executed_tools=[o['tool'] for o in observations])}
             state.update(phase='input_intent',step=step+1,request=body,
                          request_sha256=digest(body),child_key=f"agent.{run['id']}.{step+1}")
             return await self.change(run,'intent',kind='model.intent',state=state)
@@ -141,6 +141,9 @@ class Coordinator:
                 if policy.planner_protocol!='schema-v1':raise
                 return await self.reject_output(run,state,'planner_json_invalid')
             policy.authorize(decision)
+            pending=policy.pending_tool([o['tool'] for o in state.get('observations',[])])
+            if pending is not None and (isinstance(decision,FinalDecision) or decision.name!=pending):
+                return await self.reject_output(run,state,'tool_sequence_required')
             if isinstance(decision,FinalDecision):
                 if not set(decision.citations)<=citations(state.get('observations',[])):
                     if policy.planner_protocol=='schema-v1':return await self.reject_output(run,state,'citation_unobserved')

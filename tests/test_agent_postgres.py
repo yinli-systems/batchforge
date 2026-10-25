@@ -387,6 +387,32 @@ async def test_schema_does_not_turn_unobserved_citation_into_evidence(store):
     assert done['result']['citations']==[]
 
 
+async def test_provider_cannot_skip_an_immutable_tool_prerequisite_even_with_correct_answer(store):
+    run=await make(store,policy=Policy(planner_protocol='schema-v1',answer_format='number',
+        tool_sequence=('math.calculate',),max_model_calls=3,max_generated_tokens=128))
+    batch=TestBatch(['{"type":"final","answer":"42","citations":[]}',
+                     '{"type":"tool","name":"math.calculate","arguments":{"expression":"20+22"}}',
+                     '{"type":"final","answer":"42","citations":[]}'])
+    done=await advance_to_terminal(store,run,batch)
+    assert done['status']=='completed' and done['model_calls']==3 and done['generated_tokens']==60
+    assert done['tool_calls']==1 and done['state']['observations'][0]['result']=={'value':42}
+    assert done['state']['output_rejections'][0]['code']=='tool_sequence_required'
+    assert len(batch.batches)==3 and len(done['state']['receipts'])==3
+    with pytest.raises(AgentError) as exc:
+        await make(store,policy=Policy(tool_sequence=('memory.get',)))
+    assert exc.value.code=='agent_idempotency_conflict'
+
+
+async def test_out_of_order_granted_tool_is_refused_before_execution_without_budget_reset(store):
+    run=await make(store,policy=Policy(planner_protocol='schema-v1',tool_sequence=('memory.get','math.calculate'),
+        max_model_calls=1,max_generated_tokens=64))
+    batch=TestBatch(['{"type":"tool","name":"math.calculate","arguments":{"expression":"20+22"}}'])
+    done=await advance_to_terminal(store,run,batch)
+    assert done['status']=='failed' and done['result']['code']=='model_call_budget_exceeded'
+    assert done['tool_calls']==0 and done['model_calls']==1 and done['generated_tokens']==20
+    assert done['state'].get('observations',[])==[] and len(batch.batches)==1
+
+
 async def test_bounded_schema_canary_preserves_response_format_through_http_db_claim(store):
     import hashlib,httpx,json
     from backend.app import create_app as batch_app

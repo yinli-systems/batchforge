@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-25T23:19:22.296355+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-agent-schema-20261025-v1",
+  "files": {
+    "validation.json": {
+      "bytes": 2196,
+      "sha256": "561cedabd12cbd79fdb4d0d865aa58c64489d0ad3ae781abe9e9e28c7d2c4888",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

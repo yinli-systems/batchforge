@@ -13,6 +13,7 @@ OUTPUT_HINTS={
     'number':'The answer string must be one finite decimal number only, with no units or explanatory sentence. Citations belong only in the separate citations array.',
     'citations_required':'Include at least one exact citation from a retrieved memory result, in the separate citations array.',
     'planner_json_invalid':'Return exactly the documented decision object: type is tool or final; a tool has separate name and arguments; final answer is a JSON string and citations is an array. Do not add fields or duplicate keys.',
+    'tool_sequence_required':'Complete the caller-declared tool sequence in its original order before returning a final answer. Tool permissions and remaining budgets still apply.',
     'citation_unobserved':'Use only the exact citation strings actually returned by retrieved memory. Use an empty citations array when no memory citation was retrieved. A tool name is not a memory citation.'}
 
 
@@ -77,6 +78,7 @@ class Policy:
     answer_format:str='text'
     require_citations:bool=False
     planner_protocol:str='json-v1'
+    tool_sequence:tuple[str,...]=()
 
     def __post_init__(self):
         if (not isinstance(self.allowed_tools,tuple) or len(set(self.allowed_tools))!=len(self.allowed_tools)
@@ -91,6 +93,10 @@ class Policy:
             raise ValueError('Bounded agent policy and known capabilities required')
         if self.require_citations and not {'memory.get','memory.search'}&set(self.allowed_tools):
             raise ValueError('Memory citations require a granted retrieval capability')
+        if (not isinstance(self.tool_sequence,tuple) or len(self.tool_sequence)>8
+            or len(self.tool_sequence)>self.max_tool_calls
+            or any(name not in self.allowed_tools for name in self.tool_sequence)):
+            raise ValueError('Bounded tool sequence must fit the existing grants and tool budget')
 
     def authorize(self,decision):
         if isinstance(decision,ToolDecision) and decision.name not in self.allowed_tools:
@@ -104,7 +110,14 @@ class Policy:
         if self.answer_format=='text':value.pop('answer_format')
         if not self.require_citations:value.pop('require_citations')
         if self.planner_protocol=='json-v1':value.pop('planner_protocol')
+        if not self.tool_sequence:value.pop('tool_sequence')
         return value
+
+    def pending_tool(self,executed_tools):
+        executed=tuple(executed_tools)
+        if executed[:len(self.tool_sequence)]!=self.tool_sequence[:len(executed)]:
+            raise ValueError('Committed tool history violates immutable workflow order')
+        return self.tool_sequence[len(executed)] if len(executed)<len(self.tool_sequence) else None
 
     def validate_final(self,decision):
         if not isinstance(decision,FinalDecision):raise ValueError('Typed final decision required')
@@ -136,6 +149,8 @@ def planner_messages(goal,policy,tool_specs,observations=(),*,output_feedback=No
     if policy.require_citations:instruction+=' '+OUTPUT_HINTS['citations_required']
     if policy.planner_protocol=='schema-v1':
         instruction+=' '+OUTPUT_HINTS['planner_json_invalid']+' '+OUTPUT_HINTS['citation_unobserved']
+    if policy.tool_sequence:
+        instruction+=' Caller-required tool sequence: '+canonical(list(policy.tool_sequence)).decode()+'. '+OUTPUT_HINTS['tool_sequence_required']
     messages=[{'role':'system','content':instruction},{'role':'user','content':goal}]
     for observation in observations:
         encoded=canonical(observation)

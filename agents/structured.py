@@ -10,18 +10,20 @@ from .contracts import FinalDecision,canonical
 from .tools import SPECS
 
 
-def response_format(policy,*,observed_citations,remaining_tools):
+def response_format(policy,*,observed_citations,remaining_tools,executed_tools=()):
     if policy.planner_protocol=='json-v1':return {'type':'json_object'}
     if type(remaining_tools) is not int or remaining_tools<0:raise ValueError('Explicit remaining tool budget required')
     citations=sorted(set(observed_citations))
     if len(citations)>64 or any(not isinstance(c,str) or len(c)>512 for c in citations):raise ValueError('Bounded observed citations required')
     variants=[]
+    pending=policy.pending_tool(executed_tools)
     if remaining_tools:
         for spec in SPECS:
             if spec['name'] not in policy.allowed_tools:continue
+            if pending is not None and spec['name']!=pending:continue
             variants.append({'type':'object','additionalProperties':False,'required':['type','name','arguments'],
                 'properties':{'type':{'type':'string','const':'tool'},'name':{'type':'string','const':spec['name']},'arguments':copy.deepcopy(spec['arguments'])}})
-    if citations or not policy.require_citations:
+    if pending is None and (citations or not policy.require_citations):
         final=copy.deepcopy(FinalDecision.model_json_schema())
         # Force a consistent complete final envelope, including [] for a purely
         # arithmetic answer. json_object alone never enforces these field types.

@@ -61,3 +61,42 @@ Azure Agent migration still requires owner authentication. The user confirmed
 the owner password is not saved; the one-time native hidden-input prompt timed
 out without capturing a credential. No owner migration or password reset has
 been attempted. Independent implementation and native/GPU qualification continue.
+
+## Closed first schema cohort:8/20, not a quality pass
+
+Source da4ad45 passed actual native CI40243462130:1,656 Python tests, zero
+skips and23 Node tests. The four decoder calibration requests passed. The
+20-case schema cohort then completed all20 runs but passed only8. All8 pure
+arithmetic runs bypassed the requested calculator;4 also returned incorrect
+numeric values. All4 memory→calculation joins returned correct answers/citations
+but skipped the required calculator. The8 memory/poisoned-memory cases passed.
+The independent grader required actual correct tool results and did not relax
+that requirement to accept direct model computation.
+
+There were32 accepted model steps and64 artifact byte readbacks. Coordinator
+post-ACK recovery, Agent API restart/event heads, all primary epochs and child
+usage/artifact checks passed; isolated PG and private ingress stopped. The
+Agent report stays `quality_failed` and its parent stays failed. Shape-constrained
+decoding does not establish completion of required business operations. Different
+cases/contracts prevent treating these cohort scores as a matched improvement.
+
+## Next bounded contract: ordered tool prerequisites
+
+The caller may declare an immutable `tool_sequence`, at most8 entries, drawn
+only from existing grants and within the same tool-call budget. It contains
+tool names, never expected values. The grammar permits only the next required
+tool until the sequence is complete; the runtime independently rejects a
+premature final or out-of-order allowed tool before execution, preserving the
+original accepted usage and spending a new budgeted model step. Actual persisted
+tool observations advance this contract; model claims do not. Default empty
+sequences preserve previous policy documents and request hashes. A coordinator
+that does not understand a nonempty sequence is not a compatible rollback.
+
+`workflow-contract-heldout-v1` freezes20 further disjoint IDs/values. Arithmetic
+requires math.calculate; memory cases require memory.get; joins require
+memory.get then math.calculate. Existing independent answer/tool/citation grading
+is unchanged. Fresh headroom after the first schema cohort is166, sufficient
+for at most84 new tasks including four decoder checks. Recheck before admission.
+Run a new immutable source/CI and a new controller directory; never modify the
+first failed cohort, its source or grades. This is a sequential workflow
+prerequisite contract, not a general DAG or multi-Agent implementation.

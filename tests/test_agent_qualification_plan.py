@@ -1,6 +1,6 @@
 from datetime import datetime,timezone
 import pytest
-from ops.qualify_agent_runtime import fixtures,heldout_fixtures,schema_fixtures,plan,grade
+from ops.qualify_agent_runtime import fixtures,heldout_fixtures,schema_fixtures,workflow_fixtures,plan,grade
 
 
 def test_native_control_state_and_azure_model_state_are_not_conflated():
@@ -48,3 +48,15 @@ def test_schema_holdout_is_disjoint_and_does_not_rewrite_the_value_holdout():
     assert len(fresh)==20 and all(c['planner_protocol']=='schema-v1' for c in fresh)
     assert not ({c['id'] for c in fresh}&{c['id'] for c in prior})
     assert not ({c['expected'] for c in fresh}&{c['expected'] for c in prior})
+
+
+def test_workflow_contract_fixtures_declare_actual_tools_without_reusing_prior_answers():
+    from agents.contracts import Policy,digest
+    previous=fixtures()+heldout_fixtures()+schema_fixtures();before=digest(schema_fixtures());values=workflow_fixtures()
+    assert len(values)==20 and digest(schema_fixtures())==before
+    assert not ({c['id'] for c in previous}&{c['id'] for c in values})
+    assert not ({c['expected'] for c in previous}&{c['expected'] for c in values})
+    for case in values:
+        assert case['tool_sequence']==case['tools']
+        policy=Policy(planner_protocol='schema-v1',tool_sequence=tuple(case['tool_sequence']))
+        assert case['expected'] not in str(policy.document())

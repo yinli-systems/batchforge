@@ -30,6 +30,7 @@ def canary_environment(original,source):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',required=True,type=Path)
+    p.add_argument('--fixture-set',choices=['schema-contract-heldout-v1','workflow-contract-heldout-v1'],default='schema-contract-heldout-v1')
     p.add_argument('--apply',action='store_true');args=p.parse_args()
     if not args.apply:
         print(json.dumps({'decoder_tasks':4,'agent_cases':20,'max_child_tasks':84,
@@ -84,7 +85,7 @@ def main():
         suffix=base.name.removeprefix('evidence-api-agent-schema-')
         steps=[('decoder','ops.qualify_agent_grammar',root.parent/('soak480-agent-runtime-grammar-'+suffix),[],330),
                ('agent','ops.qualify_agent_runtime',root.parent/('soak480-agent-runtime-schema-'+suffix),
-                ['--fixture-set','schema-contract-heldout-v1'],1900)]
+                ['--fixture-set',args.fixture_set],1900)]
         report['children']=[]
         for label,module,run,extra,bound in steps:
             if run.exists():raise RuntimeError('Qualification directory already exists')

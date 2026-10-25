@@ -1,0 +1,78 @@
+{
+  "phase": "failed",
+  "passed": false,
+  "primary_changes": false,
+  "azure_agent_migration": false,
+  "private_api": "http://127.0.0.1:18172",
+  "max_child_tasks": 84,
+  "extra_gpu_worker": false,
+  "source_commit": "da4ad45be0c0b47d2e5d07d5a545d62470870ccf",
+  "primary_before": {
+    "api-a": {
+      "pid": 641686,
+      "start_ticks": "48004878",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 641694,
+      "start_ticks": "48005158",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 641677,
+      "start_ticks": "48004600",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 641702,
+      "start_ticks": "48005394",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "api_timeout_identity": {
+    "pid": 680415,
+    "start_ticks": "49337237",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "api_identity": {
+    "pid": 680416,
+    "start_ticks": "49337238",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "private_api_ready_and_source_bound": true,
+  "children": [
+    {
+      "kind": "decoder",
+      "run": "/root/batchforge-runtime/soak480-agent-runtime-grammar-20261025-v1",
+      "phase": "complete",
+      "passed": true,
+      "report_sha256": "f15a7e3483e3ee40c744770a322e6c2eeaaf3474484a33c8ac06452661242993"
+    },
+    {
+      "kind": "agent",
+      "run": "/root/batchforge-runtime/soak480-agent-runtime-schema-20261025-v1",
+      "phase": "quality_failed",
+      "passed": false,
+      "report_sha256": "6a538253b6847003c764a6d0aac888a5ec0cf3fd05b701d3c11a80f07ec06bc7"
+    }
+  ],
+  "child_identity": {
+    "pid": 680472,
+    "start_ticks": "49338248",
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261025-v4/source"
+  },
+  "phase_before_failure": "agent_running",
+  "error_type": "RuntimeError",
+  "private_api_stopped": true,
+  "controller_seconds": 366.7903353460133
+}

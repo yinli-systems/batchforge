@@ -49,3 +49,16 @@ def test_identifier_grammar_and_runtime_contract_share_the_same_shape():
     final=variants(p,tools=0)[0]
     assert re.fullmatch(final['properties']['answer']['pattern'],'NOVA-3091')
     assert not re.fullmatch(final['properties']['answer']['pattern'],'Project code: NOVA-3091')
+
+
+def test_ordered_tool_contract_excludes_premature_final_and_out_of_order_tools():
+    p=Policy(planner_protocol='schema-v1',tool_sequence=('memory.get','math.calculate'))
+    def schema(executed):
+        return response_format(p,observed_citations=['memory:ns:key:v1:'+'a'*64] if executed else [],
+            remaining_tools=3-len(executed),executed_tools=executed)['json_schema']['schema']['anyOf']
+    assert [v['properties']['name']['const'] for v in schema([])]==['memory.get']
+    assert [v['properties']['name']['const'] for v in schema(['memory.get'])]==['math.calculate']
+    assert any(v['properties']['type']['const']=='final' for v in schema(['memory.get','math.calculate']))
+    with pytest.raises(ValueError):schema(['math.calculate'])
+    with pytest.raises(ValueError):Policy(allowed_tools=('math.calculate',),tool_sequence=('memory.get',))
+    with pytest.raises(ValueError):Policy(max_tool_calls=1,tool_sequence=('memory.get','math.calculate'))

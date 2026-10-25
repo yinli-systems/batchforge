@@ -36,10 +36,11 @@ class RunRequest(Strict):
     answer_format:str=Field(default='text',pattern=r'^(text|identifier|number)$')
     require_citations:bool=False
     planner_protocol:str=Field(default='json-v1',pattern=r'^(json-v1|schema-v1)$')
+    tool_sequence:list[str]=Field(default_factory=list,max_length=8)
 
     def policy(self):
-        return Policy(**{k:v for k,v in self.model_dump().items() if k not in ('goal','model','allowed_tools')},
-                      allowed_tools=tuple(self.allowed_tools))
+        return Policy(**{k:v for k,v in self.model_dump().items() if k not in ('goal','model','allowed_tools','tool_sequence')},
+                      allowed_tools=tuple(self.allowed_tools),tool_sequence=tuple(self.tool_sequence))
 
 
 class MemoryWrite(Strict):

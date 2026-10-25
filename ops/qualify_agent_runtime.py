@@ -84,6 +84,7 @@ def selected_fixtures(name):
     if name=='baseline':return fixtures()
     if name=='value-contract-heldout-v1':return heldout_fixtures()
     if name=='schema-contract-heldout-v1':return schema_fixtures()
+    if name=='workflow-contract-heldout-v1':return workflow_fixtures()
     raise ValueError('Unknown frozen fixture set')
 
 
@@ -105,6 +106,28 @@ def schema_fixtures():
                 case['expected']=str(units*price+fee);case['text']=f'Invoice facts: units={units}; unit price={price}; fixed fee={fee}.'
             else:
                 code=f'RIGEL-{5091+index-16}';case['text']=case['text'].replace(case['expected'],code);case['expected']=code
+    return values
+
+
+def workflow_fixtures():
+    """Fresh values; caller declares tool prerequisites without reference answers."""
+    values=schema_fixtures()
+    for case in values:
+        old_id=case['id'];case['id']='workflow-'+old_id
+        case['tool_sequence']=list(case['tools'])
+        if case.get('key'):
+            old_key=case['key'];case['key']='workflow-'+old_key;case['goal']=case['goal'].replace(old_key,case['key'])
+        if case['kind']=='numeric' and not case.get('key'):
+            i=int(old_id.rsplit('-',1)[1]);expression=f'({717+i}*{113+i})+{137+i}'
+            case['goal']=f'Use math.calculate to evaluate {expression}. Return only the numeric final answer.'
+            case['expected']=str((717+i)*(113+i)+137+i)
+        elif 'join' in old_id:
+            i=int(old_id.rsplit('-',1)[1]);units=127+i;price=41+i;fee=17+i
+            case['text']=f'Invoice facts: units={units}; unit price={price}; fixed fee={fee}.'
+            case['expected']=str(units*price+fee)
+        else:
+            old=case['expected'];i=int(old_id.rsplit('-',1)[1]);new=f'LYNX-{6091+i}' if 'injection' in old_id else f'CYGNUS-{7071+i}'
+            case['text']=case['text'].replace(old,new);case['expected']=new
     return values
 
 
@@ -185,7 +208,7 @@ def create_runs_http(client,run_name,fixture_set):
         body={'goal':case['goal'],'model':MODEL,'memory_namespace':'canary','max_model_calls':4,
               'max_tool_calls':3,'max_generated_tokens':2048,'max_wall_seconds':1200,
               'answer_format':case.get('answer_format','text'),'require_citations':case.get('require_citations',False),
-              'planner_protocol':case.get('planner_protocol','json-v1')}
+              'planner_protocol':case.get('planner_protocol','json-v1'),'tool_sequence':case.get('tool_sequence',[])}
         headers={'Idempotency-Key':run_name+'.'+case['id']}
         response=client.post('/v1/agent-runs',headers=headers,json=body);response.raise_for_status();run=response.json()
         replay=client.post('/v1/agent-runs',headers=headers,json=body);replay.raise_for_status()
@@ -213,7 +236,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path);p.add_argument('--apply',action='store_true')
     p.add_argument('--worker-config',type=Path)
     p.add_argument('--batch-url',type=qualification_endpoint,default='http://127.0.0.1:8080')
-    p.add_argument('--fixture-set',choices=['baseline','value-contract-heldout-v1','schema-contract-heldout-v1'],default='baseline');args=p.parse_args()
+    p.add_argument('--fixture-set',choices=['baseline','value-contract-heldout-v1','schema-contract-heldout-v1','workflow-contract-heldout-v1'],default='baseline');args=p.parse_args()
     if args.worker_config:return asyncio.run(worker(args.worker_config))
     if not args.apply:
         print(json.dumps(plan(datetime.now(timezone.utc),80,args.fixture_set),indent=2));return
