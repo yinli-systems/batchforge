@@ -69,6 +69,8 @@ SAFETY_REASONS = {
     "Nonfinite or out-of-range bounded configuration": "numeric_bounds_invalid",
     "State must be under an ignored .runtime directory": "state_not_private_runtime",
     "Invalid metrics endpoint list": "metrics_endpoints_invalid",
+    "Reusable input must be a complete unchanged fixture with unique custom IDs": "reusable_fixture_invalid",
+    "Reusable input is missing, expired or differs from the pinned fixture": "reusable_input_invalid",
 }
 
 
@@ -241,8 +243,20 @@ def load_fixture(path, model):
     return source, rows
 
 
-def make_plan(configuration, rows):
+def make_plan(configuration, rows, source=None):
     """Balanced shuffled cycles preserve the fixture mixture without token claims."""
+    if configuration.get('reuse_input_file'):
+        ids = [row.get('custom_id') for row in rows]
+        if (source is None or configuration['tasks_per_batch'] != len(rows)
+                or configuration['tasks'] % len(rows) or any(not isinstance(i,str) or not i for i in ids)
+                or len(set(ids)) != len(ids) or configuration.get('fixed_output') and any(
+                    r['body'].get('min_tokens') != r['body'].get('max_tokens',r['body'].get('max_completion_tokens')) for r in rows)):
+            raise SafetyError('Reusable input must be a complete unchanged fixture with unique custom IDs')
+        return [{'index':i, 'tasks':len(rows), 'task_offset':i*len(rows),
+                 'arrival_offset_seconds':i*len(rows)/configuration['arrival_rate'],
+                 'input_sha256':hashlib.sha256(source).hexdigest(), 'input_bytes':len(source), 'data':source,
+                 'custom_ids':ids, 'output_caps':[r['body'].get('max_tokens',r['body'].get('max_completion_tokens')) for r in rows]}
+                for i in range(configuration['tasks']//len(rows))]
     rng = random.Random(configuration["seed"])
     selected = []
     while len(selected) < configuration["tasks"]:
@@ -312,6 +326,14 @@ class Database:
             coalesce(completed_at,failed_at,cancelled_at) AS finished_at FROM batches
             WHERE tenant_id=%s AND metadata->>'sustained_job'=%s ORDER BY created_at,id""", (self.tenant, self.job_id)).fetchall())
 
+    def reusable_input(self, file_id, source_sha256, size, valid_until):
+        row = self.conn.execute("""SELECT f.id FROM files f JOIN blob_objects o ON o.id=f.blob_id AND o.tenant_id=f.tenant_id
+            WHERE f.id=%s AND f.tenant_id=%s AND f.kind='input' AND f.storage_deleted_at IS NULL
+            AND f.storage_expires_at>to_timestamp(%s) AND f.bytes=%s AND o.bytes=%s
+            AND o.sha256=%s AND o.state='ready'""",(file_id,self.tenant,valid_until,size,size,source_sha256)).fetchone()
+        if row is None:
+            raise SafetyError('Reusable input is missing, expired or differs from the pinned fixture')
+
     def sample(self):
         retention = self.conn.execute("""SELECT l.max_retained_tasks,l.max_payload_bytes,u.retained_tasks,u.charged_payload_bytes
             FROM tenant_retention_limits l JOIN tenant_retention_usage u USING(tenant_id) WHERE l.tenant_id=%s""", (self.tenant,)).fetchone()
@@ -355,7 +377,8 @@ def reconcile(journal, plan, found, *, known_before_query=None):
         except (ValueError, KeyError, IndexError):
             raise SafetyError("Unexpected server batch in this job") from None
         if (index < 0 or index in by_index or metadata.get("sustained_input_sha256") != expected["input_sha256"]
-                or row["total_count"] != expected["tasks"]):
+                or row["total_count"] != expected["tasks"]
+                or journal.state['configuration'].get('reuse_input_file') not in (None,row['input_file_id'])):
             raise SafetyError("Duplicate batch or immutable workload identity mismatch")
         by_index[index] = row
         old = journal.state["batches"].get(str(index), {})
@@ -426,10 +449,29 @@ def submission_failure(journal, index, state, message, *, stage, http_status=Non
     return error
 
 
+async def verify_reusable_input(client, file_id, source):
+    digest = hashlib.sha256()
+    size = 0
+    async with client.stream('GET','/v1/files/'+file_id+'/content') as response:
+        if response.status_code != 200:
+            raise SafetyError('Reusable input is missing, expired or differs from the pinned fixture')
+        async for chunk in response.aiter_bytes():
+            size += len(chunk)
+            if size > len(source):
+                raise SafetyError('Reusable input is missing, expired or differs from the pinned fixture')
+            digest.update(chunk)
+    if size != len(source) or digest.digest() != hashlib.sha256(source).digest():
+        raise SafetyError('Reusable input is missing, expired or differs from the pinned fixture')
+
+
 async def submit(client, journal, item, configuration, admission_deadline):
     index = item["index"]
     existing = dict(journal.state["batches"].get(str(index), {}))
     state = {"index": index, "tasks": item["tasks"], "stage": "planned", **existing}
+    if configuration.get('reuse_input_file'):
+        if state.get('file_id') not in (None,configuration['reuse_input_file']):
+            raise SafetyError('Durable batch/file identity changed')
+        state['file_id'] = configuration['reuse_input_file']
     if state.get("batch_id"):
         return
     if state["stage"] == "uploading":
@@ -547,11 +589,24 @@ def summarize(journal, tasks, observations, elapsed, runtime_apis=None, plan=Non
     usage_matches = all(row["prompt_tokens"] == row["accepted_prompt_tokens"] and row["completion_tokens"] == row["accepted_completion_tokens"] for row in completed)
     caps = {f"{config['job_id']}-{item['task_offset'] + index:08d}": cap
             for item in plan or [] for index, cap in enumerate(item["output_caps"])}
-    output_lengths_exact = (all(row["completion_tokens"] == caps.get(row["custom_id"]) for row in completed)
+    reused = bool(config.get('reuse_input_file'))
+    if reused:
+        items = {item['index']:item for item in plan or []}
+        expected = {(row['batch_id'],cid):(cap,items[row['index']]['arrival_offset_seconds'])
+                    for row in accepted for cid,cap in zip(items[row['index']]['custom_ids'],items[row['index']]['output_caps'])}
+        keys = [(row.get('batch_id'),row['custom_id']) for row in tasks]
+        task_ids = [row.get('id') for row in tasks]
+        exact = (len(keys)==len(set(keys)) and set(keys)==set(expected) and None not in task_ids
+                 and len(task_ids)==len(set(task_ids)) and len(tasks)==sum(row['tasks'] for row in accepted)
+                 and all(row['accepted_attempts']==int(row['status']=='completed') for row in tasks))
+        caps = {key:value[0] for key,value in expected.items()}
+    def task_key(row):
+        return (row.get('batch_id'),row['custom_id']) if reused else row['custom_id']
+    output_lengths_exact = (all(row["completion_tokens"] == caps.get(task_key(row)) for row in completed)
                             if config.get("fixed_output") else None)
     classes = {}
     for row in completed:
-        cap = caps.get(row["custom_id"])
+        cap = caps.get(task_key(row))
         if cap:
             ratio = row["prompt_tokens"] / cap
             label = "prefill_heavy" if ratio >= 16 else "decode_heavy" if ratio <= 4 else "balanced"
@@ -562,7 +617,9 @@ def summarize(journal, tasks, observations, elapsed, runtime_apis=None, plan=Non
         if row.get("finished_at"):
             offset = datetime.fromisoformat(row["finished_at"]).timestamp() - journal.state["started_epoch"]
             windows[str(max(0, int(offset // 60)))] += 1
-            if row["custom_id"] in known:
+            if reused and task_key(row) in expected:
+                scheduled_latencies.append(offset-expected[task_key(row)][1])
+            elif row["custom_id"] in known:
                 task_index = int(row["custom_id"].rsplit("-", 1)[1])
                 cohort_offset = (task_index // config["tasks_per_batch"]) * config["tasks_per_batch"] / config["arrival_rate"]
                 scheduled_latencies.append(offset - cohort_offset)
@@ -586,6 +643,9 @@ def summarize(journal, tasks, observations, elapsed, runtime_apis=None, plan=Non
     return normalize({"report_version": 1, "job_id": config["job_id"], "configuration": config,
         "started_at": journal.state["started_at"], "finished_at": timestamp(), "elapsed_seconds_including_disconnect_and_validation": elapsed,
         "accepted_batches": len(accepted), "accepted_tasks": sum(row["tasks"] for row in accepted),
+        "input_reuse": {"enabled":reused,"file_id":config.get('reuse_input_file'),
+            "identity_scope":"(batch_id, custom_id) and globally unique task IDs" if reused else "job-scoped custom IDs",
+            "new_upload_requests":sum(row.get('upload_requests',0) for row in states)},
         "completed_tasks": len(completed), "terminal_tasks": len(terminal), "unfinished_tasks": len(tasks) - len(terminal),
         "failed_tasks": sum(row["status"] == "failed" for row in tasks), "cancelled_tasks": sum(row["status"] == "cancelled" for row in tasks),
         "accepted_exactly_once": exact, "duplicate_accepted_attempts": sum(max(0, row["accepted_attempts"] - 1) for row in tasks),
@@ -647,7 +707,9 @@ async def run(args, *, transport=None, database=None):
     configuration.update(source_sha256=hashlib.sha256(source).hexdigest(), url=local_url(args.url), engine_url=local_url(args.engine_url),
                          api=[list(item) for item in args.api], code_sha256={name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
                             for name in ("sustained_benchmark.py", "benchmark.py", "observe_runtime.py")})
-    plan = make_plan(configuration, rows)
+    if args.reuse_input_file:
+        configuration['reuse_input_file'] = args.reuse_input_file
+    plan = make_plan(configuration, rows, source)
     journal = Journal(args.state_dir, configuration)
     db = database or Database(env["DATABASE_URL"], env["BATCHFORGE_API_KEY"], args.job_id)
     observations_path = args.state_dir / "observations.jsonl"
@@ -667,6 +729,9 @@ async def run(args, *, transport=None, database=None):
     try:
         async with httpx.AsyncClient(base_url=configuration["url"], headers={"Authorization": "Bearer " + key},
             timeout=args.request_timeout, transport=transport, trust_env=False, follow_redirects=False) as client:
+            if args.reuse_input_file and any(not journal.state['batches'].get(str(item['index']),{}).get('batch_id') for item in plan):
+                await asyncio.to_thread(db.reusable_input,args.reuse_input_file,configuration['source_sha256'],len(source),end_deadline)
+                await verify_reusable_input(client,args.reuse_input_file,source)
             while True:
                 # All production database operations in this class are read-only.
                 # The HTTP futures can finish while the read-only SQL query is
@@ -760,6 +825,7 @@ def parser():
     result.add_argument("--job-id", required=True)
     result.add_argument("--env-file", type=Path, required=True)
     result.add_argument("--input-jsonl", type=Path, required=True)
+    result.add_argument("--reuse-input-file", help="Existing tenant input ID; exact byte readback and expiry validation required; no upload")
     result.add_argument("--model", required=True)
     result.add_argument("--state-dir", type=Path)
     result.add_argument("--tasks", type=int, default=720)
@@ -782,6 +848,8 @@ def parser():
 
 
 def validate_args(args):
+    if args.reuse_input_file is not None and not re.fullmatch(r'file_[0-9a-f]{32}',args.reuse_input_file):
+        raise SafetyError('Reusable input is missing, expired or differs from the pinned fixture')
     if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}", args.job_id):
         raise SafetyError("Job ID must be 1-64 alphanumeric, underscore or hyphen characters")
     if (not 1 <= args.tasks <= 20000 or not 1 <= args.tasks_per_batch <= min(args.tasks, 1000)

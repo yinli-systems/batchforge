@@ -1,0 +1,21 @@
+{
+  "identity": {
+    "pid": 587362,
+    "start_ticks": "46385772",
+    "cwd": "/root/batchforge-runtime/quality-api-review-20261025-v1/source"
+  },
+  "controller_git_commit": "5876c3a73956b02acc0bb44454ff960d35ccdf13",
+  "controller_sha256": "e5bd7fd7582f938c8530865d1b1a7b29dd58478469f6ae574a91014c0430eaf9",
+  "command": [
+    "/root/batchforge-runtime/venv/bin/python",
+    "-c",
+    "import runpy;runpy.run_path('/root/batchforge-runtime/quality-api-release-20261025-v1-controller.py',run_name='__main__')",
+    "--source-run",
+    "/root/batchforge-runtime/quality-api-review-20261025-v1",
+    "--wait-endurance",
+    "/root/batchforge-runtime/soak480-20261025-v1",
+    "--run",
+    "/root/batchforge-runtime/quality-api-release-20261025-v1"
+  ],
+  "api_source_git_commit": "831b83926c46cbde7e05ece65b4ea3c5603cc8b0"
+}

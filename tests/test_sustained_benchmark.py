@@ -41,6 +41,81 @@ def test_balanced_seeded_plan_and_exact_output_do_not_mutate_source():
     assert all("min_tokens" not in row["body"] for row in rows)
 
 
+def reusable_fixture():
+    rows=fixture_rows()[:2]
+    for row in rows:row['body']['min_tokens']=row['body']['max_tokens']
+    return rows,b'\n'.join(soak.render(row) for row in rows)+b'\n'
+
+
+def test_reuse_preserves_exact_uploaded_bytes_and_batch_scoped_custom_ids():
+    rows,source=reusable_fixture()
+    config=configuration(tasks=4,tasks_per_batch=2,reuse_input_file='file_'+'a'*32)
+    plan=soak.make_plan(config,rows,source)
+    assert len(plan)==2 and all(p['data']==source for p in plan)
+    assert plan[0]['custom_ids']==plan[1]['custom_ids']==['fixture-0','fixture-1']
+    for bad in [dict(tasks=3),dict(tasks_per_batch=1)]:
+        with pytest.raises(soak.SafetyError):soak.make_plan({**config,**bad},rows,source)
+    rows[0]['body']['min_tokens']=1
+    with pytest.raises(soak.SafetyError):soak.make_plan(config,rows,source)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('content,status',[(b'different',200),(b'',404),(b'x'*100000,200)])
+async def test_reuse_wrong_missing_or_oversized_readback_fails_before_create(content,status):
+    async with httpx.AsyncClient(base_url='http://localhost',transport=httpx.MockTransport(
+        lambda request:httpx.Response(status,content=content))) as client:
+        with pytest.raises(soak.SafetyError):await soak.verify_reusable_input(client,'file_'+'a'*32,b'expected')
+
+
+@pytest.mark.asyncio
+async def test_reusable_file_runner_reconciles_resumes_and_never_uploads(tmp_path,monkeypatch):
+    root=tmp_path/'.runtime';root.mkdir(mode=0o700)
+    rows,source=reusable_fixture();fixture=root/'input.jsonl';fixture.write_bytes(source)
+    env=root/'private.env';env.write_text('DATABASE_URL=unused\nBATCHFORGE_API_KEY=test-only\n');env.chmod(0o600)
+    fid='file_'+'a'*32
+    args=soak.validate_args(soak.parser().parse_args(['--job-id','reused','--env-file',str(env),'--input-jsonl',str(fixture),
+        '--reuse-input-file',fid,'--model','test-model','--tasks','4','--tasks-per-batch','2','--arrival-rate','1000',
+        '--duration-seconds','2','--drain-seconds','1','--max-inflight-tasks','2','--poll-seconds','.1',
+        '--fixed-output','--state-dir',str(root/'state')]))
+    server={};requests=[];preflight=[]
+    class DB:
+        def reusable_input(self,*values):preflight.append(values)
+        def batches(self):return list(server.values())
+        def sample(self):return {}
+        def close(self):pass
+        def tasks(self):
+            return [dict(id=f'task-{i}-{n}',custom_id=r['custom_id'],batch_id=b['id'],status='completed',attempts=1,
+                prompt_tokens=128,completion_tokens=r['body']['max_tokens'],accepted_prompt_tokens=128,
+                accepted_completion_tokens=r['body']['max_tokens'],accepted_attempts=1,total_attempt_records=1,
+                completion_seconds=.1,first_queue_seconds=.01,finished_at=b['finished_at'])
+                for i,b in server.items() for n,r in enumerate(rows)]
+    def handler(request):
+        requests.append((request.method,request.url.path))
+        if request.method=='GET' and request.url.path=='/v1/files/'+fid+'/content':return httpx.Response(200,content=source)
+        if request.url.path=='/metrics':return httpx.Response(200,text='')
+        assert request.url.path=='/v1/batches' and request.method=='POST'
+        body=json.loads(request.content);i=int(body['metadata']['sustained_index']);assert i not in server
+        assert body['input_file_id']==fid
+        server[i]=dict(id=f'batch-{i}',input_file_id=fid,status='completed',total_count=2,pending_count=0,running_count=0,
+            completed_count=2,failed_count=0,cancelled_count=0,metadata=body['metadata'],created_at=soak.timestamp(),finished_at=soak.timestamp())
+        value=batch_value();value['id']=f'batch-{i}';value['request_counts'].update(total=2,completed=2,pending=0)
+        return httpx.Response(200,json=value)
+    monkeypatch.setattr(soak.Sampler,'gpu',lambda:{'devices':[]})
+    report=await soak.run(args,transport=httpx.MockTransport(handler),database=DB())
+    assert report['passed'] and report['accepted_tasks']==4 and report['fixed_output_lengths_exact']
+    assert report['input_reuse']['new_upload_requests']==0 and len(preflight)==1
+    assert ('POST','/v1/files') not in requests and preflight[0][0]==fid
+    before=list(requests);resumed=await soak.run(args,transport=httpx.MockTransport(handler),database=DB())
+    assert resumed['passed'] and all(path=='/metrics' for _,path in requests[len(before):])
+    journal=soak.Journal(root/'state',report['configuration'])
+    tasks=DB().tasks();tasks[2]['batch_id']=tasks[0]['batch_id']
+    plan=soak.make_plan(report['configuration'],rows,source)
+    assert not soak.summarize(journal,tasks,[],1,plan=plan)['passed']
+    tasks=DB().tasks();tasks[2]['id']=tasks[0]['id']
+    assert not soak.summarize(journal,tasks,[],1,plan=plan)['passed']
+    journal.close()
+
+
 def test_journal_exclusive_replay_config_binding_and_private_modes(tmp_path):
     root = tmp_path / "state"
     journal = soak.Journal(root, configuration())

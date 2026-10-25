@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "captured_at": "2026-10-25T14:36:39.954841+00:00",
+  "schema_version": 11,
+  "database_read_only_verified": true,
+  "tls_verified_hostname_mode": true,
+  "tls_version": "TLSv1.3",
+  "real_owner_authenticated": true,
+  "other_owner_hidden": true,
+  "invalid_key_rejected": true,
+  "evidence": [
+    {
+      "id": "squad480-dev-20261025-v4",
+      "quality_state": "failed",
+      "tasks": 10570,
+      "batch_count": 166,
+      "report_sha256": "22c924df3d4f0ab97345f07006ea74f956019c03c26dbc01ed9555b9c6950296",
+      "response_sha256": "bf80e34061aeb96278fd1a9e81bed23cfdc3494c3e195a2ea07a112b22a43f2c",
+      "verification_state": "batch_ledger_reconciled"
+    }
+  ],
+  "source_sha256": {
+    "backend/app.py": "d78fbdf98de431b739164e92768f0a0f59288a4badf520fc43dae7cb0438a24d",
+    "backend/store.py": "b761b5e19edb91844693fd7f02c52ef413d6a3e2129750349547bbeb6ed61968",
+    "backend/evaluations.py": "92deec4d37e04046c37e551afdc4afed0351f819d8edc4129fc5695f87c7ce98",
+    "backend/config.py": "569b3c14ac175904b16d5e2394faf2637c37f8459bb08202fa7435a87bbdbc5d",
+    "frontend/app.js": "93bcb4fd934466ea88c92652a228f780f62a4d91f6981b8d992eff8653b87378"
+  },
+  "services_changed": false,
+  "inference_requests": 0,
+  "application_port_opened": false,
+  "scope": "Real Azure with source-isolated ASGI requests; production lifespan and background maintenance were not entered; no browser visual claim"
+}

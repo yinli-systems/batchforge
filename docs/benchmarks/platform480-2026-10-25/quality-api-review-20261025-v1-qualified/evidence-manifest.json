@@ -1,0 +1,25 @@
+{
+  "collected_at": "2026-10-25T15:00:26.542158+00:00",
+  "source_run": "/root/batchforge-runtime/quality-api-review-20261025-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 18572,
+      "sha256": "d02fe365477b33eada63389ea68cf1ea39f6b283626fa5bba6acd660f67165de",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 1424,
+      "sha256": "6333b3fb71d18c77b8ebce60cd847aa55c150fe5fb0c74015907e82f2376bd6b",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "release-launcher.json": {
+      "bytes": 825,
+      "sha256": "b301f0661739511ad80fcefeb959f8771cc315cea0b393d3099fa29414e08712",
+      "source_relative_path": "release-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

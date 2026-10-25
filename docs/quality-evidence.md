@@ -10,8 +10,17 @@ Configure `QUALITY_EVIDENCE_CATALOGUE` with an immutable release catalogue path,
 for example `/approved/release/deploy/quality/catalogue.json`. The default is
 empty, preserving existing deployments. The included catalogue pins the actual
 10,570-task public SQuAD report; its failed 70%/80% gate remains failed.
-This code is prepared for a new qualification after the active endurance run;
-the running primary remains immutable `398db6f` until that release completes.
+Immutable source `831b839` passed independent read-only Azure qualification at
+14:36:39 UTC on October 25: schema 11, TLS hostname verification, actual tenant
+authentication, 166-batch linkage, other-owner hiding and exact response-body
+checksums. The [qualification evidence](benchmarks/platform480-2026-10-25/quality-api-review-20261025-v1-qualified/validation.json)
+is exported with SHA-256 verification. This did not deploy the feature.
+The running primary remains immutable `398db6f` until the guarded release
+completes. Its single queued controller waits for the successful closed 2,400-task
+endurance report, then checks a private canary, drains both API enqueue paths,
+rolls only the APIs and validates both replicas and the gateway before cleanup.
+A failed check restores compatible API configuration. It never switches the
+480B runtime, changes retention, or creates cloud resources.
 
 ## Ownership and reconciliation
 
