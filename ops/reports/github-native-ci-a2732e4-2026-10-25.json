@@ -1,0 +1,93 @@
+{
+  "captured_at": "2026-10-25T21:30:30.884962+00:00",
+  "commit": "a2732e49e1eb35b8ac947e147b5d21f58afc46f7",
+  "run_id": 40235466421,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40235466421",
+  "conclusion": "success",
+  "job": {
+    "completedAt": "2026-10-25T21:28:40Z",
+    "conclusion": "success",
+    "databaseId": 121295966514,
+    "name": "existing-pod-cpu",
+    "startedAt": "2026-10-25T21:26:46Z",
+    "status": "completed",
+    "steps": [
+      {
+        "completedAt": "2026-10-25T21:26:48Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-25T21:26:47Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:26:48Z",
+        "conclusion": "success",
+        "name": "Set up runner",
+        "number": 2,
+        "startedAt": "2026-10-25T21:26:48Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:26:53Z",
+        "conclusion": "success",
+        "name": "Run actions/checkout@v4",
+        "number": 3,
+        "startedAt": "2026-10-25T21:26:48Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:27:04Z",
+        "conclusion": "success",
+        "name": "Locked CPU dependencies",
+        "number": 4,
+        "startedAt": "2026-10-25T21:26:53Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:28:37Z",
+        "conclusion": "success",
+        "name": "Native PostgreSQL17, worker failures and console regressions",
+        "number": 5,
+        "startedAt": "2026-10-25T21:27:04Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:28:38Z",
+        "conclusion": "success",
+        "name": "Post Run actions/checkout@v4",
+        "number": 10,
+        "startedAt": "2026-10-25T21:28:37Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-25T21:28:38Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 11,
+        "startedAt": "2026-10-25T21:28:38Z",
+        "status": "completed"
+      }
+    ],
+    "url": "https://github.com/yinli-systems/batchforge/actions/runs/40235466421/job/121295966514"
+  },
+  "registration_remaining": 0,
+  "new_cloud_resources": false,
+  "billing_settings_changed": false,
+  "production_credentials_transferred": false,
+  "python_tests": {
+    "passed": 1604,
+    "skipped": 0,
+    "warnings": 1,
+    "elapsed_seconds": 90.06
+  },
+  "node_tests": {
+    "passed": 23,
+    "failed": 0
+  },
+  "postgres_version": "17.11",
+  "node_version": "24.22.1",
+  "runner_os_uid": 65534,
+  "full_log_sha256": "b2f2173f0b28be58d370224e5bfb7c644fb52c4ca004241663ba42ebdc2457ee",
+  "scope": "Actual exact private-branch head push on existing Pod CPU; native passive primary pin check and real-GPU canary have independent outcomes"
+}

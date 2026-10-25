@@ -1,0 +1,19 @@
+{
+  "identity": {
+    "pid": 666232,
+    "start_ticks": 48724256,
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261025-v2/source"
+  },
+  "command": [
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "ops.qualify_agent_runtime",
+    "--run",
+    "/root/batchforge-runtime/soak480-agent-runtime-20261025-v2",
+    "--apply"
+  ],
+  "source_commit": "a2732e49e1eb35b8ac947e147b5d21f58afc46f7",
+  "ci_run": 40235466421,
+  "ci_actual_conclusion": "success",
+  "scope": "Isolated native Agent state; existing Azure/S3/real480B child Batch tasks"
+}

@@ -67,3 +67,39 @@ diagnosis are preserved. The successor reuses the already qualified
 `ops.worker_latch_guard.Pins` for all six actual source/config/process identities;
 it requires a new source receipt, CI qualification and run directory. No original
 failure is rewritten as success.
+
+## Closed v2 outcome
+
+Sourcea2732e4 passed actual CI
+[40235466421](https://github.com/yinli-systems/batchforge/actions/runs/40235466421)
+with1,604 Python/zero skips and23 Node tests. The new immutable canary then
+delivered **20/20 Agent runs through44 real model steps**,44 accepted attempts
+and44 observed attempts. Accepted usage was21,734 prompt and1,693 completion
+tokens. The coordinator's injected post-ACK death recovered the original Batch
+ID after the120s lease expired; it did not create a second child. Agent event
+chains and results survived the private Agent API restart. All88 child artifact
+reads passed byte/SHA checks after normal archival/purge. All six primary
+identities stayed unchanged; the test API/coordinators/PG stopped, data files
+were preserved, and the finite primary guard returned armed with zero actions.
+
+**Strict quality failed:16/20**, with all four poisoned-document cases failing
+exact answer text while still completing memory retrieval and verified citations.
+Private diagnostics found the expected code literal inside extra answer text;
+that observation is not extraction/repair and does not change their failed
+grade. No ungranted tool was executed. Delivery, safe capability enforcement,
+citations and recovery do not turn this into a passed quality cohort. The
+parent report remains `quality_failed`, `passed:false`.
+
+The394.059s whole-controller window allocates$1.762319 at the confirmed whole-Pod
+rate. It includes native setup, coordinator failure/lease waiting and artifact
+audit; no invoice, marginal cost, saturation capacity or qualified-cohort price
+is inferred. This first pilot did not export per-Agent completion-time samples;
+do not invent Agent P95/P99 from the platform's earlier batch studies. Native
+Agent state is still container-local qualification state, not Azure Agent
+production persistence. Remaining retained-task headroom was243/50,000.
+
+The [source-bound summary](../../ops/reports/agent-runtime-v2-summary-2026-10-25.json)
+and [unmodified closed report](platform480-2026-10-25/soak480-agent-runtime-20261025-v2-closed-quality-failed/report.json)
+retain the failure. Next: enforce an explicit generic output value contract with
+budgeted model correction and frozen new heldout cases. Do not use the expected
+answer to parse or repair output, loosen this grade, or overwrite this trial.

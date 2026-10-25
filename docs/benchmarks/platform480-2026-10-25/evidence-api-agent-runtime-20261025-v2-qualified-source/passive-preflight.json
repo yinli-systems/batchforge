@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "source_commit": "a2732e49e1eb35b8ac947e147b5d21f58afc46f7",
+  "primary_state_sha256": "efa66c6d33219ecb93241697e084dfe3f2e1f323a67f2cce564652eb4f49865d",
+  "primary_identities": {
+    "api-a": {
+      "pid": 641686,
+      "start_ticks": "48004878",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 641694,
+      "start_ticks": "48005158",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 641677,
+      "start_ticks": "48004600",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 641702,
+      "start_ticks": "48005394",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "service_mutation": false,
+  "gpu_tasks_submitted": 0,
+  "azure_owner_migration": false
+}

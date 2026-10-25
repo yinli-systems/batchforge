@@ -1,0 +1,31 @@
+{
+  "collected_at": "2026-10-25T21:38:07.760926+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-agent-runtime-20261025-v2",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 30403,
+      "sha256": "de5b782a48ad74be7ea602fe85cf2c7595cdc75a63a3624440961cec0a0334b6",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "deployment.json": {
+      "bytes": 165,
+      "sha256": "a72e67b1451e81218bf92bcb484248e3c198196fd2750c3a2e0f452279e18b24",
+      "source_relative_path": "deployment.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "passive-preflight.json": {
+      "bytes": 1062,
+      "sha256": "9a2312e436304d15a8675317b2208e228754793367df4749170c85803ed852bc",
+      "source_relative_path": "passive-preflight.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation-launcher.json": {
+      "bytes": 573,
+      "sha256": "d0fe1d49f6c24ea445e00391da01842febf8d78f91e5bcff7eada46499348080",
+      "source_relative_path": "validation-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

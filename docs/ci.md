@@ -10,6 +10,13 @@ inference, production credentials, paid minutes or billing changes were involved
 This qualifies CPU correctness of the new Agent harness/API/schema/adapter;
 it does not claim an Azure Agent migration or real-GPU Agent task success.
 
+Canary sourcea2732e4 subsequently passed actual
+[run40235466421](https://github.com/yinli-systems/batchforge/actions/runs/40235466421),
+**1,604 Python/zero skips and23 Node tests**, with the same isolated toolchain
+and zero remaining registrations. Its separate real-model canary delivered all
+20 Agent runs and passed recovery/storage, but strict answer quality was16/20;
+that GPU quality failure remains independent of the passed CPU check.
+
 Hosted run [40213979692](https://github.com/yinli-systems/batchforge/actions/runs/40213979692)
 failed before any test step for commit `2872d43`. The authenticated check
 annotation reports an account payment/spending-limit block. This is not a test

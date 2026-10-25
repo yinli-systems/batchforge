@@ -1,0 +1,27 @@
+{
+  "source_report": "docs/benchmarks/platform480-2026-10-25/soak480-agent-runtime-20261025-v2-closed-quality-failed/report.json",
+  "source_report_sha256": "167f70e3ca1d399a8955e287c4a637b18445ee89b6b49e48e9a2ff059186007b",
+  "source_commit": "a2732e49e1eb35b8ac947e147b5d21f58afc46f7",
+  "phase": "quality_failed",
+  "cohort_passed": false,
+  "delivered_agent_runs": 20,
+  "strict_quality_passed_runs": 16,
+  "cases": 20,
+  "accepted_model_tasks": 44,
+  "observed_attempts": 44,
+  "accepted_tokens": {
+    "prompt_tokens": 21734,
+    "completion_tokens": 1693
+  },
+  "artifact_reads": 88,
+  "distinct_artifact_ids": 88,
+  "agent_api_restart_state_readback": true,
+  "primary_epoch_unchanged": true,
+  "isolated_pg_stopped": true,
+  "remaining_task_headroom": 243,
+  "whole_controller_seconds": 394.058843605977,
+  "whole_pod_allocation_usd": 1.7623187172378418,
+  "invoice": null,
+  "qualified_cohort_cost": null,
+  "scope": "20 synthetic real-model Agent cases; native isolated Agent control database, not Azure Agent deployment; quality_failed remains failed"
+}
