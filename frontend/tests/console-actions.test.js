@@ -6,6 +6,7 @@ const path = require('node:path');
 const {test} = require('node:test');
 const vm = require('node:vm');
 const {webcrypto} = require('node:crypto');
+const {File} = require('node:buffer');
 
 const source = readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
 const startupIndex = source.indexOf("document.addEventListener('click'");
@@ -24,7 +25,7 @@ function jsonResponse(body) {
   return {ok: true, status: 200, json: async () => body};
 }
 
-function harness(fetch, sessionStorage = storage()) {
+function harness(fetch, sessionStorage = storage(), fixtures = {}) {
   const observed = {notices: [], opened: [], rendered: [], dialogCloses: 0, downloads: [], blobs: []};
   const confirmButton = {disabled: false};
   const drawer = {innerHTML: '', scrollTop: 0, contains() { return false; }};
@@ -34,6 +35,7 @@ function harness(fetch, sessionStorage = storage()) {
       return {href: '', download: '', click() {observed.downloads.push(this.download);}};
     },
     querySelector(selector) {
+      if (Object.hasOwn(fixtures, selector)) return fixtures[selector];
       if (selector === '#confirm-submit') return confirmButton;
       if (selector === '#confirm-dialog') return {close() { observed.dialogCloses++; }};
       if (selector === '#batch-drawer') return drawer;
@@ -41,7 +43,7 @@ function harness(fetch, sessionStorage = storage()) {
     }
   };
   const context = vm.createContext({
-    document, sessionStorage, fetch, Headers, FormData, TextEncoder, TextDecoder, Uint8Array, Blob,
+    document, sessionStorage, fetch, Headers, FormData, TextEncoder, TextDecoder, Uint8Array, Blob, File, location: {hash:''},
     URL: {createObjectURL(blob) {observed.blobs.push(blob);return 'blob:review';}, revokeObjectURL() {}},
     setTimeout(callback) {callback();}, crypto: webcrypto, observed
   });
@@ -54,7 +56,7 @@ function harness(fetch, sessionStorage = storage()) {
     openBatch = async id => observed.opened.push(id);
     const renderDetails = renderDrawer;
     renderDrawer = () => observed.rendered.push(state.detail);
-    globalThis.actions = {state, retryBatch, cancelBatch, renderDetails, verifyReceipt, loadEvidence, resetEvidence, renderEvidencePanel, capacityNotice, qualityView, loadEvaluations, resetQualityEvidence, downloadEvaluation};
+    globalThis.actions = {state, createBatch, retryBatch, cancelBatch, renderDetails, verifyReceipt, loadEvidence, resetEvidence, renderEvidencePanel, capacityNotice, qualityView, loadEvaluations, resetQualityEvidence, downloadEvaluation};
   `, context, {filename: 'frontend/app.js'});
   context.actions.state.key = 'test-tenant-key';
   context.actions.state.detailId = 'source-batch';
@@ -77,6 +79,57 @@ test('cancellation reports completion when completion wins the race', async () =
   assert.doesNotMatch(app.observed.notices.at(-1).message, /batch cancelled/i);
   assert.equal(app.observed.dialogCloses, 1);
   assert.equal(app.confirmButton.disabled, false);
+});
+
+function createFixtures() {
+  const fixtures = {'#create-submit': {disabled:false}, '#create-error': {hidden:true,textContent:''},
+    '#existing-input-id': {value:'file_'+'a'.repeat(32)}, '#batch-name': {value:'Reused input'},
+    '#create-dialog': {closes:0,close(){this.closes++;}}};
+  return fixtures;
+}
+
+test('reusing input skips upload and retries lost acknowledgement with the same task-set key', async () => {
+  const fixtures=createFixtures(), calls=[];
+  const app=harness(async (url,request) => {
+    calls.push({url,key:request.headers.get('Idempotency-Key'),body:request.body});
+    assert.equal(url,'/v1/batches');
+    assert.equal(JSON.parse(request.body).input_file_id,fixtures['#existing-input-id'].value);
+    if(calls.length===1)throw new TypeError('Lost acknowledgement');
+    return jsonResponse({id:'batch-reused'});
+  },storage(),fixtures);
+  app.state.inputMode='existing';
+  await app.createBatch({preventDefault(){}});
+  assert.equal(app.observed.opened.length,0);
+  await app.createBatch({preventDefault(){}});
+  assert.equal(calls[0].key,calls[1].key);
+  assert.equal(calls[0].body,calls[1].body);
+  assert.equal(app.observed.opened.at(-1),'batch-reused');
+  assert.equal(fixtures['#create-dialog'].closes,1);
+});
+
+test('invalid reusable file ID never creates or uploads work', async () => {
+  const fixtures=createFixtures();fixtures['#existing-input-id'].value='../another-workspace';
+  let requests=0;
+  const app=harness(async()=>{requests++;},storage(),fixtures);app.state.inputMode='existing';
+  await app.createBatch({preventDefault(){}});
+  assert.equal(requests,0);assert.match(fixtures['#create-error'].textContent,/valid input file ID/);
+});
+
+test('workspace switch during upload prevents creating tasks under the next key', async () => {
+  const fixtures=createFixtures(),calls=[];
+  const app=harness(async (url) => {
+    calls.push(url);app.state.key='next-workspace';return jsonResponse({id:'file_'+'a'.repeat(32)});
+  },storage(),fixtures);
+  app.state.inputMode='upload';app.state.uploadFile=new File(['private test request'],'input.jsonl');
+  await app.createBatch({preventDefault(){}});
+  assert.deepEqual(calls,['/v1/files']);assert.equal(app.observed.opened.length,0);
+});
+
+test('workspace switch after create does not show an old-workspace result', async () => {
+  const fixtures=createFixtures();
+  const app=harness(async()=>{app.state.key='next-workspace';return jsonResponse({id:'old-workspace-batch'});},storage(),fixtures);
+  app.state.inputMode='existing';await app.createBatch({preventDefault(){}});
+  assert.equal(app.observed.opened.length,0);assert.equal(fixtures['#create-dialog'].closes,0);
 });
 
 test('a confirmed cancellation still reports cancellation', async () => {

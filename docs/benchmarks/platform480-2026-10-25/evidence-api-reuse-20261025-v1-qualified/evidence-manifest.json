@@ -1,0 +1,25 @@
+{
+  "collected_at": "2026-10-25T15:04:47.268923+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-reuse-20261025-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 18782,
+      "sha256": "6a67968b96c87ef477834cb5d5a1c0d4471e55c99589c066270e16840036c92b",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign-launcher.json": {
+      "bytes": 662,
+      "sha256": "e61d49849f07a8086c3efe28c170ebcc7c50c104c0eb94f35107dc56386e2018",
+      "source_relative_path": "campaign-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 2155,
+      "sha256": "07105648ae792515475c113bb655d4c3643209c5f13a523f2b03ab041f2d6e40",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

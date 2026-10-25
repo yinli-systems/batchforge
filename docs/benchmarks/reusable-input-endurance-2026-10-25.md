@@ -38,7 +38,27 @@ forcing output lengths; prompts are never exported as evidence.
 - Every failure is retained. New submissions cannot begin without enough time
   to finish admission and drain before 2026-10-26 09:00 UTC.
 
+At 15:04 UTC, immutable successor source `9415736` passed real Azure read-only
+schema-11 compatibility, exact input metadata/expiry checks and independent
+authenticated S3 byte readback. The public mixture contains 13,600 requested
+output tokens per 20-task batch. The
+[qualification and launcher](platform480-2026-10-25/evidence-api-reuse-20261025-v1-qualified/evidence-manifest.json)
+are exported with SHA-256 verification. One successor is queued in
+`waiting_release`; qualification did not submit any GPU task or change services.
+
 This is a new endurance and artifact-reuse experiment. Fixed order and offered
 load differ from the original shuffled 0.5 task/s study, so its latency and
 throughput cannot establish a controlled improvement over that study. No real
 successor results are claimed in this preregistration.
+
+## Console follow-up
+
+A separately reviewed console change adds **Use existing input** to Create batch.
+It accepts an existing input ID, skips upload, and creates new tasks through the
+same API. It preserves a submission key when retrying a lost create response in
+the open dialog; changing inputs starts a new attempt. This in-memory create
+attempt does not survive a page reload. Workspace changes stop later submission
+steps and discard stale responses. The server remains authoritative for ownership,
+expiry, model support and quota checks. This frontend change is not part of either
+immutable running/queued snapshot and is **not deployed** with source `831b839`.
+Twenty Node regression checks passed; browser visual QA remains unavailable.

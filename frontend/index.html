@@ -169,6 +169,11 @@
                   role="tab"
                   aria-selected="false"
                   data-input-mode="paste">Paste requests</button>
+          <button class="input-tab"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-input-mode="existing">Use existing input</button>
         </div>
         <div id="upload-pane">
           <label class="dropzone" id="dropzone" for="batch-file">
@@ -184,6 +189,11 @@
                     class="code-input"
                     spellcheck="false"
                     placeholder='{"custom_id":"task-001","method":"POST","url":"/v1/chat/completions","body":{"model":"…","messages":[…]}}'></textarea>
+        </div>
+        <div id="existing-pane" hidden>
+          <label class="field-label" for="existing-input-id">Input file ID</label>
+          <input id="existing-input-id" placeholder="file_…" maxlength="100" autocomplete="off" spellcheck="false">
+          <p class="drawer-note">Reuse a retained input from this workspace without uploading it again. Find its ID in batch execution details. This creates new tasks with the original model and requests; input retention stays unchanged. Expired or unavailable inputs cannot be reused.</p>
         </div>
         <div class="sample-row">
           <button class="text-button" type="button" id="load-sample">

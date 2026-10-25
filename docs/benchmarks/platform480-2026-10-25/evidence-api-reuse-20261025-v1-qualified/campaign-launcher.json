@@ -1,0 +1,20 @@
+{
+  "identity": {
+    "pid": 587745,
+    "start_ticks": "46411269",
+    "cwd": "/root/batchforge-runtime/evidence-api-reuse-20261025-v1/source"
+  },
+  "source_commit": "9415736bd28ae57921abdd553ebf983bfb902d73",
+  "command": [
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "ops.reuse_input_campaign",
+    "--run",
+    "/root/batchforge-runtime/soak480-reuse-20261025-v1",
+    "--wait-release",
+    "/root/batchforge-runtime/quality-api-release-20261025-v1",
+    "--predecessor",
+    "/root/batchforge-runtime/soak480-20261025-v1"
+  ],
+  "scope": "One finite 3600-task reuse campaign; zero new input uploads, no service/cloud/retention changes"
+}

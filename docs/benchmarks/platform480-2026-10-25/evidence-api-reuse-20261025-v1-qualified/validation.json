@@ -1,0 +1,92 @@
+{
+  "passed": true,
+  "source_commit": "9415736bd28ae57921abdd553ebf983bfb902d73",
+  "gpu_inference_submitted": false,
+  "database_mutations": false,
+  "service_changes": false,
+  "read_only_verified": true,
+  "actual_schema11_reuse_query": true,
+  "independent_api_byte_readback": true,
+  "public_fixture_mixture": true,
+  "input_sha256": "c8998a6c7b9e7a3d31d41bd9b5b83f1975a75414835921a4a5dcf6dd195544aa",
+  "input_bytes": 518830,
+  "output_cap_per_batch": 13600,
+  "input_file_id": "file_c451ec1c6c78269b4e9c4d3dd0c1ddfc",
+  "capacity": {
+    "retention": {
+      "max_retained_tasks": 50000,
+      "max_payload_bytes": 335544320,
+      "retained_tasks": 42857,
+      "charged_payload_bytes": 232625000
+    },
+    "auxiliary": [
+      {
+        "resource": "archive_chunks",
+        "max_rows": 20000,
+        "max_bytes": 0,
+        "rows": 393,
+        "bytes": 0
+      },
+      {
+        "resource": "archive_runs",
+        "max_rows": 2000,
+        "max_bytes": 0,
+        "rows": 395,
+        "bytes": 0
+      },
+      {
+        "resource": "blob_generations",
+        "max_rows": 2000,
+        "max_bytes": 0,
+        "rows": 471,
+        "bytes": 0
+      },
+      {
+        "resource": "idempotency",
+        "max_rows": 4096,
+        "max_bytes": 134217728,
+        "rows": 811,
+        "bytes": 53149696
+      },
+      {
+        "resource": "input_files",
+        "max_rows": 2000,
+        "max_bytes": 0,
+        "rows": 832,
+        "bytes": 0
+      },
+      {
+        "resource": "input_read_leases",
+        "max_rows": 128,
+        "max_bytes": 0,
+        "rows": 0,
+        "bytes": 0
+      },
+      {
+        "resource": "result_read_leases",
+        "max_rows": 128,
+        "max_bytes": 0,
+        "rows": 0,
+        "bytes": 0
+      },
+      {
+        "resource": "upload_reservations",
+        "max_rows": 32,
+        "max_bytes": 0,
+        "rows": 0,
+        "bytes": 0
+      }
+    ],
+    "queue": {
+      "pending": 0,
+      "running": 30,
+      "completed": 42648,
+      "failed": 179,
+      "cancelled": 0
+    },
+    "cleanup": {
+      "terminal_batches_pending_purge": 0,
+      "oldest_terminal_age_seconds": null
+    }
+  }
+}

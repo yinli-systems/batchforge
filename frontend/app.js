@@ -618,6 +618,7 @@ async function connect(event) {
     state.batches = [];
     state.loadedMore = false;
     state.models = [];
+    state.createAttempt = null;
     resetQualityEvidence();
     if (state.detailId) closeDrawer();
     storage.set(key);
@@ -652,6 +653,7 @@ function disconnect() {
     hasMore: false,
     loadedMore: false,
     detail: null,
+    createAttempt: null,
     detailId: null
   });
   $('#connect-dialog').close();
@@ -668,13 +670,14 @@ function setInputMode(mode) {
   });
   $('#upload-pane').hidden = mode !== 'upload';
   $('#paste-pane').hidden = mode !== 'paste';
+  $('#existing-pane').hidden = mode !== 'existing';
   state.createAttempt = null;
   updateInputCount()
 }
 
 function updateInputCount() {
   const lines = $('#batch-jsonl').value.split(/\r?\n/).filter(s => s.trim()).length;
-  $('#input-line-count').textContent = state.inputMode === 'paste' ?
+  $('#input-line-count').textContent = state.inputMode === 'existing' ? 'Existing input · no upload' : state.inputMode === 'paste' ?
     `${number(lines)} request${lines===1?'':'s'}` : state.uploadFile ?
     `${number(state.uploadFile.size)} bytes` : 'JSONL format'
 }
@@ -696,22 +699,25 @@ async function openCreate() {
   $('#create-form').reset();
   state.uploadFile = null;
   state.createAttempt = null;
+  const key = state.key;
   $('#upload-label').textContent = 'Drop a JSONL file here';
   $('#upload-description').innerHTML = 'or <u>browse files</u> · one request per line';
   if (!state.models.length) {
     try {
-      state.models = (await api('/v1/models')).data || []
+      const models = await api('/v1/models');
+      if (state.key !== key) return;
+      state.models = models.data || []
     } catch (error) {
       toast(error.message, 'error')
     }
   }
+  if (state.key !== key) return;
   $('#batch-model').innerHTML = state.models.length ? state.models.map(m =>
       `<option value="${esc(m.id)}">${esc(m.id)}</option>`).join('') :
     '<option value="">No models registered</option>';
   setInputMode('upload');
   $('#create-dialog').showModal();
   $('#capacity-notice').textContent = 'Checking workspace admission headroom…';
-  const key = state.key;
   try {
     const capacity = await api('/v1/capacity');
     if (state.key !== key || !$('#create-dialog').open) return;
@@ -784,13 +790,19 @@ function validatePaste(text) {
 async function createBatch(event) {
   event.preventDefault();
   const submit = $('#create-submit');
+  if (submit.disabled) return;
+  const key = state.key;
   submit.disabled = true;
   $('#create-error').hidden = true;
   try {
     let attempt = state.createAttempt;
+    if (!key || attempt && attempt.workspaceKey !== key) throw new Error('Workspace changed. Reopen Create batch before submitting.');
     if (!attempt) {
-      let file;
-      if (state.inputMode === 'paste') {
+      let file, inputId;
+      if (state.inputMode === 'existing') {
+        inputId = $('#existing-input-id').value.trim();
+        if (!/^file_[0-9a-f]{32}$/.test(inputId)) throw new Error('Enter a valid input file ID from this workspace.');
+      } else if (state.inputMode === 'paste') {
         const text = validatePaste($('#batch-jsonl').value);
         file = new File([text], 'requests.jsonl', {
           type: 'application/jsonl'
@@ -800,19 +812,21 @@ async function createBatch(event) {
         if (!file) throw new Error('Choose a JSONL file or paste requests to create a batch.');
         if (!file.size) throw new Error('The selected file is empty.')
       }
-      submit.innerHTML = '<span class="spinner"></span>Uploading requests…';
-      const data = new FormData();
-      data.append('file', file);
-      data.append('purpose', 'batch');
-      const uploaded = await api('/v1/files', {
-        method: 'POST',
-        body: data
-      });
+      if (!inputId) {
+        submit.innerHTML = '<span class="spinner"></span>Uploading requests…';
+        const data = new FormData();
+        data.append('file', file);
+        data.append('purpose', 'batch');
+        const uploaded = await api('/v1/files', {method: 'POST', body: data});
+        if (state.key !== key) throw new Error('Workspace changed. Submission stopped before creating tasks.');
+        inputId = uploaded.id;
+      }
       const name = $('#batch-name').value.trim();
       attempt = {
         key: newIdempotencyKey(),
+        workspaceKey: key,
         payload: {
-          input_file_id: uploaded.id,
+          input_file_id: inputId,
           endpoint: '/v1/chat/completions',
           completion_window: '24h',
           metadata: name ? {
@@ -830,6 +844,8 @@ async function createBatch(event) {
       },
       body: JSON.stringify(attempt.payload)
     });
+    if (state.key !== key) return;
+    if (!batch?.id) throw new Error('The response did not include a batch ID. Retry with the same submission attempt.');
     $('#create-dialog').close();
     state.createAttempt = null;
     toast('Batch submitted. Tasks are durably queued.');
@@ -838,8 +854,10 @@ async function createBatch(event) {
       silent: true,
       includeBatches: true
     });
+    if (state.key !== key) return;
     await openBatch(batch.id)
   } catch (error) {
+    if (state.key !== key) return;
     $('#create-error').textContent = error.message;
     $('#create-error').hidden = false
   } finally {
@@ -1237,6 +1255,9 @@ $('#batch-jsonl').addEventListener('input', () => {
   updateInputCount()
 });
 $('#batch-name').addEventListener('input', () => {
+  state.createAttempt = null
+});
+$('#existing-input-id').addEventListener('input', () => {
   state.createAttempt = null
 });
 $('#load-sample').addEventListener('click', loadSample);
