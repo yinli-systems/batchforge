@@ -29,6 +29,7 @@ import io, tarfile, base64, hashlib, json, re
 root=Path(root)
 paths=[]
 for name in ['source-receipt.json','storage-preflight.json','launcher-v1.json',
+             'hardware-topology.json',
              'launcher-v2.json','queue-report.json','queue.py','queue-v2.py',
              'controller-v1.log','queue-v2.log',
              'launcher-v3.json','successor-v3.py','successor-v3.log',
