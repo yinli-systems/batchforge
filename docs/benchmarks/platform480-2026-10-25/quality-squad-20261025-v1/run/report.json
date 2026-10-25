@@ -1,0 +1,41 @@
+{
+  "protocol": "squad-1.1-em-f1-v1",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "tasks": 10570,
+  "scope": "complete dev set",
+  "seed": 20261025,
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+  "max_tokens": 128,
+  "min_tokens": null,
+  "temperature": 0,
+  "deadline_seconds": 3600,
+  "quality_gate": {
+    "minimum_exact_match": 0.7,
+    "minimum_f1": 0.8
+  },
+  "workload_sha256": "6e508e0b432ed65260af48470aafe61136d0559a70c6da61561d74af11109248",
+  "source_sha256": "c63ccd285378b838eb5b12e95a03868be9847d3ed6135807c1c1dcd917d94f1e",
+  "benchmark_sha256": "237cf4c492975beb801e031bc42d9586eeb58d4b5eb0bb00e848c514c6029bc1",
+  "limitations": [
+    "Public dev set, not a hidden test or contamination audit",
+    "Deadline applies to the complete client-observed cohort; no per-task on-time claim if exceeded",
+    "Real inference quality run; not comparable to forced-length capacity experiments"
+  ],
+  "input_bytes": 13663957,
+  "max_batch_input_bytes": 1500131,
+  "passed": false,
+  "delivery_passed": false,
+  "deadline_met": false,
+  "predictions": 0,
+  "missing": 10570,
+  "exact_match_percent": 0.0,
+  "f1_percent": 0.0,
+  "elapsed_seconds": 13.985907,
+  "exact_results_per_second": 0.0,
+  "on_time_exact_results_per_second": null,
+  "batch_ids": [],
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "cost": null
+}

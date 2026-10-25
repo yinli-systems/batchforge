@@ -1,0 +1,24 @@
+{
+  "pid": 579186,
+  "command": [
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "scripts.quality_eval",
+    "--dataset",
+    "/root/batchforge-runtime/app/.runtime/public-data/dev-v1.1.json",
+    "--out",
+    "/root/batchforge-runtime/quality-squad-20261025-v3/run",
+    "--runtime-fingerprint",
+    "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+    "--tasks",
+    "10570",
+    "--deadline",
+    "3600",
+    "--min-em",
+    ".70",
+    "--min-f1",
+    ".80"
+  ],
+  "source_commit": "bd410d4d6a9d3cca67ab46996e64da8ce7d69197",
+  "scope": "Full 10570-question public SQuAD 1.1 quality run, existing primary worker; one bounded submission"
+}

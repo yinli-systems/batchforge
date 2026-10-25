@@ -588,3 +588,13 @@ def test_actual_schema10_readonly_queries_and_no_mutations():
             observer.close()
         with psycopg.connect(source, autocommit=True) as conn:
             conn.execute(sql.SQL("DROP DATABASE {} WITH(FORCE)").format(sql.Identifier(name)))
+
+
+def test_unknown_invoice_does_not_disable_authorized_existing_gpu_work(tmp_path):
+    config=configuration(tasks=1,tasks_per_batch=1,hourly_cost=None)
+    journal=soak.Journal(tmp_path,config)
+    report=soak.summarize(journal,[],[],3600)
+    assert report['cost']['allocation_usd'] is None
+    assert report['cost']['usd_per_million_completed_tasks'] is None
+    assert report['cost']['measured_invoice'] is None
+    journal.close()

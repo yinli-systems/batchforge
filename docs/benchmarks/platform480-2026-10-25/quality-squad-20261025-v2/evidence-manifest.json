@@ -1,0 +1,43 @@
+{
+  "collected_at": "2026-10-25T13:24:10.081553+00:00",
+  "source_run": "/root/batchforge-runtime/quality-squad-20261025-v2",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 17726,
+      "sha256": "9d40bb8483ddf7614d631bd82708f270938b0a5a85f134df882819353ab5079a",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "launcher.json": {
+      "bytes": 683,
+      "sha256": "ddb4bdf64dc557bcce92cca1bfa612753b98217e6294ae7957b90bcc11925322",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/plan.json": {
+      "bytes": 1179,
+      "sha256": "3273bd80d61c794925ee68d53ba42f34fd2fca21fe7e5cdf38bc20dc967bc5c3",
+      "source_relative_path": "run/plan.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/benchmark.json": {
+      "bytes": 90671,
+      "sha256": "26db0e09c9348608102f7da95570554e2487234f8fd68210902997899aba9797",
+      "source_relative_path": "run/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/report.json": {
+      "bytes": 1634,
+      "sha256": "4af51db5db635eab8798f186186ef8ee4a5d82aecb9212e6c2fe835986caf891",
+      "source_relative_path": "run/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/scores.jsonl": {
+      "bytes": 844478,
+      "sha256": "40a182bdd2a52aacfb3a930da6c653726bacadabec6ad9b9d0531b342ef95923",
+      "source_relative_path": "run/scores.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

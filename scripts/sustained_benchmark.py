@@ -576,7 +576,7 @@ def summarize(journal, tasks, observations, elapsed, runtime_apis=None, plan=Non
     segment_span = sum(gap for gap in gaps if gap <= 2 * config.get("sample_seconds", 10))
     all_gaps = ([max(0, instants[0] - journal.state["started_epoch"])] + gaps +
                 [max(0, journal.state["started_epoch"] + elapsed - instants[-1])]) if instants else [elapsed]
-    allocation = elapsed * config["hourly_cost"] / 3600
+    allocation = elapsed * config["hourly_cost"] / 3600 if config.get('hourly_cost') is not None else None
     snapshots = [sample["quota"] for sample in observations if "quota" in sample]
     gpu = {}
     for sample in observations:
@@ -608,8 +608,9 @@ def summarize(journal, tasks, observations, elapsed, runtime_apis=None, plan=Non
         "latency_definition": "database batch.created_at to accepted task.finished_at; includes durable queue; excludes client upload/admission waiting",
         "scheduled_latency_definition": "accepted task.finished_at minus persisted job start plus deterministic cohort release offset; includes upload, 429 backoff, local concurrency and disconnect delay",
         "cost": {"assumed_whole_pod_usd_per_hour": config["hourly_cost"], "allocation_usd": allocation,
-                 "usd_per_million_completed_tasks": allocation / len(completed) * 1e6 if completed else None,
-                 "basis": "operator supplied whole-Pod allocation; includes idle, backoff, drain, validation and disconnect wall time; not invoice or marginal cost"},
+                 "usd_per_million_completed_tasks": allocation / len(completed) * 1e6 if completed and allocation is not None else None,
+                 "measured_invoice":None,
+                 "basis": "operator supplied whole-Pod allocation; includes idle, backoff, drain, validation and disconnect wall time; not invoice or marginal cost" if allocation is not None else "Current price unknown; allocation and invoice are unmeasured"},
         "http_rejections": {field: sum(row.get(field, 0) for row in states) for field in
             ("upload_429", "upload_not_forwarded", "create_429", "uncertain_create_responses")},
         "gpu_utilization_percent": {key: distribution(values) for key, values in sorted(gpu.items())},
@@ -770,7 +771,7 @@ def parser():
     result.add_argument("--drain-seconds", type=float, default=1200)
     result.add_argument("--max-inflight-tasks", type=int, default=128)
     result.add_argument("--submission-concurrency", type=int, default=2)
-    result.add_argument("--hourly-cost", type=float, required=True, help="Explicit whole-Pod allocation scenario, not invoice")
+    result.add_argument("--hourly-cost", type=float, default=None, help="Optional explicit whole-Pod allocation scenario; unknown stays null, never invoice")
     result.add_argument("--poll-seconds", type=float, default=2)
     result.add_argument("--sample-seconds", type=float, default=10)
     result.add_argument("--request-timeout", type=float, default=120)
@@ -791,6 +792,7 @@ def validate_args(args):
               "poll_seconds": (.1, 30), "sample_seconds": (1, 60), "request_timeout": (1, 180), "hourly_cost": (0, 100000)}
     for name, (low, high) in ranges.items():
         value = getattr(args, name)
+        if name=='hourly_cost' and value is None:continue
         if not math.isfinite(value) or not low <= value <= high:
             raise SafetyError("Nonfinite or out-of-range bounded configuration")
     args.state_dir = args.state_dir or Path(".runtime/sustained") / args.job_id

@@ -1,0 +1,374 @@
+{
+  "schema_version": 2,
+  "run_id": "bench-0e647784c5f7",
+  "observed_at": "2026-10-25T12:46:50.993361+00:00",
+  "measurement_started_at": "2026-10-25T12:46:37.005736+00:00",
+  "terminal_observation_ended_at": "2026-10-25T12:46:50.991668+00:00",
+  "passed": false,
+  "measurement": "client observed submission through terminal observation; output validation measured separately",
+  "engine_label": "squad-quality-run",
+  "test_fixture_detected": false,
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "requested_tasks": 10570,
+  "submitted_tasks": 0,
+  "batches": 11,
+  "accepted_batches": 0,
+  "terminal_batches": 0,
+  "requested_max_output_tokens": 128,
+  "elapsed_seconds": 13.985907,
+  "completed": 0,
+  "failed": 0,
+  "cancelled": 0,
+  "unfinished_batch_ids": [],
+  "submission_errors": [
+    {
+      "batch_index": 0,
+      "input_file_id": "file_229bede5c1bf9d8b874c8f85735cbd36",
+      "idempotency_key": "bench-0e647784c5f7-0",
+      "stage": "create",
+      "type": "HTTPStatusError",
+      "http_status": 429,
+      "create_outcome_uncertain": false
+    },
+    {
+      "batch_index": 1,
+      "input_file_id": "file_8ef66b1db46c618d4f9072810148791e",
+      "idempotency_key": "bench-0e647784c5f7-1",
+      "stage": "create",
+      "type": "HTTPStatusError",
+      "http_status": 429,
+      "create_outcome_uncertain": false
+    },
+    {
+      "batch_index": 2,
+      "input_file_id": "file_4a3106fd3f1a65d24c73a26d5b9704c6",
+      "idempotency_key": "bench-0e647784c5f7-2",
+      "stage": "create",
+      "type": "HTTPStatusError",
+      "http_status": 429,
+      "create_outcome_uncertain": false
+    },
+    {
+      "batch_index": 3,
+      "input_file_id": "file_fa662bc1b2f5019ee1075f1bf9a96431",
+      "idempotency_key": "bench-0e647784c5f7-3",
+      "stage": "create",
+      "type": "HTTPStatusError",
+      "http_status": 429,
+      "create_outcome_uncertain": false
+    },
+    {
+      "batch_index": 4,
+      "input_file_id": "file_221a620b81c1e63e4d8b25eada82e7b3",
+      "idempotency_key": "bench-0e647784c5f7-4",
+      "stage": "create",
+      "type": "HTTPStatusError",
+      "http_status": 429,
+      "create_outcome_uncertain": false
+    },
+    {
+      "batch_index": 5,
+      "input_file_id": "file_cbd554c37d017e84fcb118a3ebbbe44e",
+      "idempotency_key": "bench-0e647784c5f7-5",
+      "stage": "create",
+      "type": "HTTPStatusError",
+      "http_status": 429,
+      "create_outcome_uncertain": false
+    },
+    {
+      "batch_index": 6,
+      "input_file_id": "file_3c4a0193169ab3e94067ff2b022d6f43",
+      "idempotency_key": "bench-0e647784c5f7-6",
+      "stage": "create",
+      "type": "HTTPStatusError",
+      "http_status": 429,
+      "create_outcome_uncertain": false
+    },
+    {
+      "batch_index": 7,
+      "input_file_id": "file_ace9708e25d37f1626aacf83663eec90",
+      "idempotency_key": "bench-0e647784c5f7-7",
+      "stage": "create",
+      "type": "HTTPStatusError",
+      "http_status": 429,
+      "create_outcome_uncertain": false
+    },
+    {
+      "batch_index": 8,
+      "input_file_id": "file_5280f615832dc26d1934006bbfebd159",
+      "idempotency_key": "bench-0e647784c5f7-8",
+      "stage": "create",
+      "type": "HTTPStatusError",
+      "http_status": 429,
+      "create_outcome_uncertain": false
+    },
+    {
+      "batch_index": 9,
+      "input_file_id": "file_89d7faa6f9358d4dadfe879a0bb94610",
+      "idempotency_key": "bench-0e647784c5f7-9",
+      "stage": "create",
+      "type": "HTTPStatusError",
+      "http_status": 429,
+      "create_outcome_uncertain": false
+    },
+    {
+      "batch_index": 10,
+      "input_file_id": "file_eb695facdff51d3dd07b002185188d29",
+      "idempotency_key": "bench-0e647784c5f7-10",
+      "stage": "create",
+      "type": "HTTPStatusError",
+      "http_status": 429,
+      "create_outcome_uncertain": false
+    }
+  ],
+  "output_validation_errors": [],
+  "completed_tasks_per_second": 0.0,
+  "observed_prompt_tokens": 0,
+  "observed_completion_tokens": 0,
+  "prompt_tokens_per_task": {
+    "samples": 0,
+    "p50": null,
+    "p95": null,
+    "p99": null,
+    "max": null,
+    "mean": null
+  },
+  "completion_tokens_per_task": {
+    "samples": 0,
+    "p50": null,
+    "p95": null,
+    "p99": null,
+    "max": null,
+    "mean": null
+  },
+  "output_finish_reasons": {},
+  "output_content": {
+    "rows_with_valid_content_shape": 0,
+    "final_text_present": 0,
+    "reasoning_only": 0,
+    "no_final_text": 0,
+    "length_capped": 0,
+    "final_text_codepoints": 0,
+    "reasoning_text_codepoints": 0,
+    "population": "Durable output rows with valid choice/message shapes; length_capped means any choice ended with length",
+    "quality_evaluated": false,
+    "durable_completion_distinct_from_final_answer": true
+  },
+  "output_custom_ids_unique": true,
+  "output_custom_ids_known": true,
+  "output_rows_match_completed": true,
+  "batch_counts_match_submission": true,
+  "batch_ids": [],
+  "workload": {
+    "sha256": "ca4d5868453b792c9470146cd8b07b2a4089bb8ddeb6c4b1ab93ce8f6ed807bb",
+    "hash_definition": "concatenated exact JSONL bytes in batch_index order",
+    "provided_source_sha256": "6e508e0b432ed65260af48470aafe61136d0559a70c6da61561d74af11109248",
+    "bytes": 13663957,
+    "generation_seconds": 0.243017,
+    "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+    "prompt": null,
+    "generation_mode": "provided-jsonl",
+    "message_template": "exact provided messages; run_id prepended to custom_id",
+    "max_tokens": 128,
+    "temperature": 0,
+    "tasks_per_batch": [
+      961,
+      961,
+      961,
+      961,
+      961,
+      961,
+      961,
+      961,
+      961,
+      961,
+      960
+    ]
+  },
+  "submission": {
+    "elapsed_seconds": 13.985906,
+    "attempted_http_requests": 22,
+    "successful_http_requests": 11,
+    "requests_per_second": 1.573012,
+    "successful_requests_per_second": 0.786506,
+    "accepted_batches_per_second": 0.0,
+    "accepted_tasks_per_second": 0.0,
+    "upload_latency_seconds": {
+      "samples": 11,
+      "p50": 0.732202,
+      "p95": 1.379178,
+      "p99": 1.441349,
+      "max": 1.456891,
+      "mean": 0.90429
+    },
+    "create_latency_seconds": {
+      "samples": 11,
+      "p50": 1.44082,
+      "p95": 2.008019,
+      "p99": 2.063853,
+      "max": 2.077812,
+      "mean": 1.506573
+    },
+    "latency_population": "all attempted requests, including failures",
+    "request_population": "POST /v1/files and POST /v1/batches only; excludes polling and downloads"
+  },
+  "batch_turnaround_seconds": {
+    "samples": 0,
+    "p50": null,
+    "p95": null,
+    "p99": null,
+    "max": null,
+    "mean": null
+  },
+  "batch_after_acceptance_seconds": {
+    "samples": 0,
+    "p50": null,
+    "p95": null,
+    "p99": null,
+    "max": null,
+    "mean": null
+  },
+  "batch_upload_to_terminal_seconds": {
+    "samples": 0,
+    "p50": null,
+    "p95": null,
+    "p99": null,
+    "max": null,
+    "mean": null
+  },
+  "percentile_method": "linear interpolation at (n-1)*p",
+  "output_validation_seconds": 0.000163,
+  "poll_interval_seconds": 1,
+  "per_batch_deadline_seconds": 3600,
+  "batch_observations": [
+    {
+      "index": 0,
+      "tasks": 961,
+      "batch_id": null,
+      "status": null,
+      "upload_seconds": 0.703908,
+      "create_seconds": 1.933766,
+      "turnaround_seconds": null,
+      "request_counts": null,
+      "poll_errors": []
+    },
+    {
+      "index": 1,
+      "tasks": 961,
+      "batch_id": null,
+      "status": null,
+      "upload_seconds": 0.582332,
+      "create_seconds": 1.27157,
+      "turnaround_seconds": null,
+      "request_counts": null,
+      "poll_errors": []
+    },
+    {
+      "index": 2,
+      "tasks": 961,
+      "batch_id": null,
+      "status": null,
+      "upload_seconds": 1.194623,
+      "create_seconds": 1.060072,
+      "turnaround_seconds": null,
+      "request_counts": null,
+      "poll_errors": []
+    },
+    {
+      "index": 3,
+      "tasks": 961,
+      "batch_id": null,
+      "status": null,
+      "upload_seconds": 0.536591,
+      "create_seconds": 1.726133,
+      "turnaround_seconds": null,
+      "request_counts": null,
+      "poll_errors": []
+    },
+    {
+      "index": 4,
+      "tasks": 961,
+      "batch_id": null,
+      "status": null,
+      "upload_seconds": 1.198465,
+      "create_seconds": 1.089096,
+      "turnaround_seconds": null,
+      "request_counts": null,
+      "poll_errors": []
+    },
+    {
+      "index": 5,
+      "tasks": 961,
+      "batch_id": null,
+      "status": null,
+      "upload_seconds": 0.534952,
+      "create_seconds": 1.938227,
+      "turnaround_seconds": null,
+      "request_counts": null,
+      "poll_errors": []
+    },
+    {
+      "index": 6,
+      "tasks": 961,
+      "batch_id": null,
+      "status": null,
+      "upload_seconds": 1.456891,
+      "create_seconds": 1.44082,
+      "turnaround_seconds": null,
+      "request_counts": null,
+      "poll_errors": []
+    },
+    {
+      "index": 7,
+      "tasks": 961,
+      "batch_id": null,
+      "status": null,
+      "upload_seconds": 0.732202,
+      "create_seconds": 2.077812,
+      "turnaround_seconds": null,
+      "request_counts": null,
+      "poll_errors": []
+    },
+    {
+      "index": 8,
+      "tasks": 961,
+      "batch_id": null,
+      "status": null,
+      "upload_seconds": 1.301465,
+      "create_seconds": 1.169717,
+      "turnaround_seconds": null,
+      "request_counts": null,
+      "poll_errors": []
+    },
+    {
+      "index": 9,
+      "tasks": 961,
+      "batch_id": null,
+      "status": null,
+      "upload_seconds": 0.541109,
+      "create_seconds": 1.85466,
+      "turnaround_seconds": null,
+      "request_counts": null,
+      "poll_errors": []
+    },
+    {
+      "index": 10,
+      "tasks": 960,
+      "batch_id": null,
+      "status": null,
+      "upload_seconds": 1.164649,
+      "create_seconds": 1.010435,
+      "turnaround_seconds": null,
+      "request_counts": null,
+      "poll_errors": []
+    }
+  ],
+  "limitations": [
+    "Not a daily capacity forecast",
+    "Token lengths are measured from outputs, not guaranteed by the prompt",
+    "Batch turnaround starts before POST /v1/batches and ends at first client-observed terminal response; polling adds observation delay",
+    "No per-task inference latency or quality evaluation; final text presence is counted separately from durable completion",
+    "Reported generated tokens can include reasoning and control tokens; reasoning-only length-capped outputs remain durable completions",
+    "Accepted counts require a received create acknowledgement; uncertain create errors may have committed server-side"
+  ]
+}
