@@ -51,6 +51,7 @@ class Submission:
     batch: dict | None = None
     error: dict | None = None
     poll_errors: list[dict] = field(default_factory=list)
+    create_retry_errors: list[dict] = field(default_factory=list)
 
 
 def generate_workload(args, run_id: str) -> list[Submission]:
@@ -204,13 +205,30 @@ async def run(args, *, transport=None) -> dict:
                     item.error={'stage':'create','type':'RunDeadlineExceeded','http_status':None,'create_outcome_uncertain':False}
                     return
                 request_started = item.create_started_at = time.monotonic()
-                attempted_requests += 1
                 try:
-                    response = await client.post("/v1/batches", timeout=min(args.request_timeout,max(.1,global_deadline-time.monotonic())),json={"input_file_id": item.file_id,
-                        "endpoint": "/v1/chat/completions", "completion_window": "24h",
-                        "metadata": {**getattr(args,'metadata',{}), "benchmark_run": run_id, "engine_label": args.engine_label}},
-                        headers={"Idempotency-Key": f"{run_id}-{item.index}"})
-                    response.raise_for_status()
+                    # Transient/ambiguous creates can be retried only with the
+                    # exact body and key. Never upload again or generate a new key.
+                    create_body={"input_file_id":item.file_id,"endpoint":"/v1/chat/completions",
+                        "completion_window":"24h","metadata":{**getattr(args,'metadata',{}),
+                            "benchmark_run":run_id,"engine_label":args.engine_label}}
+                    retries=getattr(args,'create_retries',0)
+                    if type(retries) is not int or not 0<=retries<=5:raise ValueError('create_retries must be between 0 and 5')
+                    for retry in range(retries+1):
+                        attempted_requests += 1
+                        try:
+                            response=await client.post('/v1/batches',
+                                timeout=min(args.request_timeout,max(.1,global_deadline-time.monotonic())),
+                                json=create_body,headers={'Idempotency-Key':f'{run_id}-{item.index}'})
+                            response.raise_for_status()
+                            break
+                        except httpx.HTTPError as exc:
+                            transient=isinstance(exc,httpx.TransportError) or (
+                                isinstance(exc,httpx.HTTPStatusError) and exc.response.status_code in (502,503,504))
+                            if not transient or retry==retries:raise
+                            delay=min(2,.5*2**retry)
+                            if time.monotonic()+delay>=global_deadline:raise
+                            item.create_retry_errors.append({**request_error(exc,'create'),'retry':retry+1})
+                            await asyncio.sleep(delay)
                     item.batch = checked_batch(response.json())
                     successful_requests += 1
                     item.accepted_at = time.monotonic()
@@ -365,7 +383,7 @@ async def run(args, *, transport=None) -> dict:
             "create_seconds": round(item.create_seconds, 6) if item.create_seconds is not None else None,
             "turnaround_seconds": round(item.terminal_at - item.create_started_at, 6) if item.terminal_at else None,
             "request_counts": item.batch.get("request_counts") if item.batch else None,
-            "poll_errors": item.poll_errors} for item in submissions],
+            "poll_errors": item.poll_errors,"create_retry_errors":item.create_retry_errors} for item in submissions],
         "limitations": ["Not a daily capacity forecast", "Token lengths are measured from outputs, not guaranteed by the prompt",
             "Batch turnaround starts before POST /v1/batches and ends at first client-observed terminal response; polling adds observation delay",
             "No per-task inference latency or quality evaluation; final text presence is counted separately from durable completion",

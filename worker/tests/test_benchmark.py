@@ -211,3 +211,31 @@ async def test_global_deadline_prevents_waiting_uploads(monkeypatch, tmp_path):
     report = await run(args, transport=httpx.MockTransport(handle))
     assert report['submitted_tasks'] == 0 and len(uploads) == 1
     assert all(e['type'] == 'RunDeadlineExceeded' and not e['create_outcome_uncertain'] for e in report['submission_errors'])
+
+
+@pytest.mark.asyncio
+async def test_transient_create_reuses_exact_key_and_body_after_lost_ack(monkeypatch, tmp_path):
+    monkeypatch.setenv('BATCHFORGE_API_KEY', 'test-only-key')
+    args = arguments(tmp_path)
+    args.tasks = args.batches = 1
+    args.create_retries = 1
+    args.max_inflight_batches = 1
+    base = fixture_transport()
+    calls = []
+    committed = None
+
+    async def handle(request):
+        nonlocal committed
+        if request.url.path == '/v1/batches' and request.method == 'POST':
+            calls.append((request.headers['Idempotency-Key'], request.content))
+            if committed is None:
+                committed = (await base.handle_async_request(request)).json()
+                return httpx.Response(503, json={'error': {'code': 'service_unavailable'}})
+            return httpx.Response(200, json=committed)
+        return await base.handle_async_request(request)
+
+    report = await run(args, transport=httpx.MockTransport(handle))
+    assert report['passed'] and report['completed'] == 1
+    assert len(calls) == 2 and calls[0] == calls[1]
+    assert report['submission']['attempted_http_requests'] == 3
+    assert report['batch_observations'][0]['create_retry_errors'][0]['http_status'] == 503
