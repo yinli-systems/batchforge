@@ -1,0 +1,16 @@
+{
+  "phase": "waiting_quality",
+  "started_at": "2026-10-25T13:29:51.115661+00:00",
+  "quality_run": "/root/batchforge-runtime/quality-squad-20261025-v4",
+  "candidate": "/root/batchforge-runtime/evidence-api-20261025-v2",
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "cost": null,
+  "new_cloud_resources": false,
+  "model_switch": false,
+  "events": [
+    {
+      "phase": "waiting_quality",
+      "at": "2026-10-25T13:29:51.115671+00:00"
+    }
+  ]
+}

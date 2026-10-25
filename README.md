@@ -3,24 +3,26 @@
 Durable AI batch processing with a PostgreSQL control plane, fenced GPU workers,
 an OpenAI-shaped batch API, and an operations console backed by live data.
 
-The current experiment uses **one Pod with four dedicated H100 80GB GPUs**.
-The official FP8 Qwen3-235B-A22B-Instruct-2507 checkpoint (235B total, 22B active
-parameters) is running with TP4 across all four GPUs. The final schema10
-configuration, with automatic archival enabled, reduced its fixed 100-task
-mixed-length run from **809.62 to 250.15 seconds** (0.400 tasks/s), with P95/P99
-completion of **228.29/246.17 seconds**.
-All 100 tasks completed once with 545,280 input and 68,000 generated tokens.
-The earlier archival-OFF adaptive sample took 244.28 seconds; its equal-work
-NCCL experiment was 4.90% slower, so the custom collective was restored.
-These are single finite runs, not daily capacity or
-proof that one collective always wins. The preceding GPT-OSS-120B (116.83B total) 64-slot
-isolated 400-task mixed-length run completed every task in 143.27 seconds
-(2.79 tasks/s), with exactly 2,181,120 input and 272,000 generated tokens.
-This is a finite burst, not daily capacity. See the
-[single-Pod validation](docs/single-pod-validation-2026-10-24.md) for policy A/B,
-Prefill/Decode observations, failure and storage evidence, costs and limitations.
+The current private primary serves **Qwen3-Coder-480B-A35B AWQ** on one
+Pod with **four H100 80GB GPUs**, using TP4. This is a 480B-total / approximately
+35B-active MoE, not a dense 480B model. Three repeated ABBA blocks of real Batch
+API load measured exact-token32 versus static8 admission: **173.025 → 324.597
+output tokens/s**, pooled P95 **205.480 → 111.232 s** and P99 **234.285 →
+122.619 s**. These are correlated finite workloads, not daily capacity or an SLA.
+The 1,060-task platform campaign includes 120 process-fault recovery tasks,
+verified S3 readback and a separate real primary-entry qualification.
+See [480B platform evidence](docs/benchmarks/platform480-2026-10-25.md).
 
-Two API replicas and a private gateway use managed Neon PostgreSQL 17 and
+The complete 10,570-question public SQuAD quality campaign and a bounded
+2,400-task sustained-load successor are tracked separately. Delivery failures
+remain preserved; incomplete delivery is not reported as model accuracy.
+See [ground-truth evaluation and endurance protocol](docs/benchmarks/quality-squad-2026-10-25.md).
+
+Historical GPT-OSS-120B and Qwen3-235B runs remain in the
+[single-Pod validation](docs/single-pod-validation-2026-10-24.md).
+They are not the current serving model or comparable hidden quality tests.
+
+Two API replicas and a private gateway use managed Azure PostgreSQL 17 and
 verified private S3 artifacts. Workers use the local API; inference does not
 depend on an operator laptop relay. An app-owned watchdog uses process identity
 checks, bounded restart backoff and per-rank GPU memory gates. The transaction
@@ -35,24 +37,29 @@ run. Those measurements remain in [100B validation](docs/100b-validation.md),
 [evidence index](ops/reports/100b-release-evidence-2026-10-24.json).
 The current single Pod has no whole-Pod compute failover. Physical GPU reset,
 whole-Pod replacement and live KV migration remain untested.
-The managed database is currently on its free plan, without a production SLA.
+Current monetary costs are unmeasured; no new resource or paid upgrade is authorized by this campaign.
 Public paid ingress was prepared and deferred by the operator; access remains
 private. See [availability](docs/ha.md), [ingress](docs/ingress.md), and
 [second-Pod deployment](docs/pod2.md).
 
 ## Platform screenshots
 
-Current screenshots show the private single-Pod 235B deployment on October 24,
+These historical screenshots show the private single-Pod 235B deployment on October 24,
 2026, around 08:19 Asia/Dubai. The overview totals include historical runs;
 29 registered workers and 493 registered slots are historical, while only one
 worker is connected. Its 64 configured slots are a claim limit, not 64 full
-18K contexts or measured GPU utilization. [Current and historical screenshots](docs/screenshots/README.md).
+18K contexts or measured GPU utilization. [Historical console screenshots](docs/screenshots/README.md).
 
-![Current single-Pod workspace overview](docs/screenshots/qwen235b-overview-2026-10-24.jpg)
+![Historical single-Pod workspace overview](docs/screenshots/qwen235b-overview-2026-10-24.jpg)
 
-![Current Qwen3-235B worker and historical offline registrations](docs/screenshots/qwen235b-workers-2026-10-24.jpg)
+![Historical Qwen3-235B worker and offline registrations](docs/screenshots/qwen235b-workers-2026-10-24.jpg)
 
 ## Features
+
+The execution-evidence candidate adds tenant-scoped receipts, bounded task pages,
+WebCrypto checksum verification, independent artifact byte readback and logical
+admission headroom. Its real Azure/S3 canary is qualified; primary rollout waits
+for the active quality cohort to close and drain. See [execution evidence](docs/execution-evidence.md).
 
 - Upload JSONL chat-completion requests and submit a batch.
 - Follow progress, queue depth, worker health and measured token usage.

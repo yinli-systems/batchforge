@@ -63,3 +63,20 @@ Reference metric:
 [official SQuAD v1.1 evaluator](https://github.com/allenai/bi-att-flow/blob/master/squad/evaluate-v1.1.py).
 Dataset/license:
 [Stanford SQuAD](https://rajpurkar.github.io/SQuAD-explorer/).
+
+## Candidate and queued launch evidence
+
+The immutable `398db6f` candidate at private port 18150 passed real SQL/HTTP
+qualification and independent byte readback of both archived input and output.
+[Candidate evidence](platform480-2026-10-25/evidence-api-20261025-v2-launch/evidence-manifest.json)
+includes actual managed identities, source hashes and the first name-collision
+preflight rejection, which did not stop the existing canary or alter primary.
+The old v1 canary was stopped only after the distinct v2 qualified.
+
+The [queued campaign snapshot](platform480-2026-10-25/soak480-20261025-v1-queued/campaign.json)
+records independent controller PID 580284, started at 13:29:51 UTC on October 25.
+This snapshot is **waiting_quality**, not a completed rollout or endurance result.
+The launcher binds `/proc` start ticks and cwd; passive preflight verified all
+five primary service identities plus watchdog and the actual 62,259,600-byte /
+1,632,000-output-token plan. The controller and source snapshot survive client
+SSH disconnection but do not survive losing the entire container disk.

@@ -30,6 +30,7 @@ root=Path(root)
 paths=[]
 for name in ['source-receipt.json','storage-preflight.json','launcher-v1.json',
              'launcher.json','deployment.json','sql-validation.json','rollout.json','readback.json',
+             'campaign-launcher.json','initial-failure.json','passive-preflight.json',
              'campaign.json','.runtime/run/report.json','.runtime/run/observations.jsonl',
              'run/plan.json','run/benchmark.json','run/report.json','run/scores.jsonl',
              'run/observations.jsonl','run/runtime-apis.jsonl',

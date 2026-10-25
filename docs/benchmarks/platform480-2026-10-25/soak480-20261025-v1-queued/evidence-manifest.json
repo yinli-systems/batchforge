@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-25T13:31:40.088058+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-20261025-v1",
+  "files": {
+    "campaign.json": {
+      "bytes": 468,
+      "sha256": "f20954afd50cc109a9b1c8255313f101e3a9418a2a3550282dc7cfa0781f7f20",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}
