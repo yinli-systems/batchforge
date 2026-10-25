@@ -432,9 +432,18 @@ class Canary:
             require(hashlib.sha256(response.content).hexdigest()==digest,'result_or_input_changed_after_api_restart')
         durable=self.db.execute("SELECT count(*) AS n FROM files f JOIN blob_objects o ON o.id=f.blob_id AND o.tenant_id=f.tenant_id WHERE f.id=ANY(%s) AND f.tenant_id=%s AND o.backend='s3' AND o.state='ready' AND f.content IS NULL",([b['input_file_id'] for b in batches],self.tenant)).fetchone()['n']
         require(durable==len(batches),'input_payload_not_in_external_s3')
+        payloads=self.db.execute("""SELECT count(*) AS tasks,
+            count(*) FILTER(WHERE body IS NOT NULL AND response IS NOT NULL) AS retained,
+            count(*) FILTER(WHERE response IS NULL) AS responses_in_archive_only
+            FROM tasks WHERE batch_id=ANY(%s) AND tenant_id=%s""",
+            ([b['id'] for b in batches],self.tenant)).fetchone()
         self.report['persistence']={'batches':len(batches),'s3_input_objects':durable,'archived_batches':len(archives),
             'verified_files_after_api_restart':len(before),'file_sha256':before,
-            'azure_metadata_and_usage_preserved':True,'s3_https_readback_verified':True,'database_payloads_retained':True,
+            'azure_metadata_and_usage_preserved':True,'s3_https_readback_verified':True,
+            'database_payloads_retained':payloads['tasks']==payloads['retained'],
+            'database_payload_observation':payloads,
+            'database_payload_observed_at':datetime.now(timezone.utc).isoformat(),
+            'this_controller_purge_requested':False,'other_existing_archive_publishers_not_paused':True,
             'archive_receipts':archives}
         self.event('durable_input_and_archived_output_restart_readback_passed',files=len(before))
 

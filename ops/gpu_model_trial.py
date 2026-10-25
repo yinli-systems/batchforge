@@ -28,6 +28,12 @@ def require(condition, reason):
         raise RuntimeError(reason)
 
 
+def candidate_env_path(root, run):
+    # Different campaign parents may intentionally reuse a local trial name.
+    identity=hashlib.sha256(str(run.resolve()).encode()).hexdigest()[:16]
+    return root/'.runtime'/('480b-'+identity+'-engine.env')
+
+
 def require_managed_controls(manager, services):
     for service in services:
         if service['role'] not in {'api', 'gateway'}:
@@ -139,7 +145,7 @@ def main():
             active = database.execute("SELECT count(*) FROM tasks WHERE model=%s AND status IN ('pending','running')",
                                       (original_env['MODEL_NAME'],)).fetchone()[0]
         require(active == 0, 'serving_queue_must_be_drained')
-        env_path = root/'.runtime'/('480b-'+run.name+'-engine.env')
+        env_path = candidate_env_path(root,run)
         require(not env_path.exists(), 'candidate_configuration_already_exists')
         write_env(env_path, {'MODEL_NAME':REPO, 'ENGINE_MODEL_PATH':str(args.model), 'ENGINE_REVISION':REVISION,
             'ENGINE_BACKEND':'vllm', 'ENGINE_DTYPE':'half', 'ENGINE_TENSOR_PARALLEL_SIZE':'4',

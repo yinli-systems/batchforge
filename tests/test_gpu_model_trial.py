@@ -1,4 +1,14 @@
 from ops.gpu_model_trial import restore_services, require_managed_controls
+
+
+def test_candidate_configuration_identity_includes_the_entire_campaign_path(tmp_path):
+    from ops.gpu_model_trial import candidate_env_path
+    root=tmp_path/'app'
+    first=candidate_env_path(root,tmp_path/'campaign-a'/'trial-v1')
+    second=candidate_env_path(root,tmp_path/'campaign-b'/'trial-v1')
+    assert first!=second
+    assert first==candidate_env_path(root,tmp_path/'campaign-a'/'trial-v1')
+    assert first.parent==root/'.runtime'
 from types import SimpleNamespace
 import pytest
 

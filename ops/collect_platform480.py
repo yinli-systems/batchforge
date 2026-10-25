@@ -32,6 +32,7 @@ for name in ['source-receipt.json','storage-preflight.json','launcher-v1.json',
              'launcher-v2.json','queue-report.json','queue.py','queue-v2.py',
              'controller-v1.log','queue-v2.log',
              'launcher-v3.json','successor-v3.py','successor-v3.log',
+             'storage-audit-correction.json',
              'trial-v1/trial.json','trial-v1/platform/report.json',
              'trial-v1/platform/gpu-engine-samples.jsonl']:
  p=root/name
