@@ -1,0 +1,38 @@
+{
+  "captured_at": "2026-10-25T16:51:01.915567+00:00",
+  "database_read_only_verified": true,
+  "query_sha256": "ea0d5fef7848c749c3fba7962d60dc508eb4752ab621f31924f952e26c595de8",
+  "query": "SELECT a.status,a.error->>'code' AS error_code,count(*) AS n,min(a.started_at) AS first_started,max(a.finished_at) AS last_finished FROM attempts a JOIN tasks t ON t.id=a.task_id JOIN batches b ON b.id=t.batch_id WHERE b.metadata->>'sustained_job'=%s GROUP BY a.status,a.error->>'code' ORDER BY a.status,error_code",
+  "job_id": "soak480-reuse-20261025-v1",
+  "attempt_code_summary": [
+    {
+      "status": "completed",
+      "error_code": null,
+      "n": 2646,
+      "first_started": "2026-10-25 15:20:55.885275+00:00",
+      "last_finished": "2026-10-25 16:51:01.353256+00:00"
+    },
+    {
+      "status": "retrying",
+      "error_code": "engine_unavailable",
+      "n": 1,
+      "first_started": "2026-10-25 16:16:58.196266+00:00",
+      "last_finished": "2026-10-25 16:17:05.239388+00:00"
+    },
+    {
+      "status": "retrying",
+      "error_code": "kv_admission_paused",
+      "n": 1,
+      "first_started": "2026-10-25 16:17:02.146908+00:00",
+      "last_finished": "2026-10-25 16:17:05.247079+00:00"
+    },
+    {
+      "status": "running",
+      "error_code": null,
+      "n": 32,
+      "first_started": "2026-10-25 16:49:16.509138+00:00",
+      "last_finished": null
+    }
+  ],
+  "scope": "Sanitized SQL diagnosis, not an overall campaign pass; low-level transport exception class was not persisted"
+}

@@ -1,0 +1,96 @@
+{
+  "passed": true,
+  "phase": "complete",
+  "started_at": "2026-10-25T16:39:49.390825+00:00",
+  "events": [
+    {
+      "phase": "quiescence_verified",
+      "at": "2026-10-25T16:39:50.686970+00:00"
+    },
+    {
+      "phase": "watchdog_paused",
+      "at": "2026-10-25T16:39:51.349600+00:00"
+    },
+    {
+      "phase": "old_worker_stopped",
+      "at": "2026-10-25T16:39:51.860099+00:00"
+    },
+    {
+      "phase": "worker_ready",
+      "at": "2026-10-25T16:39:54.178468+00:00"
+    },
+    {
+      "phase": "progress_verified",
+      "at": "2026-10-25T16:40:15.011360+00:00"
+    },
+    {
+      "phase": "complete",
+      "at": "2026-10-25T16:40:15.323091+00:00"
+    }
+  ],
+  "reason": "Unplanned engine transport failure latched exact-token admission; supervisor only restarts dead processes",
+  "source_sha256": "7409c93c3026df58cfaa65bcfa1048c9eaaf998200ee2a1dd5a6932868c9a2d2",
+  "source_or_environment_changed": false,
+  "engine_actions": false,
+  "api_actions": false,
+  "cloud_actions": false,
+  "cost": null,
+  "classification": "Unplanned recovery; the 3600-task campaign is not uninterrupted endurance even if task delivery later succeeds",
+  "original_identities": {
+    "api-a": {
+      "pid": 589128,
+      "start_ticks": "46508204",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 589137,
+      "start_ticks": "46508489",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 574316,
+      "start_ticks": "45307649",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 589146,
+      "start_ticks": "46508781",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "worker_environment_sha256": "5f99ee4becc1946f28668ac3b1e4dd7106c01e0079ea6cdc0fdc7e774f3f7191",
+  "worker_source_sha256": {
+    "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "__main__.py": "70017c658180a9195340611de8089f6cbacb1775d0a907f9b0fa00e62ce8a062",
+    "config.py": "ad593ca2955d956137d4a34df1dc5a5eba8b53deb09a65f97080f271a14890ba",
+    "runtime.py": "56be1af6502a617540cdabf8c65e0662a833909dd2b8746df0910f3fd96eb04d",
+    "metrics.py": "f9119336068200ffc8fa994924b93d15a824493c8502d86e237678ebfb0a5196",
+    "kv_admission.py": "6c13858e3cf67fba06dddc99bd003ad99fdca1b957ed190bcb86808435341bc1"
+  },
+  "pending_tasks_preserved": 127,
+  "pending_identity_sha256": "9f9448cf566458d6fabc6f7e696bd433e5319aac99b255715fca3fa1e2d3a02e",
+  "completed_before": 2213,
+  "quiescence_observed_twice": true,
+  "db_running_before": 0,
+  "worker_active_before": 0,
+  "recovery_scope": "Restart only the same paused worker/configuration with zero active invocations; retain the durable pending queue and do not restart the engine",
+  "recovered_worker_identity": {
+    "pid": 595638,
+    "start_ticks": "46982890",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "completed_after": 2226,
+  "accepted_pending_identities_retained": true,
+  "watchdog_restart_error": null,
+  "finished_at": "2026-10-25T16:40:15.323054+00:00"
+}

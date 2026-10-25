@@ -54,6 +54,17 @@ load differ from the original shuffled 0.5 task/s study, so its latency and
 throughput cannot establish a controlled improvement over that study. No real
 successor results are claimed in this preregistration.
 
+## Recorded unplanned interruption
+
+At 16:17 UTC a transport-level inference failure latched KV admission. Pending
+work stopped advancing until a same-source, same-configuration worker recovery
+at 16:39:49–16:40:15 UTC. All 127 pending identities were preserved and engine
+PID stayed unchanged. The [incident evidence](reuse480-latch-incident-2026-10-25.md)
+retains the approximately 22-minute observed idle span, failed first recovery
+preflight and successful bounded recovery. Do not turn an eventual successful
+task-delivery report into an uninterrupted-endurance pass or bypass the parent
+campaign's changed-worker-identity guard.
+
 ## Console follow-up
 
 A separately reviewed console change adds **Use existing input** to Create batch.

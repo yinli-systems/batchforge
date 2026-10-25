@@ -1,0 +1,37 @@
+{
+  "collected_at": "2026-10-25T16:51:06.240969+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-reuse-recovery-20261025-v2",
+  "files": {
+    "sql-validation.json": {
+      "bytes": 1505,
+      "sha256": "7c6f95a837efb60ddc83fa40d7f913794f5817d64a3073f4927b829b53b7b18b",
+      "source_relative_path": "sql-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 3310,
+      "sha256": "88e5d7a82e79f06836ecc778232c05c33a97c92407618d3a5de30ebd90577fe4",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation-launcher.json": {
+      "bytes": 198,
+      "sha256": "3fdd5fde42bcae0a4459e94f30863945941915e41a4876c78b32fcf90a9cc8d4",
+      "source_relative_path": "validation-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.log.txt": {
+      "bytes": 58,
+      "sha256": "385642af001a0718eb22bf338b46ce245f0be334cd35187f9ab72ab8b2796279",
+      "source_relative_path": "validation.log",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 7113,
+      "sha256": "7409c93c3026df58cfaa65bcfa1048c9eaaf998200ee2a1dd5a6932868c9a2d2",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

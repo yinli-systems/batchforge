@@ -1,0 +1,31 @@
+{
+  "collected_at": "2026-10-25T16:46:04.990158+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-reuse-recovery-20261025-v1",
+  "files": {
+    "initial-failure.json": {
+      "bytes": 431,
+      "sha256": "56315ddaa82707916ace87952d786c395ae5211cea420157efed1fe546dacca9",
+      "source_relative_path": "initial-failure.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation-launcher.json": {
+      "bytes": 198,
+      "sha256": "0072ac3807c3e7cedb5f352361504ae8f981f84346112fad0abcd82ee25e228a",
+      "source_relative_path": "validation-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.log.txt": {
+      "bytes": 269,
+      "sha256": "78c37ba01e1322b77b238db652d73601119f4b1d9f8c5160dfc8f59657c7544a",
+      "source_relative_path": "validation.log",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 7066,
+      "sha256": "460cff75eddc8b41b45974520be8bdfe234cd28a3147ed01452e5ab994e977f4",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

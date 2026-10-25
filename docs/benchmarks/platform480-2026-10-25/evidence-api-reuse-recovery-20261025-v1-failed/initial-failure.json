@@ -1,0 +1,9 @@
+{
+  "passed": false,
+  "phase": "operator_module_import",
+  "error_type": "ModuleNotFoundError",
+  "missing_module": "ops.product_campaign",
+  "application_actions_started": false,
+  "original_source_sha256": "460cff75eddc8b41b45974520be8bdfe234cd28a3147ed01452e5ab994e977f4",
+  "scope": "Failed before any service operation; original files retained, successor v2 uses the qualified immutable ops source with explicit live root"
+}

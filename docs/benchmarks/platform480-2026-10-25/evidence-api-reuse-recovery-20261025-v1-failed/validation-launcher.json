@@ -1,0 +1,8 @@
+{
+  "identity": {
+    "pid": 595366,
+    "start_ticks": "46964255",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "scope": "Bounded same-source worker-only recovery; no engine or cloud action"
+}
