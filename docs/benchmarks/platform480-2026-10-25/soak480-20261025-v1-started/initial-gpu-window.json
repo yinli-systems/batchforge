@@ -1,0 +1,37 @@
+{
+  "scope": "Short initial endurance window; not full-run utilization or a completed pass",
+  "source_sha256": "fbbec6eb3526b8aed556391cb0acb42f7fa0139cd0eb4fc109871d45d938850e",
+  "first": "2026-10-25T14:00:48.690135+00:00",
+  "last": "2026-10-25T14:02:47.882686+00:00",
+  "samples": 20,
+  "gpu": [
+    {
+      "index": "0",
+      "samples": 20,
+      "mean_percent": 90.6,
+      "min_percent": 69.0,
+      "max_percent": 100.0
+    },
+    {
+      "index": "1",
+      "samples": 20,
+      "mean_percent": 96.3,
+      "min_percent": 87.0,
+      "max_percent": 100.0
+    },
+    {
+      "index": "2",
+      "samples": 20,
+      "mean_percent": 94.5,
+      "min_percent": 87.0,
+      "max_percent": 100.0
+    },
+    {
+      "index": "3",
+      "samples": 20,
+      "mean_percent": 77.6,
+      "min_percent": 55.0,
+      "max_percent": 100.0
+    }
+  ]
+}

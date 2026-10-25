@@ -40,8 +40,17 @@ v4 resumes v3's **same** `bench-457e33f0db9f` workload: accepted batches are
 re-observed, rejected submissions reuse their known input files and keys. The
 source/runtime/dataset hashes and original deadline remain bound; resumed
 segment timings are separate from complete-cohort elapsed time. Closed v3
-results remain unchanged. The complete quality result is pending until the
-resumed report closes and its byte/hash/ID checks pass.
+results remain unchanged. The resumed cohort is now closed: **10,570/10,570 delivered**, no missing
+predictions, 2,365,342 prompt tokens and 122,168 completion tokens. Recovered
+segment timings remain distinct from the 2,628.085-second original-cohort
+terminal-observation span. The valid measured result is **EM 53.8221%, F1
+75.8213%**: both miss the unchanged 70%/80% gates. There are 5,689 exact answers;
+on-time exact-answer goodput is 2.16469/s over that cohort span. Only four outputs
+hit the 128-token cap; 10,566 ended normally. This is not a successful quality
+qualification, even though durable delivery and deadline checks passed.
+[Original complete report](platform480-2026-10-25/quality-squad-20261025-v4-complete/run/report.json)
+and the full hash-bound score rows are preserved. The next capacity workload
+measures forced generation, not a replacement quality result.
 
 ## Next bounded endurance protocol
 
@@ -80,3 +89,51 @@ The launcher binds `/proc` start ticks and cwd; passive preflight verified all
 five primary service identities plus watchdog and the actual 62,259,600-byte /
 1,632,000-output-token plan. The controller and source snapshot survive client
 SSH disconnection but do not survive losing the entire container disk.
+
+## Short quality-window GPU observation
+
+A separate read-only window at 13:53:10–13:54:11 UTC sampled all four cards 30
+times. Arithmetic sample means were 15.40%, 16.07%, 15.83% and 13.50%; maxima
+were 100%, 98%, 97% and 99%. Model residency was high, but this short-answer
+quality phase did **not** sustain full GPU computation. The observation is not
+whole-campaign utilization, SM occupancy, energy or a performance A/B.
+The older running primary exposed no admission-stage histogram series, so the
+empty stage-delta array does not mean zero admission latency. New candidate
+instrumentation must be checked after real creates reach it.
+[Raw transferred observation and source binding](platform480-2026-10-25/quality-squad-20261025-v4-observation-v1/evidence-manifest.json)
+are preserved without payloads or credentials. A subsequent real read-only
+status aggregation showed retained historical completed payloads plus the fresh
+cohort's pre-archival reservations, not a large failed-task payload backlog.
+The existing archival cutoff and 120-second age were left unchanged.
+
+
+## Product rollout and real endurance start
+
+The product rollout passed at **13:59:37 UTC** on October 25. Both API replicas
+now load immutable `398db6f`; worker and engine identities stayed unchanged.
+A separate private gateway 8080 probe verified auth, receipt checksums, task
+pagination, capacity, the exact frontend source hash and historical input/output
+byte readback under real sustained load. The HTTP/S3 probe is a functional check,
+not a latency SLA. The original source backups remain private on the Pod.
+
+The 2,400-task endurance job actually started at 13:59:37 UTC and is still
+running. In the first reported 20-sample window (14:00:48–14:02:47 UTC), GPU
+sample means were 90.6%, 96.3%, 94.5% and 77.6%, with each reaching a sampled
+100%. This establishes active four-card compute during that window, not 100%
+continuous utilization or a completed endurance pass. Final throughput, P95/P99,
+usage conservation, sampling gaps and cost remain subject to the closed report.
+[Started campaign snapshot](platform480-2026-10-25/soak480-20261025-v1-started/evidence-manifest.json).
+
+## CPU-only quality diagnosis
+
+An offline analysis independently recomputed the same EM/F1 from all 10,570
+original predictions and pinned references, without any new inference or score
+change. Of the 4,881 non-exact predictions, 4,528 contain a complete normalized
+reference span plus extra text; 200 have token overlap without full containment,
+and 153 have no overlap. A contained gold string does **not** prove the entire
+answer correct (it can include contradictory or irrelevant alternatives), so
+this diagnostic is not an improved score or a deployable answer selector.
+Only four outputs were capped; simply raising the token limit does not address
+most of these errors. A future prompt/output-contract experiment needs its own
+fixed cohort, preregistered scoring and actual measurements after the current
+GPU campaign closes. Raw predictions and benchmark thresholds remain unchanged.

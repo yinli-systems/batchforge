@@ -31,6 +31,10 @@ paths=[]
 for name in ['source-receipt.json','storage-preflight.json','launcher-v1.json',
              'launcher.json','deployment.json','sql-validation.json','rollout.json','readback.json',
              'campaign-launcher.json','initial-failure.json','passive-preflight.json',
+             'admission-observation.json','admission-observer.py',
+             'replay-validation.json','future-receipt-validation.json',
+             'post-rollout-validation.json',
+             'quality-diagnostics-v1.json','quality-diagnostics-source-v1.py',
              'campaign.json','.runtime/run/report.json','.runtime/run/observations.jsonl',
              'run/plan.json','run/benchmark.json','run/report.json','run/scores.jsonl',
              'run/observations.jsonl','run/runtime-apis.jsonl',
@@ -63,6 +67,7 @@ with tarfile.open(fileobj=buf,mode='w:gz') as tar:
   data=p.read_bytes();total+=len(data)
   if total>limit:raise RuntimeError('evidence_snapshot_exceeds_bound')
   source_name=str(p.relative_to(root));name=source_name+'.txt' if p.suffix=='.log' else source_name
+  if source_name.startswith('.runtime/run/'):name='run/'+source_name[len('.runtime/run/'):]
   removed=0
   if p.suffix=='.jsonl' and data and not data.endswith(b'\\n'):
    end=data.rfind(b'\\n')+1;removed=len(data)-end;data=data[:end]

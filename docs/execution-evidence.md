@@ -49,3 +49,17 @@ is not hardware attestation. Database reconciliation is not answer quality, and
 recorded object metadata is not independent byte readback. Legitimately retired
 history is explicitly incomplete. A single Pod remains a single GPU failure
 domain; these features do not create multi-node HA.
+
+## Follow-up history completeness check
+
+A reviewed follow-up also compares each retained task's `attempts` counter to
+its actual attempt-row count. Accepted usage alone cannot certify that failed
+retry records are present, nor can equal aggregate totals detect records moved
+between tasks. Missing records mark history incomplete; excess records mark a
+ledger inconsistency. Legacy checksum exports remain verifiable.
+
+This follow-up passed independent read-only Azure queries on the 20-task primary
+smoke batch and both 60-task fault batches (92 attempt rows apiece). It is a
+separate code revision and is **not** silently inserted into the running,
+immutable `398db6f` candidate or queued endurance source. Promotion must happen
+after that campaign closes and a new candidate qualifies.

@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "source_captured_at": "2026-10-25T14:00:30.315161+00:00",
+  "receipt_sha256": "4bdda85616511c11de94176eb10f7f37c6aba302f626b09584bde3e7e2bed053",
+  "source_snapshot_sha256": "e0b27c22c83f52683db65d4eec10528d260090b3b483685ceb79d8db97e3f143",
+  "frontend_sha256": "2236ee72ba1ed510c73c305ca6bf09e4d0d6bdeb85b30ac0c84bc83733165a0a",
+  "scope": "Actual authenticated canary receipt verified with the console WebCrypto implementation in Node; no browser visual rendering claim"
+}

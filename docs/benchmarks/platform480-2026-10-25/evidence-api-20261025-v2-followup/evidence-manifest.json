@@ -1,0 +1,55 @@
+{
+  "collected_at": "2026-10-25T13:58:59.844416+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-20261025-v2",
+  "files": {
+    "deployment.json": {
+      "bytes": 18696,
+      "sha256": "df253e07dfba0192a4babc26a4a7f0876f3dc7fc379de6a30f39613d33403c8e",
+      "source_relative_path": "deployment.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "sql-validation.json": {
+      "bytes": 4678,
+      "sha256": "72f94b12f12f592a6ebe84b20f97645d41404f4d19a87810038c4222eb71a858",
+      "source_relative_path": "sql-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "readback.json": {
+      "bytes": 1075,
+      "sha256": "9c056ce959e849b5326f003aa6719e6801cdc2eab7321ee1a32d9f61e94d15f3",
+      "source_relative_path": "readback.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign-launcher.json": {
+      "bytes": 643,
+      "sha256": "df2e225f94d09c8f23242e15aaa4afa85683864dbacf0fb0ec158dbdcdf4a44d",
+      "source_relative_path": "campaign-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "initial-failure.json": {
+      "bytes": 163,
+      "sha256": "5421349c4b574d5583217f4cd032d80958d3b73b4da1dd12e543cbecf7f97724",
+      "source_relative_path": "initial-failure.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "passive-preflight.json": {
+      "bytes": 1069,
+      "sha256": "da01238575c302a83a5ee1db0fd8267b95e8c90d609029d82562774d195fb5af",
+      "source_relative_path": "passive-preflight.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "replay-validation.json": {
+      "bytes": 734,
+      "sha256": "f39ecf6a6da33108ee77f9e8d895116a0d7fec052e2421d0fcd1c96fb6e14818",
+      "source_relative_path": "replay-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "future-receipt-validation.json": {
+      "bytes": 2989,
+      "sha256": "ba112d887c14002fbde7a690d4044285b3cdcd1ea5ce202043399e750241dc2e",
+      "source_relative_path": "future-receipt-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

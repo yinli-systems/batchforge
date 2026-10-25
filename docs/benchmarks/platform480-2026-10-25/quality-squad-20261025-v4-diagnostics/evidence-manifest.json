@@ -1,0 +1,67 @@
+{
+  "collected_at": "2026-10-25T14:11:22.491564+00:00",
+  "source_run": "/root/batchforge-runtime/quality-squad-20261025-v4",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 18016,
+      "sha256": "fdd018259133ef8da6efe72f49752d3399f586fe06836b126d4f72cc1528cfb1",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "launcher.json": {
+      "bytes": 776,
+      "sha256": "dbe66a7531f3b7577bd3b21b993156818c50553b61f7e4af906d2528844f20ea",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "admission-observation.json": {
+      "bytes": 6726,
+      "sha256": "39e83aa71ffa14829ef393d2c790967206d46a121db71b121944b1daefb30cee",
+      "source_relative_path": "admission-observation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "admission-observer.py": {
+      "bytes": 2482,
+      "sha256": "ec0cf2e03e7ca0886cd271eae23f86426e21f0f30c4e8b74ec23e196d9c37a2b",
+      "source_relative_path": "admission-observer.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "quality-diagnostics-v1.json": {
+      "bytes": 20028,
+      "sha256": "5598fca9e6322094e07ff491724a6c4a9eced7a4b522792563111e952e2c3acf",
+      "source_relative_path": "quality-diagnostics-v1.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "quality-diagnostics-source-v1.py": {
+      "bytes": 5462,
+      "sha256": "0c0ae6826e74841719d72e5bfc528ed00b1da0df561978f9bf758d2289ac1595",
+      "source_relative_path": "quality-diagnostics-source-v1.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/plan.json": {
+      "bytes": 1487,
+      "sha256": "f15ea6fd808234eddf4775bc246529b168738465b8c145bca612c908b4f19ebf",
+      "source_relative_path": "run/plan.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/benchmark.json": {
+      "bytes": 196689,
+      "sha256": "c5663bb6050d32de2d85ced73db6898841740dbb8d7a7613b31be11848961c94",
+      "source_relative_path": "run/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/report.json": {
+      "bytes": 9623,
+      "sha256": "22c924df3d4f0ab97345f07006ea74f956019c03c26dbc01ed9555b9c6950296",
+      "source_relative_path": "run/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/scores.jsonl": {
+      "bytes": 2423641,
+      "sha256": "d914b3708f8f73f0d417948189eddf05ea5437c666a490a2fa4e5f410a04855b",
+      "source_relative_path": "run/scores.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

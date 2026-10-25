@@ -1,0 +1,20 @@
+{
+  "identity": {
+    "pid": 580284,
+    "start_ticks": "45842801",
+    "cwd": "/root/batchforge-runtime/evidence-api-20261025-v2/source"
+  },
+  "command": [
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "ops.product_campaign",
+    "--run",
+    "/root/batchforge-runtime/soak480-20261025-v1",
+    "--source-run",
+    "/root/batchforge-runtime/evidence-api-20261025-v2",
+    "--wait-quality",
+    "/root/batchforge-runtime/quality-squad-20261025-v4"
+  ],
+  "source_commit": "398db6fc38692c9d188c468eef60e228c0a7cf72",
+  "scope": "One bounded same-Pod quality-to-product-rollout-to-2400-real-task campaign; no cloud operation"
+}

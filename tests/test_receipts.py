@@ -12,7 +12,8 @@ def snapshot():
         'total_count':2,'pending_count':0,'running_count':0,'completed_count':2,'failed_count':0,'cancelled_count':0,
         'prompt_tokens':128,'completion_tokens':32,'metadata':{'secret':'must-never-export'},
         'runtime_fingerprint':'sha256:model','runtime_compatibility_scope':'first_dispatch'},
-        'tasks':{'total':2,'pending':0,'running':0,'completed':2,'failed':0,'cancelled':0,'prompt_tokens':128,'completion_tokens':32},
+        'tasks':{'total':2,'pending':0,'running':0,'completed':2,'failed':0,'cancelled':0,'prompt_tokens':128,'completion_tokens':32,'reported_attempts':3},
+        'attempt_record_checks':{'tasks_missing_records':0,'tasks_with_excess_records':0},
         'attempts':{'total':3,'accepted':2,'accepted_tasks':2,'row_usage_mismatches':0,'prompt_tokens':128,'completion_tokens':32},
         'artifacts':[],'runtimes':[{'runtime_fingerprint':'sha256:model','accepted_attempts':2}],'runtime_groups':1}
 
@@ -80,3 +81,25 @@ async def test_owner_context_is_bound_on_receipt_and_task_pages_and_lease_tokens
     with pytest.raises(APIError) as cursor:await store.task_page('owner','batch-one',1,'other-batch-task')
     assert cursor.value.status==404
     with pytest.raises(APIError):await store.task_page('owner','batch-one',201)
+
+
+def test_missing_failed_retry_records_cannot_certify_full_history_despite_conserved_acceptance():
+    row=snapshot()
+    row['tasks']['reported_attempts']=4
+    row['attempt_record_checks']['tasks_missing_records']=1
+    receipt=format_receipt(row)['receipt']
+    assert receipt['checks']['live_completed_tasks_have_accepted_attempts']
+    assert receipt['checks']['live_task_and_accepted_attempt_usage_match']
+    assert not receipt['checks']['live_task_attempt_counts_match']
+    assert receipt['ledger_state']=='incomplete_history'
+    assert not receipt['history']['full_attempt_history_available']
+
+
+def test_per_task_attempt_mismatch_cannot_hide_behind_equal_aggregate_totals():
+    row=snapshot()
+    # Two records moved between tasks keep total attempts and accepted usage
+    # unchanged, but are not a consistent execution ledger.
+    row['attempt_record_checks'].update(tasks_missing_records=1,tasks_with_excess_records=1)
+    assert format_receipt(row)['receipt']['ledger_state']=='inconsistent'
+    del row['attempt_record_checks']
+    assert not format_receipt(row)['receipt']['history']['full_attempt_history_available']

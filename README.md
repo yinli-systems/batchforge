@@ -13,9 +13,11 @@ The 1,060-task platform campaign includes 120 process-fault recovery tasks,
 verified S3 readback and a separate real primary-entry qualification.
 See [480B platform evidence](docs/benchmarks/platform480-2026-10-25.md).
 
-The complete 10,570-question public SQuAD quality campaign and a bounded
-2,400-task sustained-load successor are tracked separately. Delivery failures
-remain preserved; incomplete delivery is not reported as model accuracy.
+The complete 10,570-question public SQuAD campaign delivered every task, but
+measured **EM 53.82% / F1 75.82%**, below the predeclared 70% / 80% gates.
+The separate 2,400-task sustained compute workload is running. Delivery,
+answer quality and capacity are reported separately; original failures remain
+preserved.
 See [ground-truth evaluation and endurance protocol](docs/benchmarks/quality-squad-2026-10-25.md).
 
 Historical GPT-OSS-120B and Qwen3-235B runs remain in the
@@ -56,10 +58,10 @@ worker is connected. Its 64 configured slots are a claim limit, not 64 full
 
 ## Features
 
-The execution-evidence candidate adds tenant-scoped receipts, bounded task pages,
+The primary now exposes tenant-scoped receipts, bounded task pages,
 WebCrypto checksum verification, independent artifact byte readback and logical
-admission headroom. Its real Azure/S3 canary is qualified; primary rollout waits
-for the active quality cohort to close and drain. See [execution evidence](docs/execution-evidence.md).
+admission headroom. Both replicas passed the guarded October 25 rollout, with
+unchanged GPU worker/engine identities and historical S3 byte readback. See [execution evidence](docs/execution-evidence.md).
 
 - Upload JSONL chat-completion requests and submit a batch.
 - Follow progress, queue depth, worker health and measured token usage.

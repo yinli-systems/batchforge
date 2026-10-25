@@ -1,0 +1,79 @@
+{
+  "passed": true,
+  "read_only": true,
+  "captured_at": "2026-10-25T13:58:08.156221+00:00",
+  "source_sha256": "4b99dcfb5ac37535812564ebf2db8eac20a63ce53a61f0cac783c77b3866c262",
+  "cases": [
+    {
+      "batch_id": "batch_6e24772f9816e8f86693e70664652819",
+      "history": {
+        "live_tasks": 20,
+        "retired_tasks": 0,
+        "observed_attempts": 20,
+        "observed_accepted_attempts": 20,
+        "reported_attempts": 20,
+        "tasks_missing_attempt_records": 0,
+        "tasks_with_excess_attempt_records": 0,
+        "full_attempt_history_available": true
+      },
+      "checks": {
+        "batch_and_task_counts_match": true,
+        "batch_and_task_usage_match": true,
+        "no_duplicate_accepted_attempts_observed": true,
+        "live_completed_tasks_have_accepted_attempts": true,
+        "live_task_attempt_counts_match": true,
+        "live_task_and_attempt_rows_match": true,
+        "live_task_and_accepted_attempt_usage_match": true
+      },
+      "receipt_sha256": "62cca2d66de9fb248018f4008a9d29f3f3f782cbd6e7f81302a9e8b07e17cd8b"
+    },
+    {
+      "batch_id": "batch_8f36b66db2a038c219d0ae5d0c2f70ed",
+      "history": {
+        "live_tasks": 60,
+        "retired_tasks": 0,
+        "observed_attempts": 92,
+        "observed_accepted_attempts": 60,
+        "reported_attempts": 92,
+        "tasks_missing_attempt_records": 0,
+        "tasks_with_excess_attempt_records": 0,
+        "full_attempt_history_available": true
+      },
+      "checks": {
+        "batch_and_task_counts_match": true,
+        "batch_and_task_usage_match": true,
+        "no_duplicate_accepted_attempts_observed": true,
+        "live_completed_tasks_have_accepted_attempts": true,
+        "live_task_attempt_counts_match": true,
+        "live_task_and_attempt_rows_match": true,
+        "live_task_and_accepted_attempt_usage_match": true
+      },
+      "receipt_sha256": "d66afbf5c58eca39a00eef84a022f1e8cf3b077adaf1f0558a3acff45375abe9"
+    },
+    {
+      "batch_id": "batch_afe7e4fe5dbe0b1b1a76622422bb3346",
+      "history": {
+        "live_tasks": 60,
+        "retired_tasks": 0,
+        "observed_attempts": 92,
+        "observed_accepted_attempts": 60,
+        "reported_attempts": 92,
+        "tasks_missing_attempt_records": 0,
+        "tasks_with_excess_attempt_records": 0,
+        "full_attempt_history_available": true
+      },
+      "checks": {
+        "batch_and_task_counts_match": true,
+        "batch_and_task_usage_match": true,
+        "no_duplicate_accepted_attempts_observed": true,
+        "live_completed_tasks_have_accepted_attempts": true,
+        "live_task_attempt_counts_match": true,
+        "live_task_and_attempt_rows_match": true,
+        "live_task_and_accepted_attempt_usage_match": true
+      },
+      "receipt_sha256": "17f3a70e8fe8f26a3651d6e92bce3db245991f878e2c59cc6069e5609addfd85"
+    }
+  ],
+  "deployed": false,
+  "scope": "Follow-up receipt hardening independently queried on Azure; running candidate/primary source unchanged"
+}

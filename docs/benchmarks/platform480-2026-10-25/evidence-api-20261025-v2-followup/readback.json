@@ -1,0 +1,27 @@
+{
+  "protocol": "batchforge.readback.v1",
+  "captured_at": "2026-10-25T13:29:24.332184+00:00",
+  "receipt_sha256": "8a6e39584f515c676edbe02dd2c85addeddf9f9c5b90b72d089aa318dcc561d9",
+  "batch_id": "batch_6e24772f9816e8f86693e70664652819",
+  "checksum_verified": true,
+  "artifacts": [
+    {
+      "file_id": "file_a61c310a1508415603973f9166163b54",
+      "state": "matched",
+      "passed": true,
+      "bytes": 517409,
+      "sha256": "c34f3c63780b860c5534c89a9069756791522774c7712d26677d7ec53cd8ea9f",
+      "expected_sha256": "c34f3c63780b860c5534c89a9069756791522774c7712d26677d7ec53cd8ea9f"
+    },
+    {
+      "file_id": "file_49fdd944a5aa4f90ad963b3bf4c79dc3",
+      "state": "matched",
+      "passed": true,
+      "bytes": 78270,
+      "sha256": "7085d08b38d053e7754c8894eacfe4f635fb9155f50305c6f908d1ba2aaa986f",
+      "expected_sha256": "7085d08b38d053e7754c8894eacfe4f635fb9155f50305c6f908d1ba2aaa986f"
+    }
+  ],
+  "passed": true,
+  "scope": "Authenticated bytes read now, compared to the recorded receipt; no payload persisted, no attestation or quality claim"
+}

@@ -1,0 +1,31 @@
+{
+  "collected_at": "2026-10-25T14:11:24.336525+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-20261025-v1",
+  "files": {
+    "rollout.json": {
+      "bytes": 20121,
+      "sha256": "43c3e7fcebc40f908f922807578ce67f86542865211298d378662302696f4498",
+      "source_relative_path": "rollout.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "post-rollout-validation.json": {
+      "bytes": 1729,
+      "sha256": "a1271d3382607de64858a4bde17c408bdf887a6917f6443fd510a26e6a6e66fd",
+      "source_relative_path": "post-rollout-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 21187,
+      "sha256": "64d62ba39ae79129293cd40085db5966c0d8c412457b5d84b392ae6605195560",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    ".runtime/run/observations.jsonl": {
+      "bytes": 1175827,
+      "sha256": "0e961d7f9dae1c97db95726a2b51021d51d8e0f25ee393ab29bc54365aa03e1d",
+      "source_relative_path": ".runtime/run/observations.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

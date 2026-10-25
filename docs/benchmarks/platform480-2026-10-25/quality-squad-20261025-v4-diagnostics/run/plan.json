@@ -1,0 +1,37 @@
+{
+  "protocol": "squad-1.1-em-f1-v1",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "tasks": 10570,
+  "scope": "complete dev set",
+  "seed": 20261025,
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+  "max_tokens": 128,
+  "min_tokens": null,
+  "temperature": 0,
+  "deadline_seconds": 3600,
+  "batch_size": 64,
+  "max_inflight_batches": 2,
+  "submission_concurrency": 1,
+  "create_retries": 5,
+  "admission_wait_seconds": 300,
+  "quality_gate": {
+    "minimum_exact_match": 0.7,
+    "minimum_f1": 0.8
+  },
+  "workload_sha256": "6e508e0b432ed65260af48470aafe61136d0559a70c6da61561d74af11109248",
+  "source_sha256": "2cf7c5fc13f33fc909fbb1e4994802c189b0056164586036e2be63b8d1a7d5ff",
+  "benchmark_sha256": "9d2a3b9d5a161d0b830237ceedba5666262798bd159ce12c638c46c4491b9b87",
+  "limitations": [
+    "Public dev set, not a hidden test or contamination audit",
+    "Deadline applies to the complete client-observed cohort; no per-task on-time claim if exceeded",
+    "Real inference quality run; not comparable to forced-length capacity experiments"
+  ],
+  "resume": {
+    "prior_report_sha256": "20682513c7e8add1b1af1a952ed5ec0c2d3c888d3331e2870d06ab6c29bff039",
+    "original_cohort_started_at": "2026-10-25T13:14:29.210326+00:00",
+    "remaining_seconds": 3079.860071
+  },
+  "input_bytes": 13663957,
+  "max_batch_input_bytes": 141615
+}

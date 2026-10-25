@@ -1,4 +1,21 @@
-# Technical evidence index — October 24, 2026
+# Technical evidence index
+
+## Current entry points — October 25, 2026
+
+- [Real 480B Batch API qualification](benchmarks/platform480-2026-10-25.md):
+  repeated KV ABBA, process-fault fencing, Azure metering and S3 readback.
+- [Pinned public quality evaluation and bounded endurance campaign](benchmarks/quality-squad-2026-10-25.md):
+  original admission failures, resumed task identities and actual current state.
+- [Execution evidence](execution-evidence.md): receipt/task/capacity routes,
+  browser checksum verification and independent authenticated artifact readback.
+- [Current architecture](architecture.md): one four-H100 Pod, Azure PostgreSQL,
+  existing S3, private ingress and explicit single-Pod availability limits.
+
+The model/Neon outage and migration status below are historical October 24
+observations. They do not describe the current primary, which serves 480B using
+Azure. New claims must follow the timestamped reports above.
+
+## Historical evidence — October 24, 2026
 
 **Latest operational boundary:** Neon now rejects SQL connections because the
 project's monthly network-transfer allowance is exhausted. Historical readiness

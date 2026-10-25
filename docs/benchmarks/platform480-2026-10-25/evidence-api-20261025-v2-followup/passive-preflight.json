@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "phase": "passive_preflight",
+  "identities": {
+    "api-a": {
+      "pid": 574321,
+      "start_ticks": "45307827",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 574329,
+      "start_ticks": "45308007",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 574316,
+      "start_ticks": "45307649",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 574335,
+      "start_ticks": "45308142",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "fixture_rows": 20,
+  "planned_tasks": 2400,
+  "input_bytes": 62259600,
+  "planned_completion_tokens": 1632000,
+  "fixture_sha256": "d18a1d60dfb2dd67e1913bc0acfb3bbcc55dbe03988305b3f66a04df22ed9bc2",
+  "services_changed": false
+}

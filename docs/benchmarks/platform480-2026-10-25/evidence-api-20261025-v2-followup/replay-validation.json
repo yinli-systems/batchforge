@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "scope": "Exact existing accepted create replay on immutable candidate; no inference replay, upload or new batch",
+  "batch_id": "batch_6e24772f9816e8f86693e70664652819",
+  "http_status": 200,
+  "before": {
+    "matching_batches": 1,
+    "tasks": 20,
+    "ledger": [
+      "completed",
+      20,
+      20,
+      0,
+      109056,
+      13600
+    ]
+  },
+  "after": {
+    "matching_batches": 1,
+    "tasks": 20,
+    "ledger": [
+      "completed",
+      20,
+      20,
+      0,
+      109056,
+      13600
+    ]
+  },
+  "response_sha256": "a7323ce88a7b205e410479752e24d9b78b533470968c0bd2cf82f2cb8f16387a",
+  "new_batch_or_task_for_original_input": false,
+  "source_commit": "398db6fc38692c9d188c468eef60e228c0a7cf72"
+}
