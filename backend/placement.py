@@ -101,3 +101,38 @@ def has_nvlink_clique(gpu_count: int, pairs: frozenset[str], size: int) -> bool:
         if all("-".join(map(str, sorted(pair))) in pairs for pair in combinations(group, 2)):
             return True
     return False
+
+
+DTYPE_BYTES = {"fp16": 2.0, "bf16": 2.0, "fp8": 1.0, "int8": 1.0, "int4": 0.5}
+RUNTIME_OVERHEAD = 1.10  # multiplier for activations and allocator slack; a fixed, documented assumption
+
+
+def required_vram_bytes(*, params_billion: float, dtype: str, layers: int, kv_heads: int, head_dim: int,
+                        max_seq_len: int, batch: int, kv_dtype: str = "fp16") -> int:
+    """Estimate memory for weights plus KV cache. Every input is required; nothing is inferred from a model name.
+
+    This is a planning estimate. Actual peak memory must be measured by the benchmark before a model is trusted.
+    """
+    if dtype not in DTYPE_BYTES or kv_dtype not in DTYPE_BYTES:
+        raise ValueError("unknown dtype")
+    if min(params_billion, layers, kv_heads, head_dim, max_seq_len, batch) <= 0:
+        raise ValueError("all sizes must be positive")
+    weights = params_billion * 1e9 * DTYPE_BYTES[dtype]
+    kv_cache = 2 * layers * kv_heads * head_dim * max_seq_len * batch * DTYPE_BYTES[kv_dtype]
+    return int((weights + kv_cache) * RUNTIME_OVERHEAD)
+
+
+def fits_on_gpus(*, required_bytes: int, tensor_parallel: int, free_mib_per_gpu: list[float | None]) -> dict:
+    """Reject unless each of `tensor_parallel` GPUs has measured free memory for its shard.
+
+    Unknown (None) free memory is never treated as available.
+    """
+    if tensor_parallel < 1 or len(free_mib_per_gpu) < tensor_parallel:
+        return {"fits": False, "reason": "not enough measured GPUs for tensor parallelism"}
+    shard_mib = required_bytes / tensor_parallel / 1024**2
+    short = [index for index, free in enumerate(free_mib_per_gpu[:tensor_parallel])
+             if free is None or free < shard_mib]
+    if short:
+        return {"fits": False, "reason": f"measured free memory below {shard_mib:.0f} MiB shard on GPUs {short}",
+                "shard_mib": round(shard_mib, 1)}
+    return {"fits": True, "shard_mib": round(shard_mib, 1)}
