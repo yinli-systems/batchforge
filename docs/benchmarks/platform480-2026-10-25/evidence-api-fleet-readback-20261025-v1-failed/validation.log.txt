@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/root/batchforge-runtime/evidence-api-fleet-readback-20261025-v1/validator.py", line 50, in <module>
+    report['finished_at']=datetime.now(timezone.utc).isoformat();write_json(out,report)
+                                                                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/batchforge-runtime/evidence-api-fleet-20261025-v2/source/ops/gpu_campaign.py", line 35, in write_json
+    json.dump(value, output, indent=2, allow_nan=False)
+  File "/usr/lib/python3.12/json/__init__.py", line 179, in dump
+    for chunk in iterable:
+  File "/usr/lib/python3.12/json/encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "/usr/lib/python3.12/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/usr/lib/python3.12/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/usr/lib/python3.12/json/encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type Decimal is not JSON serializable

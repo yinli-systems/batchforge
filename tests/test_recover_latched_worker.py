@@ -1,9 +1,39 @@
 from datetime import datetime,timezone,timedelta
 import copy
 import pytest
-from ops.recover_latched_worker import MODEL,RecoveryFailed,charge_attempt,require_quiescence,recovery_sequence
+from ops.recover_latched_worker import MODEL,RecoveryFailed,charge_attempt,require_quiescence,recovery_sequence,require_engine_binding,require_effective_configuration
 
 NOW=datetime(2026,10,25,18,tzinfo=timezone.utc)
+
+
+def test_owned_process_environment_matches_files_without_disclosing_secrets():
+    require_effective_configuration({'MODEL_NAME':'pinned','WORKER_TOKEN':'private-value'},b'MODEL_NAME=pinned\0WORKER_TOKEN=private-value\0PATH=/bin\0')
+
+
+@pytest.mark.parametrize('raw',[
+    b'MODEL_NAME=old\0WORKER_TOKEN=private-value\0',
+    b'MODEL_NAME=pinned\0',
+    b'MODEL_NAME=pinned\0WORKER_TOKEN=private-value\0WORKER_TOKEN=different\0',
+])
+def test_stale_missing_or_duplicate_actual_configuration_refuses_recovery(raw):
+    with pytest.raises(ValueError) as exc:require_effective_configuration({'MODEL_NAME':'pinned','WORKER_TOKEN':'private-value'},raw)
+    assert 'private-value' not in str(exc.value) and 'different' not in str(exc.value)
+
+
+def test_quiescence_target_matches_the_worker_private_engine_and_metrics():
+    require_engine_binding({'INFERENCE_BASE_URLS':'http://127.0.0.1:8348/','WORKER_METRICS_PORT':'9105'},engine_port=8348,worker_port=9105)
+
+
+@pytest.mark.parametrize('change',[
+    {'INFERENCE_BASE_URLS':'http://127.0.0.1:9999'},
+    {'INFERENCE_BASE_URLS':'http://another-node:8348'},
+    {'INFERENCE_BASE_URLS':'http://127.0.0.1:8348,http://127.0.0.1:8350'},
+    {'INFERENCE_BASE_URLS':'http://127.0.0.1:8348/v1'},
+    {'WORKER_METRICS_HOST':'0.0.0.0'},{'WORKER_METRICS_PORT':'9999'},
+])
+def test_a_different_engine_or_metrics_endpoint_cannot_authorize_recovery(change):
+    environment={'INFERENCE_BASE_URLS':'http://127.0.0.1:8348','WORKER_METRICS_PORT':'9105',**change}
+    with pytest.raises(ValueError):require_engine_binding(environment,engine_port=8348,worker_port=9105)
 
 
 def observation():

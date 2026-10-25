@@ -42,3 +42,15 @@ journal failure and watchdog recovery failure. Native PostgreSQL17 CI and a
 separate real fault-injection qualification are required before enablement.
 A future finite health guard can invoke this command after detection; that
 integration and qualification remain separate work.
+
+The recovery endpoint must exactly match the worker's actual single private
+inference URL and metrics host/port. A quiet manifest engine cannot authorize
+recovery of a worker pointed at a different node, path or unobserved proxy.
+A follow-up rejects that mismatch before observations or any service signal;
+seven endpoint-binding regression cases cover this safety boundary.
+
+The live owned worker process environment is also checked against every pinned
+worker-file key, before observations and after restart. Missing, stale or
+duplicate effective keys fail without logging values. A file-only source probe
+cannot establish what an already running worker loaded. The endpoint/effective
+configuration follow-up passed93 related local tests; it is not deployed.

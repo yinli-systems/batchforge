@@ -56,3 +56,8 @@ The subsequent exact head **`748dc10`** also passed [run40216928687](https://git
 A root-owned pre-job hook checked the exact repository, private branch, push
 event, full commit SHA and non-root UID before checkout. No runner remained
 registered after its one job. [Authenticated result](../ops/reports/github-native-ci-748dc10-2026-10-25.json).
+
+Recovery-command source `b7a1a50` passed [native run40219250865](https://github.com/yinli-systems/batchforge/actions/runs/40219250865):
+**1,456 Python tests, zero skipped;23 console tests**, PostgreSQL17.11.
+Its command is not deployed; a subsequent endpoint/effective-config safety
+follow-up requires its own native check and real fault qualification.

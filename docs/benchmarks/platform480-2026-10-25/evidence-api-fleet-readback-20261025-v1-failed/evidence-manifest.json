@@ -1,0 +1,31 @@
+{
+  "collected_at": "2026-10-25T18:11:30.409314+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-fleet-readback-20261025-v1",
+  "files": {
+    "launcher.json": {
+      "bytes": 194,
+      "sha256": "86f1fd5a7ff835d5b0fdfbbf2a401fb471a78318c51d4925273dbefc9142004b",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "initial-failure.json": {
+      "bytes": 411,
+      "sha256": "f8070deefbcaea05cac06fb03d9e335e311e081f7e09fba0523e1a4770152f7d",
+      "source_relative_path": "initial-failure.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.log.txt": {
+      "bytes": 1208,
+      "sha256": "b0c248837a49cdaa7e5582e04d4f11cc3211210fa603db546efd79ace2da0dc7",
+      "source_relative_path": "validation.log",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 4487,
+      "sha256": "2668f73d78fe85820508d1adfd4871407df0853ab52403242c669cdfe415efc6",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

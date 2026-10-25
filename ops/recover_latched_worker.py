@@ -22,6 +22,27 @@ EXPECTED={('api','a'),('api','b'),('gateway','edge'),('engine','qwen480bench'),(
 RUNTIME='sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36'
 
 
+def require_effective_configuration(expected,raw):
+    """File contents are not evidence of what the already running worker used."""
+    pairs=[part.partition(b'=')[::2] for part in raw.split(b'\0') if b'=' in part]
+    for key,value in expected.items():
+        found=[v for k,v in pairs if k==key.encode()]
+        if found!=[value.encode()]:raise ValueError('Owned worker effective configuration differs from its pinned file')
+
+
+def require_engine_binding(environment,*,engine_port,worker_port):
+    # Quiescence of one endpoint cannot authorize restarting a worker whose
+    # uncertain invocation went to a different endpoint or an unobserved proxy.
+    raw=environment.get('INFERENCE_BASE_URLS','http://127.0.0.1:8001')
+    urls=[value.strip().rstrip('/') for value in raw.split(',') if value.strip()] if isinstance(raw,str) else []
+    if (type(engine_port) is not int or not 1<=engine_port<=65535
+        or type(worker_port) is not int or not 1<=worker_port<=65535
+        or urls!=[f'http://127.0.0.1:{engine_port}']
+        or environment.get('WORKER_METRICS_HOST','127.0.0.1')!='127.0.0.1'
+        or environment.get('WORKER_METRICS_PORT','9101')!=str(worker_port)):
+        raise ValueError('Recovery observations must bind to the worker actual private engine and metrics endpoints')
+
+
 def require_quiescence(observation,*,now):
     try:age=(now-datetime.fromisoformat(observation['captured_at'])).total_seconds()
     except (ValueError,TypeError,KeyError):raise ValueError('Fresh independent recovery observation required') from None
@@ -147,6 +168,7 @@ def main():
         before={key(s):managed_identity(ROOT,s) for s in [*services,watchdog]}
         configs={Path(s['env_file']):private_read(Path(s['env_file'])) for s in [*services,watchdog]}
         environment=file_env(worker['env_file']);source=Path(environment.get('PYTHONPATH',''))
+        require_engine_binding(environment,engine_port=engine['port'],worker_port=worker['port'])
         if (environment.get('PYTHONSAFEPATH')!='1' or not source.is_absolute() or source.resolve()!=source
             or source.name!='source' or source.parent.parent!=ROOT.parent
             or not source.parent.name.startswith('evidence-api-') or os.pathsep in str(source)):
@@ -166,6 +188,8 @@ def main():
             for s in services:
                 if s['role']=='worker' and not check_worker:continue
                 if managed_identity(ROOT,s)!=before[key(s)]:raise ValueError('Owned service identity changed')
+            if check_worker:
+                require_effective_configuration(environment,Path(f"/proc/{before[key(worker)]['pid']}/environ").read_bytes())
         import psycopg,httpx
         api=file_env(next(s['env_file'] for s in services if s['role']=='api'))
         db=psycopg.connect(api['DATABASE_URL'],autocommit=True,connect_timeout=5,
@@ -229,8 +253,7 @@ def main():
             wait_until(progressed,180,'Pending work made no observed progress');guard()
             if db.execute('SELECT count(*) FROM tasks WHERE id=ANY(%s)',(pending,)).fetchone()[0]!=len(pending):raise RuntimeError('Pending identities disappeared')
             if not manager.readiness(worker):raise RuntimeError('Recovered worker not ready')
-            effective=dict(part.partition(b'=')[::2] for part in Path(f"/proc/{managed_identity(ROOT,worker)['pid']}/environ").read_bytes().split(b'\0') if b'=' in part)
-            if effective.get(b'PYTHONPATH')!=str(source).encode() or effective.get(b'PYTHONSAFEPATH')!=b'1':raise RuntimeError('Recovered module source differs')
+            require_effective_configuration(environment,Path(f"/proc/{managed_identity(ROOT,worker)['pid']}/environ").read_bytes())
             report['recovered_worker_identity']=managed_identity(ROOT,worker)
             report['accepted_pending_identities_retained']=True
         try:

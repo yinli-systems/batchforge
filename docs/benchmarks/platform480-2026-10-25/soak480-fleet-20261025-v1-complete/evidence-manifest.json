@@ -1,0 +1,43 @@
+{
+  "collected_at": "2026-10-25T18:03:00.635734+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-fleet-20261025-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 21697,
+      "sha256": "4ecec0c948d4d9f005c5a96c277090027eef03e4ead5b566af46581418de7103",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "launcher.json": {
+      "bytes": 599,
+      "sha256": "f737b03615feac20f76187bb8b7035ee1db326d1808c2a304194d10fcdb682fc",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 26637,
+      "sha256": "fe26a7d39f3ea31cd4eda118b838dd09101221343a6b5f429f2e4e683d05c905",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/report.json": {
+      "bytes": 385583,
+      "sha256": "8beb8c796261cd60330fd53f163509bfda75b409c1fb08b9c5ace16cadb60321",
+      "source_relative_path": ".runtime/run/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/observations.jsonl": {
+      "bytes": 2212132,
+      "sha256": "8a5d8df3d13179062acaf5627e807aec95dd42d13d668112e13777cf09f5a53b",
+      "source_relative_path": ".runtime/run/observations.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 10712,
+      "sha256": "9b80d25948cb4fafb0eb84a4f46be7cc25d61b65fe158624fa02a5db2be50496",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

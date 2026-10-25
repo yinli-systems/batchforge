@@ -1,0 +1,10 @@
+{
+  "passed": false,
+  "phase": "final_report_serialization",
+  "error_type": "TypeError",
+  "cause": "PostgreSQL SUM(bigint) returned Decimal; final JSON serialization failed. No completed readback receipt is claimed.",
+  "partial_report_retained": true,
+  "partial_report_sha256": "da3c2c8d264c8ad4acdcd2c4ef03467e67473d22c90aa7e1655602563441442b",
+  "services_changed": false,
+  "inference_submissions": 0
+}

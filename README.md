@@ -81,8 +81,10 @@ unchanged GPU worker/engine identities and historical S3 byte readback. See [exe
 The guarded `748dc10` release now serves four-H100 physical inventory, verified
 input reuse and both quality/cost reports through the current worker/APIs.
 [Native release evidence](docs/benchmarks/platform480-2026-10-25/evidence-api-fleet-release-20261025-v2-complete/release.json)
-retains exact checks; a finite 800-task post-release workload is separately
-[preregistered](docs/benchmarks/fleet-endurance-2026-10-25.md).
+retains exact checks. The [closed 800-task post-release workload](docs/benchmarks/fleet-endurance-2026-10-25.md)
+completed all tasks, conserved metering and verified sampled S3 delivery. Its
+mean device-wide GPU activity was88–96%; offered-load/duration differences
+prevent treating its428.166 output token/s as a controlled speedup.
 
 The implementation covers [published quality evidence](docs/quality-evidence.md),
 [verified input reuse](docs/benchmarks/reusable-input-endurance-2026-10-25.md),
