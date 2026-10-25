@@ -69,6 +69,7 @@ const names = {
   overview: 'Overview',
   batches: 'Batches',
   workers: 'Workers',
+  quality: 'Quality evidence',
   docs: 'API reference'
 };
 const storage = {
@@ -117,6 +118,11 @@ const state = {
   lastId: null,
   loadedMore: false,
   models: [],
+  evaluations: [],
+  qualityLoaded: false,
+  qualityLoading: false,
+  qualityError: '',
+  qualityVersion: 0,
   view: 'overview',
   error: '',
   updated: null,
@@ -357,6 +363,84 @@ function codeBlock(label, text) {
   return `<div class="code-block"><div class="code-toolbar"><span>${label}</span><button class="link-button" data-copy-code>${icon('copy')}Copy</button></div><pre><code>${esc(text)}</code></pre></div>`
 }
 
+function resetQualityEvidence() {
+  state.qualityVersion++;
+  state.evaluations = [];
+  state.qualityLoaded = false;
+  state.qualityLoading = false;
+  state.qualityError = '';
+}
+
+async function loadEvaluations() {
+  const key = state.key, version = ++state.qualityVersion;
+  if (!key) return;
+  state.qualityLoading = true;
+  try {
+    const result = await api('/v1/evaluations');
+    if (state.key !== key || state.qualityVersion !== version) return;
+    state.evaluations = Array.isArray(result.data) ? result.data : [];
+    state.qualityLoaded = true;
+    state.qualityError = '';
+  } catch (error) {
+    if (state.key === key && state.qualityVersion === version)
+      state.qualityError = error.status === 404 ? 'Quality evidence is unavailable on this deployment.' : error.message;
+  } finally {
+    if (state.key === key && state.qualityVersion === version) state.qualityLoading = false;
+  }
+}
+
+function qualityView() {
+  const heading = pageHeading('Quality evidence', 'Inspect answer quality separately from durable execution.',
+    '<button class="button button-secondary" data-action="refresh">Refresh evidence</button>');
+  if (!state.connected) return heading + connectionBanner();
+  if (state.qualityError) return heading + emptyState('alert', 'Could not load quality evidence', state.qualityError, 'Try again', 'refresh');
+  if (!state.qualityLoaded) return heading + emptyState('clock', 'Loading quality evidence', 'Checking published reports against your batch ledger.');
+  if (!state.evaluations.length) return heading + emptyState('check', 'No published quality evaluations', 'Reference-based reports for this workspace will appear here after publication.');
+  const score = value => typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : '—';
+  return heading + `<div class="quality-evidence-list">${state.evaluations.map(e => {
+    const verified = e.verification_state === 'batch_ledger_reconciled', m = verified ? e.metrics : null;
+    const label = !verified ? 'Ledger linkage unverified' : e.quality_state === 'passed' ? 'Quality gate passed' : 'Quality gate failed';
+    const style = verified && e.quality_state === 'passed' ? 'completed' : 'failed';
+    return `<section class="panel"><div class="panel-header"><div><h2>${esc(e.name)}</h2><p class="panel-subtitle">${esc(e.dataset?.name)} · ${esc(e.dataset?.scope)}</p></div><span class="status-badge ${style}">${label}</span></div>
+      <div class="quality-evidence-body"><p class="drawer-note">${esc(e.model)}</p><div class="metric-grid">
+      ${metricCard('Exact match', score(m?.exact_match_percent), `Minimum ${score(e.gate?.minimum_exact_match_percent)}%`, 'check', '%')}
+      ${metricCard('Token F1', score(m?.f1_percent), `Minimum ${score(e.gate?.minimum_f1_percent)}%`, 'tasks', '%')}
+      ${metricCard(verified ? 'Delivered tasks' : 'Reported tasks', number(e.tasks), `${number(e.batch_count)} batches · ${verified ? 'ledger reconciled' : 'not reconciled'}`, 'batches')}
+      ${metricCard('On-time exact answers/s', score(m?.on_time_exact_results_per_second), 'Reference-correct answers over the cohort window', 'activity')}
+      </div><dl class="detail-list"><div><dt>Delivery</dt><dd>${verified && e.delivery_passed ? 'All reported tasks delivered' : 'Not verified'}</dd></div>
+      <div><dt>Deadline</dt><dd>${!verified ? 'Not verified' : e.deadline_met ? 'Met' : 'Not met'}</dd></div><div><dt>Runtime fingerprint</dt><dd>${esc(e.runtime_fingerprint)}</dd></div>
+      <div><dt>Source report SHA-256</dt><dd>${esc(e.report_sha256)}</dd></div><div><dt>Dataset SHA-256</dt><dd>${esc(e.dataset?.sha256)}</dd></div></dl>
+      <p class="drawer-note">Operator-published report linked to tenant-owned batch counters, usage and reported runtime. A public dev benchmark is not a production accuracy guarantee or independent hardware attestation. Cost is unmeasured.</p>
+      <button class="button button-secondary" data-action="download-evaluation" data-evaluation-id="${esc(e.id)}">${icon('download')}Download evidence JSON</button></div></section>`;
+  }).join('')}</div>`;
+}
+
+async function downloadEvaluation(button) {
+  const id = button.dataset.evaluationId, key = state.key;
+  button.disabled = true;
+  try {
+    const response = await api(`/v1/evaluations/${encodeURIComponent(id)}`, {raw: true});
+    if (state.key !== key) return;
+    const bytes = await response.arrayBuffer();
+    if (state.key !== key) return;
+    const expected = response.headers.get('X-BatchForge-Evidence-SHA256');
+    if (!expected || !/^[a-f0-9]{64}$/.test(expected)) throw new Error('Evidence checksum is missing');
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    const actual = [...new Uint8Array(digest)].map(n => n.toString(16).padStart(2, '0')).join('');
+    if (actual !== expected) throw new Error('Evidence download checksum does not match');
+    const evidence = JSON.parse(new TextDecoder('utf-8', {fatal: true}).decode(bytes));
+    if (evidence.id !== id) throw new Error('Evaluation identity changed');
+    if (state.key !== key) return;
+    const url = URL.createObjectURL(new Blob([bytes], {type: 'application/json'}));
+    const anchor = document.createElement('a');
+    anchor.href = url; anchor.download = `${id}-evidence.json`; anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Evidence checksum verified. Download started.');
+  } catch (error) {
+    if (state.key === key) toast(error.message, 'error');
+  } finally { button.disabled = false; }
+}
+
 function docsView() {
   const base = location.origin;
   const model = state.models[0]?.id || 'your-model-id';
@@ -395,6 +479,7 @@ function render() {
     overview: overviewView,
     batches: batchesView,
     workers: workersView,
+    quality: qualityView,
     docs: docsView
   } [state.view])();
   if (state.view === 'overview') drawChart();
@@ -449,12 +534,14 @@ async function refresh({
   if (!state.key || state.refreshing) return;
   state.refreshing = true;
   state.loading = !silent;
+  const key = state.key;
   $('#refresh-button').classList.add('spinning');
   if (!silent) render();
   try {
     const jobs = [api('/v1/overview')];
     if (includeBatches || state.view === 'batches') jobs.push(api('/v1/batches?limit=50'));
     const result = await Promise.allSettled(jobs);
+    if (state.key !== key) return;
     if (result[0].status === 'rejected') throw result[0].reason;
     state.overview = result[0].value;
     state.connected = true;
@@ -476,9 +563,11 @@ async function refresh({
     }
     try {
       const models = await api('/v1/models');
-      state.models = models.data || []
+      if (state.key === key) state.models = models.data || []
     } catch {}
+    if (state.key === key && state.view === 'quality') await loadEvaluations();
   } catch (error) {
+    if (state.key !== key) return;
     state.error = error.message;
     if (error.status === 401 || error.status === 403) {
       state.connected = false;
@@ -529,6 +618,8 @@ async function connect(event) {
     state.batches = [];
     state.loadedMore = false;
     state.models = [];
+    resetQualityEvidence();
+    if (state.detailId) closeDrawer();
     storage.set(key);
     $('#connect-dialog').close();
     toast('Workspace connected. Live updates are enabled.');
@@ -548,6 +639,7 @@ async function connect(event) {
 }
 
 function disconnect() {
+  resetQualityEvidence();
   storage.set('');
   Object.assign(state, {
     key: '',
@@ -1077,6 +1169,9 @@ document.addEventListener('click', async event => {
   const action = event.target.closest('[data-action]');
   if (action) {
     switch (action.dataset.action) {
+      case 'download-evaluation':
+        await downloadEvaluation(action);
+        break;
       case 'create':
         await openCreate();
         break;
@@ -1204,7 +1299,7 @@ document.addEventListener('keydown', event => {
 });
 window.addEventListener('hashchange', () => {
   render();
-  if (state.view === 'batches' && state.key) refresh({
+  if (['batches', 'quality'].includes(state.view) && state.key) refresh({
     silent: true,
     includeBatches: true
   })

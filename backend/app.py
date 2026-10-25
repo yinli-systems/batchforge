@@ -1,6 +1,7 @@
 """FastAPI HTTP boundary for the PostgreSQL batch state machine."""
 import asyncio
 import contextlib
+import hashlib
 import logging
 import random
 import secrets
@@ -375,6 +376,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             response.headers['Retry-After'] = '5'
             return response
         return await request.app.state.store.retry(tenant_id, bid, idempotency_key)
+
+    @app.get('/v1/evaluations')
+    async def evaluations(request: Request, tenant_id: str = Depends(tenant)):
+        return JSONResponse(await request.app.state.store.list_evaluations(tenant_id),headers={'Cache-Control':'no-store'})
+
+    @app.get('/v1/evaluations/{eid}')
+    async def evaluation(eid: str, request: Request, tenant_id: str = Depends(tenant)):
+        view=await request.app.state.store.get_evaluation(tenant_id,eid)
+        response=JSONResponse(view)
+        response.headers['X-BatchForge-Evidence-SHA256']=hashlib.sha256(response.body).hexdigest()
+        response.headers['Cache-Control']='no-store'
+        return response
 
     @app.get('/v1/capacity')
     async def capacity(request: Request, tenant_id: str = Depends(tenant)):

@@ -25,10 +25,14 @@ function jsonResponse(body) {
 }
 
 function harness(fetch, sessionStorage = storage()) {
-  const observed = {notices: [], opened: [], rendered: [], dialogCloses: 0};
+  const observed = {notices: [], opened: [], rendered: [], dialogCloses: 0, downloads: [], blobs: []};
   const confirmButton = {disabled: false};
   const drawer = {innerHTML: '', scrollTop: 0, contains() { return false; }};
   const document = {
+    createElement(tag) {
+      assert.equal(tag, 'a');
+      return {href: '', download: '', click() {observed.downloads.push(this.download);}};
+    },
     querySelector(selector) {
       if (selector === '#confirm-submit') return confirmButton;
       if (selector === '#confirm-dialog') return {close() { observed.dialogCloses++; }};
@@ -37,7 +41,9 @@ function harness(fetch, sessionStorage = storage()) {
     }
   };
   const context = vm.createContext({
-    document, sessionStorage, fetch, Headers, FormData, TextEncoder, Uint8Array, crypto: webcrypto, observed
+    document, sessionStorage, fetch, Headers, FormData, TextEncoder, TextDecoder, Uint8Array, Blob,
+    URL: {createObjectURL(blob) {observed.blobs.push(blob);return 'blob:review';}, revokeObjectURL() {}},
+    setTimeout(callback) {callback();}, crypto: webcrypto, observed
   });
   // Keep the real actions and HTTP client. Stub only unrelated UI refresh/navigation
   // so these tests exercise network outcomes without a DOM framework or a server.
@@ -48,7 +54,7 @@ function harness(fetch, sessionStorage = storage()) {
     openBatch = async id => observed.opened.push(id);
     const renderDetails = renderDrawer;
     renderDrawer = () => observed.rendered.push(state.detail);
-    globalThis.actions = {state, retryBatch, cancelBatch, renderDetails, verifyReceipt, loadEvidence, resetEvidence, renderEvidencePanel, capacityNotice};
+    globalThis.actions = {state, retryBatch, cancelBatch, renderDetails, verifyReceipt, loadEvidence, resetEvidence, renderEvidencePanel, capacityNotice, qualityView, loadEvaluations, resetQualityEvidence, downloadEvaluation};
   `, context, {filename: 'frontend/app.js'});
   context.actions.state.key = 'test-tenant-key';
   context.actions.state.detailId = 'source-batch';
@@ -241,4 +247,71 @@ test('evidence UI escapes task identifiers and exposes limited verification scop
   assert.match(html, /Next 25 tasks/);
   assert.match(html, /not a signature, hardware attestation, or answer-quality score/);
   assert.match(html, /1 task rows have been retired/);
+});
+
+const qualityFixture = JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'quality-evaluation.json'), 'utf8'));
+
+test('quality view separates successful delivery from a failed measured quality gate', () => {
+  const app = harness(async () => {throw new Error('No network expected');});
+  app.state.connected = true; app.state.qualityLoaded = true;
+  app.state.evaluations = [structuredClone(qualityFixture)];
+  const html = app.qualityView();
+  assert.match(html, /Quality gate failed/);
+  assert.match(html, /All reported tasks delivered/);
+  assert.match(html, /53\.82/); assert.match(html, /75\.82/);
+  assert.doesNotMatch(html, /Quality gate passed/);
+  assert.match(html, /not a production accuracy guarantee/);
+  app.state.evaluations[0].name = '<img src=x onerror=alert(1)>';
+  app.state.evaluations[0].verification_state = 'batch_ledger_mismatch';
+  app.state.evaluations[0].metrics = null;
+  const unverified = app.qualityView();
+  assert.match(unverified, /Ledger linkage unverified/);
+  assert.doesNotMatch(unverified, /53\.82|<img/);
+  assert.match(unverified, /&lt;img/);
+});
+
+test('quality responses cannot populate a different workspace after switching keys', async () => {
+  let release;
+  const app = harness(async (url, request) => {
+    assert.equal(url, '/v1/evaluations');
+    assert.equal(request.headers.get('Authorization'), 'Bearer test-tenant-key');
+    return new Promise(resolve => {release = () => resolve(jsonResponse({data: [qualityFixture]}));});
+  });
+  const pending = app.loadEvaluations();
+  app.state.key = 'another-workspace';app.resetQualityEvidence();
+  release();await pending;
+  assert.equal(app.state.evaluations.length, 0);
+  assert.equal(app.state.qualityLoaded, false);
+  assert.equal(app.state.qualityLoading, false);
+});
+
+test('an in-flight evidence download is discarded if workspace ownership changes', async () => {
+  let release;
+  const app = harness(async () => new Promise(resolve => {release = () => resolve(jsonResponse(qualityFixture));}));
+  const button = {disabled: false, dataset: {evaluationId: qualityFixture.id}};
+  const pending = app.downloadEvaluation(button);
+  assert.equal(button.disabled, true);
+  app.state.key = 'another-workspace';app.resetQualityEvidence();release();await pending;
+  assert.equal(button.disabled, false);
+  assert.equal(app.observed.notices.length, 0);
+});
+
+test('evidence download verifies and saves exact received bytes without JSON reformatting', async () => {
+  const raw = JSON.stringify(qualityFixture);
+  const hash = require('node:crypto').createHash('sha256').update(raw).digest('hex');
+  const app = harness(async () => new Response(raw, {headers: {'X-BatchForge-Evidence-SHA256': hash}}));
+  const button = {disabled: false, dataset: {evaluationId: qualityFixture.id}};
+  await app.downloadEvaluation(button);
+  assert.equal(app.observed.downloads.length, 1);
+  assert.equal(await app.observed.blobs[0].text(), raw);
+  assert.equal(button.disabled, false);
+});
+
+test('corrupt or missing evidence checksums cannot produce a downloaded artifact', async () => {
+  for (const headers of [{}, {'X-BatchForge-Evidence-SHA256': '0'.repeat(64)}]) {
+    const app = harness(async () => new Response(JSON.stringify(qualityFixture), {headers}));
+    await app.downloadEvaluation({disabled: false, dataset: {evaluationId: qualityFixture.id}});
+    assert.equal(app.observed.downloads.length, 0);
+    assert.match(app.observed.notices[0].message, /checksum/);
+  }
 });

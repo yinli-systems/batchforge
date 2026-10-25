@@ -1,0 +1,11 @@
+{
+  "protocol": "batchforge.quality-catalogue.v1",
+  "evaluations": [
+    {
+      "id": "squad480-dev-20261025-v4",
+      "name": "SQuAD 1.1 · 480B AWQ",
+      "report": "squad480-dev-20261025-v4.json",
+      "sha256": "22c924df3d4f0ab97345f07006ea74f956019c03c26dbc01ed9555b9c6950296"
+    }
+  ]
+}

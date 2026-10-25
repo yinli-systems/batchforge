@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     result_archive_purge_rows: int = Field(default=1000, ge=1, le=10000)
     retention_admission_enabled: bool = False
     frontend_dir: str = "frontend"
+    quality_evidence_catalogue: str = ""
 
     @model_validator(mode="after")
     def valid_pool(self):

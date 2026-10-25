@@ -1,0 +1,41 @@
+{
+  "id": "squad480-dev-20261025-v4",
+  "object": "quality_evaluation",
+  "name": "SQuAD 1.1 · 480B AWQ",
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+  "protocol": "squad-1.1-em-f1-v1",
+  "dataset": {
+    "name": "SQuAD 1.1",
+    "scope": "complete dev set (public)",
+    "sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9"
+  },
+  "tasks": 10570,
+  "batch_count": 166,
+  "delivery_passed": true,
+  "deadline_met": true,
+  "quality_state": "failed",
+  "metrics": {
+    "exact_match_percent": 53.822138126773886,
+    "f1_percent": 75.82132546781159,
+    "on_time_exact_results_per_second": 2.164693956407457,
+    "cohort_seconds": 2628.085131,
+    "prompt_tokens": 2365342,
+    "completion_tokens": 122168
+  },
+  "gate": {
+    "minimum_exact_match_percent": 70.0,
+    "minimum_f1_percent": 80.0
+  },
+  "report_sha256": "22c924df3d4f0ab97345f07006ea74f956019c03c26dbc01ed9555b9c6950296",
+  "scorer_sha256": "2cf7c5fc13f33fc909fbb1e4994802c189b0056164586036e2be63b8d1a7d5ff",
+  "benchmark_sha256": "9d2a3b9d5a161d0b830237ceedba5666262798bd159ce12c638c46c4491b9b87",
+  "cost": null,
+  "verification_scope": [
+    "Operator-published hash-bound report, not an issuer signature",
+    "Batch ownership, model, runtime, counters and usage reconciled on each read",
+    "Public dev score is not a hidden test, contamination audit or production accuracy guarantee",
+    "Runtime identity is worker-reported; this endpoint does not independently attest hardware or re-audit attempts"
+  ],
+  "verification_state": "batch_ledger_reconciled"
+}

@@ -82,6 +82,11 @@ class Store:
         self.schema_version = schema_version or settings.minimum_schema_version()
         self.blobs = None
         self.results = None
+        catalogue=getattr(settings,'quality_evidence_catalogue','')
+        self.quality_evidence=None
+        if catalogue:
+            from .evaluations import EvidenceCatalogue
+            self.quality_evidence=EvidenceCatalogue(catalogue)
         if settings.blob_storage_backend != 'inline':
             if settings.blob_storage_backend == 'local':
                 adapter = LocalBlobStore(settings.blob_storage_root)
@@ -240,6 +245,24 @@ class Store:
         if not row:
             raise APIError(404, "Batch not found", "not_found")
         return batch_view(row)
+
+    async def evaluation_views(self, tenant, *, details=False):
+        if not self.quality_evidence:return []
+        if self.schema_version<6:raise APIError(409,'Quality evidence linkage requires schema 6 or later','feature_unavailable')
+        from .evaluations import LEDGER_SQL
+        ids=sorted({bid for r in self.quality_evidence.records for bid in r.batch_ids})
+        async with self.pool.connection() as conn:
+            rows=await (await conn.execute(LEDGER_SQL,(tenant,ids))).fetchall()
+        return self.quality_evidence.visible(rows,details=details)
+
+    async def list_evaluations(self, tenant):
+        return {'object':'list','data':await self.evaluation_views(tenant)}
+
+    async def get_evaluation(self, tenant, eid):
+        views=await self.evaluation_views(tenant,details=True)
+        for view in views:
+            if view['id']==eid:return view
+        raise APIError(404,'Quality evaluation not found','not_found')
 
     async def capacity(self, tenant):
         from .capacity import CAPACITY_SQL,capacity_view
