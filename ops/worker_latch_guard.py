@@ -13,7 +13,7 @@ from ops.ha.retune_full_gpu import file_env
 from ops.ha.set_scheduler_policy import atomic_bytes
 from ops.product_campaign import MODEL,managed_identity
 from ops.recover_latched_worker import (ROOT,EXPECTED,RUNTIME,campaign_holds_open_lock,
-    require_effective_configuration,require_engine_binding,require_quiescence)
+    require_effective_configuration,require_engine_binding,require_quiescence,charge_attempt)
 from ops.recovery_state import state_document,fingerprint
 from ops.supervise import load_manifest,private_read
 from ops.worker_source import probe_source,PROBED_SOURCES
@@ -32,6 +32,13 @@ def candidate(observation,now):
 def action_allowed(*,now,end,attempts,apply):
     return (apply is True and type(attempts) is int and 0<=attempts<2
         and all(type(x) in (int,float) and math.isfinite(x) for x in (now,end)) and end-now>=600)
+
+
+def budget_available(document,now):
+    # Read-only peek. Exhaustion waits for natural expiry; corrupt/future data
+    # remains closed. Only the locked helper may persist a charged intent.
+    try:charge_attempt(document['attempts'],now=now);return True
+    except (ValueError,KeyError,TypeError):return False
 
 
 class EvidenceWindow:
@@ -150,6 +157,8 @@ def main():
         pins=Pins();report.update(qualification_sha256=hashlib.sha256(trial_raw).hexdigest(),
             qualification_audit_sha256=hashlib.sha256(audit_raw).hexdigest(),worker_source_probe=pins.probe,
             initial_identities=pins.identities.copy(),initial_state_sha256=pins.check())
+        budget_path=ROOT/'.runtime/worker-kv-recovery-budget.json'
+        report['initial_budget_available']=budget_available(json.loads(private_read(budget_path)),time.time())
         if (trial.get('live_worker_source_probe',{}).get('source_files')!=pins.probe['source_files']
             or audit.get('worker_source_probe',{}).get('source_files')!=pins.probe['source_files']):
             raise ValueError('Current service module bytes differ from real fault qualification')
@@ -197,6 +206,9 @@ def main():
             if window.observe(o,datetime.now(timezone.utc)):
                 if not action_allowed(now=time.time(),end=end,attempts=report['recovery_invocations'],apply=args.apply):
                     report['action_refused']='deadline_margin_or_lifetime_limit';save('action_refused',True);break
+                report['budget_available']=budget_available(json.loads(private_read(budget_path)),time.time())
+                if not report['budget_available']:
+                    save('waiting_persistent_budget');time.sleep(5);continue
                 state=pins.check(full=True);report['recovery_invocations']+=1
                 recovery=ROOT.parent/('evidence-api-worker-recovery-guard-'+base.name.removeprefix('evidence-api-')+'-'+str(report['recovery_invocations']))
                 command=[sys.executable,'-m','ops.recover_latched_worker','--run',str(recovery),'--expected-state',state,'--apply']

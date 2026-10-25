@@ -51,6 +51,18 @@ def test_whole_guard_and_persistent_helper_budgets_are_both_needed():
     assert not guard.action_allowed(now=1000,end=2000,attempts=2,apply=True)
 
 
+def test_exhausted_persistent_budget_waits_for_natural_expiry_without_mutation():
+    document={'attempts':[10000,10001]};before=copy.deepcopy(document)
+    assert not guard.budget_available(document,10002)
+    assert guard.budget_available(document,13600)
+    assert document==before
+
+
+@pytest.mark.parametrize('document',[{},None,{'attempts':['invalid']},{'attempts':[float('nan')]},{'attempts':[10003]}])
+def test_corrupt_or_future_budget_stays_closed_without_reset(document):
+    assert not guard.budget_available(document,10002)
+
+
 def state():
     return state_document(b'manifest',{Path('/owned/worker.env'):b'TOKEN=secret-not-exported'},b'receipt',
         {Path('/owned/manage.py'):'abc'},{'worker':{'pid':1,'start_ticks':'2','cwd':'/owned'}})

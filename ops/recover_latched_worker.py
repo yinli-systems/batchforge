@@ -234,7 +234,9 @@ def main():
         if not args.apply:return
         def charge():
             path=ROOT/'.runtime/worker-kv-recovery-budget.json'
-            previous=json.loads(private_read(path)) if path.exists() else {'attempts':[]}
+            # A guard starts only after a real qualification has charged this
+            # ledger. Its disappearance must not silently create a fresh budget.
+            previous=json.loads(private_read(path)) if args.expected_state is not None or path.exists() else {'attempts':[]}
             attempts=charge_attempt(previous['attempts'],now=time.time())
             atomic_bytes(path,(json.dumps({'attempts':attempts})+'\n').encode())
             report['attempts_in_window']=len(attempts)

@@ -10,7 +10,9 @@ separate lock, has an absolute deadline no later than09:00UTC2026-10-26 and a
 monotonic lifetime bound, and starts no recovery in its last600 seconds. It can
 invoke recovery at most twice during that lifetime. The existing native helper
 also charges its persistent two/hour budget, including failed intents. Neither
-budget is reset. Graceful stop lets an identified in-flight native helper finish;
+budget is reset. A read-only budget peek waits for natural hourly expiry instead
+of spawning doomed helpers. Corrupt/future data stays closed; a missing required
+ledger cannot silently create a fresh guard budget. Graceful stop lets an identified in-flight native helper finish;
 a360s helper overrun is retained as an identified independent child, not killed
 between worker stop and watchdog restoration or resubmitted under a new ID.
 
