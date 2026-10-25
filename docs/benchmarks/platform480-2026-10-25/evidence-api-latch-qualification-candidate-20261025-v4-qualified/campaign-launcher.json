@@ -1,0 +1,18 @@
+{
+  "identity": {
+    "pid": 632804,
+    "start_ticks": "47814954",
+    "cwd": "/root/batchforge-runtime/evidence-api-latch-qualification-candidate-20261025-v4/source"
+  },
+  "command": [
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "ops.qualify_worker_latch",
+    "--run",
+    "/root/batchforge-runtime/soak480-latch-qualification-20261025-v2",
+    "--apply"
+  ],
+  "source_commit": "ca3d8f4ba718091abfd9949cb9d0eb0cd21a1175",
+  "github_ci_run": 40223532547,
+  "scope": "One48-task bounded app-transport recovery qualification; independent pidfd resume guard"
+}

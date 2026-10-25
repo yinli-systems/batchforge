@@ -1,0 +1,49 @@
+{
+  "collected_at": "2026-10-25T19:02:21.754233+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-latch-qualification-20261025-v2",
+  "files": {
+    "launcher.json": {
+      "bytes": 174,
+      "sha256": "810c9ff853814367eca06ed4a2e680a5a5e24947b3528bf198a8d0d705e2293f",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "dispatch-observation.json": {
+      "bytes": 59408,
+      "sha256": "945cc7d8c998ed9c8c4529ec109347fe1be24583c275bafc2f1595254875e3d5",
+      "source_relative_path": "dispatch-observation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "recovery-validation.json": {
+      "bytes": 6212,
+      "sha256": "edd9eb3069ab6c54d435c1620bf0fa287c9f9bca2c5d69600090b33ec12ba411",
+      "source_relative_path": "recovery-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "receipt-0.json": {
+      "bytes": 2894,
+      "sha256": "c92540ec17174a2a5148718171fc4ed2f70064ce47542037a588727aa397a397",
+      "source_relative_path": "receipt-0.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "receipt-1.json": {
+      "bytes": 2903,
+      "sha256": "28bb6efb9f501dc7316c7513617573638a17c815177b84d2620ccd5e48aff169",
+      "source_relative_path": "receipt-1.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 6733,
+      "sha256": "7fbade3161e3df8ef7bce153bda7150653ea30ef7463e626d6c776690b852d27",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "queue-report.json": {
+      "bytes": 249,
+      "sha256": "d447380e530c9cf2bea065079b5a55f5c4288a1fb6879da1c97e97ce18175e3a",
+      "source_relative_path": "queue-report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

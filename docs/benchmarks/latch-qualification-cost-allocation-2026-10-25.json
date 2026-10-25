@@ -1,0 +1,17 @@
+{
+  "protocol": "batchforge.operator-allocation.v1",
+  "source_report": "docs/benchmarks/platform480-2026-10-25/soak480-latch-qualification-20261025-v2-complete/campaign.json",
+  "source_report_sha256": "7fbade3161e3df8ef7bce153bda7150653ea30ef7463e626d6c776690b852d27",
+  "source_passed": true,
+  "hourly_cost_usd": 16.1,
+  "rate_source": "Operator confirmation for the existing whole four-H100 Pod",
+  "window_start": "2026-10-25T18:58:32.694784+00:00",
+  "window_end": "2026-10-25T19:00:19.913491+00:00",
+  "whole_controller_seconds": 107.218707,
+  "allocated_usd": 0.47950588408333333,
+  "delivered_compute_tasks": 48,
+  "quality_qualified_tasks": null,
+  "invoice_verified": false,
+  "additional_cloud_resources": false,
+  "scope": "Whole-Pod wall allocation including app maintenance, calibration, injected pause and restoration. Not marginal or invoice cost, no quality-qualified answer price. Subsequent read-only archive audit, storage/network/taxes excluded. Do not sum overlapping windows."
+}

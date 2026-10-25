@@ -1,0 +1,31 @@
+{
+  "collected_at": "2026-10-25T18:47:31.345850+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-latch-qualification-candidate-20261025-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 19547,
+      "sha256": "7f1309223c775c82a60f79d06dc4cbd0b6db586dd24842d63579a2a16a515114",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 5344,
+      "sha256": "13dcf8677e4b77b6e45afef43f801ca4f29bc106e1a7f60df2619f1f988e6bab",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.log.txt": {
+      "bytes": 69,
+      "sha256": "830cab5b5b7a64796f87754134b268166bd84cc45d38552c36d1d80413d282df",
+      "source_relative_path": "validation.log",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 2215,
+      "sha256": "a8892c528b8cf8b5fc95ed5d335909dd72b6f392473ea7f89c295b157fceb66a",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

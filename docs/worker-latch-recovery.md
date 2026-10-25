@@ -3,8 +3,9 @@
 The 3,600-task study exposed a live exact-token worker that stayed paused after
 an uncertain engine invocation. Process liveness did not recover execution.
 `ops.recover_latched_worker` is a concrete native command for guarded same-source
-recovery; it is **not deployed or fault-qualified yet**, and is not an installed
-automatic watchdog. The current fixed 800-task study remains untouched.
+recovery. A finite real480B transport-fault trial has now qualified this command;
+it is **not an installed permanent automatic watchdog**. The earlier800-task
+study closed independently and its evidence stays unchanged.
 
 The command is prepare-only without `--apply`. It requires the current480B TP4
 manifest, source-selected safe-path worker, pinned runtime fingerprint,32 slots,
@@ -40,8 +41,10 @@ Local fault-ordering and invariant tests cover late quiescence loss, budget
 persistence/failure, source drift after stop, manager failure, missing progress,
 journal failure and watchdog recovery failure. Native PostgreSQL17 CI and a
 separate real fault-injection qualification are required before enablement.
-A future finite health guard can invoke this command after detection; that
-integration and qualification remain separate work.
+The [actual48-task qualification](benchmarks/latch-qualification-2026-10-25.md)
+passed with independent engine resume, same-config worker recovery and strict
+ledger/S3 verification. A future finite health guard can invoke this command
+after detection; permanent guard integration remains separate work.
 
 The recovery endpoint must exactly match the worker's actual single private
 inference URL and metrics host/port. A quiet manifest engine cannot authorize
@@ -65,3 +68,23 @@ The [driver, source pins and actual observations](benchmarks/platform480-2026-10
 are exported with transfer SHA verification. This verifies healthy-state refusal,
 not a successful recovery, installed daemon or fault-injection qualification.
 The serving worker/API remain immutable748dc10.
+
+## Actual finite fault recovery
+
+Operator sourceca3d8f4 admitted8 calibration plus40 fault tasks. An independent
+pidfd guard resumed the exact engine API parent after its45-second target
+deadline (observed45.045s). All40 fault tasks were retained pending when the
+worker became safely latched. The controller automatically invoked the command;
+fresh engine/DB/worker quiescence, actual source and effective configuration
+checks passed. Detection to completed recovery verification was10.845s.
+All48 tasks delivered64 output tokens, with48 accepted attempts and32 earlier
+timeout attempts. Both strict ledger receipts and all four input/output S3
+objects subsequently passed independent byte readback after normal DB purge.
+
+The temporary operational timeout was30 seconds; original1200-second bytes,
+primary admission gates and watchdog were restored. This does not demonstrate
+the same detection latency under the original long timeout. The existing
+two-attempt/hour persistent budget consumed one intent; no limiter was reset.
+The first controller run failed before submissions due a portless watchdog
+readiness bug; its failed report and zero-acceptance/restoration proof remain.
+No serving module source, model, cloud resource or storage policy changed.

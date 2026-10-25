@@ -1,0 +1,266 @@
+{
+  "passed": true,
+  "started_at": "2026-10-25T19:02:22.034100+00:00",
+  "source_sha256": "606062a9dfeef84b445f4b9c2086dd043b314d3f7c5fbb82d8b6d08b0c88d312",
+  "trial_report_sha256": "7fbade3161e3df8ef7bce153bda7150653ea30ef7463e626d6c776690b852d27",
+  "services_changed": false,
+  "input_uploads": 0,
+  "inference_submissions": 0,
+  "scope": "Independent48-task fault-cohort strict ledger, all4 retained input/output objects byte readback, normal S3 archive/purge, restored source and fleet; no raw payload export",
+  "full_cohort_archive": {
+    "ready_s3_archives": 2,
+    "rows_purged": 48,
+    "fully_purged": 2
+  },
+  "full_cohort_database_payload": {
+    "tasks": 48,
+    "responses_remaining": 0
+  },
+  "attempt_outcomes": [
+    {
+      "status": "completed",
+      "error_code": "none",
+      "records": 48
+    },
+    {
+      "status": "retrying",
+      "error_code": "kv_admission_timeout",
+      "records": 32
+    }
+  ],
+  "latencies": [
+    {
+      "cohort": "calibration",
+      "tasks": 8,
+      "p50_seconds": 5.03725,
+      "p95_seconds": 5.0593826,
+      "p99_seconds": 5.06176932
+    },
+    {
+      "cohort": "fault",
+      "tasks": 40,
+      "p50_seconds": 60.589016,
+      "p95_seconds": 63.302443149999995,
+      "p99_seconds": 63.30902204
+    }
+  ],
+  "retention": {
+    "retained_tasks": 48865,
+    "max_retained_tasks": 50000,
+    "headroom": 1135
+  },
+  "database_read_only_verified": true,
+  "batches": [
+    {
+      "cohort": "calibration",
+      "readback": {
+        "protocol": "batchforge.readback.v1",
+        "captured_at": "2026-10-25T19:02:40.340784+00:00",
+        "receipt_sha256": "b1cd1e57575558ed711946d168b17418daed1eab388583053054ff46285cfea9",
+        "batch_id": "batch_945572fedbfc0978a61f8c6daeef9795",
+        "checksum_verified": true,
+        "artifacts": [
+          {
+            "file_id": "file_b323a3b3946b59302697e5bafa97e7cf",
+            "state": "matched",
+            "passed": true,
+            "bytes": 5680,
+            "sha256": "eacd29cae6e43561d12163e1edc9f754faadb3ba2f95ee573b0496690046c708",
+            "expected_sha256": "eacd29cae6e43561d12163e1edc9f754faadb3ba2f95ee573b0496690046c708"
+          },
+          {
+            "file_id": "file_11f1104c8db545649a82e16e9f8ddd76",
+            "state": "matched",
+            "passed": true,
+            "bytes": 8683,
+            "sha256": "db73e20486049fd1519634b149ed5f791a177e1d0df642fb04492c826e942117",
+            "expected_sha256": "db73e20486049fd1519634b149ed5f791a177e1d0df642fb04492c826e942117"
+          }
+        ],
+        "passed": true,
+        "scope": "Authenticated bytes read now, compared to the recorded receipt; no payload persisted, no attestation or quality claim"
+      },
+      "accepted_usage": {
+        "prompt_tokens": 1024,
+        "completion_tokens": 512
+      }
+    },
+    {
+      "cohort": "fault",
+      "readback": {
+        "protocol": "batchforge.readback.v1",
+        "captured_at": "2026-10-25T19:02:44.704816+00:00",
+        "receipt_sha256": "540d736b63fb1e24f24b673ae255e8c8c5bf0344762e6bc186f34f0e220b36e4",
+        "batch_id": "batch_b6cf0402ae0acedc8b4c3d1c50c0fb25",
+        "checksum_verified": true,
+        "artifacts": [
+          {
+            "file_id": "file_5069613c82ba46ebaa45a0fdebd0d0d1",
+            "state": "matched",
+            "passed": true,
+            "bytes": 28160,
+            "sha256": "42ab8d066c5664ecdaefae2e19e178e1f1685ac67dc85ff193feef9747658837",
+            "expected_sha256": "42ab8d066c5664ecdaefae2e19e178e1f1685ac67dc85ff193feef9747658837"
+          },
+          {
+            "file_id": "file_1f3e1729ec104ba1982c9c8b3bc627d5",
+            "state": "matched",
+            "passed": true,
+            "bytes": 43068,
+            "sha256": "b41d012cda13554c19f30c1a8d858771c7831f4082bc688ae9bd0828e0616c68",
+            "expected_sha256": "b41d012cda13554c19f30c1a8d858771c7831f4082bc688ae9bd0828e0616c68"
+          }
+        ],
+        "passed": true,
+        "scope": "Authenticated bytes read now, compared to the recorded receipt; no payload persisted, no attestation or quality claim"
+      },
+      "accepted_usage": {
+        "prompt_tokens": 5120,
+        "completion_tokens": 2560
+      }
+    }
+  ],
+  "worker_source_probe": {
+    "protocol": "batchforge.worker-source-probe.v1",
+    "passed": true,
+    "safe_path": true,
+    "source_files": {
+      "worker/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "worker/config.py": "53786458d8d3aca6f5c953b2e5d06a0ac4315ec5e3349f426f435591b8583fe7",
+      "worker/runtime.py": "b7d5ca96b0e57f557d0e6f0a32e994e167cb96761dc23b8d9a2c1c7a9ee237a7",
+      "worker/metrics.py": "f9119336068200ffc8fa994924b93d15a824493c8502d86e237678ebfb0a5196",
+      "worker/kv_admission.py": "6c13858e3cf67fba06dddc99bd003ad99fdca1b957ed190bcb86808435341bc1",
+      "worker/inventory.py": "b7051c0bb79569c440e72ef0155e91f07a82a7861e1e4a240e21cb02f0707426",
+      "backend/scheduling.py": "d867b94dc4ee9d468742f38957b966b9a3caa203035cde741c1bf77b511b337c",
+      "backend/fleet.py": "71f19ace704a60656d2841103d9b7a767b4a9e6f126d87f189228457bdacd0b4",
+      "worker/__main__.py": "70017c658180a9195340611de8089f6cbacb1775d0a907f9b0fa00e62ce8a062"
+    },
+    "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+    "worker_id": "qwen480-prod-1ca6a2e05852",
+    "slots": 32,
+    "token_budget": 164256,
+    "max_model_len": 18440,
+    "adaptive_kv_enabled": true,
+    "inventory_gpu_indices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "inventory_node_sha256": "cef18c73b719e43bf33f41c699e1c3b01e3783bdbc7cb70701c24fd23b036bcb",
+    "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+    "registration_performed": false,
+    "inference_performed": false,
+    "services_changed": false
+  },
+  "fleet": {
+    "object": "list",
+    "data": [
+      {
+        "id": "cef18c73b719e43bf33f41c699e1c3b01e3783bdbc7cb70701c24fd23b036bcb",
+        "reports": [
+          {
+            "worker_id": "qwen480-prod-1ca6a2e05852",
+            "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+            "worker_status": "online",
+            "inventory_state": "fresh",
+            "age_seconds": 30.915553,
+            "inventory": {
+              "protocol": "batchforge.gpu-inventory.v1",
+              "node_id": "cef18c73b719e43bf33f41c699e1c3b01e3783bdbc7cb70701c24fd23b036bcb",
+              "observed_at": "2026-10-25T19:02:14.470219+00:00",
+              "devices": [
+                {
+                  "id": "014e325f79e8d95d51440d9cea443fc84a4636add81e7263d255f128d6fd72fe",
+                  "index": 0,
+                  "name": "NVIDIA H100 80GB HBM3",
+                  "memory_total_mib": 81559,
+                  "memory_used_mib": 74125,
+                  "utilization_percent": 0.0,
+                  "power_watts": 123.29,
+                  "temperature_celsius": 38.0
+                },
+                {
+                  "id": "537844f73b6c9fca87be68c8bfecf7cc2b87a86366435fa68459a9ed4b5710e3",
+                  "index": 1,
+                  "name": "NVIDIA H100 80GB HBM3",
+                  "memory_total_mib": 81559,
+                  "memory_used_mib": 74125,
+                  "utilization_percent": 0.0,
+                  "power_watts": 124.43,
+                  "temperature_celsius": 38.0
+                },
+                {
+                  "id": "42885736c6b14dd93af626383f18d66b1083d79bf6de7df9d99092bfed00378c",
+                  "index": 2,
+                  "name": "NVIDIA H100 80GB HBM3",
+                  "memory_total_mib": 81559,
+                  "memory_used_mib": 74125,
+                  "utilization_percent": 0.0,
+                  "power_watts": 121.11,
+                  "temperature_celsius": 38.0
+                },
+                {
+                  "id": "0b28b5d383987d117290f4eb7a689df30f7f2639a2450c66486e6a02a7876e27",
+                  "index": 3,
+                  "name": "NVIDIA H100 80GB HBM3",
+                  "memory_total_mib": 81559,
+                  "memory_used_mib": 74125,
+                  "utilization_percent": 0.0,
+                  "power_watts": 125.07,
+                  "temperature_celsius": 36.0
+                }
+              ],
+              "links": [
+                {
+                  "a": 0,
+                  "b": 1,
+                  "relation": "NV18"
+                },
+                {
+                  "a": 0,
+                  "b": 2,
+                  "relation": "NV18"
+                },
+                {
+                  "a": 0,
+                  "b": 3,
+                  "relation": "NV18"
+                },
+                {
+                  "a": 1,
+                  "b": 2,
+                  "relation": "NV18"
+                },
+                {
+                  "a": 1,
+                  "b": 3,
+                  "relation": "NV18"
+                },
+                {
+                  "a": 2,
+                  "b": 3,
+                  "relation": "NV18"
+                }
+              ],
+              "topology_complete": true
+            }
+          }
+        ],
+        "conflicts": [],
+        "observed_device_count": 4,
+        "fresh_device_count": 4,
+        "placement_capacity": null
+      }
+    ],
+    "rejected_reports": 0,
+    "observed_at": "2026-10-25T19:02:45.385772+00:00",
+    "scope": "Shared workers serving configured models; device-wide operator-selected observations, not exclusive allocation or hardware attestation",
+    "limitations": [
+      "Freshness requires a worker heartbeat and a report no older than 60 seconds; future skew over five seconds is stale",
+      "Observed devices and link labels are not free GPU capacity, measured interconnect bandwidth, or proof of inference placement"
+    ]
+  },
+  "managed_identities_unchanged_during_audit": true,
+  "finished_at": "2026-10-25T19:02:45.392392+00:00"
+}

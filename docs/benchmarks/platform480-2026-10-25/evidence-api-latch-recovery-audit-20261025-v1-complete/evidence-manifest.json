@@ -1,0 +1,31 @@
+{
+  "collected_at": "2026-10-25T19:03:42.923836+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-latch-recovery-audit-20261025-v1",
+  "files": {
+    "launcher.json": {
+      "bytes": 160,
+      "sha256": "0e0fd34041b0e176da83f8a7ab04c37956ada0515362988271954f3d30acf215",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 9892,
+      "sha256": "b99e49b00f28dfea1ca109d085b7b20792d8f800f455db2ef0a412fadfa6540e",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.log.txt": {
+      "bytes": 53,
+      "sha256": "7663327cb08cfdcec46915d5bee6b48f4c2cb8d500f4c6d27502d36d56786965",
+      "source_relative_path": "validation.log",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 6336,
+      "sha256": "606062a9dfeef84b445f4b9c2086dd043b314d3f7c5fbb82d8b6d08b0c88d312",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

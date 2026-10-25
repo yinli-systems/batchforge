@@ -65,4 +65,22 @@ follow-up requires its own native check and real fault qualification.
 The endpoint/effective-configuration follow-up **f1caf9a** passed [native run40220516759](https://github.com/yinli-systems/batchforge/actions/runs/40220516759):
 **1,467 Python tests, zero skipped;23 console tests**, PostgreSQL17.11.
 [Authenticated result and log hash](../ops/reports/github-native-ci-f1caf9a-2026-10-25.json).
-No serving source changed, and recovery fault qualification remains outstanding.
+No serving source changed in that check; real fault qualification followed below.
+
+The pidfd-rescue/controller source **d0238e2** passed [run40222634918](https://github.com/yinli-systems/batchforge/actions/runs/40222634918):
+1,497 Python tests/zero skipped and23 console tests. The189cd03 follow-up run
+40222839331 was cancelled by workflow concurrency when the operator pushed a
+further safety fix; it is neither a test failure nor a passing check.
+Then **ca30f26** passed [run40223026493](https://github.com/yinli-systems/batchforge/actions/runs/40223026493)
+with1,498 Python tests and23 console tests. Its actual controller failed before
+inference because a portless watchdog was incorrectly given HTTP readiness.
+Passing tests alone had not established real fault qualification.
+
+The corrected exact head **ca3d8f4** passed [run40223532547](https://github.com/yinli-systems/batchforge/actions/runs/40223532547):
+**1,502 Python tests, zero skipped;23 console tests**, PG17.11/Node24.22.1,
+UID65534, compileall. Its distinct48-task real GPU recovery trial and independent
+S3/ledger audit subsequently passed. [Authenticated CI result](../ops/reports/github-native-ci-ca3d8f4-2026-10-25.json)
+retains source/log hashes and zero registered runners. Each check used a new
+one-job runner; all public bootstrap and closed receipts were exported, and
+the cancelled intermediate run remains cancelled evidence. Hosted account
+restrictions and lack of a main-branch merge test remain unchanged.

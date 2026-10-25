@@ -1,0 +1,37 @@
+{
+  "collected_at": "2026-10-25T19:03:44.311737+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-latch-qualification-candidate-20261025-v4",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 19547,
+      "sha256": "6f7e7c0125dbc63c2c6cf13fd1c535d419d2d189c427efd0cddd1def2ee68b24",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign-launcher.json": {
+      "bytes": 580,
+      "sha256": "bde16d8836abd46a3a13d6beff7191a4f40b495d9e3a40c28feea135cc8aaaa2",
+      "source_relative_path": "campaign-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 5343,
+      "sha256": "220034599fe6235fc8bd340c1fb1c75c842a2d76da06de5bc16c3e2eacfd8cbc",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.log.txt": {
+      "bytes": 69,
+      "sha256": "830cab5b5b7a64796f87754134b268166bd84cc45d38552c36d1d80413d282df",
+      "source_relative_path": "validation.log",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 2215,
+      "sha256": "147b48e4bf8ca99799cab1a99fbbb92cf005765470ffe96061c83df33b3217f0",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

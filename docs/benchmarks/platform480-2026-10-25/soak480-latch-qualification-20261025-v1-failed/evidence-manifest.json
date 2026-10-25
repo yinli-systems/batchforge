@@ -1,0 +1,25 @@
+{
+  "collected_at": "2026-10-25T18:57:12.354620+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-latch-qualification-20261025-v1",
+  "files": {
+    "launcher.json": {
+      "bytes": 174,
+      "sha256": "7f0f5595d5a6c5e4b9eb501d4d909dab1d74b64ea2e58fbb553fb492edc4852a",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "initial-failure.json": {
+      "bytes": 747,
+      "sha256": "55e25ca0a1373ed87045f993cc5d0a343bf818d056d636e29464148fcc4a8e84",
+      "source_relative_path": "initial-failure.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 4473,
+      "sha256": "258f670ca09fd012c6f20460816473af60c92962fafa1bd0fe58555d5921349c",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

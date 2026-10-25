@@ -1,0 +1,21 @@
+{
+  "passed": false,
+  "qualification_failed_before_submission": true,
+  "fault_injected": false,
+  "accepted_batches": 0,
+  "actual_inference_submissions": 0,
+  "original_environment_bytes_restored": true,
+  "readiness": {
+    "8082": 200,
+    "8083": 200,
+    "9105": 200
+  },
+  "engine_quiescent": true,
+  "watchdog_live_identity": {
+    "pid": 629088,
+    "start_ticks": "47781551",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "reason": "Operator controller treated a portless watchdog as an HTTP service; bounded wait timed out before any task submission. Same mistake also caused a watchdog restoration timeout receipt although watchdog is live. Original failed report preserved.",
+  "captured_at": "2026-10-25T18:57:05.876870+00:00"
+}

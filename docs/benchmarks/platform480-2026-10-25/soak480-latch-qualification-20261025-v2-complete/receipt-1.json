@@ -1,0 +1,83 @@
+{
+  "protocol": "batchforge.receipt.v1",
+  "receipt": {
+    "batch_id": "batch_b6cf0402ae0acedc8b4c3d1c50c0fb25",
+    "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+    "status": "completed",
+    "created_at": "2026-10-25T18:59:07.009861+00:00",
+    "counts": {
+      "total": 40,
+      "pending": 0,
+      "running": 0,
+      "completed": 40,
+      "failed": 0,
+      "cancelled": 0
+    },
+    "accepted_usage": {
+      "prompt_tokens": 5120,
+      "completion_tokens": 2560
+    },
+    "ledger_state": "consistent_ledger",
+    "checks": {
+      "batch_and_task_counts_match": true,
+      "batch_and_task_usage_match": true,
+      "no_duplicate_accepted_attempts_observed": true,
+      "live_completed_tasks_have_accepted_attempts": true,
+      "live_task_attempt_counts_match": true,
+      "live_task_and_attempt_rows_match": true,
+      "live_task_and_accepted_attempt_usage_match": true
+    },
+    "history": {
+      "live_tasks": 40,
+      "retired_tasks": 0,
+      "observed_attempts": 72,
+      "observed_accepted_attempts": 40,
+      "reported_attempts": 72,
+      "tasks_missing_attempt_records": 0,
+      "tasks_with_excess_attempt_records": 0,
+      "full_attempt_history_available": true
+    },
+    "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+    "runtime_compatibility_scope": "first_dispatch",
+    "reported_runtimes": [
+      {
+        "accepted_attempts": 40,
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+      }
+    ],
+    "runtime_list_truncated": false,
+    "artifacts": [
+      {
+        "id": "file_5069613c82ba46ebaa45a0fdebd0d0d1",
+        "kind": "input",
+        "bytes": 28160,
+        "sha256": "42ab8d066c5664ecdaefae2e19e178e1f1685ac67dc85ff193feef9747658837",
+        "hash_source": "verified_upload_metadata",
+        "storage_deleted_at": null,
+        "storage_expires_at": "2026-10-26T18:59:04.655097+00:00",
+        "archive_manifest_sha256": null
+      },
+      {
+        "id": "file_1f3e1729ec104ba1982c9c8b3bc627d5",
+        "kind": "output",
+        "bytes": 0,
+        "sha256": null,
+        "hash_source": "not_published",
+        "storage_deleted_at": null,
+        "storage_expires_at": null,
+        "archive_manifest_sha256": null
+      }
+    ],
+    "quality": {
+      "state": "not_evaluated_by_this_receipt"
+    },
+    "verification_scope": [
+      "Single PostgreSQL statement snapshot, including retained-history counters",
+      "Runtime fingerprints are worker-reported, not independent hardware attestation",
+      "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+      "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+    ]
+  },
+  "receipt_sha256": "c674a1c63d856d63da211bfd20f3747a6fe3f4e115ef364cdb9701abe877544a",
+  "captured_at": "2026-10-25T19:00:10.561898+00:00"
+}

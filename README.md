@@ -28,8 +28,17 @@ See [ground-truth evaluation and endurance protocol](docs/benchmarks/quality-squ
 A frozen JSON-span answer contract subsequently passed a disjoint 1,000-question
 public holdout: **EM82.8% / F1 91.43%** versus matched baseline 56.9% / 77.10%.
 The original full-dev gate remains failed. [Protocol, paired outcomes and cost](docs/benchmarks/quality-contract-2026-10-25.md)
-retain both results. Existing-Pod CPU CI passed **1,415 PostgreSQL17 tests and
-23 console tests** for `748dc10`; see [actual CI evidence](docs/ci.md).
+retain both results. Serving source748dc10 passed1,415 native PostgreSQL17
+tests; latest operator sourceca3d8f4 passed **1,502 Python tests and23 console
+tests**. See [actual CI evidence](docs/ci.md).
+
+The post-Fleet800-task workload closed at428.166 output tokens/s, with four-card
+sample means87.95–96.22%; it is not a matched speedup or daily capacity claim.
+An additional [48-task real latch-recovery qualification](docs/benchmarks/latch-qualification-2026-10-25.md)
+preserved40 pending identities, automatically recovered the same-config worker
+after an independently resumed app-transport fault, and reconciled48 accepted
+attempts plus32 earlier timeout attempts. All four input/output S3 objects
+passed byte readback. A permanent automatic latch guard is still pending.
 
 Historical GPT-OSS-120B and Qwen3-235B runs remain in the
 [single-Pod validation](docs/single-pod-validation-2026-10-24.md).

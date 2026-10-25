@@ -1,0 +1,81 @@
+{
+  "captured_at": "2026-10-25T18:53:21.967598+00:00",
+  "commit": "189cd03b51255000a5e550205e221dacaab1d2c4",
+  "run_id": 40222839331,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40222839331",
+  "run_attempt": 1,
+  "conclusion": "cancelled",
+  "job": {
+    "id": 121257935774,
+    "name": "existing-pod-cpu",
+    "conclusion": "cancelled",
+    "started_at": "2026-10-25T18:46:40Z",
+    "completed_at": "2026-10-25T18:49:22Z",
+    "runner_name": "batchforge-cpu-20261025-v9",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-10-25T18:46:41Z",
+        "completed_at": "2026-10-25T18:46:43Z"
+      },
+      {
+        "name": "Set up runner",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-10-25T18:46:43Z",
+        "completed_at": "2026-10-25T18:46:43Z"
+      },
+      {
+        "name": "Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-10-25T18:46:43Z",
+        "completed_at": "2026-10-25T18:47:39Z"
+      },
+      {
+        "name": "Locked CPU dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-10-25T18:47:39Z",
+        "completed_at": "2026-10-25T18:47:46Z"
+      },
+      {
+        "name": "Native PostgreSQL17, worker failures and console regressions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-10-25T18:47:46Z",
+        "completed_at": "2026-10-25T18:49:18Z"
+      },
+      {
+        "name": "Post Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10,
+        "started_at": "2026-10-25T18:49:18Z",
+        "completed_at": "2026-10-25T18:49:18Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11,
+        "started_at": "2026-10-25T18:49:18Z",
+        "completed_at": "2026-10-25T18:49:18Z"
+      }
+    ]
+  },
+  "registration_remaining": 0,
+  "runner_name_still_registered": false,
+  "new_cloud_resources": false,
+  "billing_settings_changed": false,
+  "paid_github_hosted_minutes_used": false,
+  "scope": "Actual trusted private head push on existing Pod CPU; not a main merge integration test",
+  "reason": "Operator pushed a watchdog-safety follow-up while this prior check was still running; job concurrency cancelled it. Not a test failure or a passing run."
+}

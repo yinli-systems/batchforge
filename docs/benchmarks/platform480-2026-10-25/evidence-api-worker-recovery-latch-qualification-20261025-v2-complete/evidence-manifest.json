@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-25T19:02:23.315686+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-worker-recovery-latch-qualification-20261025-v2",
+  "files": {
+    "validation.json": {
+      "bytes": 6212,
+      "sha256": "edd9eb3069ab6c54d435c1620bf0fa287c9f9bca2c5d69600090b33ec12ba411",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}
