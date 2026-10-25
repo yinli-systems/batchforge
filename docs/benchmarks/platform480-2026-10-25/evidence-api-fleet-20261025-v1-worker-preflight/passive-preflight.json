@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "source_commit": "5cca48896e6d22ea4994f122ad1d45ffe804d4b6",
+  "helper_git_commit": "e1900dd031e651d88341dd23ae582a337bfe9693",
+  "helper_sha256": "5a92b83aeb7e7e1e97070ee020577f57cb0ab05817960401710dc9d944fbc260",
+  "captured_at": "2026-10-25T15:55:50.347797+00:00",
+  "environment_files_changed": false,
+  "registration_performed": false,
+  "services_changed": false,
+  "inference_performed": false,
+  "probe": {
+    "protocol": "batchforge.worker-source-probe.v1",
+    "passed": true,
+    "safe_path": true,
+    "source_files": {
+      "worker/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "worker/config.py": "53786458d8d3aca6f5c953b2e5d06a0ac4315ec5e3349f426f435591b8583fe7",
+      "worker/runtime.py": "b7d5ca96b0e57f557d0e6f0a32e994e167cb96761dc23b8d9a2c1c7a9ee237a7",
+      "worker/metrics.py": "f9119336068200ffc8fa994924b93d15a824493c8502d86e237678ebfb0a5196",
+      "worker/kv_admission.py": "6c13858e3cf67fba06dddc99bd003ad99fdca1b957ed190bcb86808435341bc1",
+      "worker/inventory.py": "b7051c0bb79569c440e72ef0155e91f07a82a7861e1e4a240e21cb02f0707426",
+      "backend/scheduling.py": "d867b94dc4ee9d468742f38957b966b9a3caa203035cde741c1bf77b511b337c",
+      "backend/fleet.py": "71f19ace704a60656d2841103d9b7a767b4a9e6f126d87f189228457bdacd0b4",
+      "worker/__main__.py": "70017c658180a9195340611de8089f6cbacb1775d0a907f9b0fa00e62ce8a062"
+    },
+    "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+    "worker_id": "qwen480-prod-1ca6a2e05852",
+    "slots": 32,
+    "token_budget": 164256,
+    "max_model_len": 18440,
+    "adaptive_kv_enabled": true,
+    "inventory_gpu_indices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "inventory_node_sha256": "5e0e1bbfce7d174785f88695c5c84a5940103800f54baad799ba6ce097a95c5f",
+    "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+    "registration_performed": false,
+    "inference_performed": false,
+    "services_changed": false
+  },
+  "managed_identities_unchanged": true
+}

@@ -92,3 +92,14 @@ an application port, samples NVIDIA or performs inference. A changed file,
 unexpected origin or failed configuration stops preparation. Local focused
 verification: **67 passed**. This is preflight support, not a rollout controller;
 no running worker/source/manifest has been changed by these helpers.
+
+The same definition-only probe passed on the actual Pod at **15:55:50 UTC**:
+Python safe-path mode selected all nine pinned `5cca488` files from the Fleet
+candidate while retaining the live root cwd. The parsed configuration preserved
+the existing worker ID, 480B model, 32 slots, 164,256-token budget, 18,440-token
+context and runtime fingerprint. All managed service identities were unchanged.
+The [native preflight receipt](benchmarks/platform480-2026-10-25/evidence-api-fleet-20261025-v1-worker-preflight/passive-preflight.json)
+pins helper `e1900dd` and its SHA-256. The probe wrote its evidence receipt;
+no service environment file, registration, inference or running study changed.
+This qualifies the source-selection mechanism, not Fleet rollout or gang
+placement. Production enablement still waits for the current fixed study.
