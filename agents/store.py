@@ -87,11 +87,13 @@ class AgentStore:
             if after:
                 anchor=await one(conn,'SELECT created_at,id FROM bf_agents.runs WHERE tenant_id=%s AND id=%s',(tenant,after))
                 if not anchor:raise AgentError(404,'agent_cursor_not_found')
-            rows=await (await conn.execute('''SELECT * FROM bf_agents.runs WHERE tenant_id=%s
+            rows=await (await conn.execute('''SELECT id,left(goal,160) AS goal_preview,length(goal)>160 AS goal_truncated,
+                model,status,model_calls,tool_calls,generated_tokens,revision,event_hash,deadline_at,created_at,updated_at
+                FROM bf_agents.runs WHERE tenant_id=%s
                 AND (%s::timestamptz IS NULL OR (created_at,id)<(%s::timestamptz,%s::text))
                 ORDER BY created_at DESC,id DESC LIMIT %s''',
                 (tenant,anchor['created_at'] if anchor else None,anchor['created_at'] if anchor else None,after,limit+1))).fetchall()
-        return {'data':[view(r) for r in rows[:limit]],'has_more':len(rows)>limit,
+        return {'data':[{k:v.isoformat() if hasattr(v,'isoformat') else v for k,v in r.items()} for r in rows[:limit]],'has_more':len(rows)>limit,
                 'next_cursor':rows[limit-1]['id'] if len(rows)>limit else None}
 
     async def claim(self,owner,tenants,*,seconds=30):

@@ -439,3 +439,71 @@ async def test_bounded_schema_canary_preserves_response_format_through_http_db_c
         assert {t['custom_id']:t['body']['response_format'] for t in tasks}==expected
         # Cancel only this isolated test cohort; no GPU or production process.
         assert (await client.post('/v1/batches/'+created.json()['id']+'/cancel',headers=public)).status_code==200
+
+
+async def test_agent_list_avoids_fetching_model_inputs_results_or_memory_documents(store):
+    run=await store.create(A,'long-goal',goal='G'*2000,model='test-model')
+    page=await store.list(A,limit=1);row=page['data'][0]
+    assert row['id']==run['id'] and row['goal_preview']=='G'*160 and row['goal_truncated']
+    assert not {'state','result','policy','goal'}&set(row)
+    assert (await store.get(A,run['id']))['goal']=='G'*2000
+
+
+async def test_agent_mount_reuses_actual_parent_pool_auth_and_stays_off_by_default(store,tmp_path):
+    import hashlib,json,httpx
+    from backend.app import create_app as batch_app
+    from backend.config import Settings
+    key='test-only-shared-agent-console-key';token='test-only-shared-worker-token'
+    with psycopg.connect(DSN,autocommit=True) as db:
+        db.execute('INSERT INTO api_keys(key_hash,tenant_id) VALUES(%s,%s) ON CONFLICT DO NOTHING',(hashlib.sha256(key.encode()).hexdigest(),A))
+    path=tmp_path/'executors.json';path.write_text(json.dumps({A:key}));path.chmod(0o600)
+    app=batch_app(Settings(database_url=DSN,model_name='test-model',batchforge_worker_token=token,
+        agent_api_enabled=True,agent_executor_keys_file=str(path),db_pool_min=1,db_pool_max=2))
+    agent=next(r.app for r in app.routes if getattr(r,'path',None)=='/agents')
+    async with app.router.lifespan_context(app),httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as c:
+        assert agent.state.store.pool is app.state.pool
+        headers={'Authorization':'Bearer '+key}
+        assert (await c.get('/agents/console/')).status_code==200
+        caps=(await c.get('/agents/v1/agent-capabilities',headers=headers)).json()
+        assert caps['admission_enabled'] and caps['batch_console_path']=='/' and caps['planner_protocols']==['json-v1']
+        result=await c.post('/agents/v1/agent-runs',headers={**headers,'Idempotency-Key':'shared-agent'},json={'goal':'test only','model':'test-model'})
+        assert result.status_code==200,result.text
+        assert (await c.get('/v1/overview',headers=headers)).json()['features']['agent_console']=='/agents/console/'
+    assert app.state.pool.closed
+    disabled=batch_app(Settings(database_url=DSN,model_name='test-model',batchforge_worker_token=token,db_pool_min=1,db_pool_max=2))
+    async with disabled.router.lifespan_context(disabled),httpx.AsyncClient(transport=httpx.ASGITransport(app=disabled),base_url='http://test') as c:
+        assert (await c.get('/agents/console/')).status_code==404
+        assert (await c.get('/v1/overview',headers=headers)).json()['features']['agent_console'] is None
+
+
+async def test_console_snapshot_preserves_float_commitments_and_scopes_receipt_before_lookup(store):
+    import httpx
+    from backend.config import Settings
+    from agents.app import create_app
+    from backend.receipts import DOMAIN,canonical
+    from agents.contracts import digest
+    run=await make(store);lease=await store.claim('synthetic-console-test',[A])
+    state={'observations':[{'tool':'math.calculate','result':{'value':42.0},'elapsed_seconds':.125}],
+           'receipts':[{'batch_id':'batch_one','receipt_sha256':'a'*64,'usage':{'prompt_tokens':20,'completion_tokens':10}}]}
+    await store.transition(A,run['id'],lease['lease_token'],lease['revision'],'final',kind='run.completed',state=state,status='completed',result={'answer':'42'},model_calls=1,tool_calls=1,generated_tokens=10)
+    calls=[]
+    class Parent:
+        pool=store.pool
+        async def tenant(self,key):return A if key=='A' else B
+        async def batch_receipt(self,tenant,bid):
+            calls.append((tenant,bid));value={'batch_id':bid,'model':'test-model','ledger_state':'consistent_ledger',
+                'counts':{'total':1,'completed':1},'checks':{'synthetic_test_consistency':True},'accepted_usage':{'prompt_tokens':20,'completion_tokens':10}}
+            return {'protocol':'batchforge.receipt.v1','receipt':value,'receipt_sha256':__import__('hashlib').sha256(DOMAIN+canonical(value)).hexdigest()}
+    app=create_app(Settings(model_name='test-model'),shared_backend=lambda:Parent(),executor_tenants=[A])
+    async with app.router.lifespan_context(app),httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as c:
+        a={'Authorization':'Bearer A'};b={'Authorization':'Bearer B'}
+        snapshot=await c.get('/v1/agent-runs/'+run['id']+'/snapshot',headers=a);body=snapshot.json()
+        assert snapshot.status_code==200 and '42.0' in body['state_json']
+        assert __import__('hashlib').sha256(snapshot.content).hexdigest()==snapshot.headers['X-BatchForge-Agent-Snapshot-SHA256']
+        assert __import__('hashlib').sha256(body['state_json'].encode()).hexdigest()==digest(state)
+        path='/v1/agent-runs/'+run['id']+'/children/batch_one/receipt'
+        assert (await c.get(path,headers=b)).status_code==404 and calls==[]
+        assert (await c.get(path.replace('batch_one','batch_other'),headers=a)).status_code==404 and calls==[]
+        result=await c.get(path,headers=a)
+        assert result.status_code==200,result.text
+        assert result.json()['accepted_usage_reconciled'] and calls==[(A,'batch_one')]

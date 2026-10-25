@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     max_output_tokens: int = Field(default=4096, ge=1, le=32768)
     # Off until this deployment/model passes the native decoder qualification.
     json_schema_enabled: bool = False
+    agent_api_enabled: bool = False
+    agent_executor_keys_file: str = ''
     max_attempts: int = Field(default=3, ge=1, le=20)
     lease_seconds: int = Field(default=90, ge=5, le=3600)
     retry_base_seconds: int = Field(default=2, ge=1, le=60)

@@ -13,24 +13,7 @@ from .app import create_app
 from .store import AgentStore
 from .batch import BatchAdapter
 from .runtime import Coordinator
-
-
-def credentials(path):
-    # Credentials are never accepted from model/user request bodies. A symlink,
-    # other-owned file or group-readable registry is not a protected executor.
-    path=Path(path)
-    try:fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
-    except OSError:raise ValueError('Regular protected registry required') from None
-    with os.fdopen(fd,'rb') as stream:
-        st=os.fstat(stream.fileno())
-        if not stat.S_ISREG(st.st_mode) or st.st_uid!=os.geteuid() or stat.S_IMODE(st.st_mode)&0o077 or st.st_size>65536:
-            raise ValueError('Executor registry must be owner-only and bounded')
-        raw=stream.read(65537)
-    if len(raw)>65536:raise ValueError('Executor registry exceeds bound')
-    value=strict_json(raw)
-    if not isinstance(value,dict) or not 1<=len(value)<=64 or any(not isinstance(k,str) or not 1<=len(k)<=128 or not isinstance(v,str) or not 16<=len(v)<=256 for k,v in value.items()):
-        raise ValueError('Explicit tenant-key registry required')
-    return value
+from .executors import credentials
 
 
 async def run_coordinator(settings,keys,endpoint,seconds):
@@ -65,10 +48,11 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('service',choices=['api','coordinator'])
     p.add_argument('--executor-keys',type=Path,required=True);p.add_argument('--batch-url',default='http://127.0.0.1:8080')
     p.add_argument('--port',type=int,default=18170);p.add_argument('--seconds',type=int,default=3600)
+    p.add_argument('--read-only',action='store_true',help='Inspect a preserved Agent database without mutation routes')
     args=p.parse_args()
     if not 1<=args.port<=65535 or not 30<=args.seconds<=50400:p.error('Bounded port and lifetime required')
     keys=credentials(args.executor_keys);settings=get_settings()
-    if args.service=='api':uvicorn.run(create_app(settings,executor_tenants=tuple(keys)),host='127.0.0.1',port=args.port,access_log=False)
+    if args.service=='api':uvicorn.run(create_app(settings,executor_keys_file=args.executor_keys,batch_endpoint=args.batch_url,read_only=args.read_only),host='127.0.0.1',port=args.port,access_log=False)
     else:asyncio.run(run_coordinator(settings,keys,args.batch_url,args.seconds))
 
 

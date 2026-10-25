@@ -312,11 +312,12 @@ def main():
         migrate_agents(state_dsn)
         write(private/'executors.json',{tid:key})
         api_env={'PATH':'/usr/bin:/bin','HOME':'/root','LANG':'C.UTF-8','PYTHONDONTWRITEBYTECODE':'1',
-            'DATABASE_URL':state_dsn,'MODEL_NAME':MODEL}
+            'DATABASE_URL':state_dsn,'MODEL_NAME':MODEL,
+            'JSON_SCHEMA_ENABLED':'true' if any(c.get('planner_protocol')=='schema-v1' for c in selected_fixtures(args.fixture_set)) else 'false'}
         def spawn_api():
             verify_source();pins.check(full=True)
             with (private/'api-private.log').open('ab') as output:
-                child=subprocess.Popen([sys.executable,'-m','agents','api','--executor-keys',str(private/'executors.json'),'--port','18170'],
+                child=subprocess.Popen([sys.executable,'-m','agents','api','--executor-keys',str(private/'executors.json'),'--port','18170','--batch-url',args.batch_url],
                     cwd=source,env=api_env,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,start_new_session=True)
             fd=os.pidfd_open(child.pid);children.append((child,fd))
             until=time.monotonic()+30

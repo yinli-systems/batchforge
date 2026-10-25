@@ -5,10 +5,11 @@ privileges. Run admission uses the authenticated tenant and server model list;
 model output cannot choose credentials, namespaces, limits or tool grants.
 """
 from __future__ import annotations
-from contextlib import asynccontextmanager
-import asyncio,logging,hashlib
-from fastapi import FastAPI,Depends,Header,Query
-from fastapi.responses import JSONResponse,StreamingResponse
+from contextlib import asynccontextmanager,AsyncExitStack
+from pathlib import Path
+import asyncio,logging,hashlib,re
+from fastapi import FastAPI,Depends,Header,Query,Request
+from fastapi.responses import JSONResponse,StreamingResponse,FileResponse,RedirectResponse
 from fastapi.exceptions import RequestValidationError
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool,PoolTimeout
@@ -20,6 +21,9 @@ from backend.migrate import verify_schema
 from .migrate import verify
 from .contracts import Strict,Policy,canonical,protocol_json
 from .store import AgentStore,AgentError
+from .executors import credentials
+from .receipts import HTTPReceipts,reconcile
+from .tools import SPECS
 
 logger=logging.getLogger('batchforge.agents')
 
@@ -48,34 +52,51 @@ class MemoryWrite(Strict):
     expected_version:int=Field(ge=0)
 
 
-def create_app(settings=None,*,store=None,auth=None,executor_tenants=()):
+def create_app(settings=None,*,store=None,auth=None,executor_tenants=(),shared_backend=None,
+               executor_keys_file=None,batch_endpoint=None,read_only=False):
     settings=settings or get_settings()
     @asynccontextmanager
     async def lifespan(app):
-        if store is not None:
-            app.state.store=store;app.state.auth=auth;yield;return
-        pool=AsyncConnectionPool(settings.database_url,min_size=1,max_size=4,open=False,
-            kwargs={'autocommit':True,'row_factory':dict_row,'connect_timeout':5,
-                    'options':'-c statement_timeout=10000 -c lock_timeout=2000 -c idle_in_transaction_session_timeout=15000'})
-        await pool.open(wait=True,timeout=30)
-        try:
-            async with pool.connection() as conn:
-                await verify_schema(conn,minimum_version=11);await verify(conn)
-            async def authenticate(key):
-                async with pool.connection() as conn:
-                    row=await (await conn.execute('SELECT tenant_id FROM public.api_keys WHERE key_hash=%s AND NOT revoked',
-                        (hashlib.sha256(key.encode()).hexdigest(),))).fetchone()
-                if not row:raise AgentError(401,'invalid_api_key')
-                return row['tenant_id']
-            app.state.store=AgentStore(pool);app.state.auth=authenticate
+        async with AsyncExitStack() as stack:
+            parent=shared_backend() if shared_backend else None
+            if store is not None:
+                selected,authenticate=store,auth
+            elif parent is not None:
+                selected,authenticate=AgentStore(parent.pool),parent.tenant
+            else:
+                pool=AsyncConnectionPool(settings.database_url,min_size=1,max_size=4,open=False,
+                    kwargs={'autocommit':True,'row_factory':dict_row,'connect_timeout':5,
+                            'options':'-c statement_timeout=10000 -c lock_timeout=2000 -c idle_in_transaction_session_timeout=15000'})
+                await pool.open(wait=True,timeout=30);stack.push_async_callback(pool.close)
+                selected=AgentStore(pool)
+                async def authenticate(key):
+                    async with pool.connection() as conn:
+                        row=await (await conn.execute('SELECT tenant_id FROM public.api_keys WHERE key_hash=%s AND NOT revoked',
+                            (hashlib.sha256(key.encode()).hexdigest(),))).fetchone()
+                    if not row:raise AgentError(401,'invalid_api_key')
+                    return row['tenant_id']
+            if store is None:
+                async with selected.pool.connection() as conn:
+                    await verify_schema(conn,minimum_version=11);await verify(conn)
+            tenants=set(executor_tenants);keys={}
+            if executor_keys_file:
+                keys=credentials(executor_keys_file)
+                for tid,key in keys.items():
+                    if await authenticate(key)!=tid:raise ValueError('Executor key does not belong to configured tenant')
+                tenants=set(keys)
+            reader=parent.batch_receipt if parent is not None else None
+            if batch_endpoint:
+                if not keys:raise ValueError('Protected executor registry required for child receipt lookup')
+                http=await stack.enter_async_context(HTTPReceipts(batch_endpoint,keys));reader=http.read
+            app.state.store=selected;app.state.auth=authenticate;app.state.executor_tenants=tenants;app.state.receipts=reader
             yield
-        finally:await pool.close()
     app=FastAPI(title='BatchForge Agents',version='0.1.0',lifespan=lifespan)
 
     def error(status,code):return JSONResponse(status_code=status,content={'error':{'code':code}})
     @app.middleware('http')
     async def bounded_json(request,call_next):
         if request.method in ('POST','PUT','PATCH'):
+            if read_only:return error(403,'agent_read_only_snapshot')
             content=bytearray()
             async for part in request.stream():
                 content.extend(part)
@@ -86,6 +107,8 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=()):
                 except (ValueError,UnicodeError,RecursionError):return error(422,'invalid_agent_json')
         response=await call_next(request)
         response.headers['Cache-Control']='no-store';response.headers['X-Content-Type-Options']='nosniff'
+        response.headers['Content-Security-Policy']="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+        response.headers['Referrer-Policy']='no-referrer'
         return response
     @app.exception_handler(AgentError)
     async def agent_error(_request,exc):return error(exc.status,exc.code)
@@ -116,14 +139,24 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=()):
             async with app.state.store.pool.connection() as conn:
                 await verify_schema(conn,minimum_version=11);await verify(conn)
                 row=await (await conn.execute("SELECT NOT pg_is_in_recovery() AND current_setting('transaction_read_only')='off' AS writable")).fetchone()
-                if not row['writable']:raise RuntimeError('Database is read-only')
+                if not row['writable'] and not read_only:raise RuntimeError('Database is read-only')
         except Exception:return error(503,'agent_store_unavailable')
-        return {'service':'batchforge-agents','state':'ready'}
+        return {'service':'batchforge-agents','state':'read_only_snapshot' if read_only else 'ready'}
+    @app.get('/v1/agent-capabilities')
+    async def capabilities(tid=Depends(tenant)):
+        return {'protocol':'batchforge.agent-capabilities.v1','tenant_id':tid,'models':list(settings.served_models()),
+            'tools':SPECS,'planner_protocols':['json-v1']+(['schema-v1'] if settings.json_schema_enabled else []),
+            'answer_formats':['text','identifier','number'],'max_tool_sequence':8,
+            'admission_enabled':not read_only and settings.batch_submission_enabled and tid in app.state.executor_tenants,
+            'memory_writes_enabled':not read_only,'cancellation_enabled':not read_only,
+            'child_receipts_enabled':app.state.receipts is not None,'read_only_snapshot':read_only,
+            'batch_console_path':'/' if shared_backend else None}
     @app.post('/v1/agent-runs')
     async def create(body:RunRequest,tid=Depends(tenant),idempotency_key:str=Header(min_length=1,max_length=128)):
-        if tid not in executor_tenants:raise AgentError(503,'tenant_executor_not_configured')
+        if tid not in app.state.executor_tenants:raise AgentError(503,'tenant_executor_not_configured')
         if not settings.batch_submission_enabled:raise AgentError(503,'admission_paused')
         if body.model not in settings.served_models():raise AgentError(400,'agent_model_not_served')
+        if body.planner_protocol=='schema-v1' and not settings.json_schema_enabled:raise AgentError(400,'agent_schema_ingress_not_enabled')
         try:policy=body.policy()
         except ValueError:raise AgentError(422,'invalid_agent_policy') from None
         return await app.state.store.create(tid,idempotency_key,goal=body.goal,model=body.model,policy=policy)
@@ -132,8 +165,24 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=()):
         return await app.state.store.list(tid,limit=limit,after=after)
     @app.get('/v1/agent-runs/{rid}')
     async def get(rid:str,tid=Depends(tenant)):return await app.state.store.get(tid,rid)
+    @app.get('/v1/agent-runs/{rid}/snapshot')
+    async def snapshot(rid:str,tid=Depends(tenant)):
+        run=await app.state.store.get(tid,rid)
+        # Preserve Python's exact float spelling inside the byte commitments.
+        # A JS re-serialization of e.g.42.0 is not the original state hash input.
+        response=JSONResponse({'protocol':'batchforge.agent-snapshot.v1','run':run,
+            'state_json':canonical(run['state']).decode(),'result_json':canonical(run['result']).decode()})
+        response.headers['X-BatchForge-Agent-Snapshot-SHA256']=hashlib.sha256(response.body).hexdigest()
+        return response
     @app.post('/v1/agent-runs/{rid}/cancel')
     async def cancel(rid:str,tid=Depends(tenant)):return await app.state.store.cancel(tid,rid)
+    @app.get('/v1/agent-runs/{rid}/children/{bid}/receipt')
+    async def child_receipt(rid:str,bid:str,tid=Depends(tenant)):
+        run=await app.state.store.get(tid,rid)
+        committed=next((r for r in run['state'].get('receipts',[]) if r.get('batch_id')==bid),None)
+        if not committed or not re.fullmatch(r'batch_[A-Za-z0-9_-]{1,80}',bid):raise AgentError(404,'agent_child_not_found')
+        if app.state.receipts is None:raise AgentError(503,'agent_child_receipt_unavailable')
+        return reconcile(run,committed,await app.state.receipts(tid,bid))
     @app.get('/v1/agent-runs/{rid}/events')
     async def events(rid:str,tid=Depends(tenant),after:int=Query(default=-1,ge=-1),limit:int=Query(default=50,ge=1,le=100)):
         return await app.state.store.events_page(tid,rid,after=after,limit=limit)
@@ -157,4 +206,12 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=()):
     @app.get('/v1/agent-memory/{namespace}/{key}')
     async def memory(namespace:str,key:str,tid=Depends(tenant)):
         return await app.state.store.memory_get(tid,namespace,key)
+    @app.get('/console',include_in_schema=False)
+    async def console_redirect(request:Request):return RedirectResponse(str(request.url.path)+'/')
+    @app.get('/console/{asset:path}',include_in_schema=False)
+    async def console_asset(asset:str):
+        if asset not in ('','index.html','app.js','core.js','styles.css'):raise AgentError(404,'not_found')
+        target=Path(__file__).with_name('console')/(asset or 'index.html')
+        if not target.is_file():raise AgentError(404,'not_found')
+        return FileResponse(target)
     return app

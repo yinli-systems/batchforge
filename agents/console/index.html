@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><title>Agent workflows · BatchForge</title>
+<link rel="stylesheet" href="styles.css"><script type="module" src="app.js"></script></head>
+<body>
+  <header><a class="brand" href="./"><span class="brand-mark">B</span>BatchForge<span class="brand-dot">.</span></a>
+    <nav><a id="batch-link" href="/" hidden>Batch workspace ↗</a><span id="connection" class="chip">Disconnected</span><button id="disconnect" type="button" hidden>Disconnect</button></nav></header>
+  <main>
+    <div class="page-heading"><div><p class="eyebrow">AGENT WORKSPACE</p><h1>Workflows you can inspect.</h1><p class="muted">Follow every model step, required tool and delivered result.</p></div><button id="refresh" type="button" disabled>Refresh workspace</button></div>
+    <p id="notice" role="status" aria-live="polite" hidden></p>
+    <section class="panel" id="connect-panel"><p class="eyebrow">PRIVATE WORKSPACE</p><h2>Connect your workspace</h2>
+      <form id="connect-form" class="connect-form"><label>Workspace API key<input id="key" type="password" autocomplete="off" spellcheck="false" required></label><button class="primary" type="submit">Connect</button></form>
+      <p class="muted">Your key and unresolved submission stay in this browser tab. Requests go to this server.</p></section>
+    <div id="workspace" hidden>
+      <div class="layout">
+        <section class="panel composer"><div class="section-title"><h2>Start a workflow</h2><span id="mode" class="chip">Checking capabilities</span></div>
+          <p id="pending-note" class="callout" hidden>A submission is unresolved. Retry its saved goal and policy with the same request key.</p>
+          <form id="run-form"><fieldset id="run-fields">
+            <label>Goal<textarea id="goal" rows="5" maxlength="32768" placeholder="Retrieve the invoice facts, calculate the total, and cite the source." required></textarea></label>
+            <div class="field-grid"><label>Model<select id="model" required></select></label><label>Planner protocol<select id="protocol"></select></label></div>
+            <label>Required tools, in order<select id="sequence"><option value="">Agent chooses tools</option><option value="math.calculate">Calculate</option><option value="memory.get">Retrieve memory</option><option value="memory.get,math.calculate">Retrieve memory → calculate</option></select></label>
+            <div class="field-grid"><label>Memory namespace<input id="namespace" value="default" pattern="[a-zA-Z0-9_-]{1,64}" required></label><label>Answer format<select id="answer-format"><option value="text">Text</option><option value="number">Number</option><option value="identifier">Identifier</option></select></label></div>
+            <label class="checkbox"><input id="require-citations" type="checkbox">Require a retrieved memory citation</label>
+            <details><summary>Execution limits</summary><div class="field-grid limits">
+              <label>Model steps<input id="model-budget" type="number" min="1" max="32" value="8" required></label>
+              <label>Tool calls<input id="tool-budget" type="number" min="0" max="64" value="8" required></label>
+              <label>Completion tokens<input id="token-budget" type="number" min="64" max="32768" value="4096" required></label>
+              <label>Deadline, seconds<input id="wall-budget" type="number" min="30" max="3600" value="900" required></label>
+            </div></details>
+          </fieldset><button class="primary" id="submit" type="submit">Start workflow</button></form>
+          <p class="muted">Available tools are bounded arithmetic and read-only workspace memory. A required tool must actually run before the workflow can finish.</p>
+        </section>
+        <section class="panel runs"><div class="section-title"><h2>Your runs</h2><span class="muted" id="run-count"></span></div><div id="run-list"></div><button id="more" type="button" hidden>Load more</button></section>
+      </div>
+      <section class="panel detail" id="detail-panel"><div class="empty"><h2>Select a run</h2><p>Inspect its answer, tool observations and accepted model receipts.</p></div></section>
+      <section class="panel memory"><div class="section-title"><div><p class="eyebrow">WORKSPACE CONTEXT</p><h2>Versioned memory</h2></div></div>
+        <form id="memory-form"><div class="field-grid"><label>Namespace<input id="memory-namespace" value="default" pattern="[a-zA-Z0-9_-]{1,64}" required></label><label>Key<input id="memory-key" pattern="[a-zA-Z0-9_.:-]{1,128}" placeholder="invoice-001" required></label></div>
+          <button id="memory-load" type="button">Read memory</button><label>Document<textarea id="memory-text" rows="5" maxlength="32768"></textarea></label>
+          <div class="memory-actions"><label>Expected version<input id="memory-version" type="number" min="0" step="1" value="0" required></label><button id="memory-save" type="submit">Save new version</button></div>
+          <p class="muted" id="memory-state">Version 0 creates a new key. An existing key requires its current version.</p></form>
+      </section>
+    </div>
+    <footer>BatchForge · Private Agent workspace <span>Execution history verifies consistency. Monetary cost is not recorded for these runs.</span></footer>
+  </main>
+</body></html>

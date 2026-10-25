@@ -31,4 +31,4 @@ testpaths = ["tests"]
 
 [tool.setuptools.package-data]
 backend = ["schema.sql", "migrations/*.sql", "CONTRACT.md"]
-agents = ["schema.sql"]
+agents = ["schema.sql", "console/*.html", "console/*.js", "console/*.css"]

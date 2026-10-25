@@ -85,6 +85,7 @@ def error_response(status, message, code="invalid_request"):
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
+    agent_service = None
 
     async def recovery_loop(store):
         while True:
@@ -160,11 +161,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                    f"-c lock_timeout={settings.db_lock_timeout_ms} -c idle_in_transaction_session_timeout=15000")
         pool = AsyncConnectionPool(settings.database_url, min_size=settings.db_pool_min, max_size=settings.db_pool_max, open=False, kwargs={"autocommit": True, "row_factory": dict_row, "options": options, "connect_timeout": 5}, timeout=settings.db_pool_timeout_seconds)
         await pool.open(wait=True, timeout=30)
+        features = contextlib.AsyncExitStack()
         try:
             async with pool.connection() as conn:
                 schema_version = await verify_schema(conn, minimum_version=settings.minimum_schema_version())
             app.state.pool, app.state.store, app.state.settings = pool, Store(pool, settings, schema_version=schema_version), settings
             app.state.worker_tokens = worker_tokens
+            if agent_service is not None:
+                await features.enter_async_context(agent_service.router.lifespan_context(agent_service))
             reaper = asyncio.create_task(recovery_loop(app.state.store), name="lease-recovery")
             collector = (asyncio.create_task(storage_loop(app.state.store), name='storage-maintenance')
                          if settings.blob_gc_enabled and app.state.store.blobs else None)
@@ -185,7 +189,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     with contextlib.suppress(asyncio.CancelledError):
                         await archiver
         finally:
-            await pool.close()
+            try:await features.aclose()
+            finally:await pool.close()
 
     app = FastAPI(title="BatchForge", version="0.1.0", lifespan=lifespan)
 
@@ -403,7 +408,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/v1/overview")
     async def overview(request: Request, tenant_id: str = Depends(tenant)):
-        return await request.app.state.store.overview(tenant_id)
+        result=await request.app.state.store.overview(tenant_id)
+        result['features']={'agent_console':'/agents/console/' if agent_service is not None and tenant_id in agent_service.state.executor_tenants else None}
+        return result
 
     @app.post("/internal/workers/register", dependencies=[Depends(worker)])
     async def register(body: Registration, request: Request):
@@ -427,9 +434,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def fail(tid: str, body: Failure, request: Request):
         return await request.app.state.store.fail(tid, body.worker_id, body.attempt_token, body.error.model_dump(), body.retryable)
 
+    if settings.agent_api_enabled:
+        if not settings.agent_executor_keys_file:
+            raise ValueError('Protected Agent executor registry required before enabling the shared API')
+        from agents.app import create_app as agent_app
+        agent_service=agent_app(settings,shared_backend=lambda:app.state.store,executor_keys_file=settings.agent_executor_keys_file)
+        app.mount('/agents',agent_service)
+
     @app.get("/{path:path}", include_in_schema=False)
     async def frontend(path: str):
-        if path.split("/", 1)[0] in {"v1", "internal", "metrics", "healthz", "readyz"}:
+        if path.split("/", 1)[0] in {"v1", "internal", "metrics", "healthz", "readyz", "agents"}:
             raise APIError(404, "Endpoint not found", "not_found")
         root = Path(settings.frontend_dir).resolve()
         target = (root / path).resolve()
