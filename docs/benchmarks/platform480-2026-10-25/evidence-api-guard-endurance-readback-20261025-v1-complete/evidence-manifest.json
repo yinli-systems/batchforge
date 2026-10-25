@@ -1,0 +1,31 @@
+{
+  "collected_at": "2026-10-25T20:07:55.877198+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-guard-endurance-readback-20261025-v1",
+  "files": {
+    "launcher.json": {
+      "bytes": 207,
+      "sha256": "c8fa5606971605a9fccc5e91df044c0698cc2a2d3c842eaef853571fcafc0c40",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 5716,
+      "sha256": "0862b8f5b9b0ef62913e4b884eff1c2e509cb97d2aa1dd016ca31efb16739726",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.log.txt": {
+      "bytes": 53,
+      "sha256": "17eaddc0ce63a68fe333e51bf3b43dad5793fd67fe8f78a33ee3c70be6a73265",
+      "source_relative_path": "validation.log",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 5515,
+      "sha256": "e57496bb6a8956c0608a027a419d269d73c870790ebb999dc944c058d8c0da23",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

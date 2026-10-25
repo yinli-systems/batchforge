@@ -1,0 +1,25 @@
+{
+  "identity": {
+    "pid": 641573,
+    "start_ticks": "47997888",
+    "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+  },
+  "command": [
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "ops.worker_latch_guard",
+    "--run",
+    "/root/batchforge-runtime/evidence-api-worker-latch-guard-qualification-latch-qualification-20261025-v3",
+    "--qualified-trial",
+    "/root/batchforge-runtime/soak480-latch-qualification-20261025-v2",
+    "--qualified-audit",
+    "/root/batchforge-runtime/evidence-api-latch-recovery-audit-20261025-v1",
+    "--active-campaign",
+    "/root/batchforge-runtime/soak480-latch-qualification-20261025-v3",
+    "--seconds",
+    "900",
+    "--stop-after-recovery",
+    "--apply"
+  ],
+  "source": "Current immutable operator snapshot"
+}

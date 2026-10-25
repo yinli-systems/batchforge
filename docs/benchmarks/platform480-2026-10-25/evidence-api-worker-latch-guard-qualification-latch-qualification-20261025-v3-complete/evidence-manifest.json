@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-25T19:32:19.185103+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-qualification-latch-qualification-20261025-v3",
+  "files": {
+    "validation.json": {
+      "bytes": 7321,
+      "sha256": "eab8894ad47f1a46a92765e5c86a5c9d89ade5d243a18e6a1c331d05f600f563",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

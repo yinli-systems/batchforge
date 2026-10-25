@@ -1,0 +1,61 @@
+{
+  "collected_at": "2026-10-25T19:32:19.827593+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-latch-qualification-20261025-v3",
+  "files": {
+    "launcher.json": {
+      "bytes": 173,
+      "sha256": "75faa505c5f4fb49dcf5c7eaf4869dd9e31c30b600725e998c06a184f8333a11",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "dispatch-observation.json": {
+      "bytes": 59381,
+      "sha256": "97f15f496d29ed2dbe69756b0fd69b664490d1f3fecdbf082e454585020f931a",
+      "source_relative_path": "dispatch-observation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "recovery-validation.json": {
+      "bytes": 6304,
+      "sha256": "013f3ace65ce0573754dd1f73235ff9c940b80e828640b9409fab3cfb96262f5",
+      "source_relative_path": "recovery-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "guard-validation.json": {
+      "bytes": 7321,
+      "sha256": "eab8894ad47f1a46a92765e5c86a5c9d89ade5d243a18e6a1c331d05f600f563",
+      "source_relative_path": "guard-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "guard-launcher.json": {
+      "bytes": 823,
+      "sha256": "a1996dd4bcd5aa3be38e55a6cec0e0dfe0565d82613149ff8116a4e62e002d14",
+      "source_relative_path": "guard-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "receipt-0.json": {
+      "bytes": 2894,
+      "sha256": "0393b2ba7c9328cdc9fecbb2e4bf51acfd3f7cf57c62d61cd8b91981ef6e362e",
+      "source_relative_path": "receipt-0.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "receipt-1.json": {
+      "bytes": 2902,
+      "sha256": "1bc01b239f04f1c45895077e364367d156c5492519266003b87349ddf6580ec5",
+      "source_relative_path": "receipt-1.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 6886,
+      "sha256": "dd995357c31863811e60660d40665f88fe87a6a8eedebc543ab62bd1f3912058",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "queue-report.json": {
+      "bytes": 249,
+      "sha256": "28410a05590228aadf4d2b7221c3df3cb972e86b30407b71bddc73ba0c77f1e9",
+      "source_relative_path": "queue-report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

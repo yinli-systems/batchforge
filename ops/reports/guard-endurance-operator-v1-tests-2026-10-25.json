@@ -1,0 +1,8 @@
+{
+  "captured_at": "2026-10-25T20:24:08.662682+00:00",
+  "tests_passed": 8,
+  "elapsed_seconds": 0.22,
+  "scope": "Actual local CPU tests before GPU launch, separate from native PG CI",
+  "test_source_sha256": "6822cca000c258b9db8131f068e28fc0e24417c02a249caa181b75802d838e56",
+  "operator_sha256": "81265f488cca45615c33d1f861f1ab02aed9074fe731fbf3dd6804523bc7be40"
+}

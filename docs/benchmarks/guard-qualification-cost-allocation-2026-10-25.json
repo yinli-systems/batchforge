@@ -1,0 +1,12 @@
+{
+  "protocol": "batchforge.operator-allocation.v1",
+  "source_report": "docs/benchmarks/platform480-2026-10-25/soak480-latch-qualification-20261025-v3-complete/campaign.json",
+  "source_report_sha256": "dd995357c31863811e60660d40665f88fe87a6a8eedebc543ab62bd1f3912058",
+  "whole_controller_seconds": 92.884478,
+  "rate_usd_per_whole_pod_hour": 16.1,
+  "rate_source": "Operator confirmation",
+  "allocation_usd": 0.41540002661111114,
+  "invoice_verified": false,
+  "quality_qualified_tasks": null,
+  "scope": "Whole controller including maintenance and injected fault; later storage audit excluded. Not invoice, marginal or quality-qualified answer cost."
+}

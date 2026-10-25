@@ -1,0 +1,218 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "apply_requested": true,
+  "events": [
+    {
+      "phase": "prepared",
+      "at": "2026-10-25T19:29:02.836069+00:00"
+    },
+    {
+      "phase": "armed",
+      "at": "2026-10-25T19:29:02.838388+00:00"
+    },
+    {
+      "phase": "telemetry_unavailable",
+      "at": "2026-10-25T19:29:43.104419+00:00"
+    },
+    {
+      "phase": "armed",
+      "at": "2026-10-25T19:29:50.883983+00:00"
+    },
+    {
+      "phase": "invoking_locked_recovery",
+      "at": "2026-10-25T19:29:56.087608+00:00"
+    },
+    {
+      "phase": "armed",
+      "at": "2026-10-25T19:30:05.942420+00:00"
+    },
+    {
+      "phase": "complete",
+      "at": "2026-10-25T19:30:05.953181+00:00"
+    }
+  ],
+  "started_at": "2026-10-25T19:29:02.040424+00:00",
+  "deadline_epoch": 1792957442.0404184,
+  "action_cutoff_epoch": 1792956842.0404184,
+  "recovery_invocations": 1,
+  "recoveries": [
+    {
+      "run": "/root/batchforge-runtime/evidence-api-worker-recovery-guard-worker-latch-guard-qualification-latch-qualification-20261025-v3-1",
+      "expected_state_sha256": "5978e869e675d878ee11c09c585f61826b0e8343d9a76f46fe811bfb9c6e0c2d",
+      "started_at": "2026-10-25T19:29:56.087593+00:00",
+      "detected_at": "2026-10-25T19:29:48.110568+00:00",
+      "quiescence_observations": [
+        {
+          "captured_at": "2026-10-25T19:29:48.110568+00:00",
+          "worker_ready_status": 503,
+          "worker_metrics": {
+            "batchforge_worker_inflight": 0.0,
+            "batchforge_worker_reserved_context_tokens": 0.0,
+            "batchforge_worker_adaptive_kv_waiting": 0.0,
+            "batchforge_worker_adaptive_kv_paused": 1.0
+          },
+          "db_running": 0,
+          "db_pending": 40,
+          "engine_quiescent": true,
+          "model_ids": [
+            "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ"
+          ],
+          "engine_version": "0.10.2"
+        },
+        {
+          "captured_at": "2026-10-25T19:29:55.890267+00:00",
+          "worker_ready_status": 503,
+          "worker_metrics": {
+            "batchforge_worker_inflight": 0.0,
+            "batchforge_worker_reserved_context_tokens": 0.0,
+            "batchforge_worker_adaptive_kv_waiting": 0.0,
+            "batchforge_worker_adaptive_kv_paused": 1.0
+          },
+          "db_running": 0,
+          "db_pending": 40,
+          "engine_quiescent": true,
+          "model_ids": [
+            "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ"
+          ],
+          "engine_version": "0.10.2"
+        }
+      ],
+      "identity": {
+        "pid": 641647,
+        "start_ticks": "48003308",
+        "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+      },
+      "exit_code": 0,
+      "result_sha256": "013f3ace65ce0573754dd1f73235ff9c940b80e828640b9409fab3cfb96262f5",
+      "passed": true,
+      "finished_at": "2026-10-25T19:30:05.929527+00:00"
+    }
+  ],
+  "engine_actions": false,
+  "api_actions": false,
+  "new_cloud_resources": false,
+  "controller_sha256": "899a25aca900badce79a2fe1e9b408b38862d1e9947b6f8f3a1423d3f32738f5",
+  "observations": 9,
+  "qualification_sha256": "7fbade3161e3df8ef7bce153bda7150653ea30ef7463e626d6c776690b852d27",
+  "qualification_audit_sha256": "b99e49b00f28dfea1ca109d085b7b20792d8f800f455db2ef0a412fadfa6540e",
+  "worker_source_probe": {
+    "protocol": "batchforge.worker-source-probe.v1",
+    "passed": true,
+    "safe_path": true,
+    "source_files": {
+      "worker/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "worker/config.py": "53786458d8d3aca6f5c953b2e5d06a0ac4315ec5e3349f426f435591b8583fe7",
+      "worker/runtime.py": "b7d5ca96b0e57f557d0e6f0a32e994e167cb96761dc23b8d9a2c1c7a9ee237a7",
+      "worker/metrics.py": "f9119336068200ffc8fa994924b93d15a824493c8502d86e237678ebfb0a5196",
+      "worker/kv_admission.py": "6c13858e3cf67fba06dddc99bd003ad99fdca1b957ed190bcb86808435341bc1",
+      "worker/inventory.py": "b7051c0bb79569c440e72ef0155e91f07a82a7861e1e4a240e21cb02f0707426",
+      "backend/scheduling.py": "d867b94dc4ee9d468742f38957b966b9a3caa203035cde741c1bf77b511b337c",
+      "backend/fleet.py": "71f19ace704a60656d2841103d9b7a767b4a9e6f126d87f189228457bdacd0b4",
+      "worker/__main__.py": "70017c658180a9195340611de8089f6cbacb1775d0a907f9b0fa00e62ce8a062"
+    },
+    "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+    "worker_id": "qwen480-prod-1ca6a2e05852",
+    "slots": 32,
+    "token_budget": 164256,
+    "max_model_len": 18440,
+    "adaptive_kv_enabled": true,
+    "inventory_gpu_indices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "inventory_node_sha256": "cef18c73b719e43bf33f41c699e1c3b01e3783bdbc7cb70701c24fd23b036bcb",
+    "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+    "registration_performed": false,
+    "inference_performed": false,
+    "services_changed": false
+  },
+  "initial_identities": {
+    "api-a": {
+      "pid": 641511,
+      "start_ticks": "47996277",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 641520,
+      "start_ticks": "47996538",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 641529,
+      "start_ticks": "47996824",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 641544,
+      "start_ticks": "47997292",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "initial_state_sha256": "5978e869e675d878ee11c09c585f61826b0e8343d9a76f46fe811bfb9c6e0c2d",
+  "initial_budget_available": true,
+  "last_observation": {
+    "captured_at": "2026-10-25T19:29:55.890267+00:00",
+    "worker_ready_status": 503,
+    "worker_metrics": {
+      "batchforge_worker_inflight": 0.0,
+      "batchforge_worker_reserved_context_tokens": 0.0,
+      "batchforge_worker_adaptive_kv_waiting": 0.0,
+      "batchforge_worker_adaptive_kv_paused": 1.0
+    },
+    "db_running": 0,
+    "db_pending": 40,
+    "engine_quiescent": true,
+    "model_ids": [
+      "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ"
+    ],
+    "engine_version": "0.10.2"
+  },
+  "telemetry_error_type": "ReadTimeout",
+  "budget_available": true,
+  "final_identities": {
+    "api-a": {
+      "pid": 641511,
+      "start_ticks": "47996277",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 641520,
+      "start_ticks": "47996538",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 641654,
+      "start_ticks": "48003822",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 641662,
+      "start_ticks": "48004261",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "final_state_sha256": "e22f0acb04a3e4033d221bc078c35e10089f5d451b60ef245c1cbebe617b28b8"
+}

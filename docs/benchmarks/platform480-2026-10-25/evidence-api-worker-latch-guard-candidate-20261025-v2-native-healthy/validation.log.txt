@@ -1,0 +1,1 @@
+{"passed": true, "error_type": null, "managed_identities_unchanged": true, "persistent_budget_unchanged": true}

@@ -84,3 +84,12 @@ retains source/log hashes and zero registered runners. Each check used a new
 one-job runner; all public bootstrap and closed receipts were exported, and
 the cancelled intermediate run remains cancelled evidence. Hosted account
 restrictions and lack of a main-branch merge test remain unchanged.
+
+Finite-guard3c7cf02 passed [run40225711838](https://github.com/yinli-systems/batchforge/actions/runs/40225711838)
+with1,536 Python tests. Budget-waiting follow-up **b80391c** passed
+[run40226014835](https://github.com/yinli-systems/batchforge/actions/runs/40226014835):
+**1,542 Python tests/zero skipped,23 console tests**, PG17.11/Node24.22.1,
+UID65534/compileall. Both jobs deregistered. Native healthy refusal, actual
+finite-guard fault integration and the800-task study passed. The derived
+800-task preflight separately passed8 local CPU safety checks; those are not
+part of the1,542-test CI count.

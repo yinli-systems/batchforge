@@ -1,0 +1,175 @@
+{
+  "passed": true,
+  "source_commit": "b80391c0827ecd6fccb9a5fd07938a73cd8f0fdd",
+  "driver_sha256": "39e59ec5ad905ee94f2b5a857acd0e4f6cf479dd2853f46e3f5fa92112faf865",
+  "finite_guard_report": {
+    "phase": "complete",
+    "passed": true,
+    "apply_requested": true,
+    "events": [
+      {
+        "phase": "prepared",
+        "at": "2026-10-25T19:28:20.321476+00:00"
+      },
+      {
+        "phase": "armed",
+        "at": "2026-10-25T19:28:20.323453+00:00"
+      },
+      {
+        "phase": "complete",
+        "at": "2026-10-25T19:28:30.359906+00:00"
+      }
+    ],
+    "started_at": "2026-10-25T19:28:19.487539+00:00",
+    "deadline_epoch": 1792957399.4875336,
+    "action_cutoff_epoch": 1792956799.4875336,
+    "recovery_invocations": 0,
+    "recoveries": [],
+    "engine_actions": false,
+    "api_actions": false,
+    "new_cloud_resources": false,
+    "controller_sha256": "899a25aca900badce79a2fe1e9b408b38862d1e9947b6f8f3a1423d3f32738f5",
+    "observations": 3,
+    "qualification_sha256": "7fbade3161e3df8ef7bce153bda7150653ea30ef7463e626d6c776690b852d27",
+    "qualification_audit_sha256": "b99e49b00f28dfea1ca109d085b7b20792d8f800f455db2ef0a412fadfa6540e",
+    "worker_source_probe": {
+      "protocol": "batchforge.worker-source-probe.v1",
+      "passed": true,
+      "safe_path": true,
+      "source_files": {
+        "worker/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "worker/config.py": "53786458d8d3aca6f5c953b2e5d06a0ac4315ec5e3349f426f435591b8583fe7",
+        "worker/runtime.py": "b7d5ca96b0e57f557d0e6f0a32e994e167cb96761dc23b8d9a2c1c7a9ee237a7",
+        "worker/metrics.py": "f9119336068200ffc8fa994924b93d15a824493c8502d86e237678ebfb0a5196",
+        "worker/kv_admission.py": "6c13858e3cf67fba06dddc99bd003ad99fdca1b957ed190bcb86808435341bc1",
+        "worker/inventory.py": "b7051c0bb79569c440e72ef0155e91f07a82a7861e1e4a240e21cb02f0707426",
+        "backend/scheduling.py": "d867b94dc4ee9d468742f38957b966b9a3caa203035cde741c1bf77b511b337c",
+        "backend/fleet.py": "71f19ace704a60656d2841103d9b7a767b4a9e6f126d87f189228457bdacd0b4",
+        "worker/__main__.py": "70017c658180a9195340611de8089f6cbacb1775d0a907f9b0fa00e62ce8a062"
+      },
+      "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+      "worker_id": "qwen480-prod-1ca6a2e05852",
+      "slots": 32,
+      "token_budget": 164256,
+      "max_model_len": 18440,
+      "adaptive_kv_enabled": true,
+      "inventory_gpu_indices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "inventory_node_sha256": "cef18c73b719e43bf33f41c699e1c3b01e3783bdbc7cb70701c24fd23b036bcb",
+      "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+      "registration_performed": false,
+      "inference_performed": false,
+      "services_changed": false
+    },
+    "initial_identities": {
+      "api-a": {
+        "pid": 632989,
+        "start_ticks": "47825100",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "api-b": {
+        "pid": 632998,
+        "start_ticks": "47825427",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "gateway-edge": {
+        "pid": 219738,
+        "start_ticks": "35326874",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "engine-qwen480bench": {
+        "pid": 573119,
+        "start_ticks": "45241916",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "worker-qwen480": {
+        "pid": 632980,
+        "start_ticks": "47824843",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "supervisor-primary": {
+        "pid": 633004,
+        "start_ticks": "47825664",
+        "cwd": "/root/batchforge-runtime/app"
+      }
+    },
+    "initial_state_sha256": "680b80299c09cf5f0f00bfac1217712f00f887c45c6e8f73f613320b356c4438",
+    "initial_budget_available": true,
+    "last_observation": {
+      "captured_at": "2026-10-25T19:28:30.344400+00:00",
+      "worker_ready_status": 200,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      }
+    },
+    "final_identities": {
+      "api-a": {
+        "pid": 632989,
+        "start_ticks": "47825100",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "api-b": {
+        "pid": 632998,
+        "start_ticks": "47825427",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "gateway-edge": {
+        "pid": 219738,
+        "start_ticks": "35326874",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "engine-qwen480bench": {
+        "pid": 573119,
+        "start_ticks": "45241916",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "worker-qwen480": {
+        "pid": 632980,
+        "start_ticks": "47824843",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "supervisor-primary": {
+        "pid": 633004,
+        "start_ticks": "47825664",
+        "cwd": "/root/batchforge-runtime/app"
+      }
+    },
+    "final_state_sha256": "680b80299c09cf5f0f00bfac1217712f00f887c45c6e8f73f613320b356c4438"
+  },
+  "locked_healthy_refusal": {
+    "phase": "failed",
+    "passed": false,
+    "events": [
+      {
+        "phase": "preflight",
+        "at": "2026-10-25T19:28:30.600983+00:00"
+      },
+      {
+        "phase": "failed",
+        "at": "2026-10-25T19:28:31.463714+00:00"
+      }
+    ],
+    "apply_requested": false,
+    "service_mutation_attempted": false,
+    "worker_restarted": false,
+    "new_cloud_resources": false,
+    "engine_actions": false,
+    "api_actions": false,
+    "source_or_environment_changed": false,
+    "controller_sha256": "2e8a364d793abc00ff70ed53652098cdac9b68414a6e09b582428247ccf96d1a",
+    "locked_state_sha256": "680b80299c09cf5f0f00bfac1217712f00f887c45c6e8f73f613320b356c4438",
+    "error_type": "ValueError",
+    "phase_before_failure": "preflight"
+  },
+  "managed_identities_unchanged": true,
+  "configuration_bytes_unchanged": true,
+  "persistent_budget_unchanged": true,
+  "captured_at": "2026-10-25T19:28:31.523799+00:00"
+}

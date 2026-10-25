@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "captured_at": "2026-10-25T19:35:56.230928+00:00",
+  "source_commit": "b80391c0827ecd6fccb9a5fd07938a73cd8f0fdd",
+  "guard_run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-primary-20261025-v1",
+  "guard_identity": {
+    "pid": 642163,
+    "start_ticks": "48039170",
+    "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+  },
+  "guard_phase": "armed",
+  "initial_state_sha256": "efa66c6d33219ecb93241697e084dfe3f2e1f323a67f2cce564652eb4f49865d",
+  "managed_identities_unchanged": true,
+  "persistent_budget_unchanged": true,
+  "initial_budget_available": false,
+  "deadline_epoch": 1793005200.0,
+  "action_cutoff_epoch": 1793004600.0,
+  "apply_requested": true,
+  "recovery_invocations": 0,
+  "guard_controller_sha256": "899a25aca900badce79a2fe1e9b408b38862d1e9947b6f8f3a1423d3f32738f5",
+  "services_changed": false,
+  "scope": "Closed startup observation of a live finite guard; not a completed monitoring lifetime or a new recovery"
+}

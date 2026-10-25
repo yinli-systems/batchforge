@@ -1,0 +1,37 @@
+{
+  "collected_at": "2026-10-25T19:28:56.773830+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 19745,
+      "sha256": "a3d00cd197413e70076d0b06b35f52e02c49dbf020e610d5ce59007f94b4c20a",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign-launcher.json": {
+      "bytes": 603,
+      "sha256": "9c503e0a2c7925c221af77f8eccad316f29c0a5af86ea0245e5868f5683f0fae",
+      "source_relative_path": "campaign-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 6116,
+      "sha256": "b5a67e737d6977097e266aa93413463defa45a23f4e6010136a76c6563e6fe58",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.log.txt": {
+      "bytes": 112,
+      "sha256": "6e64ca2eeba653bcf8ea2a0243a5f81147085406f9f789d73c0be89cc6584437",
+      "source_relative_path": "validation.log",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 3706,
+      "sha256": "39e59ec5ad905ee94f2b5a857acd0e4f6cf479dd2853f46e3f5fa92112faf865",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

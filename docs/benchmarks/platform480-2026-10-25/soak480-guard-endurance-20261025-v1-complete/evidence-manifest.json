@@ -1,0 +1,43 @@
+{
+  "collected_at": "2026-10-25T20:07:55.893842+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-guard-endurance-20261025-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 21697,
+      "sha256": "4ecec0c948d4d9f005c5a96c277090027eef03e4ead5b566af46581418de7103",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "launcher.json": {
+      "bytes": 621,
+      "sha256": "40be19f444b735403b3ffad3b95f5be6820a74df47bab0090356adcaa270d183",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 28784,
+      "sha256": "ed977f0087e2bcd40c64c5d92c9da950dba04c73335ed2b573d9aa9077e11786",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/report.json": {
+      "bytes": 384513,
+      "sha256": "b25443edb199cf45f38088f7ba3f361163114a971b3eec58213aba789cbae699",
+      "source_relative_path": ".runtime/run/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/observations.jsonl": {
+      "bytes": 1839443,
+      "sha256": "41fcdbf35cfd8d317364871014b0f33d69e9c0943b19205b8bdeadd63dec8d76",
+      "source_relative_path": ".runtime/run/observations.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 13232,
+      "sha256": "81265f488cca45615c33d1f861f1ab02aed9074fe731fbf3dd6804523bc7be40",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

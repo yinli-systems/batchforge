@@ -1,0 +1,94 @@
+{
+  "captured_at": "2026-10-25T19:28:53.752125+00:00",
+  "commit": "3c7cf022ca2a026f4bde22bd7c538c59c124f6b3",
+  "run_id": 40225711838,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40225711838",
+  "run_attempt": 1,
+  "conclusion": "success",
+  "job": {
+    "id": 121266502585,
+    "name": "existing-pod-cpu",
+    "conclusion": "success",
+    "started_at": "2026-10-25T19:22:35Z",
+    "completed_at": "2026-10-25T19:24:24Z",
+    "runner_name": "batchforge-cpu-20261025-v12",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-10-25T19:22:36Z",
+        "completed_at": "2026-10-25T19:22:37Z"
+      },
+      {
+        "name": "Set up runner",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-10-25T19:22:37Z",
+        "completed_at": "2026-10-25T19:22:37Z"
+      },
+      {
+        "name": "Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-10-25T19:22:37Z",
+        "completed_at": "2026-10-25T19:22:41Z"
+      },
+      {
+        "name": "Locked CPU dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-10-25T19:22:41Z",
+        "completed_at": "2026-10-25T19:22:49Z"
+      },
+      {
+        "name": "Native PostgreSQL17, worker failures and console regressions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-10-25T19:22:49Z",
+        "completed_at": "2026-10-25T19:24:21Z"
+      },
+      {
+        "name": "Post Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10,
+        "started_at": "2026-10-25T19:24:21Z",
+        "completed_at": "2026-10-25T19:24:21Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11,
+        "started_at": "2026-10-25T19:24:21Z",
+        "completed_at": "2026-10-25T19:24:21Z"
+      }
+    ]
+  },
+  "registration_remaining": 0,
+  "runner_name_still_registered": false,
+  "new_cloud_resources": false,
+  "billing_settings_changed": false,
+  "paid_github_hosted_minutes_used": false,
+  "scope": "Actual trusted private head push on existing Pod CPU; not a main merge integration test",
+  "python_tests": {
+    "passed": 1536,
+    "skipped": 0,
+    "warnings": 1,
+    "elapsed_seconds": 88.12
+  },
+  "node_tests": {
+    "passed": 23,
+    "failed": 0
+  },
+  "postgres_version": "17.11",
+  "node_version": "24.22.1",
+  "runner_os_uid": 65534,
+  "full_log_sha256": "807f08fdb6a60538bfbe30aa10f2015d6b0d432660c7f61a194bc64d13e6cff5"
+}

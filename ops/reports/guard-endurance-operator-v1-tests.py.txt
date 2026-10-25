@@ -1,0 +1,25 @@
+import runpy,copy
+from datetime import datetime,timezone
+from pathlib import Path
+import pytest
+module=runpy.run_path(str(Path('.runtime/guard_endurance_controller_v1.py')))
+NOW=datetime(2026,10,25,19,30,tzinfo=timezone.utc).timestamp()
+BASE=Path('/root/batchforge-runtime/soak480-guard-endurance-20261025-v1')
+IDENTITY={'pid':123,'start_ticks':'4','cwd':'/root/owned-source'}
+def snapshot():
+ return {'phase':'armed','apply_requested':True,'controller_sha256':'fixed','deadline_epoch':NOW+10000,'started_at':datetime.fromtimestamp(NOW,timezone.utc).isoformat(),'observations':3,'recovery_invocations':0}
+def launch():
+ return {'identity':IDENTITY,'source_commit':'b80391c0827ecd6fccb9a5fd07938a73cd8f0fdd','command':['python','--apply','--active-campaign',str(BASE)]}
+def check(state=None,launcher=None,actual=IDENTITY):
+ return module['check_guard_snapshot'](state or snapshot(),launcher or launch(),actual,now=NOW,expected_campaign=BASE,controller_sha='fixed')
+def test_matching_live_guard_with_full_margin_allows_preflight():assert check()==0
+@pytest.mark.parametrize('change',[{'phase':'complete'},{'apply_requested':False},{'controller_sha256':'different'},{'deadline_epoch':NOW+6299},{'started_at':datetime.fromtimestamp(NOW-91,timezone.utc).isoformat()}])
+def test_unsafe_or_stale_guard_blocks_before_submission(change):
+ with pytest.raises(RuntimeError):check({**snapshot(),**change})
+def test_unknown_epoch_or_other_study_is_not_adopted():
+ with pytest.raises(RuntimeError):check(actual=None)
+ with pytest.raises(RuntimeError):check(actual={**IDENTITY,'pid':124})
+ other=launch();other['command']=['python','--apply','--active-campaign','/other/study']
+ with pytest.raises(RuntimeError):check(launcher=other)
+def test_latest_observation_can_refresh_an_older_start_timestamp():
+ s=snapshot();s['started_at']=datetime.fromtimestamp(NOW-1000,timezone.utc).isoformat();s['last_observation']={'captured_at':datetime.fromtimestamp(NOW-5,timezone.utc).isoformat()};assert check(s)==0

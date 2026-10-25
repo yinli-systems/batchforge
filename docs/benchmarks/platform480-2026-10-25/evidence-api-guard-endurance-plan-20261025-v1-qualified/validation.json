@@ -1,0 +1,192 @@
+{
+  "planned_tasks": 800,
+  "planned_batches": 40,
+  "arrival_rate": 1,
+  "max_inflight_tasks": 128,
+  "admission_seconds": 3600,
+  "drain_seconds": 1800,
+  "new_input_uploads": 0,
+  "planned_completion_tokens": 544000,
+  "input_file_id": "file_177799a53b02a82c759be8527e26ec0a",
+  "input_sha256": "3cc7b34ef08d6d515533d3670f55119315d9e42c3842f42b8390a3d8e7f7f6a7",
+  "input_bytes": 518830,
+  "public_fixture_sha256": "d18a1d60dfb2dd67e1913bc0acfb3bbcc55dbe03988305b3f66a04df22ed9bc2",
+  "preflight_quota": {
+    "retention": {
+      "max_retained_tasks": 50000,
+      "max_payload_bytes": 335544320,
+      "retained_tasks": 48913,
+      "charged_payload_bytes": 205947844
+    },
+    "auxiliary": [
+      {
+        "resource": "archive_chunks",
+        "max_rows": 20000,
+        "max_bytes": 0,
+        "rows": 664,
+        "bytes": 0
+      },
+      {
+        "resource": "archive_runs",
+        "max_rows": 2000,
+        "max_bytes": 0,
+        "rows": 666,
+        "bytes": 0
+      },
+      {
+        "resource": "blob_generations",
+        "max_rows": 2000,
+        "max_bytes": 0,
+        "rows": 514,
+        "bytes": 0
+      },
+      {
+        "resource": "idempotency",
+        "max_rows": 4096,
+        "max_bytes": 134217728,
+        "rows": 1076,
+        "bytes": 70516736
+      },
+      {
+        "resource": "input_files",
+        "max_rows": 2000,
+        "max_bytes": 0,
+        "rows": 877,
+        "bytes": 0
+      },
+      {
+        "resource": "input_read_leases",
+        "max_rows": 128,
+        "max_bytes": 0,
+        "rows": 0,
+        "bytes": 0
+      },
+      {
+        "resource": "result_read_leases",
+        "max_rows": 128,
+        "max_bytes": 0,
+        "rows": 0,
+        "bytes": 0
+      },
+      {
+        "resource": "upload_reservations",
+        "max_rows": 32,
+        "max_bytes": 0,
+        "rows": 0,
+        "bytes": 0
+      }
+    ],
+    "queue": {
+      "pending": 0,
+      "running": 0,
+      "completed": 48734,
+      "failed": 179,
+      "cancelled": 0
+    },
+    "cleanup": {
+      "terminal_batches_pending_purge": 0,
+      "oldest_terminal_age_seconds": null
+    }
+  },
+  "original_identities": {
+    "api-a": {
+      "pid": 641686,
+      "start_ticks": "48004878",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 641694,
+      "start_ticks": "48005158",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 641677,
+      "start_ticks": "48004600",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "guard_before": {
+    "guard_run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-primary-20261025-v1",
+    "guard_identity": {
+      "pid": 642163,
+      "start_ticks": "48039170",
+      "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+    },
+    "source_commit": "b80391c0827ecd6fccb9a5fd07938a73cd8f0fdd",
+    "observations": 13,
+    "recovery_invocations": 0,
+    "last_observation": {
+      "captured_at": "2026-10-25T19:36:55.801761+00:00",
+      "worker_ready_status": 200,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      }
+    },
+    "state_sha256": "efa66c6d33219ecb93241697e084dfe3f2e1f323a67f2cce564652eb4f49865d",
+    "controller_sha256": "899a25aca900badce79a2fe1e9b408b38862d1e9947b6f8f3a1423d3f32738f5",
+    "initial_budget_available": false
+  },
+  "source_commit": "748dc10747e00be120ee5523f2b887dc1bbe73ca",
+  "controller_sha256": "81265f488cca45615c33d1f861f1ab02aed9074fe731fbf3dd6804523bc7be40",
+  "command": [
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "scripts.sustained_benchmark",
+    "--job-id",
+    "soak480-guard-endurance-20261025-v1",
+    "--env-file",
+    "/root/batchforge-runtime/soak480-guard-endurance-20261025-v1/.runtime/sustained.env",
+    "--input-jsonl",
+    "/root/batchforge-runtime/soak480-guard-endurance-20261025-v1/.runtime/input.jsonl",
+    "--reuse-input-file",
+    "file_177799a53b02a82c759be8527e26ec0a",
+    "--model",
+    "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+    "--state-dir",
+    "/root/batchforge-runtime/soak480-guard-endurance-20261025-v1/.runtime/run",
+    "--tasks",
+    "800",
+    "--tasks-per-batch",
+    "20",
+    "--arrival-rate",
+    "1",
+    "--duration-seconds",
+    "3600",
+    "--drain-seconds",
+    "1800",
+    "--max-inflight-tasks",
+    "128",
+    "--submission-concurrency",
+    "1",
+    "--fixed-output",
+    "--sample-seconds",
+    "5",
+    "--engine-url",
+    "http://127.0.0.1:8348",
+    "--hourly-cost",
+    "16.10",
+    "--api",
+    "a=http://127.0.0.1:8082",
+    "--api",
+    "b=http://127.0.0.1:8083"
+  ],
+  "comparison": "Independent endurance and artifact reuse; fixed order and offered load differ from prior study, not a controlled speedup",
+  "captured_at": "2026-10-25T19:41:12.401739+00:00",
+  "passed": true,
+  "scope": "Closed preflight/immutable source plan only;800-task study still running, no completed endurance claim",
+  "campaign": "/root/batchforge-runtime/soak480-guard-endurance-20261025-v1",
+  "phase_at_capture": "sustained_running"
+}

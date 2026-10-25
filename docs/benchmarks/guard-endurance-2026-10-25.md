@@ -1,7 +1,7 @@
 # Finite source-aware guard qualification and workload
 
-Status: preregistered; implementation/local tests are not deployment or a real
-guard-triggered recovery result. The earlier48-task command qualification stays
+Status: **real guard-triggered qualification, finite deployment and800-task
+endurance all passed**. The earlier48-task command qualification stays
 closed and independent. Serving API/worker source stays748dc10, model480B-total
 /35B-active MoE on the existing fourH100s; no cloud resources or plans change.
 
@@ -67,3 +67,71 @@ tests recovery. Failed epochs and cohorts stay preserved. Use the confirmed
 $16.10 whole-Pod/hour allocation, not invoice or marginal/quality-answer cost.
 All evidence is allowlist-exported and SHA-checked; no raw tenant outputs,
 credentials or weights leave the Pod. This does not establish whole-Pod HA.
+
+## Actual qualification and finite deployment
+
+Sourceb80391c passed native PostgreSQL17.11 CI: **1,542 Python tests,0 skips,
+23 console tests**, Node24.22.1/UID65534, all one-job runners deregistered.
+Its [healthy native proof](platform480-2026-10-25/evidence-api-worker-latch-guard-candidate-20261025-v2-native-healthy/validation.json)
+ran three observations with recovery permission and full time margin but zero
+helper invocations. All six identities/configuration bytes/budget stayed fixed.
+The locked helper matched the exact observer state SHA before healthy refusal.
+Earlier3c7cf02 CI passed1,536 tests. Budget waiting adds no reset or replay.
+
+The [v3 real trial](platform480-2026-10-25/soak480-latch-qualification-20261025-v3-complete/campaign.json)
+delivered48/48,3,072 accepted output tokens,48 accepted attempts and32 earlier
+timeout attempts. The finite guard autonomously recovered40 pending identities
+with no parent fallback. Its two quiescence observations were19:29:48.111 and
+19:29:55.890UTC; the helper's locked state SHA matched. First quiescence
+observation→verified progress was17.819s, including polling/native checks.
+The45s resume target measured45.004s; one paused-engine ReadTimeout is retained.
+Guard reports save state changes/counters rather than every healthy poll; the
+separate three-observation proof is not a full raw poll trace.
+
+Original1200s timeout/API gates/watchdog were restored without errors.
+The [independent audit](platform480-2026-10-25/evidence-api-latch-recovery-audit-20261025-v2-complete/validation.json)
+verified48 normal DB payload purges, identities retained and all four S3
+input/output objects by bytes/SHA. This is an app-transport fault under temporary
+30s timeout, not physical GPU failure or original-timeout RTO qualification.
+
+At19:35:56UTC the [normal-profile finite guard startup](platform480-2026-10-25/evidence-api-worker-latch-guard-candidate-20261025-v2-enabled/passive-preflight.json)
+passed: PID642163/start48039170, services/budget unchanged. It ends09:00UTC
+2026-10-26 with an08:50UTC action cutoff. Two recent qualification intents
+initially exhausted the hourly budget; it waits for natural expiry. Two lifetime
+invocations and two intents/hour both apply. Startup is not a completed lifetime.
+
+## Closed800-task workload
+
+The [closed study](platform480-2026-10-25/soak480-guard-endurance-20261025-v1-complete/run/report.json)
+ran19:37:42.617–19:59:10.848UTC: **800/800,0 failed/retried**,800 accepted
+attempts, exact output lengths and conserved usage. Model/source/configuration
+and all app epochs stayed fixed; zero guard invocations. Four cards each had200
+samples, mean96.395/96.905/95.985/82.000%, all max100;0 observation errors,
+max gap7.326s and no gap over2×5s. These are device-wide activity samples,
+not FLOP saturation measurements.
+
+| Measure | Earlier post-Fleet800 | Finite guard800 |
+| --- | ---: | ---: |
+| Whole wall, seconds | 1270.536 | 1288.223 |
+| Accepted output tokens/s | 428.166 | 422.287 |
+| DB acceptance→completion P95, seconds | 250.846 | 255.147 |
+| DB acceptance→completion P99, seconds | 258.444 | 261.885 |
+| Scheduled arrival→completion P95, seconds | 431.547 | 456.771 |
+| Scheduled arrival→completion P99, seconds | 488.814 | 503.539 |
+| Whole-Pod allocation at$16.10/h | $5.6821 | $5.7612 |
+
+The fixture bytes/order,800 tasks and offered1task/s match, but this later
+single observation is not randomized repeated ABBA or a causal overhead
+estimate. Throughput was1.37% lower; this does not isolate the guard's cost.
+The raw inherited comparison label refers to older differently offered studies;
+for this direct800 reference input/order/rate match. Raw reports stay unchanged.
+Different quantile populations must not be subtracted as a per-task breakdown.
+
+The [closed archive/guard audit](platform480-2026-10-25/evidence-api-guard-endurance-readback-20261025-v1-complete/validation.json)
+found40 ready S3 archives,800 normal DB response purges and800 retained identities.
+Indices0/20/39 passed strict receipts and six input/output byte reads: four
+independent objects because input is reused, not all40 outputs. The finite guard
+remained armed with zero invocations. Input24h/archival120s and limits/plans
+stayed fixed. Retained49,713/50,000 leaves287 tasks; agent work must respect
+that headroom. Allocation is not invoice, marginal or answer-quality cost;
+fixed-output compute has no semantic quality grade.

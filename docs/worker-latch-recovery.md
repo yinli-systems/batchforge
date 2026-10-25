@@ -4,7 +4,8 @@ The 3,600-task study exposed a live exact-token worker that stayed paused after
 an uncertain engine invocation. Process liveness did not recover execution.
 `ops.recover_latched_worker` is a concrete native command for guarded same-source
 recovery. A finite real480B transport-fault trial has now qualified this command;
-it is **not an installed permanent automatic watchdog**. The earlier800-task
+it is now used by an installed **finite guard ending09:00UTC2026-10-26**;
+it is not a permanent service or whole-Pod failover. The earlier800-task
 study closed independently and its evidence stays unchanged.
 
 The command is prepare-only without `--apply`. It requires the current480B TP4
@@ -44,7 +45,8 @@ separate real fault-injection qualification are required before enablement.
 The [actual48-task qualification](benchmarks/latch-qualification-2026-10-25.md)
 passed with independent engine resume, same-config worker recovery and strict
 ledger/S3 verification. A future finite health guard can invoke this command
-after detection; permanent guard integration remains separate work.
+after detection. The [finite integration and800-task study](benchmarks/guard-endurance-2026-10-25.md)
+have since passed; permanent service/whole-Pod failover remain separate work.
 
 The recovery endpoint must exactly match the worker's actual single private
 inference URL and metrics host/port. A quiet manifest engine cannot authorize
@@ -56,7 +58,8 @@ The live owned worker process environment is also checked against every pinned
 worker-file key, before observations and after restart. Missing, stale or
 duplicate effective keys fail without logging values. A file-only source probe
 cannot establish what an already running worker loaded. The endpoint/effective
-configuration follow-up passed93 related local tests; it is not deployed.
+configuration follow-up passed93 related local tests. It is included in the
+finite guard source; serving API/worker modules remain748dc10.
 
 ## Actual native healthy-worker refusal
 
@@ -88,3 +91,11 @@ two-attempt/hour persistent budget consumed one intent; no limiter was reset.
 The first controller run failed before submissions due a portless watchdog
 readiness bug; its failed report and zero-acceptance/restoration proof remain.
 No serving module source, model, cloud resource or storage policy changed.
+
+The observer passes a state SHA through `--expected-state`; the native helper
+compares source/config/PID state after both locks. The guard needs two fresh
+quiescence observations and never adopts a foreign epoch. Healthy polls do no
+DB scans. Exhausted budgets wait for natural expiry; corrupt/future/missing
+required ledgers stay closed. A helper overrun remains an identified independent
+child, never KILLed between worker stop and watchdog restoration. The real guard
+trial and clean800-task study passed; normal1200s-profile deployment is finite.
