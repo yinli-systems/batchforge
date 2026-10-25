@@ -241,6 +241,38 @@ class Store:
             raise APIError(404, "Batch not found", "not_found")
         return batch_view(row)
 
+    async def capacity(self, tenant):
+        from .capacity import CAPACITY_SQL,capacity_view
+        if self.schema_version<9:
+            raise APIError(409,'Admission headroom requires schema 9 or later','feature_unavailable')
+        async with self.pool.connection() as conn:
+            row=await one(conn,CAPACITY_SQL,(tenant,))
+        if not row:raise APIError(409,'Admission counters are unavailable','feature_unavailable')
+        return capacity_view(row,self.settings)
+
+    async def batch_receipt(self, tenant, bid):
+        from .receipts import RECEIPT_SQL,format_receipt
+        if self.schema_version<8:
+            raise APIError(409,'Execution receipts require schema 8 or later','feature_unavailable')
+        async with self.pool.connection() as conn:
+            row=await one(conn,RECEIPT_SQL,(bid,tenant))
+        if not row:raise APIError(404,'Batch not found','not_found')
+        return format_receipt(row)
+
+    async def task_page(self, tenant, bid, limit=50, after=None):
+        from .receipts import TASK_PAGE_SQL
+        if self.schema_version<8:
+            raise APIError(409,'Task ledger pages require schema 8 or later','feature_unavailable')
+        if type(limit) is not int or not 1<=limit<=200:
+            raise APIError(400,'Task page limit must be between 1 and 200')
+        async with self.pool.connection() as conn:
+            row=await one(conn,TASK_PAGE_SQL,(bid,tenant,after,after,limit+1))
+        if not row:raise APIError(404,'Batch not found','not_found')
+        if after and not row['cursor_found']:raise APIError(404,'Task cursor not found in this batch','not_found')
+        rows=row['data'];data=rows[:limit]
+        return {'object':'list','data':data,'has_more':len(rows)>limit,
+                'last_id':data[-1]['id'] if data else None,'retired_tasks':row['retired_tasks']}
+
     async def list_batches(self, tenant, limit, after=None):
         async with self.pool.connection() as conn:
             if after:

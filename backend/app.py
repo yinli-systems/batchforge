@@ -359,6 +359,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def cancel(bid: str, request: Request, tenant_id: str = Depends(tenant)):
         return await request.app.state.store.cancel(tenant_id, bid)
 
+    @app.get('/v1/batches/{bid}/receipt')
+    async def receipt(bid: str, request: Request, tenant_id: str = Depends(tenant)):
+        return await request.app.state.store.batch_receipt(tenant_id,bid)
+
+    @app.get('/v1/batches/{bid}/tasks')
+    async def task_page(bid: str, request: Request, limit: int = Query(default=50,ge=1,le=200),
+                        after: str | None = Query(default=None,max_length=80), tenant_id: str = Depends(tenant)):
+        return await request.app.state.store.task_page(tenant_id,bid,limit,after)
+
     @app.post("/v1/batches/{bid}/retry")
     async def retry(bid: str, request: Request, tenant_id: str = Depends(tenant), idempotency_key: str | None = Header(default=None)):
         if not settings.batch_submission_enabled:
@@ -366,6 +375,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             response.headers['Retry-After'] = '5'
             return response
         return await request.app.state.store.retry(tenant_id, bid, idempotency_key)
+
+    @app.get('/v1/capacity')
+    async def capacity(request: Request, tenant_id: str = Depends(tenant)):
+        return await request.app.state.store.capacity(tenant_id)
 
     @app.get("/v1/models")
     async def models(tenant_id: str = Depends(tenant)):

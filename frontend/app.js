@@ -127,6 +127,11 @@ const state = {
   detailErrors: [],
   detailErrorsFile: null,
   detailLoading: false,
+  detailReceipt: null,
+  detailTaskPage: null,
+  evidenceLoading: false,
+  evidenceError: '',
+  evidenceVersion: 0,
   uploadFile: null,
   inputMode: 'upload',
   createAttempt: null,
@@ -612,7 +617,22 @@ async function openCreate() {
       `<option value="${esc(m.id)}">${esc(m.id)}</option>`).join('') :
     '<option value="">No models registered</option>';
   setInputMode('upload');
-  $('#create-dialog').showModal()
+  $('#create-dialog').showModal();
+  $('#capacity-notice').textContent = 'Checking workspace admission headroom…';
+  const key = state.key;
+  try {
+    const capacity = await api('/v1/capacity');
+    if (state.key !== key || !$('#create-dialog').open) return;
+    $('#capacity-notice').textContent = capacityNotice(capacity);
+  } catch {
+    if (state.key === key && $('#create-dialog').open)
+      $('#capacity-notice').textContent = 'Headroom unavailable. Submission still checks current workspace limits.';
+  }
+}
+
+function capacityNotice(capacity) {
+  const mib = value => (Number(value) / 1048576).toFixed(1);
+  return `Available: ${number(capacity.retained_tasks.available)} task records · ${mib(capacity.task_payload_bytes.available)} MiB task payload · ${mib(capacity.input_bytes.available)} MiB input storage. Each new task reserves at least ${mib(capacity.new_task_reservation.fixed_bytes_per_task)} MiB plus its request body until completion. This is a snapshot; concurrent submissions can use it.`;
 }
 
 function loadSample() {
@@ -742,6 +762,7 @@ async function openBatch(id) {
   state.detail = null;
   state.detailErrors = [];
   state.detailErrorsFile = null;
+  resetEvidence();
   state.detailLoading = true;
   $('#batch-drawer').hidden = false;
   $('#drawer-backdrop').hidden = false;
@@ -754,6 +775,7 @@ async function openBatch(id) {
 function closeDrawer() {
   state.detailId = null;
   state.detail = null;
+  resetEvidence();
   $('#batch-drawer').hidden = true;
   $('#drawer-backdrop').hidden = true;
   document.body.style.overflow = '';
@@ -811,7 +833,85 @@ async function refreshDetail() {
   }
 }
 
-function renderDrawer(){const drawer=$('#batch-drawer');const active=document.activeElement;const focusedAction=drawer.contains(active)?active?.dataset?.action:null;const focusedFile=drawer.contains(active)?active?.dataset?.downloadFile:null;const scrollTop=drawer.scrollTop;const b=state.detail;if(!b){$('#batch-drawer').innerHTML=`<div class="drawer-header"><h2>Batch details</h2><button class="icon-button" data-action="close-drawer" aria-label="Close details">${icon('close')}</button></div><div class="empty-state"><span class="spinner"></span><p style="margin-top:15px">Loading batch…</p></div>`;return}const c=counts(b);const errors=state.detailErrors.length?state.detailErrors:(Array.isArray(b.errors?.data)?b.errors.data:Array.isArray(b.errors)?b.errors:[]);const detailItems=[['Model',b.model||'—'],['Created',dateText(b.created_at)],['Started',dateText(b.in_progress_at)],['Finished',dateText(b.completed_at||b.failed_at||b.cancelled_at)],['Endpoint',b.endpoint],['Completion window',b.completion_window],['Input file',b.input_file_id]];$('#batch-drawer').innerHTML=`<div class="drawer-header"><div><span class="eyebrow">BATCH DETAILS</span><h2>${esc(batchName(b))}</h2><span class="batch-id">${esc(b.id)}</span></div><button class="icon-button" data-action="close-drawer" aria-label="Close details">${icon('close')}</button></div><div class="drawer-body"><div class="drawer-status-row">${statusBadge(b.status)}<button class="link-button" data-action="refresh-detail">${icon('refresh')}Refresh</button></div><div class="drawer-progress"><div class="progress-meta"><span>${number(completedCount(b))} of ${number(c.total)} tasks resolved</span><span>${progress(b)}%</span></div><div class="progress-track"><div class="progress-fill ${b.status==='in_progress'?'running':''}" style="width:${progress(b)}%"></div></div></div><section class="drawer-section"><dl class="detail-grid">${[['Completed',c.completed],['Failed',c.failed],['Running',c.running],['Pending',c.pending],['Cancelled',c.cancelled],['Total requests',c.total]].map(([label,value])=>`<div class="detail-item"><dt>${label}</dt><dd class="${label==='Completed'?'text-green':label==='Failed'&&value?'text-red':''}">${number(value)}</dd></div>`).join('')}</dl></section>${renderHistoryRetention(b)}<section class="drawer-section"><h3>Results & recovery</h3><div class="drawer-actions">${b.output_file_id?`<button class="button button-secondary" data-download-file="${esc(b.output_file_id)}" data-filename="${esc(b.id)}-output.jsonl">${icon('download')}Download output</button>`:''}${b.error_file_id?`<button class="button button-secondary" data-download-file="${esc(b.error_file_id)}" data-filename="${esc(b.id)}-errors.jsonl">${icon('download')}Download errors</button>`:''}${terminal(b)&&c.failed&&!historyRetention(b)?`<button class="button button-secondary" data-action="retry-batch">${icon('refresh')}Retry ${number(c.failed)} failed</button>`:''}${!terminal(b)?`<button class="button button-danger" data-action="cancel-batch">${icon('stop')}Cancel batch</button>`:''}</div><p class="drawer-note">${historyRetention(b)?'Retry is unavailable once task history retirement has started.':terminal(b)?'Retry creates a new batch from failed tasks only. Existing results are retained.':'Result files become available when this batch reaches a terminal state. Accepted results are retained if you cancel.'}</p></section>${errors.length?`<section class="drawer-section"><h3>Task errors <span class="muted">· preview, up to 30</span></h3><div class="task-errors">${errors.map(e=>`<div class="task-error"><strong>${esc(e.custom_id||e.code||'Task error')}</strong><p>${esc(e.error?.message||e.message||e.error?.code||'Unknown error')}</p></div>`).join('')}</div></section>`:''}<section class="drawer-section"><h3>Execution details</h3><dl class="detail-list">${detailItems.map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl></section>${b.usage?`<section class="drawer-section"><h3>Token usage</h3><dl class="detail-list"><div><dt>Input tokens</dt><dd>${number(b.usage.prompt_tokens)}</dd></div><div><dt>Output tokens</dt><dd>${number(b.usage.completion_tokens)}</dd></div></dl></section>`:'<p class="drawer-note">Token usage is reported in workspace totals from accepted worker responses. Per-batch token breakdown is not exposed by this API version.</p>'}${Object.keys(b.metadata||{}).length?`<section class="drawer-section"><h3>Metadata</h3>${codeBlock('JSON',JSON.stringify(b.metadata,null,2))}</section>`:''}</div>`;drawer.scrollTop=scrollTop;if(focusedAction)drawer.querySelector(`[data-action="${focusedAction}"]`)?.focus({preventScroll:true});else if(focusedFile)$$('[data-download-file]',drawer).find(el=>el.dataset.downloadFile===focusedFile)?.focus({preventScroll:true})}
+function renderDrawer(){const drawer=$('#batch-drawer');const active=document.activeElement;const focusedAction=drawer.contains(active)?active?.dataset?.action:null;const focusedFile=drawer.contains(active)?active?.dataset?.downloadFile:null;const scrollTop=drawer.scrollTop;const b=state.detail;if(!b){$('#batch-drawer').innerHTML=`<div class="drawer-header"><h2>Batch details</h2><button class="icon-button" data-action="close-drawer" aria-label="Close details">${icon('close')}</button></div><div class="empty-state"><span class="spinner"></span><p style="margin-top:15px">Loading batch…</p></div>`;return}const c=counts(b);const errors=state.detailErrors.length?state.detailErrors:(Array.isArray(b.errors?.data)?b.errors.data:Array.isArray(b.errors)?b.errors:[]);const detailItems=[['Model',b.model||'—'],['Created',dateText(b.created_at)],['Started',dateText(b.in_progress_at)],['Finished',dateText(b.completed_at||b.failed_at||b.cancelled_at)],['Endpoint',b.endpoint],['Completion window',b.completion_window],['Input file',b.input_file_id]];$('#batch-drawer').innerHTML=`<div class="drawer-header"><div><span class="eyebrow">BATCH DETAILS</span><h2>${esc(batchName(b))}</h2><span class="batch-id">${esc(b.id)}</span></div><button class="icon-button" data-action="close-drawer" aria-label="Close details">${icon('close')}</button></div><div class="drawer-body"><div class="drawer-status-row">${statusBadge(b.status)}<button class="link-button" data-action="refresh-detail">${icon('refresh')}Refresh</button></div><div class="drawer-progress"><div class="progress-meta"><span>${number(completedCount(b))} of ${number(c.total)} tasks resolved</span><span>${progress(b)}%</span></div><div class="progress-track"><div class="progress-fill ${b.status==='in_progress'?'running':''}" style="width:${progress(b)}%"></div></div></div><section class="drawer-section"><dl class="detail-grid">${[['Completed',c.completed],['Failed',c.failed],['Running',c.running],['Pending',c.pending],['Cancelled',c.cancelled],['Total requests',c.total]].map(([label,value])=>`<div class="detail-item"><dt>${label}</dt><dd class="${label==='Completed'?'text-green':label==='Failed'&&value?'text-red':''}">${number(value)}</dd></div>`).join('')}</dl></section>${renderHistoryRetention(b)}${renderEvidencePanel()}<section class="drawer-section"><h3>Results & recovery</h3><div class="drawer-actions">${b.output_file_id?`<button class="button button-secondary" data-download-file="${esc(b.output_file_id)}" data-filename="${esc(b.id)}-output.jsonl">${icon('download')}Download output</button>`:''}${b.error_file_id?`<button class="button button-secondary" data-download-file="${esc(b.error_file_id)}" data-filename="${esc(b.id)}-errors.jsonl">${icon('download')}Download errors</button>`:''}${terminal(b)&&c.failed&&!historyRetention(b)?`<button class="button button-secondary" data-action="retry-batch">${icon('refresh')}Retry ${number(c.failed)} failed</button>`:''}${!terminal(b)?`<button class="button button-danger" data-action="cancel-batch">${icon('stop')}Cancel batch</button>`:''}</div><p class="drawer-note">${historyRetention(b)?'Retry is unavailable once task history retirement has started.':terminal(b)?'Retry creates a new batch from failed tasks only. Existing results are retained.':'Result files become available when this batch reaches a terminal state. Accepted results are retained if you cancel.'}</p></section>${errors.length?`<section class="drawer-section"><h3>Task errors <span class="muted">· preview, up to 30</span></h3><div class="task-errors">${errors.map(e=>`<div class="task-error"><strong>${esc(e.custom_id||e.code||'Task error')}</strong><p>${esc(e.error?.message||e.message||e.error?.code||'Unknown error')}</p></div>`).join('')}</div></section>`:''}<section class="drawer-section"><h3>Execution details</h3><dl class="detail-list">${detailItems.map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl></section>${b.usage?`<section class="drawer-section"><h3>Token usage</h3><dl class="detail-list"><div><dt>Input tokens</dt><dd>${number(b.usage.prompt_tokens)}</dd></div><div><dt>Output tokens</dt><dd>${number(b.usage.completion_tokens)}</dd></div></dl></section>`:'<p class="drawer-note">Token usage is reported in workspace totals from accepted worker responses. Per-batch token breakdown is not exposed by this API version.</p>'}${Object.keys(b.metadata||{}).length?`<section class="drawer-section"><h3>Metadata</h3>${codeBlock('JSON',JSON.stringify(b.metadata,null,2))}</section>`:''}</div>`;drawer.scrollTop=scrollTop;if(focusedAction)drawer.querySelector(`[data-action="${focusedAction}"]`)?.focus({preventScroll:true});else if(focusedFile)$$('[data-download-file]',drawer).find(el=>el.dataset.downloadFile===focusedFile)?.focus({preventScroll:true})}
+function resetEvidence() {
+  state.evidenceVersion++;
+  state.detailReceipt = null;
+  state.detailTaskPage = null;
+  state.evidenceLoading = false;
+  state.evidenceError = '';
+}
+
+function canonicalReceipt(value) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return JSON.stringify(value);
+  if (typeof value === 'number' && Number.isFinite(value) && Number.isSafeInteger(value)) return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalReceipt).join(',')}]`;
+  if (value && typeof value === 'object') return `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${canonicalReceipt(value[k])}`).join(',')}}`;
+  throw new Error('Receipt contains unsupported or imprecise values');
+}
+
+async function verifyReceipt(envelope) {
+  if (envelope?.protocol !== 'batchforge.receipt.v1') throw new Error('Unsupported receipt protocol');
+  const bytes = new TextEncoder().encode(`${envelope.protocol}\0${canonicalReceipt(envelope.receipt)}`);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  const hex = [...new Uint8Array(digest)].map(n => n.toString(16).padStart(2, '0')).join('');
+  if (hex !== envelope.receipt_sha256) throw new Error('Receipt checksum does not match');
+  return envelope;
+}
+
+async function loadEvidence(after = null) {
+  const id = state.detailId, key = state.key;
+  if (!id || !key || state.evidenceLoading) return;
+  const version = ++state.evidenceVersion;
+  state.evidenceLoading = true;
+  state.evidenceError = '';
+  renderDrawer();
+  try {
+    const jobs = [api(`/v1/batches/${encodeURIComponent(id)}/tasks?limit=25${after ? `&after=${encodeURIComponent(after)}` : ''}`)];
+    if (!after) jobs.push(api(`/v1/batches/${encodeURIComponent(id)}/receipt`).then(verifyReceipt));
+    const results = await Promise.allSettled(jobs);
+    if (state.detailId !== id || state.key !== key || state.evidenceVersion !== version) return;
+    if (results[0].status === 'fulfilled') state.detailTaskPage = results[0].value;
+    if (results[1]?.status === 'fulfilled') {
+      if (results[1].value.receipt.batch_id !== id) throw new Error('Receipt belongs to another batch');
+      state.detailReceipt = results[1].value;
+    }
+    state.evidenceError = results.filter(r => r.status === 'rejected').map(r => r.reason.message).join('; ');
+  } catch (error) {
+    if (state.detailId === id && state.evidenceVersion === version) state.evidenceError = error.message;
+  } finally {
+    if (state.detailId === id && state.key === key && state.evidenceVersion === version) {
+      state.evidenceLoading = false;
+      renderDrawer();
+    }
+  }
+}
+
+function renderEvidencePanel() {
+  const envelope = state.detailReceipt, r = envelope?.receipt, page = state.detailTaskPage;
+  const labels = {consistent_ledger: 'Ledger reconciled', inconsistent: 'Ledger mismatch detected',
+    incomplete_history: 'History incomplete', in_progress: 'Execution in progress'};
+  return `<section class="drawer-section"><h3>Execution evidence</h3>
+    <div class="drawer-actions"><button class="button button-secondary" data-action="load-evidence" ${state.evidenceLoading ? 'disabled' : ''}>${state.evidenceLoading ? 'Loading…' : r ? 'Refresh evidence' : 'Inspect ledger & tasks'}</button>
+    ${r ? '<button class="button button-secondary" data-action="download-receipt">Download receipt JSON</button>' : ''}</div>
+    ${state.evidenceError ? `<p class="drawer-note text-red" role="alert">${esc(state.evidenceError)}</p>` : ''}
+    ${r ? `<p class="drawer-note"><strong>${esc(labels[r.ledger_state] || r.ledger_state)}</strong> · ${number(r.history.observed_accepted_attempts)} accepted attempts · checksum verified in this browser. Captured ${esc(dateText(envelope.captured_at))}.</p>
+      <dl class="detail-list"><div><dt>Receipt SHA-256</dt><dd>${esc(envelope.receipt_sha256)}</dd></div><div><dt>Runtime fingerprint</dt><dd>${esc(r.runtime_fingerprint || 'Not recorded')}</dd></div></dl>
+      <p class="drawer-note">Reconciles retained database counters and accepted usage. Runtime identity is worker-reported. Recorded artifact hashes require separate byte readback. A checksum is not a signature, hardware attestation, or answer-quality score.</p>` : '<p class="drawer-note">Inspect accepted usage, runtime identity and retained task history without exposing request or response payloads.</p>'}
+    ${page ? `<h3>Task ledger · this page</h3><div class="task-errors">${page.data.map(t => `<div class="task-error"><strong>${esc(t.custom_id)}</strong><p>${esc(t.status)} · attempts ${number(t.attempts)}/${number(t.max_attempts)} · accepted tokens ${number(t.prompt_tokens)} in / ${number(t.completion_tokens)} out${t.completion_seconds == null ? '' : ` · ${Number(t.completion_seconds).toFixed(2)}s to completion`}</p><p>${esc(t.worker_id || 'Unassigned')}</p></div>`).join('') || '<p class="drawer-note">No retained task rows on this page.</p>'}</div>
+      ${page.retired_tasks ? `<p class="drawer-note">${number(page.retired_tasks)} task rows have been retired; batch totals remain available.</p>` : ''}
+      <div class="drawer-actions"><button class="link-button" data-action="load-evidence" ${state.evidenceLoading ? 'disabled' : ''}>First page</button>${page.has_more ? `<button class="link-button" data-action="next-tasks" ${state.evidenceLoading ? 'disabled' : ''}>Next 25 tasks</button>` : ''}</div>` : ''}
+    </section>`;
+}
+
+function downloadReceipt() {
+  if (!state.detailReceipt) return;
+  const url = URL.createObjectURL(new Blob([JSON.stringify(state.detailReceipt, null, 2) + '\n'], {type: 'application/json'}));
+  const anchor = document.createElement('a');
+  anchor.href = url; anchor.download = `${state.detailReceipt.receipt.batch_id}-receipt.json`;
+  anchor.click(); URL.revokeObjectURL(url);
+}
+
 function historyRetention(batch) {
   const marker = batch?.history_retention;
   if (!marker || typeof marker !== 'object' || Array.isArray(marker)) return null;
@@ -996,6 +1096,15 @@ document.addEventListener('click', async event => {
         break;
       case 'refresh-detail':
         await refreshDetail();
+        break;
+      case 'load-evidence':
+        await loadEvidence();
+        break;
+      case 'next-tasks':
+        await loadEvidence(state.detailTaskPage?.last_id);
+        break;
+      case 'download-receipt':
+        downloadReceipt();
         break;
       case 'retry-batch':
         await retryBatch(action);

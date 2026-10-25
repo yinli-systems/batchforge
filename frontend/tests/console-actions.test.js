@@ -37,7 +37,7 @@ function harness(fetch, sessionStorage = storage()) {
     }
   };
   const context = vm.createContext({
-    document, sessionStorage, fetch, Headers, FormData, crypto: webcrypto, observed
+    document, sessionStorage, fetch, Headers, FormData, TextEncoder, Uint8Array, crypto: webcrypto, observed
   });
   // Keep the real actions and HTTP client. Stub only unrelated UI refresh/navigation
   // so these tests exercise network outcomes without a DOM framework or a server.
@@ -48,7 +48,7 @@ function harness(fetch, sessionStorage = storage()) {
     openBatch = async id => observed.opened.push(id);
     const renderDetails = renderDrawer;
     renderDrawer = () => observed.rendered.push(state.detail);
-    globalThis.actions = {state, retryBatch, cancelBatch, renderDetails};
+    globalThis.actions = {state, retryBatch, cancelBatch, renderDetails, verifyReceipt, loadEvidence, resetEvidence, renderEvidencePanel, capacityNotice};
   `, context, {filename: 'frontend/app.js'});
   context.actions.state.key = 'test-tenant-key';
   context.actions.state.detailId = 'source-batch';
@@ -198,4 +198,47 @@ test('a normal unmarked terminal batch preserves its existing retry and result b
   await app.retryBatch({disabled: false});
   assert.equal(requests, 1);
   assert.equal(app.observed.opened.at(-1), 'retry-normal');
+});
+
+const receiptFixture = JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'ledger-receipt.json'), 'utf8'));
+
+test('browser verifies Python canonical receipt and rejects altered usage', async () => {
+  const app = harness(async () => {throw new Error('No network expected');});
+  assert.equal((await app.verifyReceipt(receiptFixture)).receipt_sha256, receiptFixture.receipt_sha256);
+  const tampered = structuredClone(receiptFixture);
+  tampered.receipt.accepted_usage.completion_tokens++;
+  await assert.rejects(app.verifyReceipt(tampered), /checksum does not match/);
+  const imprecise = structuredClone(receiptFixture);
+  imprecise.receipt.accepted_usage.completion_tokens = 9007199254740992;
+  await assert.rejects(app.verifyReceipt(imprecise), /imprecise/);
+});
+
+test('a closed or replaced drawer cannot be overwritten by stale evidence responses', async () => {
+  const releases = [];
+  const app = harness(url => new Promise(resolve => releases.push(() => resolve(jsonResponse(
+    url.includes('/receipt') ? receiptFixture : {data: [], has_more: false, retired_tasks: 0}
+  )))));
+  const pending = app.loadEvidence();
+  assert.equal(releases.length, 2);
+  app.resetEvidence();
+  app.state.detailId = 'another-batch';
+  releases.forEach(release => release());
+  await pending;
+  assert.equal(app.state.detailReceipt, null);
+  assert.equal(app.state.detailTaskPage, null);
+  assert.equal(app.state.evidenceLoading, false);
+});
+
+test('evidence UI escapes task identifiers and exposes limited verification scope', () => {
+  const app = harness(async () => {throw new Error('No network expected');});
+  app.state.detailReceipt = receiptFixture;
+  app.state.detailTaskPage = {data: [{custom_id: '<img src=x onerror=alert(1)>', status: 'completed',
+    attempts: 2, max_attempts: 3, prompt_tokens: 4, completion_tokens: 5,
+    completion_seconds: 1.25, worker_id: '<script>bad()</script>'}], has_more: true, retired_tasks: 1};
+  const html = app.renderEvidencePanel();
+  assert.doesNotMatch(html, /<img|<script>/);
+  assert.match(html, /&lt;img/);
+  assert.match(html, /Next 25 tasks/);
+  assert.match(html, /not a signature, hardware attestation, or answer-quality score/);
+  assert.match(html, /1 task rows have been retired/);
 });
