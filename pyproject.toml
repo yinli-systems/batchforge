@@ -20,9 +20,10 @@ dependencies = [
 [project.optional-dependencies]
 test = ["pytest>=8,<9", "pytest-asyncio>=0.24,<1", "httpx>=0.28,<1"]
 worker = ["httpx>=0.28,<1"]
+agents = ["httpx>=0.28,<1"]
 
 [tool.setuptools.packages.find]
-include = ["backend*", "worker*"]
+include = ["backend*", "worker*", "agents*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -30,3 +31,4 @@ testpaths = ["tests"]
 
 [tool.setuptools.package-data]
 backend = ["schema.sql", "migrations/*.sql", "CONTRACT.md"]
+agents = ["schema.sql"]

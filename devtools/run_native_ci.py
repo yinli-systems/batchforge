@@ -53,7 +53,7 @@ def main():
             subprocess.run([sys.executable, '-m', 'pytest', *CHECK_PATHS, '-q'], cwd=source, env=tests_env, check=True, timeout=600)
             subprocess.run([node, '--test', *map(str, sorted((source / 'frontend/tests').glob('*.test.js')))],
                            cwd=source, env=env, check=True, timeout=120)
-            subprocess.run([sys.executable, '-m', 'compileall', '-q', 'backend', 'worker', 'ops', 'scripts', 'devtools'],
+            subprocess.run([sys.executable, '-m', 'compileall', '-q', 'backend', 'worker', 'agents', 'ops', 'scripts', 'devtools'],
                            cwd=source, env=env, check=True, timeout=120)
         finally:
             subprocess.run([control, '-D', str(data), '-m', 'fast', '-w', 'stop'], env=env, check=True, stdout=subprocess.DEVNULL)

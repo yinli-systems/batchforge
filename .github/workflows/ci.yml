@@ -54,7 +54,7 @@ jobs:
       - name: Console cancellation and retry acknowledgement regressions
         run: node --test frontend/tests/*.test.js
       - name: Compile Python source
-        run: python -m compileall -q backend worker ops scripts devtools
+        run: python -m compileall -q backend worker agents ops scripts devtools
   existing-pod-cpu:
     # One reviewed private-branch push, on an operator-staged ephemeral runner.
     # No fork PR code or production credentials are passed to the Pod runner.

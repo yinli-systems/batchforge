@@ -3,6 +3,15 @@
 Durable AI batch processing with a PostgreSQL control plane, fenced GPU workers,
 an OpenAI-shaped batch API, and an operations console backed by live data.
 
+An additive [durable Agent runtime](docs/agent-runtime.md) now implements typed
+planning, capability-checked data tools, tenant memory, fenced coordinator
+leases and receipt-linked model steps through the existing Batch queue. It is
+under native qualification; Azure Agent-schema migration and real-GPU Agent
+task-success qualification are still pending. The broader
+[Agent platform implementation map](docs/agent-platform-roadmap.md) tracks
+workflow composition, VectorMatch, isolation, multimodal and learning work
+without presenting planned capabilities as deployed features.
+
 The current private primary serves **Qwen3-Coder-480B-A35B AWQ** on one
 Pod with **four H100 80GB GPUs**, using TP4. This is a 480B-total / approximately
 35B-active MoE, not a dense 480B model. Three repeated ABBA blocks of real Batch
