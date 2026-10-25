@@ -1,0 +1,37 @@
+{
+  "collected_at": "2026-10-25T17:41:47.256915+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-fleet-20261025-v2",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 21697,
+      "sha256": "4ecec0c948d4d9f005c5a96c277090027eef03e4ead5b566af46581418de7103",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "readback.json": {
+      "bytes": 2359,
+      "sha256": "654f674b68953b35fa476015489f38864ca8c1019b77114e6e217eff3df268ef",
+      "source_relative_path": "readback.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 4099,
+      "sha256": "f36eb53489d553fee32dc57023325d00eb758acbb574afaefb099443f1e82a9e",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "release-launcher.json": {
+      "bytes": 523,
+      "sha256": "bd78526bd02bb518db2af467a7965f8b37e0cc0c9ab3346a931cf4d1bd756027",
+      "source_relative_path": "release-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "post-rollout-health.json": {
+      "bytes": 1610,
+      "sha256": "57d67a47754172fc9f6370e24a33db8d2f45345531c8d3c65c4901bb82f95514",
+      "source_relative_path": "post-rollout-health.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

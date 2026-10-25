@@ -1,5 +1,17 @@
 # Published quality evidence
 
+Current publication uses immutable **`748dc10`**, after the guarded Fleet/quality
+release. Both APIs and gateway reconcile two reports: the failed original
+10,570-question full-dev baseline and the passing frozen 1,000-question JSON-span
+holdout. The console and API expose answer-contract/cohort hashes, invalid-format
+counts and separately pinned operator-rate allocations. Cost bytes, arithmetic,
+wall interval, exact counts and quality gate must match the source report; any
+ledger mismatch suppresses both scores and cost. These are not invoices. The
+[release receipt](benchmarks/platform480-2026-10-25/evidence-api-fleet-release-20261025-v2-complete/release.json)
+retains checks before and after reopening. The earlier `831b839` rollout below is
+historical publication evidence.
+
+
 This follow-up adds an authenticated Quality evidence view and two read-only
 routes, without new cloud services, credentials, database tables or migrations:
 
@@ -8,8 +20,8 @@ routes, without new cloud services, credentials, database tables or migrations:
 
 Configure `QUALITY_EVIDENCE_CATALOGUE` with an immutable release catalogue path,
 for example `/approved/release/deploy/quality/catalogue.json`. The default is
-empty, preserving existing deployments. The included catalogue pins the actual
-10,570-task public SQuAD report; its failed 70%/80% gate remains failed.
+empty, preserving existing deployments. The included catalogue pins the original 10,570-task report and frozen
+1,000-task holdout; the original failed 70%/80% gate remains failed.
 Immutable source `831b839` passed independent read-only Azure qualification at
 14:36:39 UTC on October 25: schema 11, TLS hostname verification, actual tenant
 authentication, 166-batch linkage, other-owner hiding and exact response-body
@@ -18,12 +30,12 @@ is exported with SHA-256 verification. This did not deploy the feature.
 The guarded release completed **2026-10-25 15:20:51 UTC**, after the successful
 closed 2,400-task endurance report. A private canary passed, both API enqueue
 paths drained, and both API replicas and the gateway passed validation before
-canary cleanup. The primary now uses immutable **`831b839`** with its pinned
+canary cleanup. That release used immutable **`831b839`** with its pinned
 catalogue. The 480B worker and engine identities stayed unchanged. The
 [actual release receipt](benchmarks/platform480-2026-10-25/quality-api-release-20261025-v1-complete/release.json)
 is retained. Failed checks would restore compatible API configuration; no
 retention, schema, model or cloud resource changed. The separate input-reuse
-console and physical-fleet follow-ups are not in this published revision.
+console and physical-fleet follow-ups were not in that earlier revision.
 
 ## Ownership and reconciliation
 

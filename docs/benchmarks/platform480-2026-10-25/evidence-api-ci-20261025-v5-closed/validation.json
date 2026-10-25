@@ -1,0 +1,20 @@
+{
+  "bootstrap_state": {
+    "phase": "runner_exited",
+    "passed": false,
+    "gpu_inference": false,
+    "production_credentials_copied": false,
+    "new_cloud_resources": false,
+    "uid": 65534,
+    "updated_epoch": 1792949696.8764954,
+    "runner_archive_sha256": "08e9ccb3604d2462c24b5e33604dc30810296ca15cc65f23cffd4317eb144c37",
+    "runner_pid": 603677,
+    "exit_code": 0,
+    "runner_exited_cleanly": true,
+    "job_conclusion": "Verify independently through GitHub; runner exit alone is not a passed job"
+  },
+  "bootstrap_source_sha256": "4b5f52644c0b13c385d97cba96d14a1330f7ff7121437b61f863c697a94d33b6",
+  "interpretation": "Runner exit is not the GitHub job result; actual source748dc10 job passed1415 Python/23 Node tests",
+  "token_file_remaining": false,
+  "private_logs_exported": false
+}

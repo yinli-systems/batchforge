@@ -50,3 +50,9 @@ job is skipped for that same private branch to avoid the known billing block.
 This is not a main-branch merge test. Other branches still use the hosted job.
 Every source push requires another short-lived supervised runner; publishing
 Markdown/benchmark evidence alone does not queue another job.
+
+The subsequent exact head **`748dc10`** also passed [run40216928687](https://github.com/yinli-systems/batchforge/actions/runs/40216928687):
+**1,415 Python tests, zero skips, 23 console tests**, PostgreSQL17.11/Node24.22.1.
+A root-owned pre-job hook checked the exact repository, private branch, push
+event, full commit SHA and non-root UID before checkout. No runner remained
+registered after its one job. [Authenticated result](../ops/reports/github-native-ci-748dc10-2026-10-25.json).

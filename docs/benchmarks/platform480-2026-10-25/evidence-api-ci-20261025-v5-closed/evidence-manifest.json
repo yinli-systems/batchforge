@@ -1,0 +1,25 @@
+{
+  "collected_at": "2026-10-25T17:41:24.353886+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-ci-20261025-v5",
+  "files": {
+    "launcher.json": {
+      "bytes": 100,
+      "sha256": "12a44c255561bfe025449115ee208bc8bcb1e313bdf5e10308b5f9169b586d72",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 810,
+      "sha256": "baa9e87ce5169b2910000d94d06bb5c14845cf029be1aeb5e0bdac3d964a83df",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 5590,
+      "sha256": "4b5f52644c0b13c385d97cba96d14a1330f7ff7121437b61f863c697a94d33b6",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

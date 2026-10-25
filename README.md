@@ -28,8 +28,8 @@ See [ground-truth evaluation and endurance protocol](docs/benchmarks/quality-squ
 A frozen JSON-span answer contract subsequently passed a disjoint 1,000-question
 public holdout: **EM82.8% / F1 91.43%** versus matched baseline 56.9% / 77.10%.
 The original full-dev gate remains failed. [Protocol, paired outcomes and cost](docs/benchmarks/quality-contract-2026-10-25.md)
-retain both results. Existing-Pod CPU CI passed **1,387 PostgreSQL17 tests and
-22 console tests** for `5791efe`; see [actual CI evidence](docs/ci.md).
+retain both results. Existing-Pod CPU CI passed **1,415 PostgreSQL17 tests and
+23 console tests** for `748dc10`; see [actual CI evidence](docs/ci.md).
 
 Historical GPT-OSS-120B and Qwen3-235B runs remain in the
 [single-Pod validation](docs/single-pod-validation-2026-10-24.md).
@@ -78,7 +78,13 @@ WebCrypto checksum verification, independent artifact byte readback and logical
 admission headroom. Both replicas passed the guarded October 25 rollout, with
 unchanged GPU worker/engine identities and historical S3 byte readback. See [execution evidence](docs/execution-evidence.md).
 
-Separately qualified follow-ups cover [published quality evidence](docs/quality-evidence.md),
+The guarded `748dc10` release now serves four-H100 physical inventory, verified
+input reuse and both quality/cost reports through the current worker/APIs.
+[Native release evidence](docs/benchmarks/platform480-2026-10-25/evidence-api-fleet-release-20261025-v2-complete/release.json)
+retains exact checks; a finite 800-task post-release workload is separately
+[preregistered](docs/benchmarks/fleet-endurance-2026-10-25.md).
+
+The implementation covers [published quality evidence](docs/quality-evidence.md),
 [verified input reuse](docs/benchmarks/reusable-input-endurance-2026-10-25.md),
 and [physical GPU inventory](docs/gpu-fleet.md). Their documentation distinguishes
 prepared, queued and deployed features; new source is not inserted into fixed

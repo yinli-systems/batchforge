@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-25T17:41:25.627244+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-fleet-release-20261025-v1",
+  "files": {
+    "release.json": {
+      "bytes": 3523,
+      "sha256": "9dc461118258b3e5bc313272aacf0c88a0285320e87541ac18ca041d60b1eeab",
+      "source_relative_path": "release.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

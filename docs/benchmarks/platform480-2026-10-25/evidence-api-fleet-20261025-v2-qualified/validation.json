@@ -1,0 +1,126 @@
+{
+  "passed": true,
+  "captured_at": "2026-10-25T17:32:31.604880+00:00",
+  "schema_version": 11,
+  "database_read_only_verified": true,
+  "tls_verified_hostname_mode": true,
+  "tls_version": "TLSv1.3",
+  "real_owner_authenticated": true,
+  "other_owner_hidden": true,
+  "invalid_key_rejected": true,
+  "evidence": [
+    {
+      "id": "squad480-dev-20261025-v4",
+      "quality_state": "failed",
+      "tasks": 10570,
+      "batch_count": 166,
+      "report_sha256": "22c924df3d4f0ab97345f07006ea74f956019c03c26dbc01ed9555b9c6950296",
+      "response_sha256": "40436341ee4fa665e4e79a461dda1f1392b45a3935cff3211d6a8aa2cf236969",
+      "verification_state": "batch_ledger_reconciled"
+    },
+    {
+      "id": "squad480-json-span-holdout-20261025-v1",
+      "quality_state": "passed",
+      "tasks": 1000,
+      "batch_count": 16,
+      "report_sha256": "b986699c883282cbe0cfa764c23dbdc1d218be0a59a4036a8dc12f8286806547",
+      "response_sha256": "14e9b4588584867806a41945fa2c3389ab4fcf785455b3db532ededc2346d573",
+      "verification_state": "batch_ledger_reconciled"
+    }
+  ],
+  "source_sha256": {
+    "backend/app.py": "7a503be42b3cef075766d60e6c645538da85cdedc116edfa1f5de1104d4e5c1e",
+    "backend/store.py": "afb8b105993ff7700932b5253354e397002d89763f3701ff918e9fefbc2230f2",
+    "backend/evaluations.py": "00ae09a844b4ebab80d203af047060e90a90bc082d110bb7c589b780949c4834",
+    "backend/fleet.py": "71f19ace704a60656d2841103d9b7a767b4a9e6f126d87f189228457bdacd0b4",
+    "backend/config.py": "569b3c14ac175904b16d5e2394faf2637c37f8459bb08202fa7435a87bbdbc5d",
+    "frontend/app.js": "fbcc8f9850b29657db1faa53f13da272c68026fd113a39f31c3d33ff71d0492b"
+  },
+  "fleet_actual_azure_query_passed": true,
+  "fleet_reported_nodes": 0,
+  "services_changed": false,
+  "inference_requests": 0,
+  "application_port_opened": false,
+  "scope": "Real Azure with source-isolated ASGI requests; production lifespan and background maintenance were not entered; no browser visual claim",
+  "independent_physical_inventory": {
+    "protocol": "batchforge.gpu-inventory.v1",
+    "node_id": "cef18c73b719e43bf33f41c699e1c3b01e3783bdbc7cb70701c24fd23b036bcb",
+    "observed_at": "2026-10-25T17:32:32.117023+00:00",
+    "devices": [
+      {
+        "id": "014e325f79e8d95d51440d9cea443fc84a4636add81e7263d255f128d6fd72fe",
+        "index": 0,
+        "name": "NVIDIA H100 80GB HBM3",
+        "memory_total_mib": 81559,
+        "memory_used_mib": 74125,
+        "utilization_percent": 0.0,
+        "power_watts": 126.76,
+        "temperature_celsius": 36.0
+      },
+      {
+        "id": "537844f73b6c9fca87be68c8bfecf7cc2b87a86366435fa68459a9ed4b5710e3",
+        "index": 1,
+        "name": "NVIDIA H100 80GB HBM3",
+        "memory_total_mib": 81559,
+        "memory_used_mib": 74125,
+        "utilization_percent": 0.0,
+        "power_watts": 127.8,
+        "temperature_celsius": 37.0
+      },
+      {
+        "id": "42885736c6b14dd93af626383f18d66b1083d79bf6de7df9d99092bfed00378c",
+        "index": 2,
+        "name": "NVIDIA H100 80GB HBM3",
+        "memory_total_mib": 81559,
+        "memory_used_mib": 74125,
+        "utilization_percent": 0.0,
+        "power_watts": 129.18,
+        "temperature_celsius": 43.0
+      },
+      {
+        "id": "0b28b5d383987d117290f4eb7a689df30f7f2639a2450c66486e6a02a7876e27",
+        "index": 3,
+        "name": "NVIDIA H100 80GB HBM3",
+        "memory_total_mib": 81559,
+        "memory_used_mib": 74125,
+        "utilization_percent": 0.0,
+        "power_watts": 129.13,
+        "temperature_celsius": 35.0
+      }
+    ],
+    "links": [
+      {
+        "a": 0,
+        "b": 1,
+        "relation": "NV18"
+      },
+      {
+        "a": 0,
+        "b": 2,
+        "relation": "NV18"
+      },
+      {
+        "a": 0,
+        "b": 3,
+        "relation": "NV18"
+      },
+      {
+        "a": 1,
+        "b": 2,
+        "relation": "NV18"
+      },
+      {
+        "a": 1,
+        "b": 3,
+        "relation": "NV18"
+      },
+      {
+        "a": 2,
+        "b": 3,
+        "relation": "NV18"
+      }
+    ],
+    "topology_complete": true
+  },
+  "physical_inventory_registered": false
+}

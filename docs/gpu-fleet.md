@@ -1,10 +1,19 @@
 # Physical GPU inventory transport
 
-This follow-up adds an opt-in worker reporter, a bounded read-only
-`GET /v1/fleet` endpoint and a physical-observations panel in Workers. It is
-independently qualified; it is not part of the immutable active endurance,
-queued quality release or queued reusable-input campaign. No deployment or
-new worker registration is claimed here.
+The opt-in physical reporter and read-only `GET /v1/fleet` are **deployed** on
+the running worker, both primary APIs and gateway as immutable `748dc10`.
+The [native release receipt](benchmarks/platform480-2026-10-25/evidence-api-fleet-release-20261025-v2-complete/release.json)
+records closed admission/drain, exact module hashes, persisted fresh inventory,
+strict receipts, quality/cost evidence and successful reopening. The engine
+PID573119 and gateway PID219738 remained unchanged. Worker PID607044 now reports
+all four selected H100s; API source `UVICORN_APP_DIR`, worker safe-path/PYTHONPATH
+and the quality catalogue point to the immutable qualified candidate. No model,
+engine, schema, quota, retention or paid resource changed. The original failed
+endurance remains failed; separate post-incident qualification authorized this
+observation release. Browser visual QA remains unavailable.
+
+The original preparation below is retained chronologically. Statements of
+zero nodes/no enablement describe those earlier qualification timestamps.
 
 ## Independent qualification
 
@@ -102,7 +111,7 @@ The [native preflight receipt](benchmarks/platform480-2026-10-25/evidence-api-fl
 pins helper `e1900dd` and its SHA-256. The probe wrote its evidence receipt;
 no service environment file, registration, inference or running study changed.
 This qualifies the source-selection mechanism, not Fleet rollout or gang
-placement. Production enablement still waits for the current fixed study.
+placement. That preflight did not enable production; the later completed release above did.
 
 ## Release and rollback ordering
 

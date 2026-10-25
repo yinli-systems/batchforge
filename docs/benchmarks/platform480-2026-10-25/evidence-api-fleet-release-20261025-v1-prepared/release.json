@@ -1,0 +1,95 @@
+{
+  "phase": "prepared",
+  "passed": false,
+  "events": [
+    {
+      "phase": "preflight",
+      "at": "2026-10-25T17:35:59.874483+00:00"
+    },
+    {
+      "phase": "prepared",
+      "at": "2026-10-25T17:36:01.874187+00:00"
+    }
+  ],
+  "engine_actions": false,
+  "new_cloud_resources": false,
+  "quota_changes": false,
+  "retention_changes": false,
+  "controller_sha256": "b787ad4ad53237ee121e97cf04794c032d398aad87658e46d4e19285d1f2f295",
+  "uninterrupted_endurance_passed": false,
+  "separate_post_incident_delivery_qualified": true,
+  "squad_subset_gate_passed": true,
+  "scope": "Fleet observation release only; original endurance and complete-dev quality failures remain",
+  "qualification_sha256": {
+    "predecessor": "3d0e20d43145901e68652eb3d3d445c7c6808220e85a9e2b2dcfcc54433835cc",
+    "delivery": "d55e7130b56360289077e1607a3e1c8e7d164f7075541a0d6d52402e3538a951",
+    "recovery": "88e5d7a82e79f06836ecc778232c05c33a97c92407618d3a5de30ebd90577fe4",
+    "qualification": "4961f27c95a1430a1deea916999eda4f3509fdd1c791ec2c74d5e1fe1dd6b74c"
+  },
+  "source_commit": "748dc10747e00be120ee5523f2b887dc1bbe73ca",
+  "worker_source_probe": {
+    "protocol": "batchforge.worker-source-probe.v1",
+    "passed": true,
+    "safe_path": true,
+    "source_files": {
+      "worker/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "worker/config.py": "53786458d8d3aca6f5c953b2e5d06a0ac4315ec5e3349f426f435591b8583fe7",
+      "worker/runtime.py": "b7d5ca96b0e57f557d0e6f0a32e994e167cb96761dc23b8d9a2c1c7a9ee237a7",
+      "worker/metrics.py": "f9119336068200ffc8fa994924b93d15a824493c8502d86e237678ebfb0a5196",
+      "worker/kv_admission.py": "6c13858e3cf67fba06dddc99bd003ad99fdca1b957ed190bcb86808435341bc1",
+      "worker/inventory.py": "b7051c0bb79569c440e72ef0155e91f07a82a7861e1e4a240e21cb02f0707426",
+      "backend/scheduling.py": "d867b94dc4ee9d468742f38957b966b9a3caa203035cde741c1bf77b511b337c",
+      "backend/fleet.py": "71f19ace704a60656d2841103d9b7a767b4a9e6f126d87f189228457bdacd0b4",
+      "worker/__main__.py": "70017c658180a9195340611de8089f6cbacb1775d0a907f9b0fa00e62ce8a062"
+    },
+    "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+    "worker_id": "qwen480-prod-1ca6a2e05852",
+    "slots": 32,
+    "token_budget": 164256,
+    "max_model_len": 18440,
+    "adaptive_kv_enabled": true,
+    "inventory_gpu_indices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "inventory_node_sha256": "cef18c73b719e43bf33f41c699e1c3b01e3783bdbc7cb70701c24fd23b036bcb",
+    "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+    "registration_performed": false,
+    "inference_performed": false,
+    "services_changed": false
+  },
+  "original_identities": {
+    "api-a": {
+      "pid": 589128,
+      "start_ticks": "46508204",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 589137,
+      "start_ticks": "46508489",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 595638,
+      "start_ticks": "46982890",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 595649,
+      "start_ticks": "46985205",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  }
+}

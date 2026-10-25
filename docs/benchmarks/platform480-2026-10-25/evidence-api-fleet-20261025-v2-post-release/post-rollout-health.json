@@ -1,0 +1,61 @@
+{
+  "captured_at": "2026-10-25T17:41:42.593817+00:00",
+  "passed": true,
+  "services": {
+    "api-a": {
+      "identity": {
+        "pid": 607072,
+        "start_ticks": "47324034",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "ready": true
+    },
+    "api-b": {
+      "identity": {
+        "pid": 607081,
+        "start_ticks": "47324312",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "ready": true
+    },
+    "gateway-edge": {
+      "identity": {
+        "pid": 219738,
+        "start_ticks": "35326874",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "ready": true
+    },
+    "engine-qwen480bench": {
+      "identity": {
+        "pid": 573119,
+        "start_ticks": "45241916",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "ready": true
+    },
+    "worker-qwen480": {
+      "identity": {
+        "pid": 607044,
+        "start_ticks": "47323191",
+        "cwd": "/root/batchforge-runtime/app"
+      },
+      "ready": true
+    }
+  },
+  "worker_execution_health": {
+    "state": "ready",
+    "action_required": false,
+    "quiescence_observed": false,
+    "scope": "Current readiness, not proof of throughput, long-term stability or queue progress"
+  },
+  "worker_gauges": {
+    "batchforge_worker_inflight": 31.0,
+    "batchforge_worker_reserved_context_tokens": 159520.0,
+    "batchforge_worker_adaptive_kv_waiting": 8.0,
+    "batchforge_worker_adaptive_kv_paused": 0.0,
+    "ready": true
+  },
+  "container_disk_free_bytes": 452060934144,
+  "storage_scope": "Existing container disk only; not Pod-loss durability; /workspace remains excluded"
+}

@@ -1,0 +1,70 @@
+{
+  "passed": true,
+  "captured_at": "2026-10-25T17:41:20.041015+00:00",
+  "primary_readbacks": [
+    {
+      "port": 8082,
+      "fresh_gpu_count": 4,
+      "fleet_body_sha256": "d055393491d3a32f896d38ff2ef59d1de13b5fda54b91a25007545526298d16b",
+      "evaluations": [
+        {
+          "id": "squad480-dev-20261025-v4",
+          "tasks": 10570,
+          "quality_state": "failed",
+          "exact_match": 53.822138126773886,
+          "allocation_usd_per_on_time_exact_result": "0.002065983604280189840042186676"
+        },
+        {
+          "id": "squad480-json-span-holdout-20261025-v1",
+          "tasks": 1000,
+          "quality_state": "passed",
+          "exact_match": 82.8,
+          "allocation_usd_per_on_time_exact_result": "0.001031564149691358024691358025"
+        }
+      ]
+    },
+    {
+      "port": 8083,
+      "fresh_gpu_count": 4,
+      "fleet_body_sha256": "99113dd594d38a0c64d6b1004d6dc99ce4a829f1a2be50daa841b5448c6d3377",
+      "evaluations": [
+        {
+          "id": "squad480-dev-20261025-v4",
+          "tasks": 10570,
+          "quality_state": "failed",
+          "exact_match": 53.822138126773886,
+          "allocation_usd_per_on_time_exact_result": "0.002065983604280189840042186676"
+        },
+        {
+          "id": "squad480-json-span-holdout-20261025-v1",
+          "tasks": 1000,
+          "quality_state": "passed",
+          "exact_match": 82.8,
+          "allocation_usd_per_on_time_exact_result": "0.001031564149691358024691358025"
+        }
+      ]
+    },
+    {
+      "port": 8080,
+      "fresh_gpu_count": 4,
+      "fleet_body_sha256": "c8bc1c29cd43f57213b6e90f56a1e2cf11781a4b56824b1885cbd3add3e02199",
+      "evaluations": [
+        {
+          "id": "squad480-dev-20261025-v4",
+          "tasks": 10570,
+          "quality_state": "failed",
+          "exact_match": 53.822138126773886,
+          "allocation_usd_per_on_time_exact_result": "0.002065983604280189840042186676"
+        },
+        {
+          "id": "squad480-json-span-holdout-20261025-v1",
+          "tasks": 1000,
+          "quality_state": "passed",
+          "exact_match": 82.8,
+          "allocation_usd_per_on_time_exact_result": "0.001031564149691358024691358025"
+        }
+      ]
+    }
+  ],
+  "scope": "Live post-release HTTP readback while independent bounded real800-task campaign runs; no injected inventory or visual QA"
+}

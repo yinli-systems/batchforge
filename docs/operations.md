@@ -11,14 +11,14 @@ metering; the existing private S3 endpoint holds verified input/result archives.
 
 | Service | Active configuration |
 | --- | --- |
-| API replicas | `api-a` / `api-b`, loopback 8082 / 8083, immutable API source `831b839` |
+| API replicas | `api-a` / `api-b`, loopback 8082 / 8083, immutable API source `748dc10` |
 | Private gateway | `gateway-edge`, loopback 8080 |
 | Engine | `engine-qwen480bench`, loopback 8348, TP4 |
 | Worker | `worker-qwen480`, health/metrics 9105, exact-token admission, 32 slots |
 | KV admission | 164,256-token budget; last qualified physical KV 172,912 tokens |
 | Context / durable lease | 18,440 tokens / 15 seconds |
 | Supervision | `supervisor-primary`, exact PID/start-time/cwd checks |
-| GPU Fleet reporting | Candidate qualified; **not enabled on the serving worker** |
+| GPU Fleet reporting | **Enabled**; four selected H100s, Azure metadata, fresh views on both APIs and gateway |
 
 Worker and API source selection differ: `UVICORN_APP_DIR` selects API source,
 not `python -m worker`. A worker candidate requires the source-origin probe,
