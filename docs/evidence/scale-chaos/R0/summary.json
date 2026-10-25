@@ -1,0 +1,101 @@
+{
+ "default_limit_probe": {
+  "status": 429,
+  "tasks": 10000,
+  "code": "retained_payload_limit",
+  "message": "Retained payload budget reached; wait for verified archival or operator cleanup",
+  "retried_after_raise": true
+ },
+ "retention_limits_raised": {
+  "max_payload_bytes": 17179869184,
+  "max_retained_tasks": 1000000,
+  "deviation_from_default": true
+ },
+ "rung": "R0",
+ "workers": 10,
+ "tasks": 10000,
+ "wall_s": 22.21,
+ "throughput_tasks_per_s": 450.2,
+ "claims": 10000,
+ "replay": {
+  "replayed": 50,
+  "idempotent": 50,
+  "unexpected": 0
+ },
+ "invariants": [
+  {
+   "invariant": "every submitted task ends terminal",
+   "ok": true,
+   "detail": {
+    "live": 0,
+    "total": 10000,
+    "expected": 10000
+   }
+  },
+  {
+   "invariant": "exactly-once acceptance (no task with two completed attempts)",
+   "ok": true,
+   "detail": {
+    "tasks_with_two": 0
+   }
+  },
+  {
+   "invariant": "accepted set equals completed set",
+   "ok": true,
+   "detail": {
+    "workers_accepted": 10000,
+    "db_completed": 10000,
+    "only_worker": 0,
+    "only_db": 0
+   }
+  },
+  {
+   "invariant": "batch counters reconcile",
+   "ok": true,
+   "detail": {
+    "batch_completed": 10000,
+    "tasks_completed": 10000
+   }
+  },
+  {
+   "invariant": "token totals match worker-side usage",
+   "ok": true,
+   "detail": {
+    "batch_completion": 324227,
+    "worker_completion": 324227,
+    "batch_prompt": 1288389,
+    "worker_prompt": 1288389
+   }
+  },
+  {
+   "invariant": "no stale or duplicate acceptance in fault-free run",
+   "ok": true,
+   "detail": {
+    "stale": 0,
+    "duplicates": 0
+   }
+  },
+  {
+   "invariant": "worker-side errors",
+   "ok": true,
+   "detail": {
+    "errors": 0
+   }
+  }
+ ],
+ "passed": true,
+ "migrations_applied": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11
+ ],
+ "schema_version": 11
+}

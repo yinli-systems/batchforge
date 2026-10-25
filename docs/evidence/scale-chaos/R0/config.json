@@ -1,0 +1,25 @@
+{
+ "simulated": [
+  "workers",
+  "inference"
+ ],
+ "real": [
+  "api",
+  "postgresql",
+  "sql_paths"
+ ],
+ "workers": 10,
+ "tasks": 10000,
+ "seed": 20261025,
+ "service_ms": [
+  5.0,
+  40.0
+ ],
+ "slots_per_worker": 4,
+ "sql_claim": true,
+ "sql_completion": true,
+ "sql_recovery": true,
+ "lease_seconds": 60,
+ "git_sha": "afbcfc1066167214ba5266ca969396950f627e80",
+ "started_utc": "2026-10-25T00:37:09+00:00"
+}
