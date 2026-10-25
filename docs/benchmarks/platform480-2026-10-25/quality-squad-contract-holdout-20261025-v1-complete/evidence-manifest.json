@@ -1,0 +1,37 @@
+{
+  "collected_at": "2026-10-25T17:27:20.938489+00:00",
+  "source_run": "/root/batchforge-runtime/quality-squad-contract-holdout-20261025-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 18954,
+      "sha256": "ab115419b56e75599a89b3a3243f78fc9de60947af2ce3ed0acf561aa85f2ff6",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/plan.json": {
+      "bytes": 1585,
+      "sha256": "2885d8e60b837bd9d9a4a96c9253780699b355f766b6d52e8214da10f1a99a29",
+      "source_relative_path": "run/plan.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/benchmark.json": {
+      "bytes": 21162,
+      "sha256": "835b74df5d2aa4f9bfcbf7498f1401ce2fd495dc46b60ea405598fa395cea783",
+      "source_relative_path": "run/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/report.json": {
+      "bytes": 2835,
+      "sha256": "b986699c883282cbe0cfa764c23dbdc1d218be0a59a4036a8dc12f8286806547",
+      "source_relative_path": "run/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/scores.jsonl": {
+      "bytes": 348812,
+      "sha256": "554be32600da2f41162a6b833a6458728f1372d7ac328a4ececc27eb41547ffb",
+      "source_relative_path": "run/scores.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

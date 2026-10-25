@@ -12,7 +12,13 @@ permissions:
   contents: read
 jobs:
   postgres-and-worker:
-    if: github.event_name == 'pull_request' || github.ref != 'refs/heads/codex/gpu-campaign-300b-evidence'
+    # This private development PR uses the tested head push check. Hosted
+    # integration jobs remain available to other branches; no fork uses the Pod.
+    if: >-
+      github.ref != 'refs/heads/codex/gpu-campaign-300b-evidence' &&
+      !(github.event_name == 'pull_request' &&
+        github.event.pull_request.head.ref == 'codex/gpu-campaign-300b-evidence' &&
+        github.event.pull_request.head.repo.full_name == 'yinli-systems/batchforge')
     runs-on: ubuntu-latest
     services:
       postgres:

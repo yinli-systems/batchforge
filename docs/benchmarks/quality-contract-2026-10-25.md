@@ -36,3 +36,23 @@ scope and storage capacity. Do not raise the 50,000 retained-task quota, add a
 tenant to evade it, delete history or change retention. The current 46,917
 retained tasks leave 3,083 available; this plan accepts at most 1,100 new tasks.
 No new GPU, paid resource or paid inference API is used.
+
+## Actual closed result
+
+Source `5791efe` completed both real Batch API cohorts without service/config
+changes. Calibration (100 questions) measured **EM81.0 / F1 91.4460** versus the
+same IDs' old **52.0 / 75.9018**. Three invalid formats scored zero. The unchanged
+candidate proceeded to the disjoint 1,000-question holdout: **EM82.8 / F1 91.4292**
+versus matched baseline **56.9 / 77.0984**, with 271 exact wins, 12 losses and
+717 unchanged. All 1,000 were delivered; 18 invalid formats scored zero. The
+measured cohort window was **190.987 seconds**, within the 1,200-second bound.
+The [controller and cohort hashes](platform480-2026-10-25/quality-squad-contract-20261025-v1-complete/validation.json)
+and [original holdout report / scores](platform480-2026-10-25/quality-squad-contract-holdout-20261025-v1-complete/run/report.json)
+are exported with transfer SHA verification.
+
+The [separate rate allocation](quality-contract-cost-allocation-2026-10-25.json)
+is **$0.8541** for the holdout window, or **$1.0316 per thousand on-time
+reference-exact results** (828). This is not an invoice, a matched cost speedup
+or full-dataset production quality. The original full-dev 53.82/75.82 failed
+gate remains published beside the sampled successor. No gold answer selected
+or repaired a model response, and no new tenant/quota/retention rule was used.

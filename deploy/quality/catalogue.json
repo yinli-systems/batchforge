@@ -3,9 +3,19 @@
   "evaluations": [
     {
       "id": "squad480-dev-20261025-v4",
-      "name": "SQuAD 1.1 · 480B AWQ",
+      "name": "SQuAD full public dev · original span contract",
       "report": "squad480-dev-20261025-v4.json",
-      "sha256": "22c924df3d4f0ab97345f07006ea74f956019c03c26dbc01ed9555b9c6950296"
+      "sha256": "22c924df3d4f0ab97345f07006ea74f956019c03c26dbc01ed9555b9c6950296",
+      "cost_report": "squad480-dev-20261025-v4-allocation.json",
+      "cost_sha256": "87142cf120871df386c0ccff202dbd50c4535e9b2ed03d502e7da34e450f5048"
+    },
+    {
+      "id": "squad480-json-span-holdout-20261025-v1",
+      "name": "SQuAD public holdout · JSON span · 1,000 questions",
+      "report": "squad480-json-span-holdout-20261025-v1.json",
+      "sha256": "b986699c883282cbe0cfa764c23dbdc1d218be0a59a4036a8dc12f8286806547",
+      "cost_report": "squad480-json-span-holdout-20261025-v1-allocation.json",
+      "cost_sha256": "d98b5610b7939bb79880723a942079801be320d4ce7df5974076cb9573f5514c"
     }
   ]
 }

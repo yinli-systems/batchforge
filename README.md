@@ -25,6 +25,12 @@ answer quality and capacity are reported separately; original failures remain
 preserved.
 See [ground-truth evaluation and endurance protocol](docs/benchmarks/quality-squad-2026-10-25.md).
 
+A frozen JSON-span answer contract subsequently passed a disjoint 1,000-question
+public holdout: **EM82.8% / F1 91.43%** versus matched baseline 56.9% / 77.10%.
+The original full-dev gate remains failed. [Protocol, paired outcomes and cost](docs/benchmarks/quality-contract-2026-10-25.md)
+retain both results. Existing-Pod CPU CI passed **1,387 PostgreSQL17 tests and
+22 console tests** for `5791efe`; see [actual CI evidence](docs/ci.md).
+
 Historical GPT-OSS-120B and Qwen3-235B runs remain in the
 [single-Pod validation](docs/single-pod-validation-2026-10-24.md).
 They are not the current serving model or comparable hidden quality tests.

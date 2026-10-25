@@ -128,3 +128,12 @@ def test_fifo_cannot_block_release_file_validation(tmp_path):
     (tmp_path/'report.json').unlink()
     os.mkfifo(tmp_path/'report.json',0o600)
     with pytest.raises(ValueError,match='release file'):EvidenceCatalogue(path)
+
+
+def test_json_answer_contract_requires_hashes_and_counts_invalid_answers_as_nonexact(tmp_path):
+    data=report();data.update(answer_contract='json-span-v1',answer_contract_sha256='d'*64,
+        selected_ids_sha256='e'*64,excluded_ids_sha256='f'*64,invalid_answer_contracts=1)
+    row=EvidenceCatalogue(write_catalogue(tmp_path,data)).visible(ledger())[0]
+    assert row['answer_contract']['invalid_results']==1
+    data['invalid_answer_contracts']=2
+    with pytest.raises(ValueError,match='contract evidence'):EvidenceCatalogue(write_catalogue(tmp_path,data))

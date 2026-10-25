@@ -95,6 +95,16 @@ def evaluation(entry,report):
         finite(goodput,0,1000000)
         if not report['deadline_met'] or abs(goodput-(em/100*tasks/seconds))>1e-6:
             raise ValueError('On-time exact goodput contradicts recorded metrics')
+    contract=report.get('answer_contract','span-v1')
+    if contract not in ('span-v1','json-span-v1'):raise ValueError('Unknown published answer contract')
+    contract_sha=report.get('answer_contract_sha256')
+    selected_sha=report.get('selected_ids_sha256');excluded_sha=report.get('excluded_ids_sha256')
+    for value in (contract_sha,selected_sha,excluded_sha):
+        if value is not None and (not isinstance(value,str) or not HEX.fullmatch(value)):raise ValueError('Invalid answer/cohort hash')
+    invalid=report.get('invalid_answer_contracts')
+    if invalid is not None:integer(invalid,0,tasks)
+    if contract=='json-span-v1' and (None in (contract_sha,selected_sha,excluded_sha,invalid) or tasks*em/100>tasks-invalid+1e-6):
+        raise ValueError('Complete answer contract evidence required')
     view={'id':eid,'object':'quality_evaluation','name':name,'model':model,
         'runtime_fingerprint':fingerprint,'protocol':report['protocol'],
         'dataset':{'name':'SQuAD 1.1','scope':scope+' (public)','sha256':report['dataset_sha256']},
@@ -105,6 +115,8 @@ def evaluation(entry,report):
         'gate':{'minimum_exact_match_percent':minimum_em,'minimum_f1_percent':minimum_f1},
         'report_sha256':entry['sha256'],'scorer_sha256':report['source_sha256'],
         'benchmark_sha256':report['benchmark_sha256'],'cost':None,
+        'answer_contract':{'id':contract,'source_sha256':contract_sha,'invalid_results':invalid,
+            'selected_ids_sha256':selected_sha,'excluded_ids_sha256':excluded_sha},
         'verification_scope':['Operator-published hash-bound report, not an issuer signature',
             'Batch ownership, model, runtime, counters and usage reconciled on each read',
             'Public dev score is not a hidden test, contamination audit or production accuracy guarantee',
@@ -127,7 +139,17 @@ class EvidenceCatalogue:
             if not isinstance(expected,str) or not HEX.fullmatch(expected):raise ValueError('Report hash required')
             content=private_release_bytes(path.parent/filename,2*1024**2)
             if hashlib.sha256(content).hexdigest()!=expected:raise ValueError('Evidence report hash differs')
-            records.append(evaluation(entry,json.loads(content)))
+            report=json.loads(content);record=evaluation(entry,report)
+            if 'cost_report' in entry or 'cost_sha256' in entry:
+                filename=entry.get('cost_report');expected_cost=entry.get('cost_sha256')
+                if (not isinstance(filename,str) or not re.fullmatch('[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}\\.json',filename)
+                    or not isinstance(expected_cost,str) or not HEX.fullmatch(expected_cost)):raise ValueError('Invalid cost report pin')
+                cost_raw=private_release_bytes(path.parent/filename,65536)
+                if hashlib.sha256(cost_raw).hexdigest()!=expected_cost:raise ValueError('Cost report hash differs')
+                from backend.cost_evidence import allocation_view
+                record.view['cost']=allocation_view(json.loads(cost_raw),report,entry['sha256'])
+                record.view['cost']['report_sha256']=expected_cost
+            records.append(record)
         if len({r.id for r in records})!=len(records):raise ValueError('Duplicate evaluation identity')
         self.records=tuple(records)
 
@@ -144,7 +166,7 @@ class EvidenceCatalogue:
                         ('prompt_tokens',metrics['prompt_tokens']),('completion_tokens',metrics['completion_tokens'])]))
             view['verification_state']='batch_ledger_reconciled' if linked else 'batch_ledger_mismatch'
             if not linked:
-                view['quality_state']='unverified';view['metrics']=None
+                view['quality_state']='unverified';view['metrics']=None;view['cost']=None
             if details:view['batch_ids']=list(record.batch_ids)
             result.append(view)
         return result

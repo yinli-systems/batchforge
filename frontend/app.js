@@ -431,6 +431,7 @@ function qualityView() {
     const verified = e.verification_state === 'batch_ledger_reconciled', m = verified ? e.metrics : null;
     const label = !verified ? 'Ledger linkage unverified' : e.quality_state === 'passed' ? 'Quality gate passed' : 'Quality gate failed';
     const style = verified && e.quality_state === 'passed' ? 'completed' : 'failed';
+    const cost = verified && e.cost?.kind === 'operator_rate_time_allocation' ? e.cost : null;
     return `<section class="panel"><div class="panel-header"><div><h2>${esc(e.name)}</h2><p class="panel-subtitle">${esc(e.dataset?.name)} · ${esc(e.dataset?.scope)}</p></div><span class="status-badge ${style}">${label}</span></div>
       <div class="quality-evidence-body"><p class="drawer-note">${esc(e.model)}</p><div class="metric-grid">
       ${metricCard('Exact match', score(m?.exact_match_percent), `Minimum ${score(e.gate?.minimum_exact_match_percent)}%`, 'check', '%')}
@@ -440,7 +441,11 @@ function qualityView() {
       </div><dl class="detail-list"><div><dt>Delivery</dt><dd>${verified && e.delivery_passed ? 'All reported tasks delivered' : 'Not verified'}</dd></div>
       <div><dt>Deadline</dt><dd>${!verified ? 'Not verified' : e.deadline_met ? 'Met' : 'Not met'}</dd></div><div><dt>Runtime fingerprint</dt><dd>${esc(e.runtime_fingerprint)}</dd></div>
       <div><dt>Source report SHA-256</dt><dd>${esc(e.report_sha256)}</dd></div><div><dt>Dataset SHA-256</dt><dd>${esc(e.dataset?.sha256)}</dd></div></dl>
-      <p class="drawer-note">Operator-published report linked to tenant-owned batch counters, usage and reported runtime. A public dev benchmark is not a production accuracy guarantee or independent hardware attestation. Cost is unmeasured.</p>
+      <dl class="detail-list"><div><dt>Answer contract</dt><dd>${esc(e.answer_contract?.id || 'Not recorded')}</dd></div>
+      <div><dt>Invalid answer formats</dt><dd>${e.answer_contract?.invalid_results == null ? 'Not recorded' : number(e.answer_contract.invalid_results)}</dd></div>
+      <div><dt>Whole-Pod time allocation</dt><dd>${cost ? '$' + score(Number(cost.whole_pod_window_usd)) + ' at $' + score(Number(cost.hourly_rate_usd)) + '/h' : 'Not published'}</dd></div>
+      <div><dt>Allocation per 1,000 on-time exact answers</dt><dd>${cost?.usd_per_on_time_reference_exact_result != null ? '$' + score(Number(cost.usd_per_on_time_reference_exact_result) * 1000) : 'Not published'}</dd></div></dl>
+      <p class="drawer-note">Operator-published report linked to tenant-owned batch counters, usage and reported runtime. A public dev benchmark is not a production accuracy guarantee or independent hardware attestation. Cost allocation uses operator-confirmed rates, is not an invoice, excludes unverified extra charges and cannot be added across overlapping runs. Individual exact answers do not imply the cohort quality gate passed.</p>
       <button class="button button-secondary" data-action="download-evaluation" data-evaluation-id="${esc(e.id)}">${icon('download')}Download evidence JSON</button></div></section>`;
   }).join('')}</div>`;
 }

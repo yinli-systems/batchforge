@@ -1,0 +1,17 @@
+{
+  "bootstrap_state": {
+    "phase": "failed",
+    "passed": false,
+    "gpu_inference": false,
+    "production_credentials_copied": false,
+    "new_cloud_resources": false,
+    "uid": 65534,
+    "updated_epoch": 1792948718.1659229,
+    "error_type": "PermissionError"
+  },
+  "bootstrap_source_sha256": "82aa0c3037994ba604c0a3cac139a2103473619b2f75ebd756d23ce482944059",
+  "interpretation": "Bootstrap/runner exit is independent of the GitHub test job conclusion; consult linked authenticated job evidence",
+  "token_file_remaining": false,
+  "public_bootstrap_only": true,
+  "private_logs_exported": false
+}

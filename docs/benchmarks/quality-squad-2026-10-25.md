@@ -66,7 +66,8 @@ Offered arrival rate is 0.5 tasks/s, maximum in-flight 128, cohorts 20,
 admission cap 7,200 seconds and drain cap 1,800 seconds. Forced output lengths
 make this a compute/endurance workload, **not** another answer-quality score.
 GPU/engine/HTTP/database samples occur every five seconds, with gaps reported.
-No unmeasured hourly price is substituted: costs stay null. Results are pending.
+The original reports retain null costs. The 2,400-task run is now [closed](endurance480-2026-10-25.md); subsequent operator-confirmed rate allocations are separate overlays.
+A [frozen answer-contract successor](quality-contract-2026-10-25.md) passed its 1,000-question public holdout; it does not rewrite this full-dev failure.
 
 Reference metric:
 [official SQuAD v1.1 evaluator](https://github.com/allenai/bi-att-flow/blob/master/squad/evaluate-v1.1.py).

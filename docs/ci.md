@@ -32,3 +32,21 @@ actual result and independent PostgreSQL17 proof; do not mark CI passed.
 
 References: [GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions),
 [runner releases](https://github.com/actions/runner/releases).
+
+## Actual existing-Pod check
+
+[Run40215776424, attempt2](https://github.com/yinli-systems/batchforge/actions/runs/40215776424/attempts/2)
+for exact source `5791efe` completed successfully: **1,387 Python tests passed,
+zero skipped**, PostgreSQL **17.11**, Node24.22.1, **22 console tests passed** and
+compileall passed. The runner OS UID was65534, with production credentials
+absent. It ran no GPU inference. The one-job runner exited and GitHub listed
+zero registered runners afterwards. [Authenticated result / log hash](../ops/reports/github-native-ci-5791efe-2026-10-25.json)
+is retained. Initial bootstrap permission errors and attempt1's incorrect
+rootfs/toolchain layout remain failed evidence; they are not relabeled passes.
+A clean runner-process exit is distinct from a successful workflow job.
+
+The trusted development PR relies on its head-push check; the hosted integration
+job is skipped for that same private branch to avoid the known billing block.
+This is not a main-branch merge test. Other branches still use the hosted job.
+Every source push requires another short-lived supervised runner; publishing
+Markdown/benchmark evidence alone does not queue another job.

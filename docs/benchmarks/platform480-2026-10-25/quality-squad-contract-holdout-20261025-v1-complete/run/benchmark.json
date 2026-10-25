@@ -1,0 +1,740 @@
+{
+  "schema_version": 2,
+  "run_id": "bench-28a72cdf51c0",
+  "observed_at": "2026-10-25T17:25:53.327943+00:00",
+  "resume": null,
+  "max_inflight_batches": 2,
+  "submission_rate_scope": "Includes completion-credit waits when max_inflight_batches is set",
+  "measurement_started_at": "2026-10-25T17:22:34.947689+00:00",
+  "original_measurement_started_at": "2026-10-25T17:22:34.947689+00:00",
+  "terminal_observation_ended_at": "2026-10-25T17:25:45.934423+00:00",
+  "passed": true,
+  "measurement": "client observed submission through terminal observation; output validation measured separately",
+  "engine_label": "squad-quality-run",
+  "test_fixture_detected": false,
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "requested_tasks": 1000,
+  "submitted_tasks": 1000,
+  "batches": 16,
+  "accepted_batches": 16,
+  "terminal_batches": 16,
+  "requested_max_output_tokens": 128,
+  "elapsed_seconds": 190.986713,
+  "completed": 1000,
+  "failed": 0,
+  "cancelled": 0,
+  "unfinished_batch_ids": [],
+  "submission_errors": [],
+  "output_validation_errors": [],
+  "completed_tasks_per_second": 5.235966,
+  "observed_prompt_tokens": 330509,
+  "observed_completion_tokens": 10881,
+  "prompt_tokens_per_task": {
+    "samples": 1000,
+    "p50": 317.0,
+    "p95": 472.15,
+    "p99": 602.02,
+    "max": 896,
+    "mean": 330.509
+  },
+  "completion_tokens_per_task": {
+    "samples": 1000,
+    "p50": 9.0,
+    "p95": 21.05,
+    "p99": 35.01,
+    "max": 64,
+    "mean": 10.881
+  },
+  "output_finish_reasons": {
+    "stop": 1000
+  },
+  "output_content": {
+    "rows_with_valid_content_shape": 1000,
+    "final_text_present": 1000,
+    "reasoning_only": 0,
+    "no_final_text": 0,
+    "length_capped": 0,
+    "final_text_codepoints": 38340,
+    "reasoning_text_codepoints": 0,
+    "population": "Durable output rows with valid choice/message shapes; length_capped means any choice ended with length",
+    "quality_evaluated": false,
+    "durable_completion_distinct_from_final_answer": true
+  },
+  "output_custom_ids_unique": true,
+  "output_custom_ids_known": true,
+  "output_rows_match_completed": true,
+  "batch_counts_match_submission": true,
+  "batch_ids": [
+    "batch_820d60f5e6e7439b98d845499dcd091e",
+    "batch_1e157959f3cda90180c494fc2c83677c",
+    "batch_c1022248366a43113b7d10d7d89d060a",
+    "batch_3e9a540c8fd0edec14d8516edd6b47ba",
+    "batch_66059d0a8516e9b237e9af5f8496aabb",
+    "batch_47bdf9776d24343b9c31f2ccc4f7453b",
+    "batch_0d279d2cb5cf09873e6c533dbc062e82",
+    "batch_f8e7a68ecf72b936bf73c2ff036b1c06",
+    "batch_864bbc6230544a5cb97e0d3fbf6cb13e",
+    "batch_a77b91cc9ccbf9a953f44478b6832063",
+    "batch_3b0e917767126e332009e3c2d24b6084",
+    "batch_e8795c16c615681156cf3374cd39f654",
+    "batch_09596a2ca2f2edbd94ef7ec6472d96b0",
+    "batch_75ec62224cc6290d7f92f5ec0f1bd663",
+    "batch_2b9c5ea46caf90507c3b43b26f9ad434",
+    "batch_19d4ef6fb6e4cec910ff3c648243d43e"
+  ],
+  "workload": {
+    "sha256": "9089ecb681f8b9e1bded0fee4eea8a26fa808aadbdd7001e89f25a53808f03a3",
+    "hash_definition": "concatenated exact JSONL bytes in batch_index order",
+    "provided_source_sha256": "bfcc3787e017d5edb63c0445d0eb45e409c6bebdf7061ecc2fe5206cd7caa1ce",
+    "bytes": 1802001,
+    "generation_seconds": 0.050515,
+    "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+    "prompt": null,
+    "generation_mode": "provided-jsonl",
+    "message_template": "exact provided messages; run_id prepended to custom_id",
+    "max_tokens": 128,
+    "temperature": 0,
+    "tasks_per_batch": [
+      63,
+      63,
+      63,
+      63,
+      63,
+      63,
+      63,
+      63,
+      62,
+      62,
+      62,
+      62,
+      62,
+      62,
+      62,
+      62
+    ]
+  },
+  "submission": {
+    "elapsed_seconds": 190.986614,
+    "attempted_http_requests": 60,
+    "successful_http_requests": 32,
+    "requests_per_second": 0.314158,
+    "successful_requests_per_second": 0.167551,
+    "accepted_batches_per_second": 0.083776,
+    "accepted_tasks_per_second": 5.235969,
+    "upload_latency_seconds": {
+      "samples": 16,
+      "p50": 0.655121,
+      "p95": 1.080191,
+      "p99": 1.61823,
+      "max": 1.75274,
+      "mean": 0.690592
+    },
+    "create_latency_seconds": {
+      "samples": 16,
+      "p50": 0.802546,
+      "p95": 45.626921,
+      "p99": 89.595351,
+      "max": 100.587459,
+      "mean": 8.853655
+    },
+    "latency_population": "all attempted requests, including failures",
+    "request_population": "POST /v1/files and POST /v1/batches only; excludes polling and downloads"
+  },
+  "batch_turnaround_seconds": {
+    "samples": 16,
+    "p50": 7.153917,
+    "p95": 51.621434,
+    "p99": 95.030238,
+    "max": 105.88244,
+    "mean": 15.058801
+  },
+  "batch_after_acceptance_seconds": {
+    "samples": 16,
+    "p50": 6.238871,
+    "p95": 7.563486,
+    "p99": 8.170161,
+    "max": 8.32183,
+    "mean": 6.205147
+  },
+  "batch_upload_to_terminal_seconds": {
+    "samples": 16,
+    "p50": 7.807799,
+    "p95": 52.224511,
+    "p99": 95.501479,
+    "max": 106.320721,
+    "mean": 15.749395
+  },
+  "percentile_method": "linear interpolation at (n-1)*p",
+  "output_validation_seconds": 7.392954,
+  "poll_interval_seconds": 1,
+  "per_batch_deadline_seconds": 1200,
+  "batch_observations": [
+    {
+      "index": 0,
+      "tasks": 63,
+      "batch_id": "batch_820d60f5e6e7439b98d845499dcd091e",
+      "status": "completed",
+      "upload_seconds": 0.502664,
+      "create_seconds": 0.611571,
+      "turnaround_seconds": 7.922275,
+      "request_counts": {
+        "total": 63,
+        "completed": 63,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 1,
+      "tasks": 63,
+      "batch_id": "batch_1e157959f3cda90180c494fc2c83677c",
+      "status": "completed",
+      "upload_seconds": 0.425258,
+      "create_seconds": 0.676151,
+      "turnaround_seconds": 7.195466,
+      "request_counts": {
+        "total": 63,
+        "completed": 63,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 2,
+      "tasks": 63,
+      "batch_id": "batch_c1022248366a43113b7d10d7d89d060a",
+      "status": "completed",
+      "upload_seconds": 0.70878,
+      "create_seconds": 0.793259,
+      "turnaround_seconds": 6.016375,
+      "request_counts": {
+        "total": 63,
+        "completed": 63,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 3,
+      "tasks": 63,
+      "batch_id": "batch_3e9a540c8fd0edec14d8516edd6b47ba",
+      "status": "completed",
+      "upload_seconds": 0.658459,
+      "create_seconds": 0.825608,
+      "turnaround_seconds": 7.093333,
+      "request_counts": {
+        "total": 63,
+        "completed": 63,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 4,
+      "tasks": 63,
+      "batch_id": "batch_66059d0a8516e9b237e9af5f8496aabb",
+      "status": "completed",
+      "upload_seconds": 0.751433,
+      "create_seconds": 0.820276,
+      "turnaround_seconds": 7.112369,
+      "request_counts": {
+        "total": 63,
+        "completed": 63,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 5,
+      "tasks": 63,
+      "batch_id": "batch_47bdf9776d24343b9c31f2ccc4f7453b",
+      "status": "completed",
+      "upload_seconds": 0.619175,
+      "create_seconds": 0.80108,
+      "turnaround_seconds": 5.00797,
+      "request_counts": {
+        "total": 63,
+        "completed": 63,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 6,
+      "tasks": 63,
+      "batch_id": "batch_0d279d2cb5cf09873e6c533dbc062e82",
+      "status": "completed",
+      "upload_seconds": 0.727329,
+      "create_seconds": 0.694991,
+      "turnaround_seconds": 7.939595,
+      "request_counts": {
+        "total": 63,
+        "completed": 63,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 7,
+      "tasks": 63,
+      "batch_id": "batch_f8e7a68ecf72b936bf73c2ff036b1c06",
+      "status": "completed",
+      "upload_seconds": 0.449893,
+      "create_seconds": 0.572748,
+      "turnaround_seconds": 6.817363,
+      "request_counts": {
+        "total": 63,
+        "completed": 63,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 8,
+      "tasks": 62,
+      "batch_id": "batch_864bbc6230544a5cb97e0d3fbf6cb13e",
+      "status": "completed",
+      "upload_seconds": 0.43828,
+      "create_seconds": 100.587459,
+      "turnaround_seconds": 105.88244,
+      "request_counts": {
+        "total": 62,
+        "completed": 62,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": [
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 1
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 2
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 3
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 4
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 5
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 6
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 7
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 8
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 9
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 10
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 11
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 12
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 13
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 14
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 15
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 16
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 17
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 18
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 19
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 20
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "tasks": 62,
+      "batch_id": "batch_a77b91cc9ccbf9a953f44478b6832063",
+      "status": "completed",
+      "upload_seconds": 1.75274,
+      "create_seconds": 3.7059,
+      "turnaround_seconds": 10.98225,
+      "request_counts": {
+        "total": 62,
+        "completed": 62,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": [
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 1
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "tasks": 62,
+      "batch_id": "batch_3b0e917767126e332009e3c2d24b6084",
+      "status": "completed",
+      "upload_seconds": 0.856008,
+      "create_seconds": 1.120516,
+      "turnaround_seconds": 7.344903,
+      "request_counts": {
+        "total": 62,
+        "completed": 62,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 11,
+      "tasks": 62,
+      "batch_id": "batch_e8795c16c615681156cf3374cd39f654",
+      "status": "completed",
+      "upload_seconds": 0.628458,
+      "create_seconds": 0.896345,
+      "turnaround_seconds": 5.065268,
+      "request_counts": {
+        "total": 62,
+        "completed": 62,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 12,
+      "tasks": 62,
+      "batch_id": "batch_09596a2ca2f2edbd94ef7ec6472d96b0",
+      "status": "completed",
+      "upload_seconds": 0.658007,
+      "create_seconds": 27.306741,
+      "turnaround_seconds": 33.534432,
+      "request_counts": {
+        "total": 62,
+        "completed": 62,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": [
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 1
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 2
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 3
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 4
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 5
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 6
+        },
+        {
+          "stage": "create",
+          "type": "HTTPStatusError",
+          "http_status": 429,
+          "error_code": "retained_payload_limit",
+          "create_outcome_uncertain": false,
+          "transient_retry": 0,
+          "quota_wait_retry": 7
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "tasks": 62,
+      "batch_id": "batch_75ec62224cc6290d7f92f5ec0f1bd663",
+      "status": "completed",
+      "upload_seconds": 0.531887,
+      "create_seconds": 0.64125,
+      "turnaround_seconds": 6.867241,
+      "request_counts": {
+        "total": 62,
+        "completed": 62,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 14,
+      "tasks": 62,
+      "batch_id": "batch_2b9c5ea46caf90507c3b43b26f9ad434",
+      "status": "completed",
+      "upload_seconds": 0.652234,
+      "create_seconds": 0.800569,
+      "turnaround_seconds": 9.122398,
+      "request_counts": {
+        "total": 62,
+        "completed": 62,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    },
+    {
+      "index": 15,
+      "tasks": 62,
+      "batch_id": "batch_19d4ef6fb6e4cec910ff3c648243d43e",
+      "status": "completed",
+      "upload_seconds": 0.688864,
+      "create_seconds": 0.804013,
+      "turnaround_seconds": 7.037139,
+      "request_counts": {
+        "total": 62,
+        "completed": 62,
+        "failed": 0,
+        "cancelled": 0,
+        "running": 0,
+        "pending": 0
+      },
+      "poll_errors": [],
+      "create_retry_errors": []
+    }
+  ],
+  "limitations": [
+    "Not a daily capacity forecast",
+    "Token lengths are measured from outputs, not guaranteed by the prompt",
+    "Batch turnaround starts before POST /v1/batches and ends at first client-observed terminal response; polling adds observation delay",
+    "No per-task inference latency or quality evaluation; final text presence is counted separately from durable completion",
+    "Reported generated tokens can include reasoning and control tokens; reasoning-only length-capped outputs remain durable completions",
+    "Accepted counts require a received create acknowledgement; uncertain create errors may have committed server-side"
+  ]
+}

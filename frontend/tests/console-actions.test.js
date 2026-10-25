@@ -320,6 +320,21 @@ test('evidence UI escapes task identifiers and exposes limited verification scop
 
 const qualityFixture = JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'quality-evaluation.json'), 'utf8'));
 
+test('published allocation cannot imply an invoice or turn a failed gate into a pass', () => {
+  const app = harness(async () => {throw new Error('Unexpected fetch');});
+  app.state.connected = true;app.state.qualityLoaded = true;
+  const value = structuredClone(qualityFixture);
+  value.cost = {kind: 'operator_rate_time_allocation', whole_pod_window_usd: '11.75338',
+    hourly_rate_usd: '16.10', usd_per_on_time_reference_exact_result: '0.00206598'};
+  value.answer_contract = {id: 'json-span-v1', invalid_results: 18};
+  app.state.evaluations = [value];
+  const html = app.qualityView();
+  assert.match(html, /\$11.75 at \$16.10\/h/);assert.match(html, /\$2.07/);
+  assert.match(html, /not an invoice/);assert.match(html, /Quality gate failed/);
+  value.verification_state = 'batch_ledger_mismatch';
+  assert.doesNotMatch(app.qualityView(), /\$11.75/);
+});
+
 test('quality view separates successful delivery from a failed measured quality gate', () => {
   const app = harness(async () => {throw new Error('No network expected');});
   app.state.connected = true; app.state.qualityLoaded = true;

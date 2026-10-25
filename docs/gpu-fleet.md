@@ -130,3 +130,20 @@ block recovery actions; even a final journal failure prevents a success claim.
 Failure-injection tests cover partial reopen, post-reopen validation, failed
 rollback drain, failed original validation after reopen, source/preflight
 failure and disk/event failure. This preparation changes no running service.
+
+## Post-incident native rollout candidate
+
+`ops.promote_fleet` now binds the ordering primitive to the actual live-root
+manager, both existing locks, private fsynced backups, API create/retry drain
+gates, fresh DB/worker/engine quiescence, immutable module hashes and exact
+PID identities. It is prepare-only without `--apply`. No engine action, model,
+quota, retention or cloud operation is implemented.
+
+The original 3,600-task parent remains failed. A distinct gate reconciles its
+successful delivery, the recorded worker-only recovery and a separate closed
+100-task post-incident delivery qualification, checking all original/protected
+identities. It never converts that into successful uninterrupted endurance.
+A separate quality result can remain failed while observation transport is
+qualified. Rollback first installs compatible closed API gates and drains
+accepted work before replacing a worker. Qualification/prepare support is not
+proof of a deployed Fleet; a completed native release receipt is required.

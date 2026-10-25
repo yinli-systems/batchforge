@@ -1,0 +1,61 @@
+{
+  "collected_at": "2026-10-25T17:27:19.907037+00:00",
+  "source_run": "/root/batchforge-runtime/quality-squad-contract-20261025-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 18954,
+      "sha256": "ab115419b56e75599a89b3a3243f78fc9de60947af2ce3ed0acf561aa85f2ff6",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "launcher.json": {
+      "bytes": 283,
+      "sha256": "2e658dd721e0709a05969c5008742446119a5a305c1423e449b5d661c672742d",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 3193,
+      "sha256": "4961f27c95a1430a1deea916999eda4f3509fdd1c791ec2c74d5e1fe1dd6b74c",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/plan.json": {
+      "bytes": 1582,
+      "sha256": "a9b9ae9023039ee45be880a6c446828e0cd4189dc8048d3facf60e8668068136",
+      "source_relative_path": "run/plan.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/benchmark.json": {
+      "bytes": 5986,
+      "sha256": "f8c1a6b181b56c313e5fa5425e87da156108ab250b1e1e2bd244b4e441eda5f3",
+      "source_relative_path": "run/benchmark.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/report.json": {
+      "bytes": 2179,
+      "sha256": "189fe1fa865828dfbb6ace7c667a7a890ee85594a0583d82e538be6eeabf7b1f",
+      "source_relative_path": "run/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/scores.jsonl": {
+      "bytes": 34941,
+      "sha256": "6cd59a34f9eedd93f08e5728e53a09dc08633cd40952781bb621f01657964a6f",
+      "source_relative_path": "run/scores.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.log.txt": {
+      "bytes": 38,
+      "sha256": "6e11c3e6262d375ba78eaf7ace2848558e44dea8c9388fa922b149ea364cd653",
+      "source_relative_path": "validation.log",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 6991,
+      "sha256": "ca7d2bbf323b1f480833e9598cb677e2d73fb1f6bb6837a94c37d1acef4b8dcd",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

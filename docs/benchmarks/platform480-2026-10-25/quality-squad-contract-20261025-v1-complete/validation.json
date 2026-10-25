@@ -1,0 +1,105 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "events": [
+    {
+      "phase": "waiting_ci",
+      "at": "2026-10-25T17:21:19.360983+00:00"
+    },
+    {
+      "phase": "preflight",
+      "at": "2026-10-25T17:22:24.370463+00:00"
+    },
+    {
+      "phase": "calibration_running",
+      "at": "2026-10-25T17:22:24.880592+00:00"
+    },
+    {
+      "phase": "holdout_running",
+      "at": "2026-10-25T17:22:34.571578+00:00"
+    },
+    {
+      "phase": "complete",
+      "at": "2026-10-25T17:25:53.509099+00:00"
+    }
+  ],
+  "model_switch": false,
+  "service_actions": false,
+  "cloud_actions": false,
+  "quota_changes": false,
+  "retention_changes": false,
+  "hourly_rate_operator_confirmed": 16.1,
+  "measured_invoice": null,
+  "source_commit": "5791efee17a8b5253a7ebf86796415cd404363f4",
+  "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+  "original_identities": {
+    "api-a": {
+      "pid": 589128,
+      "start_ticks": "46508204",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 589137,
+      "start_ticks": "46508489",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 595638,
+      "start_ticks": "46982890",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "calibration_ids_sha256": "ab22799eec5c48cf6b3d7782e6e2d9e216bd13592820a5282d3916155801c10d",
+  "holdout_ids_sha256": "913065e081a7e6c919de6042aad66bea8be687c81812490f92db265d859dba47",
+  "baseline_scores_sha256": "d914b3708f8f73f0d417948189eddf05ea5437c666a490a2fa4e5f410a04855b",
+  "source_contract_sha256": "a7359175cc5bb7d8e1a462ae1121b01a8d00cdacd8871fa89b3957f441e96e09",
+  "retained_before": 46917,
+  "calibration": {
+    "passed": true,
+    "delivery_passed": true,
+    "evaluation_valid": true,
+    "exact_match_percent": 81.0,
+    "f1_percent": 91.4460018242627,
+    "invalid_answer_contracts": 3,
+    "elapsed_seconds": 8.579349
+  },
+  "calibration_paired": {
+    "tasks": 100,
+    "baseline_exact_match_percent": 52.0,
+    "baseline_f1_percent": 75.90175289896652,
+    "candidate_wins": 32,
+    "candidate_losses": 3,
+    "same_exact_status": 65,
+    "baseline_scores_sha256": "d914b3708f8f73f0d417948189eddf05ea5437c666a490a2fa4e5f410a04855b"
+  },
+  "holdout_run": "/root/batchforge-runtime/quality-squad-contract-holdout-20261025-v1",
+  "holdout": {
+    "passed": true,
+    "delivery_passed": true,
+    "evaluation_valid": true,
+    "exact_match_percent": 82.8,
+    "f1_percent": 91.42917649317026,
+    "invalid_answer_contracts": 18,
+    "elapsed_seconds": 190.986734
+  },
+  "holdout_paired": {
+    "tasks": 1000,
+    "baseline_exact_match_percent": 56.9,
+    "baseline_f1_percent": 77.09839128220236,
+    "candidate_wins": 271,
+    "candidate_losses": 12,
+    "same_exact_status": 717,
+    "baseline_scores_sha256": "d914b3708f8f73f0d417948189eddf05ea5437c666a490a2fa4e5f410a04855b"
+  },
+  "managed_identities_unchanged": true
+}
