@@ -1,6 +1,7 @@
 import json
 import pytest
-from ops.qualify_worker_latch import MODEL,RUNTIME,task_rows,inference_confirmed,strict_receipt
+from ops.qualify_worker_latch import MODEL,RUNTIME,task_rows,inference_confirmed,strict_receipt,started
+from pathlib import Path
 
 
 def test_only_two_fixed_cohorts_reuse_public_fixture_without_mutating_it():
@@ -55,3 +56,20 @@ def test_ledger_checksum_alone_is_insufficient_for_qualification():
         e=envelope();e['receipt'][field]=value
         e['receipt_sha256']=hashlib.sha256(DOMAIN+canonical(e['receipt'])).hexdigest()
         with pytest.raises(RuntimeError):strict_receipt(e,40)
+
+
+def test_portless_watchdog_needs_exact_managed_identity_not_a_nonexistent_http_probe():
+    class Manager:
+        def readiness(self,s):raise AssertionError('Portless daemon has no HTTP readiness')
+    root=Path('/owned/app');s={'role':'supervisor','name':'primary'}
+    assert started(Manager(),root,s,identity=lambda r,s:{'pid':123,'start_ticks':'4','cwd':str(root)})
+    assert not started(Manager(),root,s,identity=lambda r,s:{'pid':123,'start_ticks':'4','cwd':'/foreign'})
+    def absent(r,s):raise RuntimeError('Managed daemon absent')
+    with pytest.raises(RuntimeError):started(Manager(),root,s,identity=absent)
+
+
+@pytest.mark.parametrize('ready',[None,False,True])
+def test_http_service_still_requires_positive_readiness(ready):
+    class Manager:
+        def readiness(self,s):return ready
+    assert started(Manager(),Path('/owned/app'),{'role':'api','port':8082}) is (ready is True)

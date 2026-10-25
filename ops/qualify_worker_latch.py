@@ -68,6 +68,14 @@ def strict_receipt(envelope, count):
         raise RuntimeError('Strict acceptance, attempt, usage or runtime receipt failed')
 
 
+def started(manager,root,service,*,identity=managed_identity):
+    # A supervisor is a managed daemon, not an HTTP server. None from the
+    # manager's HTTP readiness method is not evidence that daemon start failed.
+    if service.get('port') is None:
+        return identity(root,service).get('cwd')==str(root)
+    return manager.readiness(service) is True
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path,required=True)
     p.add_argument('--apply',action='store_true');args=p.parse_args();os.umask(0o077)
@@ -138,7 +146,7 @@ def main():
         if action=='stop':managed_identity(ROOT,s)
         _,error=manager.invoke(s,action)
         if error:raise RuntimeError('Owned service action failed')
-        if action=='start':wait_until(lambda:manager.readiness(s),90,'Service not ready')
+        if action=='start':wait_until(lambda:started(manager,ROOT,s),90,'Service not ready')
     def configure(s,e):
         invoke(s,'stop')
         atomic_bytes(Path(s['env_file']),''.join(k+'='+shlex.quote(v)+'\n' for k,v in e.items()).encode())
