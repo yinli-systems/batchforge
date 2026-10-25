@@ -32,7 +32,10 @@ Model output is strict JSON data. Duplicate names (including nested names),
 markdown extraction, additional authority fields and unobserved memory citations
 are rejected. Invalid planner output still charges its accepted generated tokens.
 The model cannot choose a tenant, executor key, memory namespace, endpoint or
-new capability. Currently available tools are bounded literal arithmetic and
+new capability. The opt-in [schema-v1 candidate](agent-schema-qualification.md)
+also constrains legal tool envelopes and observed citations at decoding, while
+retaining runtime enforcement and bounded metered correction. Currently
+available tools are bounded literal arithmetic and
 read-only tenant/namespace memory get/search. The calculator uses a bounded AST,
 not Python evaluation. Shell, network, arbitrary Python and effectful tools are
 unavailable. This is capability enforcement over trusted tools; it is **not** a
@@ -125,7 +128,8 @@ CPU correctness tests, not real-GPU Agent quality evidence.
 
 The existing Azure runtime role lacks CREATE privilege. No Azure owner
 credential is persisted in the known restricted configurations. Owner credential
-location is requested; no password guessing, privilege escalation, public11
+is not saved, as the user confirmed. A native hidden-input prompt expired without
+capturing it; no password guessing, privilege escalation, public11
 ledger change or production cutover is attempted. Continue native qualification
 and a reviewable migration while resolving that requirement. The first real
 Agent canary must preserve this distinction if using an isolated test control

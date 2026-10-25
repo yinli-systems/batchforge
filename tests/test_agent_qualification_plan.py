@@ -1,6 +1,6 @@
 from datetime import datetime,timezone
 import pytest
-from ops.qualify_agent_runtime import fixtures,heldout_fixtures,plan,grade
+from ops.qualify_agent_runtime import fixtures,heldout_fixtures,schema_fixtures,plan,grade
 
 
 def test_native_control_state_and_azure_model_state_are_not_conflated():
@@ -38,3 +38,13 @@ def test_value_contract_holdout_has_new_ids_and_answers_and_explicit_generic_pol
     assert sum(c['require_citations'] for c in heldout)==12
     result=plan(datetime(2026,10,25,22,tzinfo=timezone.utc),80,'value-contract-heldout-v1')
     assert result['max_new_tasks']==80 and result['fixture_sha256']!=plan(datetime(2026,10,25,22,tzinfo=timezone.utc),80)['fixture_sha256']
+
+
+def test_schema_holdout_is_disjoint_and_does_not_rewrite_the_value_holdout():
+    from agents.contracts import digest
+    before=digest(heldout_fixtures());fresh=schema_fixtures()
+    assert digest(heldout_fixtures())==before=='19382f4e66b1a2c959c4e2532bc590907688da06ab72fadd8dc10d11e85894ec'
+    prior=fixtures()+heldout_fixtures()
+    assert len(fresh)==20 and all(c['planner_protocol']=='schema-v1' for c in fresh)
+    assert not ({c['id'] for c in fresh}&{c['id'] for c in prior})
+    assert not ({c['expected'] for c in fresh}&{c['expected'] for c in prior})

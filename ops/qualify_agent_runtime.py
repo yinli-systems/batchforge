@@ -7,6 +7,7 @@ No existing API, worker, model, guard configuration or quota is modified.
 """
 from __future__ import annotations
 import argparse,asyncio,contextlib,fcntl,hashlib,json,os,pwd,signal,subprocess,sys,time
+from ops.agent_endpoint import qualification_endpoint
 from datetime import datetime,timezone
 from decimal import Decimal,InvalidOperation
 from pathlib import Path
@@ -82,7 +83,29 @@ def heldout_fixtures():
 def selected_fixtures(name):
     if name=='baseline':return fixtures()
     if name=='value-contract-heldout-v1':return heldout_fixtures()
+    if name=='schema-contract-heldout-v1':return schema_fixtures()
     raise ValueError('Unknown frozen fixture set')
+
+
+def schema_fixtures():
+    values=heldout_fixtures()  # Fresh objects; prior frozen dataset stays intact.
+    for index,case in enumerate(values):
+        case['id']='schema-'+case['id'];case['planner_protocol']='schema-v1'
+        if index<8:
+            a,b,c=517+index,83+index,97+index;expression=f'({a}*{b})+{c}'
+            case['goal']=f'Use math.calculate to evaluate {expression}. Then return a final answer containing only the decimal numeric result, without units.'
+            case['expected']=str(a*b+c)
+        else:
+            old_key=case['key'];new_key='schema-'+old_key;case['key']=new_key
+            case['goal']=case['goal'].replace(old_key,new_key)
+            if index<12:
+                code=f'ALTAIR-{4071+index-8}';case['expected']=code;case['text']=f'The project code is {code}.'
+            elif index<16:
+                i=index-12;units,price,fee=97+i,31+i,7+i
+                case['expected']=str(units*price+fee);case['text']=f'Invoice facts: units={units}; unit price={price}; fixed fee={fee}.'
+            else:
+                code=f'RIGEL-{5091+index-16}';case['text']=case['text'].replace(case['expected'],code);case['expected']=code
+    return values
 
 
 def grade(case,run):
@@ -140,7 +163,7 @@ async def worker(config_path):
                     'pid':os.getpid(),'at':datetime.now(timezone.utc).isoformat()},stream)
                 stream.flush();os.fsync(stream.fileno())
             os._exit(42)  # This exact canary process, never engine/worker/API.
-    adapter=FaultAdapter(lookup_pool,base_url='http://127.0.0.1:8080',tenant_keys={cfg['tenant']:cfg['api_key']})
+    adapter=FaultAdapter(lookup_pool,base_url=qualification_endpoint(cfg['batch_url']),tenant_keys={cfg['tenant']:cfg['api_key']})
     coordinator=Coordinator(AgentStore(state_pool),adapter,owner='canary-'+os.urandom(8).hex(),tenants=[cfg['tenant']])
     deadline=time.monotonic()+1200
     try:
@@ -161,7 +184,8 @@ def create_runs_http(client,run_name,fixture_set):
             response.raise_for_status()
         body={'goal':case['goal'],'model':MODEL,'memory_namespace':'canary','max_model_calls':4,
               'max_tool_calls':3,'max_generated_tokens':2048,'max_wall_seconds':1200,
-              'answer_format':case.get('answer_format','text'),'require_citations':case.get('require_citations',False)}
+              'answer_format':case.get('answer_format','text'),'require_citations':case.get('require_citations',False),
+              'planner_protocol':case.get('planner_protocol','json-v1')}
         headers={'Idempotency-Key':run_name+'.'+case['id']}
         response=client.post('/v1/agent-runs',headers=headers,json=body);response.raise_for_status();run=response.json()
         replay=client.post('/v1/agent-runs',headers=headers,json=body);replay.raise_for_status()
@@ -188,7 +212,8 @@ def verify_event_pages(client,tenant,rid):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path);p.add_argument('--apply',action='store_true')
     p.add_argument('--worker-config',type=Path)
-    p.add_argument('--fixture-set',choices=['baseline','value-contract-heldout-v1'],default='baseline');args=p.parse_args()
+    p.add_argument('--batch-url',type=qualification_endpoint,default='http://127.0.0.1:8080')
+    p.add_argument('--fixture-set',choices=['baseline','value-contract-heldout-v1','schema-contract-heldout-v1'],default='baseline');args=p.parse_args()
     if args.worker_config:return asyncio.run(worker(args.worker_config))
     if not args.apply:
         print(json.dumps(plan(datetime.now(timezone.utc),80,args.fixture_set),indent=2));return
@@ -199,7 +224,7 @@ def main():
     os.umask(0o077);base.mkdir(mode=0o700);private=base/'.runtime';private.mkdir(mode=0o700)
     report={'phase':'prepared','passed':False,'gpu_inference':True,'azure_agent_schema_modified':False,
         'control_db':'isolated native PG17 on container disk; not Pod-loss durable','events':[],
-        'controller_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+        'controller_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'batch_ingress':args.batch_url}
     def event(phase):
         report['phase']=phase;report['events'].append({'phase':phase,'at':datetime.now(timezone.utc).isoformat()});write(base/'report.json',report)
     event('prepared');children=[];server_started=False;start=time.monotonic();azure=None
@@ -283,7 +308,7 @@ def main():
         with httpx.Client(base_url='http://127.0.0.1:18170',headers={'Authorization':'Bearer '+key},trust_env=False,timeout=10) as client:
             run_ids=create_runs_http(client,base.name,args.fixture_set)
         report['runs']=run_ids;report['agent_api_idempotent_replays_verified']=len(run_ids)
-        write(private/'config.json',{'state_dsn':state_dsn,'azure_dsn':env['DATABASE_URL'],'tenant':tid,'api_key':key})
+        write(private/'config.json',{'state_dsn':state_dsn,'azure_dsn':env['DATABASE_URL'],'tenant':tid,'api_key':key,'batch_url':args.batch_url})
         cfg=private/'config.json'
         event('running')
         def spawn():
@@ -329,7 +354,7 @@ def main():
             [r['state']['batch_id'] for r in raw if r['state'].get('batch_id')]))
         fault=report.get('coordinator_fault')
         if not fault or fault['batch_id'] not in bids:raise RuntimeError('Ambiguous ACK did not reconcile original child')
-        with httpx.Client(base_url='http://127.0.0.1:8080',headers={'Authorization':'Bearer '+key},trust_env=False,follow_redirects=False,timeout=20) as client:
+        with httpx.Client(base_url=args.batch_url,headers={'Authorization':'Bearer '+key},trust_env=False,follow_redirects=False,timeout=20) as client:
             receipts=[]
             for bid in bids:
                 response=client.get('/v1/batches/'+bid+'/receipt');response.raise_for_status();proof=response.json()

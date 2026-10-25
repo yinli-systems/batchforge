@@ -11,7 +11,9 @@ TOOL_NAMES=frozenset({'math.calculate','memory.get','memory.search'})
 OUTPUT_HINTS={
     'identifier':'The answer string must be one identifier only, with no spaces or explanatory sentence. Citations belong only in the separate citations array.',
     'number':'The answer string must be one finite decimal number only, with no units or explanatory sentence. Citations belong only in the separate citations array.',
-    'citations_required':'Include at least one exact citation from a retrieved memory result, in the separate citations array.'}
+    'citations_required':'Include at least one exact citation from a retrieved memory result, in the separate citations array.',
+    'planner_json_invalid':'Return exactly the documented decision object: type is tool or final; a tool has separate name and arguments; final answer is a JSON string and citations is an array. Do not add fields or duplicate keys.',
+    'citation_unobserved':'Use only the exact citation strings actually returned by retrieved memory. Use an empty citations array when no memory citation was retrieved. A tool name is not a memory citation.'}
 
 
 class OutputContractError(ValueError):
@@ -74,6 +76,7 @@ class Policy:
     max_wall_seconds:int=900
     answer_format:str='text'
     require_citations:bool=False
+    planner_protocol:str='json-v1'
 
     def __post_init__(self):
         if (not isinstance(self.allowed_tools,tuple) or len(set(self.allowed_tools))!=len(self.allowed_tools)
@@ -83,7 +86,8 @@ class Policy:
             or type(self.max_tool_calls) is not int or not 0<=self.max_tool_calls<=64
             or type(self.max_generated_tokens) is not int or not 64<=self.max_generated_tokens<=32768
             or type(self.max_wall_seconds) is not int or not 30<=self.max_wall_seconds<=3600
-            or self.answer_format not in ('text','identifier','number') or type(self.require_citations) is not bool):
+            or self.answer_format not in ('text','identifier','number') or type(self.require_citations) is not bool
+            or self.planner_protocol not in ('json-v1','schema-v1')):
             raise ValueError('Bounded agent policy and known capabilities required')
         if self.require_citations and not {'memory.get','memory.search'}&set(self.allowed_tools):
             raise ValueError('Memory citations require a granted retrieval capability')
@@ -99,6 +103,7 @@ class Policy:
         value=asdict(self)
         if self.answer_format=='text':value.pop('answer_format')
         if not self.require_citations:value.pop('require_citations')
+        if self.planner_protocol=='json-v1':value.pop('planner_protocol')
         return value
 
     def validate_final(self,decision):
@@ -129,6 +134,8 @@ def planner_messages(goal,policy,tool_specs,observations=(),*,output_feedback=No
         'Tool catalogue: '+canonical(specifications).decode())
     if policy.answer_format in OUTPUT_HINTS:instruction+=' '+OUTPUT_HINTS[policy.answer_format]
     if policy.require_citations:instruction+=' '+OUTPUT_HINTS['citations_required']
+    if policy.planner_protocol=='schema-v1':
+        instruction+=' '+OUTPUT_HINTS['planner_json_invalid']+' '+OUTPUT_HINTS['citation_unobserved']
     messages=[{'role':'system','content':instruction},{'role':'user','content':goal}]
     for observation in observations:
         encoded=canonical(observation)

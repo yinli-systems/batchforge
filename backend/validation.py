@@ -105,8 +105,10 @@ def validate_rows(data: bytes, settings) -> list[dict]:
             stops = [body["stop"]] if isinstance(body["stop"], str) else body["stop"]
             if not isinstance(stops, list) or not 1 <= len(stops) <= 4 or any(not isinstance(value, str) or not 1 <= len(value) <= 256 for value in stops):
                 raise InvalidInput(f"Line {number}: stop must be a string or 1 to 4 nonempty strings of at most 256 characters")
-        if "response_format" in body and body["response_format"] not in ({"type": "text"}, {"type": "json_object"}):
-            raise InvalidInput(f"Line {number}: response_format supports only type=text or type=json_object")
+        if 'response_format' in body:
+            from .response_formats import validate_response_format
+            try:validate_response_format(body['response_format'],allow_json_schema=getattr(settings,'json_schema_enabled',False))
+            except ValueError as exc:raise InvalidInput(f'Line {number}: {exc}') from None
         body = dict(body)
         body.setdefault("max_tokens", tokens) if "max_completion_tokens" not in body else None
         result.append({"custom_id": custom_id, "body": body})

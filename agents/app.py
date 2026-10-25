@@ -35,6 +35,7 @@ class RunRequest(Strict):
     max_wall_seconds:int=Field(default=900,ge=30,le=3600)
     answer_format:str=Field(default='text',pattern=r'^(text|identifier|number)$')
     require_citations:bool=False
+    planner_protocol:str=Field(default='json-v1',pattern=r'^(json-v1|schema-v1)$')
 
     def policy(self):
         return Policy(**{k:v for k,v in self.model_dump().items() if k not in ('goal','model','allowed_tools')},

@@ -61,6 +61,13 @@ class Coordinator:
     async def fail(self,run,code):
         return await self.change(run,'failed',kind='run.failed',state=run['state'],status='failed',result={'code':code})
 
+    async def reject_output(self,run,state,code):
+        state.setdefault('output_rejections',[]).append({'step':state['step'],'code':code,
+            'content_sha256':digest(state['model_content']),'receipt_sha256':state['receipts'][-1]['receipt_sha256']})
+        state['output_feedback']=code;state['phase']='plan'
+        for key in ('request','batch_id','file_id','upload_attempted','model_content','delivery_invalid'):state.pop(key,None)
+        return await self.change(run,'output_rejected',kind='output.rejected',state=state)
+
     async def advance(self,run):
         state=copy.deepcopy(run['state']);phase=state.get('phase','plan');policy=policy_from(run['policy'])
         step=state.get('step',0)
@@ -69,8 +76,10 @@ class Coordinator:
             remaining=run['max_generated_tokens']-run['generated_tokens']
             if remaining<64:return await self.fail(run,'generated_token_budget_exceeded')
             observations=[{k:v for k,v in item.items() if k!='elapsed_seconds'} for item in state.get('observations',[])]
+            from .structured import response_format
             body={'model':run['model'],'messages':planner_messages(run['goal'],policy,SPECS,observations,output_feedback=state.get('output_feedback')),
-                  'max_tokens':min(512,remaining),'temperature':0,'response_format':{'type':'json_object'}}
+                  'max_tokens':min(512,remaining),'temperature':0,
+                  'response_format':response_format(policy,observed_citations=citations(observations),remaining_tools=run['max_tool_calls']-run['tool_calls'])}
             state.update(phase='input_intent',step=step+1,request=body,
                          request_sha256=digest(body),child_key=f"agent.{run['id']}.{step+1}")
             return await self.change(run,'intent',kind='model.intent',state=state)
@@ -127,17 +136,18 @@ class Coordinator:
         if phase=='decision':
             if state.get('delivery_invalid'):
                 return await self.fail(run,'model_output_truncated' if state['delivery_invalid']=='model_output_truncated' else 'model_delivery_invalid')
-            decision=parse_decision(state['model_content'])
+            try:decision=parse_decision(state['model_content'])
+            except ValueError:
+                if policy.planner_protocol!='schema-v1':raise
+                return await self.reject_output(run,state,'planner_json_invalid')
             policy.authorize(decision)
             if isinstance(decision,FinalDecision):
-                if not set(decision.citations)<=citations(state.get('observations',[])):raise ValueError('Unretrieved citation')
+                if not set(decision.citations)<=citations(state.get('observations',[])):
+                    if policy.planner_protocol=='schema-v1':return await self.reject_output(run,state,'citation_unobserved')
+                    raise ValueError('Unretrieved citation')
                 try:policy.validate_final(decision)
                 except OutputContractError as exc:
-                    state.setdefault('output_rejections',[]).append({'step':state['step'],'code':exc.code,
-                        'content_sha256':digest(state['model_content']),'receipt_sha256':state['receipts'][-1]['receipt_sha256']})
-                    state['output_feedback']=exc.code;state['phase']='plan'
-                    for key in ('request','batch_id','file_id','upload_attempted','model_content','delivery_invalid'):state.pop(key,None)
-                    return await self.change(run,'output_rejected',kind='output.rejected',state=state)
+                    return await self.reject_output(run,state,exc.code)
                 return await self.change(run,'final',kind='run.completed',state=state,status='completed',
                     result={**decision.model_dump(),'batch_receipts':state.get('receipts',[])})
             if run['tool_calls']>=run['max_tool_calls']:return await self.fail(run,'tool_call_budget_exceeded')

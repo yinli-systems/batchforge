@@ -365,3 +365,51 @@ async def test_output_correction_cannot_reset_or_overrun_model_budget(store):
     done=await advance_to_terminal(store,run,batch)
     assert done['status']=='failed' and done['model_calls']==2 and done['generated_tokens']==40
     assert done['result']['code']=='model_call_budget_exceeded' and len(batch.batches)==2
+
+
+async def test_schema_provider_violation_is_rejected_and_correction_is_metered(store):
+    run=await make(store,policy=Policy(planner_protocol='schema-v1',answer_format='identifier',max_model_calls=2,max_generated_tokens=128))
+    batch=TestBatch(['{"type":"memory.get","arguments":{"key":"untrusted"}}',
+                     '{"type":"final","answer":"VALID-CODE","citations":[]}'])
+    done=await advance_to_terminal(store,run,batch)
+    assert done['status']=='completed' and done['model_calls']==2 and done['generated_tokens']==40
+    assert done['tool_calls']==0 and done['state']['output_rejections'][0]['code']=='planner_json_invalid'
+    assert done['state']['request']['response_format']['type']=='json_schema'
+
+
+async def test_schema_does_not_turn_unobserved_citation_into_evidence(store):
+    run=await make(store,policy=Policy(planner_protocol='schema-v1',answer_format='number',max_model_calls=2,max_generated_tokens=128))
+    batch=TestBatch(['{"type":"final","answer":"42","citations":["math.calculate"]}',
+                     '{"type":"final","answer":"42","citations":[]}'])
+    done=await advance_to_terminal(store,run,batch)
+    assert done['status']=='completed' and done['model_calls']==2 and done['generated_tokens']==40
+    assert done['state']['output_rejections'][0]['code']=='citation_unobserved'
+    assert done['result']['citations']==[]
+
+
+async def test_bounded_schema_canary_preserves_response_format_through_http_db_claim(store):
+    import hashlib,httpx,json
+    from backend.app import create_app as batch_app
+    from backend.config import Settings
+    from ops.qualify_agent_grammar import fixture
+    from ops.product_campaign import MODEL
+    key='test-only-schema-ingress-key';token='test-only-schema-worker'
+    cases,_=fixture()
+    with psycopg.connect(DSN,autocommit=True) as db:
+        db.execute('INSERT INTO api_keys(key_hash,tenant_id) VALUES(%s,%s) ON CONFLICT DO NOTHING',(hashlib.sha256(key.encode()).hexdigest(),A))
+    app=batch_app(Settings(database_url=DSN,model_name=MODEL,json_schema_enabled=True,batchforge_worker_token=token))
+    async with app.router.lifespan_context(app),httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as client:
+        public={'Authorization':'Bearer '+key};internal={'Authorization':'Bearer '+token}
+        response=await client.post('/v1/files',headers=public,data={'purpose':'batch'},files={'file':('schema.jsonl',b'\n'.join(json.dumps(c).encode() for c in cases),'application/jsonl')})
+        assert response.status_code==200,response.text
+        created=await client.post('/v1/batches',headers={**public,'Idempotency-Key':'schema-test'},json={'input_file_id':response.json()['id']})
+        assert created.status_code==200,created.text
+        reg=await client.post('/internal/workers/register',headers=internal,json={'worker_id':'schema-http-test','name':'synthetic schema transport only','model':MODEL,'concurrency':4})
+        assert reg.status_code==200,reg.text
+        claim=await client.post('/internal/tasks/claim',headers=internal,json={'worker_id':'schema-http-test','model':MODEL,'limit':4})
+        assert claim.status_code==200,claim.text
+        tasks=claim.json()['tasks'];assert len(tasks)==4
+        expected={c['custom_id']:c['body']['response_format'] for c in cases}
+        assert {t['custom_id']:t['body']['response_format'] for t in tasks}==expected
+        # Cancel only this isolated test cohort; no GPU or production process.
+        assert (await client.post('/v1/batches/'+created.json()['id']+'/cancel',headers=public)).status_code==200
