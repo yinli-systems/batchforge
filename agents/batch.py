@@ -5,7 +5,7 @@ gates and tenant quotas apply. Read-only artifact lookup uses the same database.
 Keys are executor configuration, never model output or workflow state.
 """
 from __future__ import annotations
-import asyncio,hashlib
+import hashlib
 from urllib.parse import urlsplit
 import httpx
 from backend.receipts import verify as verify_receipt
@@ -22,7 +22,7 @@ class BatchAdapter:
         self.pool=pool;self.base_url=base_url.rstrip('/');self.tenant_keys=dict(tenant_keys)
         if not self.tenant_keys or any(not isinstance(k,str) or not isinstance(v,str) or not v for k,v in self.tenant_keys.items()):
             raise ValueError('Explicit executor tenant credentials required')
-        self.client=client or httpx.AsyncClient(timeout=httpx.Timeout(15,connect=5),follow_redirects=False)
+        self.client=client or httpx.AsyncClient(timeout=httpx.Timeout(15,connect=5),follow_redirects=False,trust_env=False)
 
     @staticmethod
     def input_bytes(run,state):

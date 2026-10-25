@@ -47,6 +47,22 @@ ungranted tool capabilities; this alone does not guarantee semantic correctness.
 
 ## Model-step outbox and uncertain I/O
 
+The candidate output-contract extension lets the caller request a generic
+`text`, `identifier` or `number` answer string and require retrieved citations.
+Validation never receives a reference answer and does not extract a substring,
+strip prose or normalize the model's answer into a passing result. A rejected
+value records its original content/receipt hashes and requests a new model step
+with a fixed runtime validation hint. That step has a fresh child identity,
+consumes the same remaining budget and retains all accepted token usage. It can
+fail the run when the budget runs out; there is no unlimited repair loop.
+
+Default text/no-required-citation requests keep the exact v1 policy document
+and idempotency hash. New non-default contracts are explicitly immutable run
+policy. A deployment must keep a coordinator that understands them until those
+accepted runs finish; an older coordinator is not a compatible rollback for an
+active identifier/number-policy run. The serving Batch schema11 and Agent SQLv1
+checksums are unchanged by this additive application contract.
+
 Before any external action, persist a model-input intent and content SHA.
 Before the single upload attempt, persist `upload_attempted`. After a crash,
 reconcile an exact tenant/filename/size/SHA match and independently read its

@@ -7,9 +7,8 @@ fences Agent commits; an already accepted child Batch can still consume GPU afte
 Agent cancellation. Its accepted usage stays in the original Batch ledger.
 """
 from __future__ import annotations
-from dataclasses import asdict
 import copy
-from .contracts import Policy,ToolDecision,FinalDecision,canonical,digest,parse_decision,planner_messages
+from .contracts import Policy,ToolDecision,FinalDecision,OutputContractError,canonical,digest,parse_decision,planner_messages
 from .tools import Context,SPECS,execute
 from .memory import StoreMemory
 from .store import AgentError
@@ -70,7 +69,7 @@ class Coordinator:
             remaining=run['max_generated_tokens']-run['generated_tokens']
             if remaining<64:return await self.fail(run,'generated_token_budget_exceeded')
             observations=[{k:v for k,v in item.items() if k!='elapsed_seconds'} for item in state.get('observations',[])]
-            body={'model':run['model'],'messages':planner_messages(run['goal'],policy,SPECS,observations),
+            body={'model':run['model'],'messages':planner_messages(run['goal'],policy,SPECS,observations,output_feedback=state.get('output_feedback')),
                   'max_tokens':min(512,remaining),'temperature':0,'response_format':{'type':'json_object'}}
             state.update(phase='input_intent',step=step+1,request=body,
                          request_sha256=digest(body),child_key=f"agent.{run['id']}.{step+1}")
@@ -132,6 +131,13 @@ class Coordinator:
             policy.authorize(decision)
             if isinstance(decision,FinalDecision):
                 if not set(decision.citations)<=citations(state.get('observations',[])):raise ValueError('Unretrieved citation')
+                try:policy.validate_final(decision)
+                except OutputContractError as exc:
+                    state.setdefault('output_rejections',[]).append({'step':state['step'],'code':exc.code,
+                        'content_sha256':digest(state['model_content']),'receipt_sha256':state['receipts'][-1]['receipt_sha256']})
+                    state['output_feedback']=exc.code;state['phase']='plan'
+                    for key in ('request','batch_id','file_id','upload_attempted','model_content','delivery_invalid'):state.pop(key,None)
+                    return await self.change(run,'output_rejected',kind='output.rejected',state=state)
                 return await self.change(run,'final',kind='run.completed',state=state,status='completed',
                     result={**decision.model_dump(),'batch_receipts':state.get('receipts',[])})
             if run['tool_calls']>=run['max_tool_calls']:return await self.fail(run,'tool_call_budget_exceeded')

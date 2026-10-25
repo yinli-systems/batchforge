@@ -4,7 +4,6 @@ The Agent schema is independent from the serving Batch API ledger. Model steps
 will reference real Batch IDs; these counters are not a second billing ledger.
 """
 from __future__ import annotations
-from dataclasses import asdict
 import hashlib,re,secrets
 from psycopg.types.json import Jsonb
 from .contracts import Policy,canonical,digest
@@ -58,7 +57,7 @@ class AgentStore:
         if (not isinstance(key,str) or not 1<=len(key)<=128 or not isinstance(goal,str)
             or not 1<=len(goal.encode())<=32768 or '\x00' in goal or not isinstance(model,str) or not 1<=len(model)<=256
             or not isinstance(policy,Policy)):raise AgentError(400,'invalid_agent_run')
-        body={'goal':goal,'model':model,'policy':asdict(policy)};request_hash=digest(body)
+        body={'goal':goal,'model':model,'policy':policy.document()};request_hash=digest(body)
         async with self.pool.connection() as conn,conn.transaction():
             await self.tenant_lock(conn,tenant)
             old=await one(conn,'SELECT * FROM bf_agents.runs WHERE tenant_id=%s AND request_key=%s',(tenant,key))
@@ -69,7 +68,7 @@ class AgentStore:
             row=await one(conn,"""INSERT INTO bf_agents.runs(id,tenant_id,request_key,request_hash,goal,model,policy,
                 max_model_calls,max_tool_calls,max_generated_tokens,event_hash,deadline_at)
                 VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,clock_timestamp()+(%s*interval '1 second')) RETURNING *""",
-                (rid,tenant,key,request_hash,goal,model,Jsonb(asdict(policy)),policy.max_model_calls,policy.max_tool_calls,
+                (rid,tenant,key,request_hash,goal,model,Jsonb(policy.document()),policy.max_model_calls,policy.max_tool_calls,
                  policy.max_generated_tokens,ZERO,policy.max_wall_seconds))
             tail=await self.event(conn,row,kind='run.created',payload={'request_sha256':request_hash},operation_key='create',request_hash=request_hash)
             row=await one(conn,'UPDATE bf_agents.runs SET event_hash=%s WHERE tenant_id=%s AND id=%s RETURNING *',(tail,tenant,rid))

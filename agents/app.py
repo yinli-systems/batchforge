@@ -6,8 +6,7 @@ model output cannot choose credentials, namespaces, limits or tool grants.
 """
 from __future__ import annotations
 from contextlib import asynccontextmanager
-from dataclasses import asdict
-import asyncio,json,logging,hashlib
+import asyncio,logging,hashlib
 from fastapi import FastAPI,Depends,Header,Query
 from fastapi.responses import JSONResponse,StreamingResponse
 from fastapi.exceptions import RequestValidationError
@@ -16,7 +15,7 @@ from psycopg_pool import AsyncConnectionPool,PoolTimeout
 import psycopg
 from pydantic import Field
 from backend.config import get_settings
-from backend.store import Store,APIError
+from backend.store import APIError
 from backend.migrate import verify_schema
 from .migrate import verify
 from .contracts import Strict,Policy,canonical,protocol_json
@@ -34,6 +33,8 @@ class RunRequest(Strict):
     max_tool_calls:int=Field(default=8,ge=0,le=64)
     max_generated_tokens:int=Field(default=4096,ge=64,le=32768)
     max_wall_seconds:int=Field(default=900,ge=30,le=3600)
+    answer_format:str=Field(default='text',pattern=r'^(text|identifier|number)$')
+    require_citations:bool=False
 
     def policy(self):
         return Policy(**{k:v for k,v in self.model_dump().items() if k not in ('goal','model','allowed_tools')},

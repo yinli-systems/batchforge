@@ -330,3 +330,38 @@ async def test_coordinator_uses_actual_batch_http_pg_ledger_and_receipt(store):
         assert len(done['result']['batch_receipts'])==1
         receipt=await client.get('/v1/batches/'+value['state']['batch_id']+'/receipt',headers={'Authorization':'Bearer '+key})
         assert receipt.json()['receipt']['history']['observed_accepted_attempts']==1
+
+
+async def test_legacy_default_policy_hash_and_key_replay_survive_output_contract_upgrade(store):
+    from agents.contracts import digest
+    run=await make(store)
+    old_policy={'allowed_tools':['math.calculate','memory.get','memory.search'],'memory_namespace':'default',
+        'max_model_calls':8,'max_tool_calls':8,'max_generated_tokens':4096,'max_wall_seconds':900}
+    old_hash=digest({'goal':'Compute invoice total using allowed tools','model':'test-model','policy':old_policy})
+    async with store.pool.connection() as db:
+        row=await (await db.execute('SELECT request_hash,policy FROM bf_agents.runs WHERE id=%s',(run['id'],))).fetchone()
+    assert row=={'request_hash':old_hash,'policy':old_policy}
+    assert (await make(store))['id']==run['id']
+    with pytest.raises(AgentError) as exc:await make(store,policy=Policy(answer_format='identifier'))
+    assert exc.value.code=='agent_idempotency_conflict'
+
+
+async def test_output_correction_is_a_new_metered_model_step_not_gold_extraction(store):
+    run=await make(store,policy=Policy(allowed_tools=(),answer_format='identifier',max_tool_calls=0,max_model_calls=2,max_generated_tokens=128))
+    batch=TestBatch(['{"type":"final","answer":"The project code is ALPHA-42","citations":[]}',
+                     '{"type":"final","answer":"ALPHA-42","citations":[]}'])
+    done=await advance_to_terminal(store,run,batch)
+    assert done['status']=='completed' and done['result']['answer']=='ALPHA-42'
+    assert done['model_calls']==2 and done['generated_tokens']==40 and len(batch.batches)==2
+    assert len(done['state']['output_rejections'])==1
+    assert done['state']['output_rejections'][0]['receipt_sha256']=='a'*64
+    # No reference answer is passed to the coordinator/validator.
+    assert 'ALPHA-42' not in str(done['state']['request']['messages'])
+
+
+async def test_output_correction_cannot_reset_or_overrun_model_budget(store):
+    run=await make(store,policy=Policy(answer_format='number',max_model_calls=2,max_generated_tokens=128))
+    batch=TestBatch(['{"type":"final","answer":"The result is 42"}']*2)
+    done=await advance_to_terminal(store,run,batch)
+    assert done['status']=='failed' and done['model_calls']==2 and done['generated_tokens']==40
+    assert done['result']['code']=='model_call_budget_exceeded' and len(batch.batches)==2
