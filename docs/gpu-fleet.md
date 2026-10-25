@@ -103,3 +103,30 @@ pins helper `e1900dd` and its SHA-256. The probe wrote its evidence receipt;
 no service environment file, registration, inference or running study changed.
 This qualifies the source-selection mechanism, not Fleet rollout or gang
 placement. Production enablement still waits for the current fixed study.
+
+## Release and rollback ordering
+
+`ops.fleet_release` adds a tested ordering primitive, not an installed controller
+or an automatic launch. A service-I/O adapter must still bind it to the existing
+exclusive campaign lock, owned PID identities, fsynced phase events and private
+configuration backups. Its admission guard rejects incomplete/failed 3,600-task
+reports, non-unique acceptance, inconsistent usage, incorrect output lengths or
+unexpected input uploads.
+
+The forward path pauses both enqueue gates, drains accepted work, installs and
+checks the worker, then installs/checks the APIs, reopens admission and checks
+again. Engine/model actions are excluded. The drain callback must verify durable
+pending/running tasks **and** worker inflight **and** engine quiescence.
+
+A failure after reopening may coexist with newly accepted tasks. Rollback first
+installs known-compatible APIs with admission closed, ensures a live draining
+worker, and drains again **before** replacing the worker. Original readiness is
+checked before and after reopening. A failed rollback leaves admission closed
+where possible and records any inability to close it explicitly; it never
+claims success or discards accepted tasks. Watchdog recovery is attempted even
+after a failed shutdown. Journal failures abort forward mutation but cannot
+block recovery actions; even a final journal failure prevents a success claim.
+
+Failure-injection tests cover partial reopen, post-reopen validation, failed
+rollback drain, failed original validation after reopen, source/preflight
+failure and disk/event failure. This preparation changes no running service.
