@@ -33,3 +33,16 @@ def test_uncertain_watchdog_stop_still_attempts_idempotent_restart():
     with pytest.raises(RuntimeError):
         rollout_sequence(**{n:lambda:None for n in ['pause','drain','install','validate','reopen','restore']},watchdog=watchdog)
     assert events==[False,True]
+
+
+def test_failed_post_open_validation_restores_compatible_api_configuration():
+    events=[];validations=0
+    def validate():
+        nonlocal validations
+        validations+=1;events.append('validate')
+        if validations==2:raise RuntimeError('post_open_failed')
+    def action(name):return lambda:events.append(name)
+    with pytest.raises(RuntimeError,match='post_open_failed'):
+        rollout_sequence(**{n:action(n) for n in ['pause','drain','install','reopen','restore']},validate=validate,
+                         watchdog=lambda enabled:events.append(('watchdog',enabled)))
+    assert events[-4:]==['reopen','validate','restore',('watchdog',True)]
