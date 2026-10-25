@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     # Operator-controlled allowlist. Each batch retains exactly one model;
     # workers and queues are always matched by that identity.
     model_names_json: str = ""
+    # Operator drain gate: existing reads, cancellations and leased work continue.
+    batch_submission_enabled: bool = True
     max_upload_bytes: int = Field(default=10 * 1024 * 1024, ge=1024, le=100 * 1024 * 1024)
     max_tasks_per_batch: int = Field(default=10000, ge=1, le=100000)
     max_request_bytes: int = Field(default=131072, ge=1024, le=1048576)

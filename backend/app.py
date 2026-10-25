@@ -339,6 +339,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/v1/batches")
     async def create_batch(body: CreateBatch, request: Request, tenant_id: str = Depends(tenant), idempotency_key: str | None = Header(default=None)):
+        if not settings.batch_submission_enabled:
+            response = error_response(503, "Batch admission is paused for maintenance; retry with the same idempotency key", "admission_paused")
+            response.headers['Retry-After'] = '5'
+            return response
         if any(len(key) > 64 or len(value) > 512 for key, value in body.metadata.items()):
             raise APIError(400, "Metadata keys/values exceed limits")
         return await request.app.state.store.create(tenant_id, body.model_dump(), idempotency_key)
@@ -357,6 +361,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/v1/batches/{bid}/retry")
     async def retry(bid: str, request: Request, tenant_id: str = Depends(tenant), idempotency_key: str | None = Header(default=None)):
+        if not settings.batch_submission_enabled:
+            response = error_response(503, "Batch admission is paused for maintenance; retry with the same idempotency key", "admission_paused")
+            response.headers['Retry-After'] = '5'
+            return response
         return await request.app.state.store.retry(tenant_id, bid, idempotency_key)
 
     @app.get("/v1/models")
