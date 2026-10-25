@@ -88,6 +88,7 @@ def main():
             try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB);return True
             except BlockingIOError:return False
         wait_until(acquire,60,'Another controller owns app release');unchanged()
+        event('preflight')
         _,services,_=load_manifest(root/'.runtime/services-primary.json',root=root)
         expected={('api','a'),('api','b'),('gateway','edge'),('engine','qwen480bench'),('worker','qwen480')}
         if {(s['role'],s['name']) for s in services}!=expected or len(services)!=5:raise RuntimeError('Primary manifest changed')
@@ -111,6 +112,7 @@ def main():
         if cfg.exists() or manager.invoke(canary,'status')[0]['running']:raise RuntimeError('Canary identity already exists')
         def env_bytes(e):return ''.join(k+'='+shlex.quote(v)+'\n' for k,v in e.items()).encode()
         atomic_bytes(cfg,env_bytes(release_environment(envs['a'],source,paused=True,canary=True)))
+        event('starting_canary')
         start,error=manager.invoke(canary,'start');canary_started=True
         if error:raise RuntimeError('Canary start failed')
         wait_until(lambda:manager.readiness(canary),60,'Canary not ready')
@@ -177,7 +179,7 @@ def main():
         for s in services:
             if s['role'] in ('worker','engine') and managed_identity(root,s)!=identities[s['role']+'-'+s['name']]:
                 raise RuntimeError('GPU identity changed')
-        db.close();report['primary_published']=True;report['passed']=True;event('primary_published')
+        db.close();report['observed_gpu_identities_unchanged']=True;report['primary_published']=True;report['passed']=True;event('primary_published')
     except BaseException as exc:
         report['phase_before_failure']=report['phase'];report['error_type']=type(exc).__name__;report['passed']=False;event('failed')
     finally:

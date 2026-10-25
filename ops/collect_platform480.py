@@ -20,7 +20,7 @@ HOST = '4x7ej43hrqznjn-64410eb2@ssh.runpod.io'
 
 
 def remote_script(remote_run):
-    if not re.fullmatch(r'/root/batchforge-runtime/(?:platform480|promotion480|quality-squad|evidence-api|soak480)-[a-zA-Z0-9-]+', remote_run):
+    if not re.fullmatch(r'/root/batchforge-runtime/(?:platform480|promotion480|quality-squad|evidence-api|soak480|quality-api-review|quality-api-release)-[a-zA-Z0-9-]+', remote_run):
         raise ValueError('Only an owned platform480 experiment may be collected')
     return "stty -echo\npython3 - <<'BF_COLLECT_PY'\n" + f"root={remote_run!r}\n" + '''
 from pathlib import Path
@@ -35,6 +35,7 @@ for name in ['source-receipt.json','storage-preflight.json','launcher-v1.json',
              'replay-validation.json','future-receipt-validation.json',
              'post-rollout-validation.json',
              'quality-diagnostics-v1.json','quality-diagnostics-source-v1.py',
+             'validation.json','release.json','release-launcher.json',
              'campaign.json','.runtime/run/report.json','.runtime/run/observations.jsonl',
              'run/plan.json','run/benchmark.json','run/report.json','run/scores.jsonl',
              'run/observations.jsonl','run/runtime-apis.jsonl',
