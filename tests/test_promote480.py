@@ -85,3 +85,17 @@ def test_process_only_watchdog_readiness_uses_owned_identity_not_a_missing_http_
     roll.invoke=lambda *args:{'running':False}
     with pytest.raises(RuntimeError,match='exited_during_start'):
         roll.ready({'role':'engine','port':8348})
+
+
+def test_promotion_uses_qualified_fair_policy_and_rollback_preserves_original_settings():
+    roll=object.__new__(Promotion);written=[]
+    roll.apis=[{'name':'a','env_file':'/private/test-api.env'}]
+    original={'MODEL_NAME':'235b','SCHEDULER_POLICY':'cost_aware','BATCH_SUBMISSION_ENABLED':'true'}
+    roll.api_envs={'a':dict(original)}
+    roll.write_env=lambda path,env:written.append(dict(env))
+    roll.invoke=lambda *args:None;roll.ready=lambda *args:None
+    roll.apis_config(enabled=False,model=REPO)
+    assert written[-1]['SCHEDULER_POLICY']=='fair' and written[-1]['BATCH_SUBMISSION_ENABLED']=='false'
+    assert roll.api_envs['a']==original
+    roll.apis_config(enabled=True,restore=True)
+    assert written[-1]==original
