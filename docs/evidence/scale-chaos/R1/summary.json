@@ -1,0 +1,184 @@
+{
+ "rung": "R1",
+ "verdict": "PASS",
+ "measurement_valid": true,
+ "workers": 100,
+ "slots_per_worker": 4,
+ "tasks": 100000,
+ "batches": 10,
+ "wall_s": 192.28,
+ "throughput_tasks_per_s": 520.1,
+ "started_utc": "2026-10-25T01:06:19.498+00:00",
+ "finished_utc": "2026-10-25T01:10:18.793+00:00",
+ "default_limit_probe": {
+  "status": 429,
+  "tasks": 10000,
+  "code": "retained_payload_limit",
+  "message": "Retained payload budget reached; wait for verified archival or operator cleanup",
+  "retried_after_raise": true
+ },
+ "lab_deviations": {
+  "max_queued_tasks_per_tenant": {
+   "production": 100000,
+   "lab": 1000000
+  },
+  "retention_payload_bytes": {
+   "production": 1073741824,
+   "lab": 274877906944
+  },
+  "retention_max_retained_tasks": {
+   "production": 100000,
+   "lab": 1000000
+  }
+ },
+ "tenant_retention_usage_after_submit": {
+  "retained_tasks": 100000,
+  "charged_payload_bytes": 117974488890
+ },
+ "retention_limits_raised": {
+  "max_payload_bytes": 274877906944,
+  "max_retained_tasks": 1000000,
+  "deviation_from_default": true
+ },
+ "facts": {
+  "task_states": {
+   "completed": 100000
+  },
+  "attempt_states": {
+   "completed": 100000
+  },
+  "claims_worker_side": 100000,
+  "tasks_submitted": 100000,
+  "reclaims_beyond_one_per_task": 0,
+  "expired_attempts_db": 0
+ },
+ "simulator_processes": [
+  {
+   "workers": 25,
+   "cpu_s": 97.409,
+   "loop_overrun_p99_ms": 9.758
+  },
+  {
+   "workers": 25,
+   "cpu_s": 96.597,
+   "loop_overrun_p99_ms": 10.58
+  },
+  {
+   "workers": 25,
+   "cpu_s": 96.309,
+   "loop_overrun_p99_ms": 12.774
+  },
+  {
+   "workers": 25,
+   "cpu_s": 96.323,
+   "loop_overrun_p99_ms": 10.99
+  }
+ ],
+ "worker_latency_ms": {
+  "claim": {
+   "n": 175158,
+   "p50_ms": 50.52,
+   "p95_ms": 105.622,
+   "p99_ms": 161.875,
+   "max_ms": 615.831,
+   "mean_ms": 56.981
+  },
+  "complete": {
+   "n": 100000,
+   "p50_ms": 48.407,
+   "p95_ms": 105.394,
+   "p99_ms": 172.563,
+   "max_ms": 636.718,
+   "mean_ms": 55.763
+  }
+ },
+ "worker_errors_by_kind": {},
+ "heartbeats_ok": 0,
+ "heartbeats_failed": 0,
+ "generator_loop_overrun_p99_ms": 11.206,
+ "generator_loop_overrun_limit_ms": 50.0,
+ "replay": {
+  "replayed": 50,
+  "idempotent": 50,
+  "unexpected": 0
+ },
+ "invariants": [
+  {
+   "invariant": "every submitted task ends terminal",
+   "ok": true,
+   "detail": {
+    "live": 0,
+    "total": 100000,
+    "expected": 100000
+   }
+  },
+  {
+   "invariant": "exactly-once acceptance (no task with two completed attempts)",
+   "ok": true,
+   "detail": {
+    "tasks_with_two": 0
+   }
+  },
+  {
+   "invariant": "accepted set equals completed set",
+   "ok": true,
+   "detail": {
+    "workers_accepted": 100000,
+    "db_completed": 100000,
+    "only_worker": 0,
+    "only_db": 0
+   }
+  },
+  {
+   "invariant": "batch counters reconcile",
+   "ok": true,
+   "detail": {
+    "batch_completed": 100000,
+    "tasks_completed": 100000,
+    "batch_pending": 0,
+    "batch_running": 0
+   }
+  },
+  {
+   "invariant": "token totals match worker-side usage",
+   "ok": true,
+   "detail": {
+    "batch_completion": 3244963,
+    "worker_completion": 3244963,
+    "batch_prompt": 12925521,
+    "worker_prompt": 12925521
+   }
+  },
+  {
+   "invariant": "no stale or duplicate acceptance",
+   "ok": true,
+   "detail": {
+    "stale": 0,
+    "duplicates": 0,
+    "stale_by_code": {}
+   }
+  },
+  {
+   "invariant": "worker-side errors",
+   "ok": true,
+   "detail": {
+    "errors": 0,
+    "errors_by_kind": {}
+   }
+  }
+ ],
+ "migrations_applied": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11
+ ],
+ "schema_version": 11
+}

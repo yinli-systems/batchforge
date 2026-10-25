@@ -1,0 +1,125 @@
+{
+ "rung": "R1",
+ "simulated": [
+  "workers",
+  "inference",
+  "engine"
+ ],
+ "real": [
+  "api",
+  "postgresql",
+  "sql_paths",
+  "migrations"
+ ],
+ "workers": 100,
+ "slots_per_worker": 4,
+ "tasks": 100000,
+ "chunk_per_batch": 10000,
+ "seed": 20261025,
+ "service_ms": [
+  5.0,
+  40.0
+ ],
+ "heartbeat": "advertised interval (lease_seconds // 3), per in-flight task",
+ "lease_seconds": 60,
+ "api_db_pool_max": 20,
+ "sql_claim": true,
+ "sql_completion": true,
+ "sql_recovery": true,
+ "submissions": [
+  {
+   "chunk": 0,
+   "tasks": 10000,
+   "status": 429,
+   "batch_id": "batch_e6a3f2ed0f012af4738dbc11184c8d93",
+   "code": "retained_payload_limit",
+   "at": "production_defaults",
+   "retry_status": 200
+  },
+  {
+   "chunk": 1,
+   "tasks": 10000,
+   "status": 200,
+   "batch_id": "batch_4df4a527b96364684e4d2fd88743beab",
+   "code": null,
+   "at": "lab_budget"
+  },
+  {
+   "chunk": 2,
+   "tasks": 10000,
+   "status": 200,
+   "batch_id": "batch_33d903c6701c28842bb30903527918f9",
+   "code": null,
+   "at": "lab_budget"
+  },
+  {
+   "chunk": 3,
+   "tasks": 10000,
+   "status": 200,
+   "batch_id": "batch_e2636aa7ef78e804644f229589b73d56",
+   "code": null,
+   "at": "lab_budget"
+  },
+  {
+   "chunk": 4,
+   "tasks": 10000,
+   "status": 200,
+   "batch_id": "batch_c401352bf7620bbde54be0f2647d793e",
+   "code": null,
+   "at": "lab_budget"
+  },
+  {
+   "chunk": 5,
+   "tasks": 10000,
+   "status": 200,
+   "batch_id": "batch_bf2472bdfc03643bfa649a7d8a9e56b1",
+   "code": null,
+   "at": "lab_budget"
+  },
+  {
+   "chunk": 6,
+   "tasks": 10000,
+   "status": 200,
+   "batch_id": "batch_6aae74ee587f964c9804b5f0a9c2d702",
+   "code": null,
+   "at": "lab_budget"
+  },
+  {
+   "chunk": 7,
+   "tasks": 10000,
+   "status": 200,
+   "batch_id": "batch_627cbba2efe5eb5f9db71c154cdd3284",
+   "code": null,
+   "at": "lab_budget"
+  },
+  {
+   "chunk": 8,
+   "tasks": 10000,
+   "status": 200,
+   "batch_id": "batch_b26cc91e86f867ff316f6d7bdc57cc62",
+   "code": null,
+   "at": "lab_budget"
+  },
+  {
+   "chunk": 9,
+   "tasks": 10000,
+   "status": 200,
+   "batch_id": "batch_cce2d8e6e35cfaec4a73625f359f40f6",
+   "code": null,
+   "at": "lab_budget"
+  }
+ ],
+ "environment": {
+  "python": "3.12.14",
+  "platform": "darwin",
+  "cpu_count": 10,
+  "host_type": "local Mac, isolated PostgreSQL (not GPU hardware, not managed Neon)",
+  "postgres": "postgres (PostgreSQL) 16.2"
+ },
+ "code_sha256": "a65b3a09ebae2eb398da424d7e085e46d907b0cb2e41acdc4085d31fe458e1ff",
+ "files_hashed": 29,
+ "git_head": "485658bfbe37981e4b8ae9ef842b11015168c795",
+ "git_tree_dirty_in_code_paths": false,
+ "dirty_paths": [],
+ "started_utc": "2026-10-25T01:06:19.498+00:00"
+}

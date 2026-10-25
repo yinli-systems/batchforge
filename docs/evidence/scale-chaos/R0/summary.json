@@ -1,4 +1,15 @@
 {
+ "rung": "R0",
+ "verdict": "PASS",
+ "measurement_valid": true,
+ "workers": 10,
+ "slots_per_worker": 4,
+ "tasks": 10000,
+ "batches": 1,
+ "wall_s": 31.61,
+ "throughput_tasks_per_s": 316.4,
+ "started_utc": "2026-10-25T01:05:38.469+00:00",
+ "finished_utc": "2026-10-25T01:06:18.052+00:00",
  "default_limit_probe": {
   "status": 429,
   "tasks": 10000,
@@ -6,17 +17,86 @@
   "message": "Retained payload budget reached; wait for verified archival or operator cleanup",
   "retried_after_raise": true
  },
+ "lab_deviations": {
+  "max_queued_tasks_per_tenant": {
+   "production": 100000,
+   "lab": 1000000
+  },
+  "retention_payload_bytes": {
+   "production": 1073741824,
+   "lab": 17179869184
+  },
+  "retention_max_retained_tasks": {
+   "production": 100000,
+   "lab": 1000000
+  }
+ },
+ "tenant_retention_usage_after_submit": {
+  "retained_tasks": 10000,
+  "charged_payload_bytes": 11797438890
+ },
  "retention_limits_raised": {
   "max_payload_bytes": 17179869184,
   "max_retained_tasks": 1000000,
   "deviation_from_default": true
  },
- "rung": "R0",
- "workers": 10,
- "tasks": 10000,
- "wall_s": 22.21,
- "throughput_tasks_per_s": 450.2,
- "claims": 10000,
+ "facts": {
+  "task_states": {
+   "completed": 10000
+  },
+  "attempt_states": {
+   "completed": 10000
+  },
+  "claims_worker_side": 10000,
+  "tasks_submitted": 10000,
+  "reclaims_beyond_one_per_task": 0,
+  "expired_attempts_db": 0
+ },
+ "simulator_processes": [
+  {
+   "workers": 3,
+   "cpu_s": 10.847,
+   "loop_overrun_p99_ms": 14.084
+  },
+  {
+   "workers": 2,
+   "cpu_s": 7.975,
+   "loop_overrun_p99_ms": 20.305
+  },
+  {
+   "workers": 3,
+   "cpu_s": 11.111,
+   "loop_overrun_p99_ms": 21.871
+  },
+  {
+   "workers": 2,
+   "cpu_s": 7.836,
+   "loop_overrun_p99_ms": 27.995
+  }
+ ],
+ "worker_latency_ms": {
+  "claim": {
+   "n": 8143,
+   "p50_ms": 6.423,
+   "p95_ms": 17.096,
+   "p99_ms": 39.608,
+   "max_ms": 239.965,
+   "mean_ms": 8.236
+  },
+  "complete": {
+   "n": 10000,
+   "p50_ms": 7.024,
+   "p95_ms": 20.701,
+   "p99_ms": 43.891,
+   "max_ms": 227.51,
+   "mean_ms": 9.061
+  }
+ },
+ "worker_errors_by_kind": {},
+ "heartbeats_ok": 0,
+ "heartbeats_failed": 0,
+ "generator_loop_overrun_p99_ms": 21.563,
+ "generator_loop_overrun_limit_ms": 50.0,
  "replay": {
   "replayed": 50,
   "idempotent": 50,
@@ -54,36 +134,39 @@
    "ok": true,
    "detail": {
     "batch_completed": 10000,
-    "tasks_completed": 10000
+    "tasks_completed": 10000,
+    "batch_pending": 0,
+    "batch_running": 0
    }
   },
   {
    "invariant": "token totals match worker-side usage",
    "ok": true,
    "detail": {
-    "batch_completion": 324227,
-    "worker_completion": 324227,
-    "batch_prompt": 1288389,
-    "worker_prompt": 1288389
+    "batch_completion": 325425,
+    "worker_completion": 325425,
+    "batch_prompt": 1288338,
+    "worker_prompt": 1288338
    }
   },
   {
-   "invariant": "no stale or duplicate acceptance in fault-free run",
+   "invariant": "no stale or duplicate acceptance",
    "ok": true,
    "detail": {
     "stale": 0,
-    "duplicates": 0
+    "duplicates": 0,
+    "stale_by_code": {}
    }
   },
   {
    "invariant": "worker-side errors",
    "ok": true,
    "detail": {
-    "errors": 0
+    "errors": 0,
+    "errors_by_kind": {}
    }
   }
  ],
- "passed": true,
  "migrations_applied": [
   1,
   2,
