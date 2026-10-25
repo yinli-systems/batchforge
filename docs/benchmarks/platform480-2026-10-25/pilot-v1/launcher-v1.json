@@ -1,0 +1,18 @@
+{
+  "pid": 552670,
+  "command": [
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "ops.gpu_model_trial",
+    "--run",
+    "/root/batchforge-runtime/platform480-20261025-v1/trial-v1",
+    "--model",
+    "/root/batchforge-runtime/gpu-takeover-20261025/model-spool",
+    "--benchmark-source",
+    "/root/batchforge-runtime/platform480-20261025-v1/source-v1",
+    "--platform-canary",
+    "--abba-repeats",
+    "1"
+  ],
+  "source_bundle_sha256": "9331997c58d1484edf5eae88f71d09477ad18a5e690af90ec712cf6f6b577e4e"
+}

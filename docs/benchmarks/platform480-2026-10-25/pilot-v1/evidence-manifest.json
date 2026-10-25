@@ -1,0 +1,71 @@
+{
+  "collected_at": "2026-10-25T10:56:58.374667+00:00",
+  "source_run": "/root/batchforge-runtime/platform480-20261025-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 274,
+      "sha256": "9f7e9af2dfa905b0751fa71d07a004d2d8f844a39ee2a289e51ff9d806c25679"
+    },
+    "storage-preflight.json": {
+      "bytes": 311,
+      "sha256": "f993143991b06de2f558c01ac9fad8cccd528b42cc4529fb8ce85dc166fa34d9"
+    },
+    "launcher-v1.json": {
+      "bytes": 524,
+      "sha256": "7ff2af9cb2f3d9608d970b8476cf92e5c6f80a9c7a1035426d3e48213e952e1e"
+    },
+    "controller-v1.log": {
+      "bytes": 1528,
+      "sha256": "5e868b8d22b0bab800b0f42fc8c97dcc680309654e31165606daf951749f7841"
+    },
+    "storage-audit-correction.json": {
+      "bytes": 1080,
+      "sha256": "71129d4979741190ea07e22514df2392ecc0311a259090d4ebe209368792978b"
+    },
+    "trial-v1/trial.json": {
+      "bytes": 2187,
+      "sha256": "c53b634adb20da866cb08335bb3a5489c894433e5ad626be05ca6d38d798e67b"
+    },
+    "trial-v1/platform/report.json": {
+      "bytes": 318212,
+      "sha256": "41a31469d4afb9adf2b2a714094ae9033fdccf2eec21681c7253f654888b19f4"
+    },
+    "trial-v1/platform/gpu-engine-samples.jsonl": {
+      "bytes": 2203035,
+      "sha256": "bd634b1ac3109d608d2a464e87a7b9a60a9ab16dc55508b805ee5bd92d78728d"
+    },
+    "trial-v1/platform/00-capacity-A/benchmark.json": {
+      "bytes": 5258,
+      "sha256": "143d13b0f75c1d6acb362b9b84d24952c4eea5ae3cb3546f89b9bb42352f1088"
+    },
+    "trial-v1/platform/01-capacity-B/benchmark.json": {
+      "bytes": 5253,
+      "sha256": "fa4a26cdfaf20308635ca9a200042ed02ad0c49846d6d74f1c9cb89f0d74a4be"
+    },
+    "trial-v1/platform/02-capacity-B/benchmark.json": {
+      "bytes": 5259,
+      "sha256": "d63aae823551761cd22be6b9ca1854e8afbc2c26683755135e8073be4a21db3c"
+    },
+    "trial-v1/platform/03-capacity-A/benchmark.json": {
+      "bytes": 5260,
+      "sha256": "2cca95089c437f9c92d99b55204e3d02c15fdf9d8aa3e91807135dbe741b306c"
+    },
+    "trial-v1/platform/04-policy-A/benchmark.json": {
+      "bytes": 5260,
+      "sha256": "3d4cd5580e6e506f5a60ffab945cfd209af793e82f92eaefeb9d36f61013e291"
+    },
+    "trial-v1/platform/05-policy-B/benchmark.json": {
+      "bytes": 5253,
+      "sha256": "5803b20b77e18c970c9705d976b1f4b5c104517cc5388ac12242d1014c297ea6"
+    },
+    "trial-v1/platform/06-policy-B/benchmark.json": {
+      "bytes": 5260,
+      "sha256": "6fbc6356d98970e0c5735f48965495d07e36991724f0553c6c433be2f1b02c43"
+    },
+    "trial-v1/platform/07-policy-A/benchmark.json": {
+      "bytes": 5260,
+      "sha256": "15af146c4991b8ebe5ff115ce61f028bccf8e11eb296b45ca4b1d38614d1c74f"
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

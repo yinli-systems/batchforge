@@ -1,0 +1,9 @@
+{
+  "input_sha256": "6457519d053fb91aca9701fb167b5660179921fea372d329c65786b6875f7738",
+  "bytes": 260,
+  "upload_status": 200,
+  "file_id": "file_a3457f77a9d4e1bc09c90f113cdc27a3",
+  "read_status": 200,
+  "readback_sha256": "6457519d053fb91aca9701fb167b5660179921fea372d329c65786b6875f7738",
+  "passed": true
+}

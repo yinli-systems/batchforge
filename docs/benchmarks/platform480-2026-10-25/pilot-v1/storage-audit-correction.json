@@ -1,0 +1,27 @@
+{
+  "observed_at": "2026-10-25T10:56:07.064065+00:00",
+  "original_report_sha256": "41a31469d4afb9adf2b2a714094ae9033fdccf2eec21681c7253f654888b19f4",
+  "original_report_retained": true,
+  "corrected_field": "persistence.database_payloads_retained",
+  "original_value": true,
+  "corrected_value": false,
+  "database_payload_observation": {
+    "tasks": 200,
+    "retained": 0,
+    "responses_in_archive_only": 200,
+    "prompt_tokens": 1090560,
+    "completion_tokens": 136000
+  },
+  "archive_observation": {
+    "ready_archives": 10,
+    "database_payload_rows_purged": 200
+  },
+  "cause": "Existing primary API archive publishers were not paused; purge_payloads=False controls only this experiment writer. The original unconditional retention assertion was incorrect.",
+  "unaffected_verified_results": [
+    "200 real tasks completed with unique acceptance and conserved usage",
+    "10 input S3 objects and 10 output archives",
+    "20 file digests survived canary API restart",
+    "worker and engine+worker process recovery with stale-attempt fencing"
+  ],
+  "cost": null
+}

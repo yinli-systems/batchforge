@@ -1,0 +1,208 @@
+{
+  "campaign_passed": true,
+  "completed_phases": 8,
+  "planned_phases": 8,
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "revision": "9ce3eaa67fe88609afec235117e97eb03d9b3cda",
+  "cost": null,
+  "groups": [
+    {
+      "study": "capacity",
+      "treatment": "A",
+      "phases": 2,
+      "tasks": 40,
+      "slots": [
+        4
+      ],
+      "policy": [
+        "fair"
+      ],
+      "adaptive": [
+        false
+      ],
+      "phase_wall_seconds": 367.880309,
+      "output_tokens": 27200,
+      "output_tokens_per_second": 73.93709131629548,
+      "tasks_per_second": 0.108731016641611,
+      "task_completion_seconds": {
+        "samples": 40,
+        "p50": 100.633526,
+        "p95": 131.888685,
+        "p99": 182.517603,
+        "max": 182.759385,
+        "mean": 85.061008
+      },
+      "queue_seconds": {
+        "samples": 40,
+        "p50": 81.925489,
+        "p95": 108.993526,
+        "p99": 112.358007,
+        "max": 113.492957,
+        "mean": 58.152814
+      },
+      "accepted_attempt_seconds": {
+        "samples": 40,
+        "p50": 13.775079,
+        "p95": 79.544881,
+        "p99": 80.640642,
+        "max": 81.039129,
+        "mean": 26.908194
+      },
+      "completion_population": "DB task created through accepted completion; legacy packs sum queue and accepted attempt"
+    },
+    {
+      "study": "capacity",
+      "treatment": "B",
+      "phases": 2,
+      "tasks": 40,
+      "slots": [
+        8
+      ],
+      "policy": [
+        "fair"
+      ],
+      "adaptive": [
+        false
+      ],
+      "phase_wall_seconds": 217.547753,
+      "output_tokens": 27200,
+      "output_tokens_per_second": 125.03002042039019,
+      "tasks_per_second": 0.1838676770888091,
+      "task_completion_seconds": {
+        "samples": 40,
+        "p50": 29.239858,
+        "p95": 102.815375,
+        "p99": 106.776945,
+        "max": 106.912208,
+        "mean": 41.900992
+      },
+      "queue_seconds": {
+        "samples": 40,
+        "p50": 12.292805,
+        "p95": 30.232533,
+        "p99": 31.70661,
+        "max": 32.511773,
+        "mean": 12.33575
+      },
+      "accepted_attempt_seconds": {
+        "samples": 40,
+        "p50": 16.869846,
+        "p95": 86.513276,
+        "p99": 86.873785,
+        "max": 86.971125,
+        "mean": 29.565242
+      },
+      "completion_population": "DB task created through accepted completion; legacy packs sum queue and accepted attempt"
+    },
+    {
+      "study": "policy",
+      "treatment": "A",
+      "phases": 2,
+      "tasks": 40,
+      "slots": [
+        8
+      ],
+      "policy": [
+        "fair"
+      ],
+      "adaptive": [
+        false
+      ],
+      "phase_wall_seconds": 213.310049,
+      "output_tokens": 27200,
+      "output_tokens_per_second": 127.5139175463787,
+      "tasks_per_second": 0.1875204669799687,
+      "task_completion_seconds": {
+        "samples": 40,
+        "p50": 32.881542,
+        "p95": 94.316588,
+        "p99": 105.406395,
+        "max": 105.665787,
+        "mean": 41.416176
+      },
+      "queue_seconds": {
+        "samples": 40,
+        "p50": 9.181083,
+        "p95": 34.835566,
+        "p99": 38.741158,
+        "max": 40.297135,
+        "mean": 12.491885
+      },
+      "accepted_attempt_seconds": {
+        "samples": 40,
+        "p50": 15.49547,
+        "p95": 84.808148,
+        "p99": 85.428644,
+        "max": 85.456059,
+        "mean": 28.924291
+      },
+      "completion_population": "DB task created through accepted completion; legacy packs sum queue and accepted attempt"
+    },
+    {
+      "study": "policy",
+      "treatment": "B",
+      "phases": 2,
+      "tasks": 40,
+      "slots": [
+        8
+      ],
+      "policy": [
+        "cost_aware"
+      ],
+      "adaptive": [
+        false
+      ],
+      "phase_wall_seconds": 214.84144600000002,
+      "output_tokens": 27200,
+      "output_tokens_per_second": 126.60499408480055,
+      "tasks_per_second": 0.18618381483058905,
+      "task_completion_seconds": {
+        "samples": 40,
+        "p50": 22.36676,
+        "p95": 105.121219,
+        "p99": 106.957698,
+        "max": 107.015265,
+        "mean": 37.082698
+      },
+      "queue_seconds": {
+        "samples": 40,
+        "p50": 5.611031,
+        "p95": 29.487644,
+        "p99": 29.917734,
+        "max": 29.928279,
+        "mean": 8.374488
+      },
+      "accepted_attempt_seconds": {
+        "samples": 40,
+        "p50": 16.192667,
+        "p95": 77.640094,
+        "p99": 79.305154,
+        "max": 80.038753,
+        "mean": 28.70821
+      },
+      "completion_population": "DB task created through accepted completion; legacy packs sum queue and accepted attempt"
+    }
+  ],
+  "abba_blocks": [
+    {
+      "study": "capacity",
+      "repeat": 0,
+      "a_output_tokens_per_second": 73.93709131629548,
+      "b_output_tokens_per_second": 125.03002042039019,
+      "b_over_a_throughput": 1.6910324465635829
+    },
+    {
+      "study": "policy",
+      "repeat": 0,
+      "a_output_tokens_per_second": 127.5139175463787,
+      "b_output_tokens_per_second": 126.60499408480055,
+      "b_over_a_throughput": 0.9928719666129968
+    }
+  ],
+  "limitations": [
+    "One existing four-H100 Pod; no heterogeneous hardware or cross-node HA claim",
+    "Task quantiles are descriptive mixed-workload quantiles; tasks within a burst are correlated",
+    "Throughput is sum of accepted output tokens divided by sum of measured platform phase walls",
+    "No confidence interval, independent run significance, monetary savings or daily SLA is claimed"
+  ]
+}

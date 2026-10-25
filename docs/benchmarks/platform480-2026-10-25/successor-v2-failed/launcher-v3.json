@@ -1,0 +1,7 @@
+{
+  "pid": 557169,
+  "queue_path": "/root/batchforge-runtime/platform480-20261025-v2/successor-v3.py",
+  "queue_sha256": "2797ae1c730e9cd57897a0e446464fe24e29da5154f77c5d304bac7e6e7af91d",
+  "isolated_imports_passed": true,
+  "prior_initialization_failures_preserved": 2
+}

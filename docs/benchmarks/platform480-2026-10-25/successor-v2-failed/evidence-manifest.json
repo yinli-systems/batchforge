@@ -1,0 +1,51 @@
+{
+  "collected_at": "2026-10-25T10:57:47.185494+00:00",
+  "source_run": "/root/batchforge-runtime/platform480-20261025-v2",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 17157,
+      "sha256": "ad7803efd2c0a17b3c81156554eea10bc47236e2078f33055d42af30d61a228d"
+    },
+    "launcher-v1.json": {
+      "bytes": 187,
+      "sha256": "57becfa24c8ac900d796bfa412bdf9dcc0b2284bf5e197b9f0bb0163ca07d8bb"
+    },
+    "launcher-v2.json": {
+      "bytes": 236,
+      "sha256": "4ece209cf6453639b40afbfa94a36c71efe5ea50b2c403f944881b10ea1f38fa"
+    },
+    "queue-report.json": {
+      "bytes": 691,
+      "sha256": "e2bfcddb2c193b2495d78bbb3f9ab0139e6a3c1b2956f75bf78f16dbcc22eae6"
+    },
+    "queue.py": {
+      "bytes": 3689,
+      "sha256": "551ed42ed1721e8ecd5129b30346cbd4b1a02f030aed8abf0a4bc6c05214afb5"
+    },
+    "queue-v2.py": {
+      "bytes": 3730,
+      "sha256": "2797ae1c730e9cd57897a0e446464fe24e29da5154f77c5d304bac7e6e7af91d"
+    },
+    "controller-v1.log": {
+      "bytes": 223,
+      "sha256": "ee4b087444f21956aec8e64459cd57c0e808d3f279179ad048ba92bd5e8ec1ec"
+    },
+    "queue-v2.log": {
+      "bytes": 1134,
+      "sha256": "af320f5cf7543c2fcf7e5e38d04c0fec274d2b85021b6e761eacecdbfbc9bea1"
+    },
+    "launcher-v3.json": {
+      "bytes": 273,
+      "sha256": "cc44f8e8582758752ec3946a4b9e3d424f4cfe111fdf7e178ab508356c05a923"
+    },
+    "successor-v3.py": {
+      "bytes": 3730,
+      "sha256": "2797ae1c730e9cd57897a0e446464fe24e29da5154f77c5d304bac7e6e7af91d"
+    },
+    "successor-v3.log": {
+      "bytes": 709,
+      "sha256": "c086aa7da10fcb1468efa17a5aa837f552e0d2f4f683656868fd30b1725b6bda"
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

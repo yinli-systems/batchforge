@@ -1,0 +1,63 @@
+{
+  "started_at": "2026-10-25T10:27:42.478626+00:00",
+  "phase": "platform_canary_passed",
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "revision": "9ce3eaa67fe88609afec235117e97eb03d9b3cda",
+  "total_parameters": 480154875392,
+  "active_parameters_approx": 35000000000,
+  "quantization": "AWQ INT4; kernel must be confirmed in actual startup log",
+  "manifest_sha256": "ecbec45bfa6da34d6d1aba7ff63e49cbdbb7ff9c2b9280af5c2c1a01fc65dcf6",
+  "events": [
+    {
+      "at": "2026-10-25T10:27:42.772831+00:00",
+      "event": "watchdog_paused"
+    },
+    {
+      "at": "2026-10-25T10:27:43.213663+00:00",
+      "event": "original_worker_drained"
+    },
+    {
+      "at": "2026-10-25T10:27:47.116345+00:00",
+      "event": "original_engine_stopped"
+    },
+    {
+      "at": "2026-10-25T10:27:51.622600+00:00",
+      "event": "480b_engine_loading"
+    },
+    {
+      "at": "2026-10-25T10:29:02.049616+00:00",
+      "event": "480b_engine_ready"
+    },
+    {
+      "at": "2026-10-25T10:52:08.966455+00:00",
+      "event": "480b_platform_canary_passed"
+    },
+    {
+      "at": "2026-10-25T10:52:13.057192+00:00",
+      "event": "candidate_stopped"
+    },
+    {
+      "at": "2026-10-25T10:53:26.006470+00:00",
+      "event": "serving_pair_restored"
+    },
+    {
+      "at": "2026-10-25T10:53:26.296860+00:00",
+      "event": "watchdog_restored"
+    }
+  ],
+  "controller_sha256": "b7b48036dfda574b6690180915586456581cd2d10fd91e76c645996426cb499d",
+  "checkpoint_verified_bytes": 252341633360,
+  "gpu_inventory_csv": [
+    "0, GPU-c43133f3-8aec-31fb-3ccd-06cc7b64de08, NVIDIA H100 80GB HBM3, 81559 MiB",
+    "1, GPU-635baa6f-767c-a497-55ba-c5e9b453131e, NVIDIA H100 80GB HBM3, 81559 MiB",
+    "2, GPU-8d6feb38-a161-e269-a1de-39c63eef2699, NVIDIA H100 80GB HBM3, 81559 MiB",
+    "3, GPU-04ad4dbe-0838-169d-b041-42126335b711, NVIDIA H100 80GB HBM3, 81559 MiB"
+  ],
+  "limitations": [
+    "One existing four-H100 Pod, no independent-node HA",
+    "Local staging is not Pod-loss durable; evidence must be exported off Pod",
+    "Finite engine benchmark; no tenant routing or production capacity claim"
+  ],
+  "restore_failures": [],
+  "finished_at": "2026-10-25T10:53:26.298703+00:00"
+}

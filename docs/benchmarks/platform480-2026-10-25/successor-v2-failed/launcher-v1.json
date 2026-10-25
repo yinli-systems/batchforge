@@ -1,0 +1,5 @@
+{
+  "pid": 556595,
+  "queue_path": "/root/batchforge-runtime/platform480-20261025-v2/queue.py",
+  "scope": "Bounded successor; waits for prior successful qualification and restoration"
+}

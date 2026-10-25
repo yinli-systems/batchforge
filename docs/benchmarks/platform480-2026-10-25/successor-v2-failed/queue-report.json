@@ -1,0 +1,18 @@
+{
+  "phase": "kv_trial_failed",
+  "source_commit": "f884d7f",
+  "paid_resources_created": false,
+  "source_updates": {
+    "worker/config.py": {
+      "before_sha256": "e6f70e8ab7ef47059a74a09a4f105e6de8c57bcca2b990d7fd7e6a53bc9d24e4",
+      "after_sha256": "ad593ca2955d956137d4a34df1dc5a5eba8b53deb09a65f97080f271a14890ba"
+    },
+    "worker/kv_admission.py": {
+      "before_sha256": "e26dff615204edde0ffdeba44271dc84ced4b6d26477f90b6df874fd6a270d6e",
+      "after_sha256": "6c13858e3cf67fba06dddc99bd003ad99fdca1b957ed190bcb86808435341bc1"
+    }
+  },
+  "prior_report_sha256": "41a31469d4afb9adf2b2a714094ae9033fdccf2eec21681c7253f654888b19f4",
+  "child_pid": 560276,
+  "returncode": 1
+}

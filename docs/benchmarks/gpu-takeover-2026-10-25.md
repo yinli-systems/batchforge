@@ -165,10 +165,13 @@ queue and verified checkpoint and runs on the Pod without a local SSH relay.
 Related focused tests: **73 passed, 3 Linux-only checks skipped on macOS**.
 The real Linux rollout/recovery is recorded separately above.
 
-This proves a real 300B+ total-parameter model experiment on this one allocation.
-It does **not** prove 480B routing through the durable Batch API, heterogeneous
+This first campaign proved a real 300B+ total-parameter model experiment on this
+one allocation. The subsequent [durable Batch API pilot](platform480-2026-10-25.md)
+completed 200 real tasks, S3/API-restart readback and two application fault
+recovery cohorts. Its separate report includes a retained storage-report correction.
+The first engine-only campaign did **not** establish heterogeneous
 hardware savings, independent-node failover, response quality, sustained daily
-capacity, or production HA. Next work is an isolated 480B Batch API/worker canary
-with durable acceptance and metering checks, then preregistered repeated ABBA
-experiments and measured admission bottleneck analysis. Do not infer ten-million
+capacity, or production HA. The next running study uses preregistered repeated
+ABBA KV-admission experiments and measured admission bottleneck analysis.
+Do not infer ten-million
 tasks/day from these finite engine bursts.
