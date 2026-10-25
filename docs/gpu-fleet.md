@@ -64,3 +64,31 @@ Enablement must follow a drained, identity-checked worker rollout after the
 fixed GPU studies close. API/worker source and every physical qualification
 snapshot must be exported and pinned separately. Do not alter running studies
 to make a new feature appear active.
+
+## Worker module origins before enablement
+
+The existing manager starts `python -m worker` with the live application root
+as its working directory. **`PYTHONPATH` alone does not select a new worker**:
+Python normally searches that working directory first. `UVICORN_APP_DIR` selects
+API source and does not affect the worker. A real local `-m` regression reproduces
+the old-package resolution with a shadow package.
+
+`ops.worker_source.source_environment` prepares, without writing any file,
+an environment with `PYTHONSAFEPATH=1` and exactly one approved `PYTHONPATH`.
+Python 3.11+ safe-path mode removes the implicit working-directory entry, while
+the process cwd remains the live root for managed PID checks. Python treats any
+nonempty safe-path variable as enabled; disable it by unsetting it, not by setting
+`0`. The helper preserves all existing credentials, model, explicit worker ID,
+KV budget, slots, origins and metrics settings. Missing fixed model/worker
+identities or an ambiguous device selection are rejected.
+
+The definition-only probe checks safe-path support, actual module origins and
+nine entrypoint/runtime/configuration/metrics/KV/inventory/backend file hashes
+against a qualified source receipt. It reads `worker/__main__.py` bytes without
+importing that executable entrypoint. It validates Settings and returns only a
+fixed projection, including the unchanged worker/model identity and runtime
+fingerprint. It never constructs or runs Worker, registers, claims tasks, opens
+an application port, samples NVIDIA or performs inference. A changed file,
+unexpected origin or failed configuration stops preparation. Local focused
+verification: **67 passed**. This is preflight support, not a rollout controller;
+no running worker/source/manifest has been changed by these helpers.
