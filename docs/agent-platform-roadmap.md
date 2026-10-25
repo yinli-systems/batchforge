@@ -7,8 +7,8 @@ but it does not establish Agent task success or every advertised capability.
 | Layer | Current concrete state | Next acceptance evidence |
 |---|---|---|
 | Production inference | Live private Batch API, Azure identity/metering, S3 artifacts,480B MoE/4H100 | Preserve existing receipts and quota policy for Agent children |
-| Agent harness | Additive typed sequential planner/tool loop, strict protocol and budget/fencing implementation | Real480B goal→tool→verified answer with resumed coordinator and stable child IDs |
-| Durable workflows | DB leases, revisions, event chain, uncertain-I/O outbox | DAG dependencies, fan-out/join, child cancellation, bounded retries and recovery under coordinator loss |
+| Agent harness | Typed loop and immutable ordered-tool prerequisites;20/20 fresh real480B goals qualified with44 children, post-ACK recovery and88 artifact reads; earlier failed cohorts retained | Azure owner migration and durable production rollout; larger independent task-success evaluation |
+| Durable workflows | DB leases, revisions, event chain, uncertain-I/O outbox and runtime-enforced sequential tool order | DAG dependencies, fan-out/join, child cancellation, bounded retries and recovery under coordinator loss |
 | Multi-Agent | Not implemented | Bounded delegated child runs, capability intersection, durable joins, no recursive budget escape |
 | Memory/context/RAG | Versioned tenant/namespace PostgreSQL memory and full-text adapter | Qualified vector backend/index identity, retrieval/citation checks, bounded context and frozen retrieval eval; VectorMatch currently supplies matching/replication patterns and needs a distinct domain-data read adapter |
 | GPU serving | Real exact-token admission, fair/cost-aware scheduling, Fleet, qualified finite latch guard | Agent interactive vs batch workload SLO/goodput under a preregistered matched study |

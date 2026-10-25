@@ -69,6 +69,22 @@ accepted runs finish; an older coordinator is not a compatible rollback for an
 active identifier/number-policy run. The serving Batch schema11 and Agent SQLv1
 checksums are unchanged by this additive application contract.
 
+An optional immutable `tool_sequence` declares caller-required tool prerequisites.
+It is bounded by the original grants and run budget. For example,
+`["memory.get","math.calculate"]` requires a committed memory observation then
+a committed calculation before finalization. Model claims or a correct-looking
+answer cannot substitute for execution. Schema-v1 permits only the next required
+tool, and the runtime separately enforces the order even if the provider ignores
+the grammar. A refusal keeps all original accepted usage and requests a new
+budgeted decision. This is a sequential contract, not a general DAG or delegation
+system. Empty sequences keep old request hashes; older coordinators cannot safely
+process accepted nonempty sequences.
+
+Schema-v1 also requires a Batch ingress qualified for `response_format.json_schema`.
+The currently serving primary still leaves that new feature off. Qualification
+uses the bounded private ingress18172; a durable production Agent rollout needs
+the owner migration and a separately reviewed compatible ingress deployment.
+
 Before any external action, persist a model-input intent and content SHA.
 Before the single upload attempt, persist `upload_attempted`. After a crash,
 reconcile an exact tenant/filename/size/SHA match and independently read its

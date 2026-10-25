@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-25T23:31:58.529403+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-agent-tool-order-audit-20261025-v2",
+  "files": {
+    "validation.json": {
+      "bytes": 10404,
+      "sha256": "923c4508abdaca8541da284a6c1e7b04c872fecb2ec645b7ea3bee91caba95bc",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 4933,
+      "sha256": "eb5f3495e6d221d64a06e8cc6b79201b29b1f80755670c869e2b32a93bafe6cf",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

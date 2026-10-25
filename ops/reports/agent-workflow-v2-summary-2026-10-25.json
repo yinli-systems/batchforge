@@ -1,0 +1,29 @@
+{
+  "source_report": "docs/benchmarks/platform480-2026-10-25/soak480-agent-runtime-schema-20261025-v2-complete/report.json",
+  "source_report_sha256": "4da4ac13e4ebe1597201f9dc40c71c9347361887c0deee04bfd5518f5bde76cf",
+  "source_commit": "0909c615af424f3131fa8b313ff32ca625bc3799",
+  "phase": "complete",
+  "cohort_passed": true,
+  "delivered_agent_runs": 20,
+  "strict_quality_passed_runs": 20,
+  "cases": 20,
+  "fixture_set": "workflow-contract-heldout-v1",
+  "fixture_sha256": "469e69dacf5156fb0b15c1abf53b98a9338ca0329cfa9f427ad78e97f8b9e815",
+  "accepted_model_tasks": 44,
+  "observed_attempts": 44,
+  "accepted_tokens": {
+    "prompt_tokens": 28447,
+    "completion_tokens": 1926
+  },
+  "artifact_reads": 88,
+  "distinct_artifact_ids": 88,
+  "agent_api_restart_state_readback": true,
+  "primary_epoch_unchanged": true,
+  "isolated_pg_stopped": true,
+  "remaining_task_headroom": 118,
+  "whole_controller_seconds": 355.05505956400884,
+  "whole_pod_allocation_usd": 1.587885127494595,
+  "invoice": null,
+  "qualified_cohort_cost": null,
+  "scope": "20 fresh synthetic ordered-tool cases; full task quality/recovery/readback pass; native Agent state, not Azure Agent rollout or general Agent competence"
+}

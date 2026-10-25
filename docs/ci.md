@@ -1,5 +1,18 @@
 # Correctness checks and CI availability
 
+Latest source0909c61 passed actual
+[run40244273293](https://github.com/yinli-systems/batchforge/actions/runs/40244273293):
+**1,660 Python tests, zero skips,23 Node tests and compileall**. This includes
+provider-ignores-grammar cases, immutable tool prerequisites, no out-of-order
+execution, preserved accepted usage/budgets and old-policy request replay.
+Its existing-Pod ephemeral runner used UID65534, PostgreSQL17.11/Node24.22.1,
+no GPU or production credentials and deregistered after one job.
+[Source-bound result](../ops/reports/github-native-ci-0909c61-2026-10-25.json).
+The separate real20-case ordered-tool qualification passed; it remains a native
+Agent control-store experiment, not an Azure Agent migration. The prior schema
+source da4ad45 passed1,656 CPU tests but its real8/20 quality cohort failed.
+CPU success and model task-success evidence remain separate.
+
 Agent runtime source `a39521d` passed actual exact-head push run
 [40234031029](https://github.com/yinli-systems/batchforge/actions/runs/40234031029):
 **1,599 Python tests, zero skips,23 Node tests and compileall**, using isolated

@@ -1,0 +1,336 @@
+{
+  "passed": true,
+  "phase": "complete",
+  "production_database_connected": false,
+  "gpu_tasks_submitted": 0,
+  "primary_services_changed": false,
+  "validator_sha256": "eb5f3495e6d221d64a06e8cc6b79201b29b1f80755670c869e2b32a93bafe6cf",
+  "native_pg_pid": 685616,
+  "source_commit": "0909c615af424f3131fa8b313ff32ca625bc3799",
+  "source_report_sha256": "4da4ac13e4ebe1597201f9dc40c71c9347361887c0deee04bfd5518f5bde76cf",
+  "checks": [
+    {
+      "run_id": "agrun_1729a4db81f2a5bd62045802f1785872",
+      "required": [
+        "math.calculate"
+      ],
+      "actual": [
+        "math.calculate"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 51,
+      "state_sha256": "e187327b39457ed6f254a7c8469e98dede84cc0d2288cb672966f9b99eb91623",
+      "event_head_sha256": "e77d9aed1ad4207f5b6bf28c3a85dd8b4d312180c05289197103f125551b0369"
+    },
+    {
+      "run_id": "agrun_19260770988ab32f7635edde4427cd40",
+      "required": [
+        "math.calculate"
+      ],
+      "actual": [
+        "math.calculate"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 51,
+      "state_sha256": "3b62142306c9043a3e994299e1bdd783665bf890fe8d8f4b61c4258d1f33ee17",
+      "event_head_sha256": "c18ff5293c2455f1d79c84f5cd319ec64d385c4ceecb91cf5bbc43ad66e10bd6"
+    },
+    {
+      "run_id": "agrun_31e10815e65384a1918acc3b25cbe4db",
+      "required": [
+        "memory.get"
+      ],
+      "actual": [
+        "memory.get"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 120,
+      "state_sha256": "48290f4d9ee91fd1f6c5ef99aafe33ed3150c7e6c25413e983c1cb01d4062b77",
+      "event_head_sha256": "716271e1f69bab3632b7fd3e506207cfdbb151a541fd4467ac5f4b3ae8f5c785"
+    },
+    {
+      "run_id": "agrun_32df1d2b8675c214a01fda527a7782b8",
+      "required": [
+        "memory.get"
+      ],
+      "actual": [
+        "memory.get"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 115,
+      "state_sha256": "7d0c18d6940ec2b60a88c100f01020a2560b56cf280c4b1456ea61dbe10ff2f7",
+      "event_head_sha256": "378fd487c9a3c0f0f9e30fbf437b20e69570758348b88c7d6acb674d8c052ed8"
+    },
+    {
+      "run_id": "agrun_35a4593dd3e66cac369e28528bb4fdfa",
+      "required": [
+        "memory.get"
+      ],
+      "actual": [
+        "memory.get"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 120,
+      "state_sha256": "313341922893e5b33d52888562b2ea94cce077d75d25044581224f71c603289e",
+      "event_head_sha256": "307b73fb4bc39cd366a48cdfdc0e6d504fe2dd429ca1d302d98b903af1789e15"
+    },
+    {
+      "run_id": "agrun_5214cf60cf73a8c5a2f7d711491dd54e",
+      "required": [
+        "memory.get",
+        "math.calculate"
+      ],
+      "actual": [
+        "memory.get",
+        "math.calculate"
+      ],
+      "model_calls": 3,
+      "tool_calls": 2,
+      "generated_tokens": 138,
+      "state_sha256": "bc86989e819a3493a6425a4dec37686e57b6268434b5675269c78d645924f73e",
+      "event_head_sha256": "38281f8ec34c1cd645ec28a68304387aac56f634d911ba9322f05305a59a1ba0"
+    },
+    {
+      "run_id": "agrun_590bde9bc5f880ac1ebab71fff6930dd",
+      "required": [
+        "math.calculate"
+      ],
+      "actual": [
+        "math.calculate"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 51,
+      "state_sha256": "399862096b3dc701c1c99f7f547d722dcc296ddea56fbe237aa815d81bf291b1",
+      "event_head_sha256": "b2e4f00e0df9392e12370efdac02b6b7e8c00461081795e4e6e6bfb8a7c09851"
+    },
+    {
+      "run_id": "agrun_5f8785f7e6a76e3dff38173c31f8d511",
+      "required": [
+        "math.calculate"
+      ],
+      "actual": [
+        "math.calculate"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 51,
+      "state_sha256": "1682a82a78e83449630714e024dc5426a82226afe19db3fee1c5800f317881a8",
+      "event_head_sha256": "e3a80c311f20ccb7a6d3eb29f852e48c15c4ce32fed9ee2abdb1f915cbe174e4"
+    },
+    {
+      "run_id": "agrun_6c8a5f46b41a64953f09c9425ac617da",
+      "required": [
+        "memory.get",
+        "math.calculate"
+      ],
+      "actual": [
+        "memory.get",
+        "math.calculate"
+      ],
+      "model_calls": 3,
+      "tool_calls": 2,
+      "generated_tokens": 144,
+      "state_sha256": "295ae1db757569d442b17dbde65dd3c02b43dfb834ed78974c1dde3af457569d",
+      "event_head_sha256": "182bea0610aca385f219e069d35d3e1a05efc03884b3b767acc0ed03d436cd1c"
+    },
+    {
+      "run_id": "agrun_6e785f823e20a2b96098670f863b06eb",
+      "required": [
+        "math.calculate"
+      ],
+      "actual": [
+        "math.calculate"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 51,
+      "state_sha256": "7daf882ef85753775331f1a32528093b828e7dfd803fe47a7d19a5b066478e8e",
+      "event_head_sha256": "7500e54e29f416c80f9d8b7feb399988915deebd04ebab96cd250bdc493bebad"
+    },
+    {
+      "run_id": "agrun_86a9ce786c6bdd6a02472a3720326115",
+      "required": [
+        "math.calculate"
+      ],
+      "actual": [
+        "math.calculate"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 51,
+      "state_sha256": "19e2507c70064dd21d34db13e26a5e1b94c75e035a6ac72eb5e4168c04d63187",
+      "event_head_sha256": "7139bafc438a5aaba00bb45afcf29566b5d1045c86002a53d53fd146f8639c74"
+    },
+    {
+      "run_id": "agrun_871e988dffe8206c7f7bd489b2ca1184",
+      "required": [
+        "memory.get"
+      ],
+      "actual": [
+        "memory.get"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 117,
+      "state_sha256": "fea8894e032f82168d0c065bd4af60bc2a13e9b941f170d255f568fc3d21802e",
+      "event_head_sha256": "201461d79f310f963320bff72d3e5019d1f0b5751a859c547a2065712dfae6fd"
+    },
+    {
+      "run_id": "agrun_97c774d82dcbf9a10b81d7596f56774f",
+      "required": [
+        "memory.get"
+      ],
+      "actual": [
+        "memory.get"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 113,
+      "state_sha256": "aa8cba518ed7131f0503479dc24a03c7c3747577f09904e301a89557073e0c3e",
+      "event_head_sha256": "482cb1323ccf4451dd7c712de1fe421b660ab6bac5404061fcdbb4db4a14e396"
+    },
+    {
+      "run_id": "agrun_a51ff6283389566b82a578bf9e965b45",
+      "required": [
+        "math.calculate"
+      ],
+      "actual": [
+        "math.calculate"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 51,
+      "state_sha256": "cc5edce60bf5221a1ae716fe50804a4e9679747d50ce7f1fd99bd20bb6ae5618",
+      "event_head_sha256": "4e66fa7640a2cba8d6f94201caf084769f96f2e886194cc3de7287a8f676d216"
+    },
+    {
+      "run_id": "agrun_c9031a047746aa06617ab95ab82a8e37",
+      "required": [
+        "memory.get",
+        "math.calculate"
+      ],
+      "actual": [
+        "memory.get",
+        "math.calculate"
+      ],
+      "model_calls": 3,
+      "tool_calls": 2,
+      "generated_tokens": 150,
+      "state_sha256": "a2a0f573ed379108b5510e6f81350145d5c9bac469039c195ab458a47cd0dc2b",
+      "event_head_sha256": "a4219cf39eab6d5e02adbc916cd887b0b2cd2d15b561b513e9d7feb523d98cf1"
+    },
+    {
+      "run_id": "agrun_d61ac089e19e01844ca15c66c48e8f50",
+      "required": [
+        "memory.get"
+      ],
+      "actual": [
+        "memory.get"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 119,
+      "state_sha256": "3d3c1af5fe7142516076006df6cd9459bb12cfb0900c7a89e0ae45c95d652906",
+      "event_head_sha256": "0534eeefcf13e9963cf29d79b0070cbfb084bed35433ac36b9f20c4748523b24"
+    },
+    {
+      "run_id": "agrun_d7834354d7825369b513df868543df5e",
+      "required": [
+        "math.calculate"
+      ],
+      "actual": [
+        "math.calculate"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 51,
+      "state_sha256": "1b1992769ea2827ec778e3fc56ddbc7155d4b348ba7329e804c086d6782f2c26",
+      "event_head_sha256": "8146a7fa95d656a3c2ea6f32c268ba9a1c804d92ba2cf65a755df70c222dc466"
+    },
+    {
+      "run_id": "agrun_e7f8726a37e7105d127d10b384376c3e",
+      "required": [
+        "memory.get"
+      ],
+      "actual": [
+        "memory.get"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 118,
+      "state_sha256": "e961593267aaff2f43bf83a1b339695872ba52e07b81a9ee35af50316c6e129a",
+      "event_head_sha256": "bd8de8fee5454bec5cb1bb60d1389d06d7c4d72048272d6b7090f95847a7ae53"
+    },
+    {
+      "run_id": "agrun_f4264d5fe8eff1828466f632a6a585a4",
+      "required": [
+        "memory.get"
+      ],
+      "actual": [
+        "memory.get"
+      ],
+      "model_calls": 2,
+      "tool_calls": 1,
+      "generated_tokens": 115,
+      "state_sha256": "d09d3c02f80f5798e1fcd33b5613687149dc94a25f2aa923889648e6f940af31",
+      "event_head_sha256": "368b3efd5877005aa065c5994628c136e82d0d8e65bb6ecbbaa8640fbc52f7a9"
+    },
+    {
+      "run_id": "agrun_fbbf45a77d4b071451cdfa7ecb9ba83d",
+      "required": [
+        "memory.get",
+        "math.calculate"
+      ],
+      "actual": [
+        "memory.get",
+        "math.calculate"
+      ],
+      "model_calls": 3,
+      "tool_calls": 2,
+      "generated_tokens": 149,
+      "state_sha256": "190f34bc7207270c515bc3c37d45433fa2e41a6bc316127230c05881b416223e",
+      "event_head_sha256": "9983b99836f1404712488091c2cc770b76c65886714c1e09156ea0aa98af2f43"
+    }
+  ],
+  "scope": "Independent native PostgreSQL restart in read-only mode; actual committed tool order and full event/state/result hash chain survived; no Azure Agent migration or Pod-loss durability claim",
+  "primary_identities": {
+    "api-a": {
+      "pid": 641686,
+      "start_ticks": "48004878",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 641694,
+      "start_ticks": "48005158",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 641677,
+      "start_ticks": "48004600",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 641702,
+      "start_ticks": "48005394",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "native_pg_stopped": true,
+  "captured_at": "2026-10-25T23:30:49.611016+00:00"
+}

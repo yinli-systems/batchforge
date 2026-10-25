@@ -100,3 +100,36 @@ for at most84 new tasks including four decoder checks. Recheck before admission.
 Run a new immutable source/CI and a new controller directory; never modify the
 first failed cohort, its source or grades. This is a sequential workflow
 prerequisite contract, not a general DAG or multi-Agent implementation.
+
+## Closed ordered-tool qualification:20/20
+
+Source0909c61 passed native CI40244273293 with1,660 Python/zero skips and23 Node
+tests. A fresh private-ingress controller ran four decoder requests, then all
+20 workflow-contract goals passed exact answer, actual required tool-result
+and retrieved-citation checks. The44 child model tasks had44 observed attempts,
+28,447 prompt and1,926 completion tokens. The original acknowledged child was
+reconciled after coordinator death and natural lease expiry; no replacement
+child identity was accepted. Agent API restart preserved result/event heads.
+
+All88 distinct input/output artifact IDs passed byte readback after normal S3
+archive/purge. All primary epochs/configuration stayed unchanged; private API,
+coordinators and isolated PG stopped. The355.055s controller window allocates
+$1.587885 at the operator-confirmed whole-Pod rate, including fault wait and
+audit. This is not an invoice, a production per-answer price or a controlled
+speedup over different earlier cases. Fresh retained-task headroom is118.
+
+An extra independent audit first attempted to connect after the controller had
+already stopped its native PG; that OperationalError is retained. A new owned
+audit restarted only that isolated cluster in read-only mode and verified all20
+actual tool sequences, full event chains and committed state/result hashes
+against the closed report, then stopped its cluster. No GPU tasks or production
+database mutation occurred. This demonstrates process-restart readback on the
+container, not Pod-loss durability or an Azure Agent rollout.
+
+Sources: [unchanged cohort report](benchmarks/platform480-2026-10-25/soak480-agent-runtime-schema-20261025-v2-complete/report.json),
+[source-bound summary](../ops/reports/agent-workflow-v2-summary-2026-10-25.json),
+[private-ingress lifecycle](benchmarks/platform480-2026-10-25/evidence-api-agent-schema-20261025-v2-complete/validation.json),
+[independent read-only restart audit](benchmarks/platform480-2026-10-25/evidence-api-agent-tool-order-audit-20261025-v2-complete/validation.json).
+The original16/20,15/20 and8/20 failed cohorts remain failed. The20 synthetic
+cases establish this bounded workflow contract, not general model reliability,
+full SQuAD qualification, a complete DAG/multi-Agent platform or production HA.

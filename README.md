@@ -6,8 +6,13 @@ an OpenAI-shaped batch API, and an operations console backed by live data.
 An additive [durable Agent runtime](docs/agent-runtime.md) now implements typed
 planning, capability-checked data tools, tenant memory, fenced coordinator
 leases and receipt-linked model steps through the existing Batch queue. Native
-CPU correctness checks pass; Azure Agent-schema migration and real-GPU Agent
-task-success qualification are still pending. The broader
+The latest native check passes1,660 Python/zero-skip and23 console tests. A
+finite real480B qualification passed20/20 fresh ordered-tool Agent goals,
+44 model tasks and88 artifact byte readbacks, including post-ACK coordinator
+loss and API restart. Agent state used an isolated native PostgreSQL cluster;
+Azure Agent-schema migration still requires owner authentication. Earlier16/20,
+15/20 and8/20 failures remain preserved. [Protocol and evidence](docs/agent-schema-qualification.md).
+The broader
 [Agent platform implementation map](docs/agent-platform-roadmap.md) tracks
 workflow composition, VectorMatch, isolation, multimodal and learning work
 without presenting planned capabilities as deployed features.
@@ -38,7 +43,7 @@ A frozen JSON-span answer contract subsequently passed a disjoint 1,000-question
 public holdout: **EM82.8% / F1 91.43%** versus matched baseline 56.9% / 77.10%.
 The original full-dev gate remains failed. [Protocol, paired outcomes and cost](docs/benchmarks/quality-contract-2026-10-25.md)
 retain both results. Serving source748dc10 passed1,415 native PostgreSQL17
-tests; latest operator sourceb80391c passed **1,542 Python tests and23 console
+tests; latest Agent/operator source0909c61 passed **1,660 Python tests and23 console
 tests**. See [actual CI evidence](docs/ci.md).
 
 The post-Fleet800-task workload closed at428.166 output tokens/s, with four-card

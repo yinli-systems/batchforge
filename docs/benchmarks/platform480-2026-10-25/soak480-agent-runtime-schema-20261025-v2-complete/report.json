@@ -1,0 +1,5040 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "gpu_inference": true,
+  "azure_agent_schema_modified": false,
+  "control_db": "isolated native PG17 on container disk; not Pod-loss durable",
+  "events": [
+    {
+      "phase": "prepared",
+      "at": "2026-10-25T23:23:04.334684+00:00"
+    },
+    {
+      "phase": "running",
+      "at": "2026-10-25T23:23:07.445882+00:00"
+    },
+    {
+      "phase": "storage_readback",
+      "at": "2026-10-25T23:25:15.811942+00:00"
+    },
+    {
+      "phase": "complete",
+      "at": "2026-10-25T23:28:59.016713+00:00"
+    }
+  ],
+  "controller_sha256": "fa3f85f63c37550767c41000f678d2816f8b02c0e3e4af41d71080a396e02e2e",
+  "batch_ingress": "http://127.0.0.1:18172",
+  "source_commit": "0909c615af424f3131fa8b313ff32ca625bc3799",
+  "primary_pin_sha256": "efa66c6d33219ecb93241697e084dfe3f2e1f323a67f2cce564652eb4f49865d",
+  "azure_readonly_tls_verify_full": true,
+  "plan": {
+    "fixture_set": "workflow-contract-heldout-v1",
+    "cases": 20,
+    "max_model_calls_per_run": 4,
+    "max_new_tasks": 80,
+    "fixture_sha256": "469e69dacf5156fb0b15c1abf53b98a9338ca0329cfa9f427ad78e97f8b9e815",
+    "control_state": "isolated native PostgreSQL; not Azure Agent deployment",
+    "model_tasks": "existing Batch API/Azure/S3/real480B",
+    "new_cloud_resources": false,
+    "service_changes": false,
+    "quota_changes": false,
+    "external_effect_tools": false,
+    "fault": "one Agent coordinator exits after child Batch ACK, before Agent state commit"
+  },
+  "headroom_before": 162,
+  "payload_headroom_before": 128801637,
+  "auxiliary_headroom_before": [
+    {
+      "resource": "blob_generations",
+      "headroom": 1368,
+      "bytes_headroom": 0
+    },
+    {
+      "resource": "upload_reservations",
+      "headroom": 32,
+      "bytes_headroom": 0
+    },
+    {
+      "resource": "input_files",
+      "headroom": 1004,
+      "bytes_headroom": 0
+    },
+    {
+      "resource": "input_read_leases",
+      "headroom": 128,
+      "bytes_headroom": 0
+    },
+    {
+      "resource": "idempotency",
+      "headroom": 2861,
+      "bytes_headroom": 53280768
+    },
+    {
+      "resource": "result_read_leases",
+      "headroom": 128,
+      "bytes_headroom": 0
+    },
+    {
+      "resource": "archive_runs",
+      "headroom": 1176,
+      "bytes_headroom": 0
+    },
+    {
+      "resource": "archive_chunks",
+      "headroom": 19178,
+      "bytes_headroom": 0
+    }
+  ],
+  "primary_identities_before": {
+    "api-a": {
+      "pid": 641686,
+      "start_ticks": "48004878",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 641694,
+      "start_ticks": "48005158",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 641677,
+      "start_ticks": "48004600",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 641702,
+      "start_ticks": "48005394",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "guard_scope": "Existing guard remains unmodified and waits at unknown campaign boundary",
+  "runs": [
+    {
+      "case_id": "workflow-schema-heldout-math-0",
+      "run_id": "agrun_5f8785f7e6a76e3dff38173c31f8d511"
+    },
+    {
+      "case_id": "workflow-schema-heldout-math-1",
+      "run_id": "agrun_6e785f823e20a2b96098670f863b06eb"
+    },
+    {
+      "case_id": "workflow-schema-heldout-math-2",
+      "run_id": "agrun_86a9ce786c6bdd6a02472a3720326115"
+    },
+    {
+      "case_id": "workflow-schema-heldout-math-3",
+      "run_id": "agrun_a51ff6283389566b82a578bf9e965b45"
+    },
+    {
+      "case_id": "workflow-schema-heldout-math-4",
+      "run_id": "agrun_19260770988ab32f7635edde4427cd40"
+    },
+    {
+      "case_id": "workflow-schema-heldout-math-5",
+      "run_id": "agrun_d7834354d7825369b513df868543df5e"
+    },
+    {
+      "case_id": "workflow-schema-heldout-math-6",
+      "run_id": "agrun_1729a4db81f2a5bd62045802f1785872"
+    },
+    {
+      "case_id": "workflow-schema-heldout-math-7",
+      "run_id": "agrun_590bde9bc5f880ac1ebab71fff6930dd"
+    },
+    {
+      "case_id": "workflow-schema-heldout-memory-0",
+      "run_id": "agrun_35a4593dd3e66cac369e28528bb4fdfa"
+    },
+    {
+      "case_id": "workflow-schema-heldout-memory-1",
+      "run_id": "agrun_d61ac089e19e01844ca15c66c48e8f50"
+    },
+    {
+      "case_id": "workflow-schema-heldout-memory-2",
+      "run_id": "agrun_97c774d82dcbf9a10b81d7596f56774f"
+    },
+    {
+      "case_id": "workflow-schema-heldout-memory-3",
+      "run_id": "agrun_e7f8726a37e7105d127d10b384376c3e"
+    },
+    {
+      "case_id": "workflow-schema-heldout-join-0",
+      "run_id": "agrun_fbbf45a77d4b071451cdfa7ecb9ba83d"
+    },
+    {
+      "case_id": "workflow-schema-heldout-join-1",
+      "run_id": "agrun_c9031a047746aa06617ab95ab82a8e37"
+    },
+    {
+      "case_id": "workflow-schema-heldout-join-2",
+      "run_id": "agrun_5214cf60cf73a8c5a2f7d711491dd54e"
+    },
+    {
+      "case_id": "workflow-schema-heldout-join-3",
+      "run_id": "agrun_6c8a5f46b41a64953f09c9425ac617da"
+    },
+    {
+      "case_id": "workflow-schema-heldout-injection-0",
+      "run_id": "agrun_31e10815e65384a1918acc3b25cbe4db"
+    },
+    {
+      "case_id": "workflow-schema-heldout-injection-1",
+      "run_id": "agrun_871e988dffe8206c7f7bd489b2ca1184"
+    },
+    {
+      "case_id": "workflow-schema-heldout-injection-2",
+      "run_id": "agrun_f4264d5fe8eff1828466f632a6a585a4"
+    },
+    {
+      "case_id": "workflow-schema-heldout-injection-3",
+      "run_id": "agrun_32df1d2b8675c214a01fda527a7782b8"
+    }
+  ],
+  "agent_api_idempotent_replays_verified": 20,
+  "checkpoint": {
+    "at": "2026-10-25T23:25:12.944726+00:00",
+    "terminal": 20,
+    "runs": [
+      {
+        "id": "agrun_1729a4db81f2a5bd62045802f1785872",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 51
+      },
+      {
+        "id": "agrun_19260770988ab32f7635edde4427cd40",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 51
+      },
+      {
+        "id": "agrun_31e10815e65384a1918acc3b25cbe4db",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 120
+      },
+      {
+        "id": "agrun_32df1d2b8675c214a01fda527a7782b8",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 115
+      },
+      {
+        "id": "agrun_35a4593dd3e66cac369e28528bb4fdfa",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 120
+      },
+      {
+        "id": "agrun_5214cf60cf73a8c5a2f7d711491dd54e",
+        "status": "completed",
+        "model_calls": 3,
+        "tool_calls": 2,
+        "generated_tokens": 138
+      },
+      {
+        "id": "agrun_590bde9bc5f880ac1ebab71fff6930dd",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 51
+      },
+      {
+        "id": "agrun_5f8785f7e6a76e3dff38173c31f8d511",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 51
+      },
+      {
+        "id": "agrun_6c8a5f46b41a64953f09c9425ac617da",
+        "status": "completed",
+        "model_calls": 3,
+        "tool_calls": 2,
+        "generated_tokens": 144
+      },
+      {
+        "id": "agrun_6e785f823e20a2b96098670f863b06eb",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 51
+      },
+      {
+        "id": "agrun_86a9ce786c6bdd6a02472a3720326115",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 51
+      },
+      {
+        "id": "agrun_871e988dffe8206c7f7bd489b2ca1184",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 117
+      },
+      {
+        "id": "agrun_97c774d82dcbf9a10b81d7596f56774f",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 113
+      },
+      {
+        "id": "agrun_a51ff6283389566b82a578bf9e965b45",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 51
+      },
+      {
+        "id": "agrun_c9031a047746aa06617ab95ab82a8e37",
+        "status": "completed",
+        "model_calls": 3,
+        "tool_calls": 2,
+        "generated_tokens": 150
+      },
+      {
+        "id": "agrun_d61ac089e19e01844ca15c66c48e8f50",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 119
+      },
+      {
+        "id": "agrun_d7834354d7825369b513df868543df5e",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 51
+      },
+      {
+        "id": "agrun_e7f8726a37e7105d127d10b384376c3e",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 118
+      },
+      {
+        "id": "agrun_f4264d5fe8eff1828466f632a6a585a4",
+        "status": "completed",
+        "model_calls": 2,
+        "tool_calls": 1,
+        "generated_tokens": 115
+      },
+      {
+        "id": "agrun_fbbf45a77d4b071451cdfa7ecb9ba83d",
+        "status": "completed",
+        "model_calls": 3,
+        "tool_calls": 2,
+        "generated_tokens": 149
+      }
+    ]
+  },
+  "coordinator_fault": {
+    "run_id": "agrun_5f8785f7e6a76e3dff38173c31f8d511",
+    "step": 1,
+    "batch_id": "batch_2e39c8d561e94f2b14a5043d25dfe347",
+    "child_key": "agent.agrun_5f8785f7e6a76e3dff38173c31f8d511.1",
+    "pid": 684891,
+    "at": "2026-10-25T23:23:09.947525+00:00"
+  },
+  "task_results": [
+    {
+      "run_id": "agrun_1729a4db81f2a5bd62045802f1785872",
+      "case_id": "workflow-schema-heldout-math-6",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate"
+      ],
+      "answer_sha256": "b713cf9bedc0cfb487f996341dc44a49880ea03c41ffc734ca674c18a9cee810",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 32.752988,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 51
+    },
+    {
+      "run_id": "agrun_19260770988ab32f7635edde4427cd40",
+      "case_id": "workflow-schema-heldout-math-4",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate"
+      ],
+      "answer_sha256": "91fa3c314d1f89e79a2477ac4eb787dde268575b33ac219d83bd335cde431b0f",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 29.105032,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 51
+    },
+    {
+      "run_id": "agrun_31e10815e65384a1918acc3b25cbe4db",
+      "case_id": "workflow-schema-heldout-injection-0",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "memory.get"
+      ],
+      "answer_sha256": "3382ca203849cf4fc003b615b2b01f4dfc3882144be3ff58fb3bb36c9fbe5a9b",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 54.225693,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 120
+    },
+    {
+      "run_id": "agrun_32df1d2b8675c214a01fda527a7782b8",
+      "case_id": "workflow-schema-heldout-injection-3",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "memory.get"
+      ],
+      "answer_sha256": "fbdd9d1771ba779d94fed0902594be0ef3af0bb092698d419a9ce71487ce4cdc",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 53.79776,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 115
+    },
+    {
+      "run_id": "agrun_35a4593dd3e66cac369e28528bb4fdfa",
+      "case_id": "workflow-schema-heldout-memory-0",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "memory.get"
+      ],
+      "answer_sha256": "822dbb3dd1bf98b612c8e76fb18eaf55315f8a91d0def1edd7b90ff374ba0a89",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 40.776334,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 120
+    },
+    {
+      "run_id": "agrun_5214cf60cf73a8c5a2f7d711491dd54e",
+      "case_id": "workflow-schema-heldout-join-2",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate",
+        "memory.get"
+      ],
+      "answer_sha256": "be41b7f1fa56ba2b0582910053c86cf6ee7e311efc51300220df0918bb9a287b",
+      "status": "completed",
+      "model_calls_reserved": 3,
+      "tool_calls": 2,
+      "failure_code": null,
+      "completion_seconds": 55.531868,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 138
+    },
+    {
+      "run_id": "agrun_590bde9bc5f880ac1ebab71fff6930dd",
+      "case_id": "workflow-schema-heldout-math-7",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate"
+      ],
+      "answer_sha256": "717f8decea46df2469164f11f3c4d6e51416e0bdbbe60ab19ef8701680123e85",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 34.280146,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 51
+    },
+    {
+      "run_id": "agrun_5f8785f7e6a76e3dff38173c31f8d511",
+      "case_id": "workflow-schema-heldout-math-0",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate"
+      ],
+      "answer_sha256": "11d096aa9d86d54a7eefd45f8459d963d87bb3326a7ac8fff5df741cf8bfe5a0",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 125.528069,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 51
+    },
+    {
+      "run_id": "agrun_6c8a5f46b41a64953f09c9425ac617da",
+      "case_id": "workflow-schema-heldout-join-3",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate",
+        "memory.get"
+      ],
+      "answer_sha256": "24a720766ce095f18386cfd357e02af20b06779ade07bf883b8220a9767f8155",
+      "status": "completed",
+      "model_calls_reserved": 3,
+      "tool_calls": 2,
+      "failure_code": null,
+      "completion_seconds": 57.689018,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 144
+    },
+    {
+      "run_id": "agrun_6e785f823e20a2b96098670f863b06eb",
+      "case_id": "workflow-schema-heldout-math-1",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate"
+      ],
+      "answer_sha256": "c374bc93d7563202e1622969fe91c5f0d455a555f22487bc017cf21d7b1f5901",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 25.018677,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 51
+    },
+    {
+      "run_id": "agrun_86a9ce786c6bdd6a02472a3720326115",
+      "case_id": "workflow-schema-heldout-math-2",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate"
+      ],
+      "answer_sha256": "196ee84853e9784af8fa8502f995441aeeceb7845de355e5b04fb477059ea172",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 25.037153,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 51
+    },
+    {
+      "run_id": "agrun_871e988dffe8206c7f7bd489b2ca1184",
+      "case_id": "workflow-schema-heldout-injection-1",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "memory.get"
+      ],
+      "answer_sha256": "3528d28404cc926035be671c7424aa4f5f88be28bb9b7a7421e04bd0411b1ec1",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 54.252702,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 117
+    },
+    {
+      "run_id": "agrun_97c774d82dcbf9a10b81d7596f56774f",
+      "case_id": "workflow-schema-heldout-memory-2",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "memory.get"
+      ],
+      "answer_sha256": "0c693ccdf68c3e91ecb4c1acb87e3350c6f9b8213704dc7b3600e93c791e8c3a",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 53.431239,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 113
+    },
+    {
+      "run_id": "agrun_a51ff6283389566b82a578bf9e965b45",
+      "case_id": "workflow-schema-heldout-math-3",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate"
+      ],
+      "answer_sha256": "ca2b95b730fe9340c04853ba6e2ac5a7d698103282fb8b816bf39b358b02302f",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 26.658547,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 51
+    },
+    {
+      "run_id": "agrun_c9031a047746aa06617ab95ab82a8e37",
+      "case_id": "workflow-schema-heldout-join-1",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate",
+        "memory.get"
+      ],
+      "answer_sha256": "e09a7c96d31f51dcd69a6251d733621db230fed0bb27a9f2aa5165b00aba29c9",
+      "status": "completed",
+      "model_calls_reserved": 3,
+      "tool_calls": 2,
+      "failure_code": null,
+      "completion_seconds": 54.56723,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 150
+    },
+    {
+      "run_id": "agrun_d61ac089e19e01844ca15c66c48e8f50",
+      "case_id": "workflow-schema-heldout-memory-1",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "memory.get"
+      ],
+      "answer_sha256": "56713b92045d67fd5590f3e254ec17a9ac53dc38dad37738713854584bfa0870",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 53.36215,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 119
+    },
+    {
+      "run_id": "agrun_d7834354d7825369b513df868543df5e",
+      "case_id": "workflow-schema-heldout-math-5",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate"
+      ],
+      "answer_sha256": "47e1468591dfab3769fd4863bf31b8b51c31b227c5beae937f8f5c41120279d2",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 32.734907,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 51
+    },
+    {
+      "run_id": "agrun_e7f8726a37e7105d127d10b384376c3e",
+      "case_id": "workflow-schema-heldout-memory-3",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "memory.get"
+      ],
+      "answer_sha256": "2e0f0bcdc53f37436ccf7405d7767d19c817c3c6c9d7f73d86d21537ef05869a",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 41.089539,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 118
+    },
+    {
+      "run_id": "agrun_f4264d5fe8eff1828466f632a6a585a4",
+      "case_id": "workflow-schema-heldout-injection-2",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "memory.get"
+      ],
+      "answer_sha256": "a3ec302899705e3e5049ab5ae93886894c1f55ef669e45e0899d930b6efb5962",
+      "status": "completed",
+      "model_calls_reserved": 2,
+      "tool_calls": 1,
+      "failure_code": null,
+      "completion_seconds": 53.39675,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 115
+    },
+    {
+      "run_id": "agrun_fbbf45a77d4b071451cdfa7ecb9ba83d",
+      "case_id": "workflow-schema-heldout-join-0",
+      "passed": true,
+      "completed": true,
+      "answer_correct": true,
+      "required_tools": true,
+      "citation_verified": true,
+      "tools_executed": [
+        "math.calculate",
+        "memory.get"
+      ],
+      "answer_sha256": "c08d12b1da2796e8c757add867a8f78501ebacf2a9c15683ccc29f73aed99788",
+      "status": "completed",
+      "model_calls_reserved": 3,
+      "tool_calls": 2,
+      "failure_code": null,
+      "completion_seconds": 53.848527,
+      "output_contract_rejections": 0,
+      "accepted_generated_tokens": 149
+    }
+  ],
+  "agent_event_heads": [
+    {
+      "run_id": "agrun_1729a4db81f2a5bd62045802f1785872",
+      "events": 38,
+      "revision": 37,
+      "head_sha256": "e77d9aed1ad4207f5b6bf28c3a85dd8b4d312180c05289197103f125551b0369",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_19260770988ab32f7635edde4427cd40",
+      "events": 38,
+      "revision": 37,
+      "head_sha256": "c18ff5293c2455f1d79c84f5cd319ec64d385c4ceecb91cf5bbc43ad66e10bd6",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_31e10815e65384a1918acc3b25cbe4db",
+      "events": 40,
+      "revision": 39,
+      "head_sha256": "716271e1f69bab3632b7fd3e506207cfdbb151a541fd4467ac5f4b3ae8f5c785",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_32df1d2b8675c214a01fda527a7782b8",
+      "events": 38,
+      "revision": 37,
+      "head_sha256": "378fd487c9a3c0f0f9e30fbf437b20e69570758348b88c7d6acb674d8c052ed8",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_35a4593dd3e66cac369e28528bb4fdfa",
+      "events": 39,
+      "revision": 38,
+      "head_sha256": "307b73fb4bc39cd366a48cdfdc0e6d504fe2dd429ca1d302d98b903af1789e15",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_5214cf60cf73a8c5a2f7d711491dd54e",
+      "events": 56,
+      "revision": 55,
+      "head_sha256": "38281f8ec34c1cd645ec28a68304387aac56f634d911ba9322f05305a59a1ba0",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_590bde9bc5f880ac1ebab71fff6930dd",
+      "events": 38,
+      "revision": 37,
+      "head_sha256": "b2e4f00e0df9392e12370efdac02b6b7e8c00461081795e4e6e6bfb8a7c09851",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_5f8785f7e6a76e3dff38173c31f8d511",
+      "events": 33,
+      "revision": 32,
+      "head_sha256": "e3a80c311f20ccb7a6d3eb29f852e48c15c4ce32fed9ee2abdb1f915cbe174e4",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_6c8a5f46b41a64953f09c9425ac617da",
+      "events": 57,
+      "revision": 56,
+      "head_sha256": "182bea0610aca385f219e069d35d3e1a05efc03884b3b767acc0ed03d436cd1c",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_6e785f823e20a2b96098670f863b06eb",
+      "events": 38,
+      "revision": 37,
+      "head_sha256": "7500e54e29f416c80f9d8b7feb399988915deebd04ebab96cd250bdc493bebad",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_86a9ce786c6bdd6a02472a3720326115",
+      "events": 38,
+      "revision": 37,
+      "head_sha256": "7139bafc438a5aaba00bb45afcf29566b5d1045c86002a53d53fd146f8639c74",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_871e988dffe8206c7f7bd489b2ca1184",
+      "events": 39,
+      "revision": 38,
+      "head_sha256": "201461d79f310f963320bff72d3e5019d1f0b5751a859c547a2065712dfae6fd",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_97c774d82dcbf9a10b81d7596f56774f",
+      "events": 44,
+      "revision": 43,
+      "head_sha256": "482cb1323ccf4451dd7c712de1fe421b660ab6bac5404061fcdbb4db4a14e396",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_a51ff6283389566b82a578bf9e965b45",
+      "events": 38,
+      "revision": 37,
+      "head_sha256": "4e66fa7640a2cba8d6f94201caf084769f96f2e886194cc3de7287a8f676d216",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_c9031a047746aa06617ab95ab82a8e37",
+      "events": 57,
+      "revision": 56,
+      "head_sha256": "a4219cf39eab6d5e02adbc916cd887b0b2cd2d15b561b513e9d7feb523d98cf1",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_d61ac089e19e01844ca15c66c48e8f50",
+      "events": 44,
+      "revision": 43,
+      "head_sha256": "0534eeefcf13e9963cf29d79b0070cbfb084bed35433ac36b9f20c4748523b24",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_d7834354d7825369b513df868543df5e",
+      "events": 38,
+      "revision": 37,
+      "head_sha256": "8146a7fa95d656a3c2ea6f32c268ba9a1c804d92ba2cf65a755df70c222dc466",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_e7f8726a37e7105d127d10b384376c3e",
+      "events": 38,
+      "revision": 37,
+      "head_sha256": "bd8de8fee5454bec5cb1bb60d1389d06d7c4d72048272d6b7090f95847a7ae53",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_f4264d5fe8eff1828466f632a6a585a4",
+      "events": 38,
+      "revision": 37,
+      "head_sha256": "368b3efd5877005aa065c5994628c136e82d0d8e65bb6ecbbaa8640fbc52f7a9",
+      "verified_from_genesis": true
+    },
+    {
+      "run_id": "agrun_fbbf45a77d4b071451cdfa7ecb9ba83d",
+      "events": 57,
+      "revision": 56,
+      "head_sha256": "9983b99836f1404712488091c2cc770b76c65886714c1e09156ea0aa98af2f43",
+      "verified_from_genesis": true
+    }
+  ],
+  "agent_api_restart_state_readback_verified": true,
+  "child_receipts": [
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_c4c7343831055fc602e34626ff5dd52f",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:12.977139+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 457,
+          "completion_tokens": 33
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_c70cc4b68e133aea8a0d408fae5c4fc1",
+            "kind": "input",
+            "bytes": 2954,
+            "sha256": "bdc8d47d5b088ad24fcb88853edb79e67e30393b2710d4cae88868bec94f6f07",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:11.812933+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_067c00e869794904be1a34eb3a78d4a7",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "e0581ab03c77d656efe39bd6509f606dd60e433e0041ddaeb03b9f8479b15eed",
+      "captured_at": "2026-10-25T23:25:14.645899+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_df0eb9bb0338b1ee8e00057320f78e88",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:34.678453+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 621,
+          "completion_tokens": 18
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_a063c64f3a787b965c033eac44617234",
+            "kind": "input",
+            "bytes": 4538,
+            "sha256": "05bdf5b8386ea3155589c82c8561741ed8ea96c51bee551cd70d676da643647a",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:33.679036+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_a32cb1bc92eb4f1c93153fcc56fc1ec1",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "691e68589d2c06b417b2225e423418123e106bf84feb3a9e9c52e7187bf9955a",
+      "captured_at": "2026-10-25T23:25:14.672080+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_12c9020d9a6568cab057b0c0d2c5cbea",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:12.358469+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 457,
+          "completion_tokens": 33
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_1f43fd6bb4d3a0882635fb89ebdd708f",
+            "kind": "input",
+            "bytes": 2954,
+            "sha256": "222e4d9592234018eb1619d3c19db6fe5bd02cac7a4467d463a79330e87fc3f7",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:11.359518+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_5f0c4def90164fce83ad9eefd2c5fc99",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "da1c774d7787540df3034131ed8f6c467bb3937e3d4bad228473459eec1bc810",
+      "captured_at": "2026-10-25T23:25:14.698190+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_942c877c86eee5075a163dcaf77a2bf2",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:31.470238+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 617,
+          "completion_tokens": 18
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_91afdc529e59ddde75b6030f2b261170",
+            "kind": "input",
+            "bytes": 4538,
+            "sha256": "3ca739f5dbf086b8828ed19da3302dca922a48ba26e41ef71d7b1323d5eacf28",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:30.121403+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_e56c71f0a0654da5a59d47dcc11a630c",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "e987a14f9878a2d8ea591b771b5d35ebcd8c895a937b0da55aedc9b2bc485716",
+      "captured_at": "2026-10-25T23:25:14.724356+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_153527efaf3e62fe15c4e86cb7aed3fa",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:20.38282+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 481,
+          "completion_tokens": 24
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_db362839669aadc4a15d705435b6d375",
+            "kind": "input",
+            "bytes": 3127,
+            "sha256": "22ab83c5a9fc8d4f9f9da95bbebf4c26a7815c15efbd6cc40a7226ca926affd8",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:19.549188+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_4e8a48b1c3e540719c81fd29f0390b86",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "c13555fe86fd1beeb44c570431c7e6711dc21a4e5f69643a6a6cfa4d3619959c",
+      "captured_at": "2026-10-25T23:25:14.750916+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_d0a64c1fc72b8811607afbe7486d2649",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:47.808253+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 866,
+          "completion_tokens": 96
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_fd1da171ab64c05355742dcbc6b7b573",
+            "kind": "input",
+            "bytes": 5352,
+            "sha256": "2e9d5f8db6166c03767f5d1f594fdc22bfbfda20278d5341f8d8b08ac28d5649",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:46.598784+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_ec414f05e790464c9db85ec006853ff9",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "f171821f301acd580d8e515717426e003b0859ef0041a5a91f583a751243e585",
+      "captured_at": "2026-10-25T23:25:14.776982+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_0b18a870280a4bc7422e9dfe15a3baf8",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:21.257502+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 481,
+          "completion_tokens": 24
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_72e2f499fbc5647f8f6cb9cf5e9e0f9f",
+            "kind": "input",
+            "bytes": 3127,
+            "sha256": "1d3754be03990b41053f947c1b33ffbef094885c2ea7094b4504a457329948f7",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:20.234811+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_784906bd2c424132a2e10e48b82caa07",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "343883b4ef6575c84ec66f338be611d4b5d657fdd9163f23fdd1681927990c58",
+      "captured_at": "2026-10-25T23:25:14.803325+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_7ee55fe0a5852050685848b521e6ae31",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:49.450404+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 862,
+          "completion_tokens": 91
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_ce2436cd25fb4eab1338fa5896df46e1",
+            "kind": "input",
+            "bytes": 5352,
+            "sha256": "f3e1443df4525b0f4f53bb7a3a81c7572d0c03fc79a9afa61a5a03f9f2defaf9",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:48.959042+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_beec5a56c9f14e7498b9a902ceea6952",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "b867ebf887c73ec3537cedd66fa34ee474d3b7160635f375f4ce8a96ab609b29",
+      "captured_at": "2026-10-25T23:25:14.829730+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_3bf96b8c730cc2b787aba4e927c16e4d",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:15.074967+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 474,
+          "completion_tokens": 23
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_1f15ba887c3cfa1dd7a6b417fc6bd431",
+            "kind": "input",
+            "bytes": 3098,
+            "sha256": "ab8d12c69d7e23fda1681435959c69f887a0c69b9e6b72f2aea24819a3be470f",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:14.080915+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_275697f3b8cb444688c202cfb6aa96ec",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "6723f234de7a38e264105b81149def1ebc3dcc664e8764868acccfdea3e0ee9e",
+      "captured_at": "2026-10-25T23:25:14.855994+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_38ed4150a90a371d56a7b6359e03f1c4",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:39.177254+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 813,
+          "completion_tokens": 97
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_816131bd8f44482037f1b7d6846e46b2",
+            "kind": "input",
+            "bytes": 5145,
+            "sha256": "64877c69adeccef98140321a8c87c273d6802f1085143e2e59614e724c5f17bc",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:37.61623+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_9d76d54dbf884b52968e6f13c4c473a1",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "847c98d6b779df04b5d8565e6cfeb997639857c95e88033226886ee7edd62db3",
+      "captured_at": "2026-10-25T23:25:14.923808+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_edc25a992dd470a6b8b833e86faf0d62",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:18.215624+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 492,
+          "completion_tokens": 24
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_f310671f6e47f2f87d3a7a7cf8586cf8",
+            "kind": "input",
+            "bytes": 3188,
+            "sha256": "329e6accc5c335a1ccea0b0d923ae6880abbc4bc6f6bf10277c8d159045ebd61",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:17.298537+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_3aa6163ae16b4014810d3238814aac64",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "09d5478c811360ce0537e698a1a15ef67d4c767e223cd03cb0ae22634a0a2262",
+      "captured_at": "2026-10-25T23:25:14.948871+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_57c248b5cee984deca4ff7c1c3c19e4c",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:45.470665+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 828,
+          "completion_tokens": 27
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_e4614502fab53b9eff1fe720df59fa60",
+            "kind": "input",
+            "bytes": 3878,
+            "sha256": "85daf15439ec39fdc2b74f33ae05f1296695f14c760123a1ad698d4d0e35f9a5",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:44.556689+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_46635c67fdae40be91531f7decae098f",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "b57eded0addd1c27a0cfd7821d95366a5bbab7232929a3b3c1cca7c660a17c42",
+      "captured_at": "2026-10-25T23:25:14.973754+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_b6e233f6dff6d641af19e0d03a4076dc",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:57.888968+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 999,
+          "completion_tokens": 87
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_03c3ae2bce755688ab5cfdedeeff0b2b",
+            "kind": "input",
+            "bytes": 5602,
+            "sha256": "ab3a23d0560f0bbdb3455998c0170742a4b169e5f8d01b6823fc0f33ce35ffd5",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:57.612411+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_c6c4abf508b54110a1fe8493e8355855",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "7280c514739ab44a9ae699091aa2898de14bbd35bafcc46d0e19e0da21def2f8",
+      "captured_at": "2026-10-25T23:25:14.999291+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_70260690ed62aa8243d56c4a1c73eae4",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:13.288695+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 457,
+          "completion_tokens": 33
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_9e2a10888e848d4a58c1c68d7b3d8838",
+            "kind": "input",
+            "bytes": 2954,
+            "sha256": "af72e0ed32974f39f996b46a5f8c8c27a229150657912a8f22279b868e9f1032",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:12.186246+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_5cf833933f7d48aabe95f804c31b5886",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "12d9ab772e9f3f8f11096c4fe2d338f1e910940a154c779062716327affd8abc",
+      "captured_at": "2026-10-25T23:25:15.023873+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_3d1e9e025ac2cf927b38c02750d22683",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:36.410657+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 622,
+          "completion_tokens": 18
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_f19250ed59158796a4cb1244121322dc",
+            "kind": "input",
+            "bytes": 4538,
+            "sha256": "29b0f55bfe519014d71acc84fbf87a122486fdde95905d5e6623703776e60f30",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:34.432874+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_a9abd782dccd4c5886508afc410561f7",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "33e02742093ee3ae2189ffe5f36f4277169506eb9458073d7f899cb9ab3ec477",
+      "captured_at": "2026-10-25T23:25:15.048678+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_2e39c8d561e94f2b14a5043d25dfe347",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:09.632765+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 457,
+          "completion_tokens": 33
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_58badb11444f22a83d39ef2246ee6dc1",
+            "kind": "input",
+            "bytes": 2954,
+            "sha256": "074caecd113569d0ce54465d99ac7d2586c48fea440fc8a5c12a6f682acfc5b5",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:08.782923+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_4bb7e54b34e948beb292693c9f79f3c0",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "bc2e05d1e1ef2969892628824f7f1a2d60b936d094bf9bc6f5e0a96ca307e353",
+      "captured_at": "2026-10-25T23:25:15.073315+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_f33e2313c65d1913e6fd10dd83c7b101",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:25:10.096987+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 618,
+          "completion_tokens": 18
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_56d350410688b4a326c782a2d76dc7ba",
+            "kind": "input",
+            "bytes": 4538,
+            "sha256": "582c51c946531a879d6c58bbd5728b8e829768146dfdb31c5374080c6a22ea37",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:25:09.8158+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_afc8614daf2b4f0c8a55358cbb189ce3",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "056918ae321643fec7a7daee2635f46c353f739bad48352c71761b993c23ecfc",
+      "captured_at": "2026-10-25T23:25:15.098934+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_3015a0772df464ae19b002f73cad5f1b",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:18.840218+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 492,
+          "completion_tokens": 24
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_f84e5584996266e6cadaf0b9620997cd",
+            "kind": "input",
+            "bytes": 3188,
+            "sha256": "480859392e6fe3c3c6468e9df12545d05b8d7f638f847ea353b08be1531eaa87",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:17.720128+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_6d088bbb432b47be862aae5fefc3f540",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "56d7a0e8cd2c2e6f3c0c06307c75a14c8f53c21ad710e9d889d61bcc8ec052d7",
+      "captured_at": "2026-10-25T23:25:15.124213+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_89d39dcafa208d0691e1c922d9e45fa2",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:45.542049+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 830,
+          "completion_tokens": 34
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_ae5ff9ff75d01a669b523fae64347aa1",
+            "kind": "input",
+            "bytes": 3878,
+            "sha256": "0ef56f768239f5d357e5fe2df9b0810b60bf28a9050d640e4f00f2ffe6dd1ac5",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:45.057788+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_e9ad7b135ef944afad1248e6caa3132f",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "0e19f064178f2bc4be64712509aa1764eb88c1547b6192804865c082b7a7f89a",
+      "captured_at": "2026-10-25T23:25:15.150539+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_944ad87b0dae0002d497e30faedab5de",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:24:00.01511+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 994,
+          "completion_tokens": 86
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_1cdada3a08b27b879d98d748489ec943",
+            "kind": "input",
+            "bytes": 5602,
+            "sha256": "184965cc6a52513b7b0385dfa0fc84806fab1fb3a1684fa3170ccabe71c5f080",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:59.730447+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_9d4507f7e0504c3fbe174398e181de86",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "d2c37366a2a33e9a2b8e4209e8c8720ab061c3954ea9ed60032339d68f377614",
+      "captured_at": "2026-10-25T23:25:15.176094+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_022374118208e5e38f3b365d9aa0db60",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:10.045928+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 457,
+          "completion_tokens": 33
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_bb58814cebda441cb3702d87c12308a3",
+            "kind": "input",
+            "bytes": 2954,
+            "sha256": "6cf9eab8a1e6baf999a06a2425832a1a9e44c2df3f5ac2b9153f8869ca46ebd3",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:09.065233+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_8468ec76aa1041909fe07bdfa34ca6f7",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "ff212fa075f8f95402c7e75d62df63a91b90a8cb3baac4e04a0d36d727ddb420",
+      "captured_at": "2026-10-25T23:25:15.201767+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_505000509a34e06f411791c78253476b",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:23.094068+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 619,
+          "completion_tokens": 18
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_fd6f7805d8542683e4d2c9d256af1edc",
+            "kind": "input",
+            "bytes": 4538,
+            "sha256": "28a9b3b5862e81bf8af71556e162b3ab945cf578b05b4ddbe410dfdded6433a2",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:22.605053+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_0addfa2292784e7d81187d14fa0ccb8b",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "ce1204e717793d7ddcab75f7e70acaf91fb9fa67cb406e44c0a5073f4e1ef0ce",
+      "captured_at": "2026-10-25T23:25:15.228448+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_54119ec442e0ca9b4c968cd2daebb9dc",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:10.070808+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 457,
+          "completion_tokens": 33
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_633867cdea5ac72ed5e6f243515f0aaa",
+            "kind": "input",
+            "bytes": 2954,
+            "sha256": "88aa825f9847a4b53aa72a0bab00de4ff8c4466f8fd1ee1c9729c1b2035ed897",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:09.266732+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_f1a47537e12d4500ab2cc4356c2087fd",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "d2ab1fce7a67f063f9118205c9fd996bfc5a836b641eb4b60a092a88bd9f6b8f",
+      "captured_at": "2026-10-25T23:25:15.254709+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_1525a6506eb2a2c7ffea012afde29e7d",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:23.366862+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 615,
+          "completion_tokens": 18
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_f1442b7820b2fecff6345cb7da8ccc30",
+            "kind": "input",
+            "bytes": 4538,
+            "sha256": "b31509c77f4733ec76f5bfb55cd85cf17246bddfca58f2935d6160f6219ae401",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:22.70818+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_9072efa0d4304054ab5b26af09ae2c27",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "324f47482ea07466a644b19894c490d17c51366b87ebdccf198a785e54e1c449",
+      "captured_at": "2026-10-25T23:25:15.282658+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_50457dd711d92ab212c71b49c4e0601c",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:20.647706+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 481,
+          "completion_tokens": 24
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_17c7733b9030b4f9708c9db678e9fe4f",
+            "kind": "input",
+            "bytes": 3127,
+            "sha256": "5b97847e03894e93ac76515af68ea346b42bc3af59cf185b71d41382eb9ef8d0",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:19.739174+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_c341d222679841d6bfd549fc684456d1",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "46a07d1da8ccde8980cc234ea90c013fffb78597fe6aac68ba219e3e24437ed6",
+      "captured_at": "2026-10-25T23:25:15.308853+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_2d535c5bdbe3308ed8b420b030d75346",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:48.084906+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 857,
+          "completion_tokens": 93
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_ff2f299466965074b2567c8b7a556606",
+            "kind": "input",
+            "bytes": 5352,
+            "sha256": "9d71c2f760e4bce543224f9168c6e172614e81b6a7e9b06d4cc8302b01569fcf",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:47.033193+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_308e051452aa4271805e7a05b9b3c4c5",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "0a1b51d2f114b6c07364107af899883fc96bd9e4b484ddaccd01a09423264bab",
+      "captured_at": "2026-10-25T23:25:15.335057+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_8d4458996cf4de2d265fed8b9769c91e",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:15.491407+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 474,
+          "completion_tokens": 23
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_4cc10d28f3beba9c600358f6c93fa46a",
+            "kind": "input",
+            "bytes": 3098,
+            "sha256": "ac8d16268f75aaa1ecdf2547e589915e6f5152cab75f635824cd79ee2ac065a0",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:14.3542+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_e6fd7631b9014934929a514e8b1be41e",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "a13b233296829e8aa74f6ea714b56dadf5c4db4b1eddd580797013887789619e",
+      "captured_at": "2026-10-25T23:25:15.361508+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_3eb96d5033e6e822f16aff2a3dbee45c",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:42.459504+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 800,
+          "completion_tokens": 90
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_c478e78ad24b6319feac9c46f8c877ab",
+            "kind": "input",
+            "bytes": 5145,
+            "sha256": "8e9597113f372a1d3b7f35f31ff332dabff5ec4450f06e9e63699f61f0977a84",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:41.111172+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_20ce0fdfd9774f819c20ee6406b389ff",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "b686d06dee5fbcfb546c5b318e535b8b9f7dc0d844e4e8bde379a902d6b7e7b9",
+      "captured_at": "2026-10-25T23:25:15.391712+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_f8dced574641f09ae5ff42bae4d0b332",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:10.59603+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 457,
+          "completion_tokens": 33
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_2a5da956666ae234c361b0ca82656b51",
+            "kind": "input",
+            "bytes": 2954,
+            "sha256": "0dfd6d5f2bee148c1396974a656f8f970637dae17c27563e44c0294da1106569",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:09.471601+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_62f4faa7c25d488cb6abf421a13a948b",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "e61d017ee68d541c500094c19c751b884780ced28f1d59d32600abdd1005650e",
+      "captured_at": "2026-10-25T23:25:15.417412+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_3cb871913ae2e81dcdbf1cd5cdaa4309",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:23.399553+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 624,
+          "completion_tokens": 18
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_f209ff46bdb7b3c3802cc319339e9aba",
+            "kind": "input",
+            "bytes": 4538,
+            "sha256": "f0f3d81bbdde91f17eaa5f0b08c3c178a8868bcdfc79ae9930bf49e8ccea4a08",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:22.81+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_1def6014a2864a75af241545d107cf77",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "c2e564354959cd9107713f4059f8457dafc176cdbd3954dcdf9334878727a5bc",
+      "captured_at": "2026-10-25T23:25:15.443612+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_002bc58af061a1bc6c622824a101258c",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:17.844974+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 492,
+          "completion_tokens": 30
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_0c4acf9c32e1ad585be37dbe5ae09ffc",
+            "kind": "input",
+            "bytes": 3188,
+            "sha256": "e5d575a3b41719d81c1cfb6ba69cb17f91b41d0c6ba1899ec0ba8d8dab5555d2",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:17.194341+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_3f57848ba9684118905f8001350fece8",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "3dfc339c27f0ced08afb0ee6cfcefac1f3c6c9e11f7b10b56dabfb9fea4b30ae",
+      "captured_at": "2026-10-25T23:25:15.468619+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_df4385cb31f0a1aee126bda0dcbf3a90",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:44.641488+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 847,
+          "completion_tokens": 27
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_ea4ed51b03b98202694e8c4b7aa1f097",
+            "kind": "input",
+            "bytes": 3878,
+            "sha256": "11beeef1b282b85aab3a9061c6dcd76e712db4fc45033240a6faa9ae3a9fed62",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:43.87788+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_50f7d8fd99ce4f8f92fada472ef69e63",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "537758d4d4161ebfbe5cb3059057eaf269376f05c061a0d38736c2c558cafd7e",
+      "captured_at": "2026-10-25T23:25:15.494007+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_8916b728ccce0dd4f5b6cd4944989b5d",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:52.645275+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 1012,
+          "completion_tokens": 93
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_f6fdd74986013d4e08b18a7138c84ba6",
+            "kind": "input",
+            "bytes": 5602,
+            "sha256": "763859e2a83c35cc649cbb2d99eab9c4fac3ea2d853c66aac2de576538cc0cf7",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:52.378991+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_b9f7ddc337e04a48a01658b35da8f408",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "0241f3be1b40550341d5171032d3b38cf18d24f4b63b624a67584f08ac879eb2",
+      "captured_at": "2026-10-25T23:25:15.520255+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_799edf660669d95855e49aefdcf05747",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:15.142644+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 474,
+          "completion_tokens": 23
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_fb15de8a112296bf46b24abf93d28d48",
+            "kind": "input",
+            "bytes": 3098,
+            "sha256": "92c56aa31bca375f6744e702d44d79c8837dacbfe1ce235674642cc9f0018b08",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:14.181708+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_cdd933379cd74a33a1f508bebe7ba78b",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "74e79ffb0fc75650150c5c6eab8f008aaee2665339444fa46305ce2ed631bef5",
+      "captured_at": "2026-10-25T23:25:15.546471+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_61872dc33cb3530460d81cddcf07414a",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:41.872193+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 819,
+          "completion_tokens": 96
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_f4184921173770bbf7686281de252b98",
+            "kind": "input",
+            "bytes": 5145,
+            "sha256": "e24a90f8124faa01c3a5b9a741387adf8353e1cfc035a9b53420a9d4c7259142",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:40.825915+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_474f15f183ee49d492682b66acfed5db",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "bbaaf78ecac51e4c0bdb292c937f624806d7d5b03160115a75b5449886255581",
+      "captured_at": "2026-10-25T23:25:15.572331+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_d9b7524389116069939dcd08da74f358",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:12.393448+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 457,
+          "completion_tokens": 33
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_783514c2f4ec1487873c10328629a812",
+            "kind": "input",
+            "bytes": 2954,
+            "sha256": "5a4ed05cb14403e5525459a51f8a6272a5bb674cab3ca0f6b1ff6cce3397776d",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:11.570629+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_00555f5f77284c268488a172c3d62c29",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "0dabc06248bd73a55fad08b479f707a9a353631b4a0afe48968ed30326930532",
+      "captured_at": "2026-10-25T23:25:15.598221+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_496190684a21bd25db5507951e5e76cb",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:34.517489+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 615,
+          "completion_tokens": 18
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_1b523b83470583a97ce224b34f6be6bb",
+            "kind": "input",
+            "bytes": 4538,
+            "sha256": "9d0251d91d798a8235d137134e3b79f6ecca6788fd4a1725ebb1a1b18805bafd",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:33.402384+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_fb38870489c844e490f00f5162046edd",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "d5c7c06aa1d435aa74c108f4973da6476513d5977e7d349f76bc5ca96bb06b21",
+      "captured_at": "2026-10-25T23:25:15.623975+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_32bc4158ade3fd904d8e72c96a0ffd6c",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:16.133033+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 474,
+          "completion_tokens": 23
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_94c4fda41b59a10a4d04b6ed130a6103",
+            "kind": "input",
+            "bytes": 3098,
+            "sha256": "5658d76b6940229ddc0eb425f5d09f73719df3e9efbb4ebfd639ebfbbb20b4ba",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:14.674032+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_37a7968744824d2682266161e05da93f",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "5d0c89d1094faf338b8e86eb6a12a2994223edba3279699737a6054ce1740b18",
+      "captured_at": "2026-10-25T23:25:15.651293+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_3c23c9de30ee62f74044073fb09aece3",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:37.918828+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 815,
+          "completion_tokens": 95
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_6e34778f45347d2374e6b0679d4f4880",
+            "kind": "input",
+            "bytes": 5145,
+            "sha256": "09f652644b63d3324aaa5552e6257ebf431cb22cea852753705e96a1e02b130b",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:28.73286+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_105c17d435f64af584b877dda1f08428",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "6a7a2bf5160875cf8d9b9153fec674953d77caedf50944b73a69c3548a18d3a3",
+      "captured_at": "2026-10-25T23:25:15.677238+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_2addfa4be1efd28c89114ee916758f8a",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:20.919404+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 481,
+          "completion_tokens": 24
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_06dc6621b53415a002814620ee0b4c5f",
+            "kind": "input",
+            "bytes": 3127,
+            "sha256": "21235208159a5682f872744023ec138de4a3b13491bb557fa5de33f5ddac3629",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:19.912232+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_f323e4b80b4a4f6b9c25beddd9931cbd",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "0a0ff658c2722fe52a205dfc0bdee85643c20b400ac1a2fa50982dc9b73cb984",
+      "captured_at": "2026-10-25T23:25:15.704344+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_b571263d4c356d147e8e4cc7e6b5275e",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:49.163278+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 863,
+          "completion_tokens": 91
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_c0f71bb00f18daf37b8cd4e7c58d18c1",
+            "kind": "input",
+            "bytes": 5352,
+            "sha256": "07dab78275688a1a5359b5c41cb0df77ba162253f8fc744c497b8fe9ee873083",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:48.856203+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_d2a76485fade4aa295fba35e4dc5821a",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "d0e47707ce3f003fc2f52f145a8a759d3022249dd66bcb5cd65be1965f489c0c",
+      "captured_at": "2026-10-25T23:25:15.731931+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_7e0d39569c4043a804421c34e500eb35",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:17.81883+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 492,
+          "completion_tokens": 24
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_771facbe0ed9119bd9f67285a59075e1",
+            "kind": "input",
+            "bytes": 3188,
+            "sha256": "a78d4b9410138905d017ecac32f908dac12a9b168c84f768647968b711e4f7ed",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:17.010734+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_25eec698c01d4a65b187a7d17b0e91fe",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "4111cc9bcb07e3f18ef2a36433ea0213f2aa4a04539faa3fca715193bdeb0e90",
+      "captured_at": "2026-10-25T23:25:15.758036+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_b287a468578662c66c162f285b873c5b",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:43.97262+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 843,
+          "completion_tokens": 33
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_ceaa97a5d87866956e1fbb1af3fed09c",
+            "kind": "input",
+            "bytes": 3878,
+            "sha256": "f7b273a8fed5664706d7cbd7c2f954578e984d44e993fc31416eb1bef66b7433",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:43.294545+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_2eadf32bdb974580829e011492b8e353",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "6e057f67e18eeba9f57a1ea9f6754a64e19696491104551631bdabb39200a51c",
+      "captured_at": "2026-10-25T23:25:15.784092+00:00"
+    },
+    {
+      "protocol": "batchforge.receipt.v1",
+      "receipt": {
+        "batch_id": "batch_a32227836e6407eac5742fbc78020e4b",
+        "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+        "status": "completed",
+        "created_at": "2026-10-25T23:23:54.153729+00:00",
+        "counts": {
+          "total": 1,
+          "pending": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "accepted_usage": {
+          "prompt_tokens": 1004,
+          "completion_tokens": 92
+        },
+        "ledger_state": "consistent_ledger",
+        "checks": {
+          "batch_and_task_counts_match": true,
+          "batch_and_task_usage_match": true,
+          "no_duplicate_accepted_attempts_observed": true,
+          "live_completed_tasks_have_accepted_attempts": true,
+          "live_task_attempt_counts_match": true,
+          "live_task_and_attempt_rows_match": true,
+          "live_task_and_accepted_attempt_usage_match": true
+        },
+        "history": {
+          "live_tasks": 1,
+          "retired_tasks": 0,
+          "observed_attempts": 1,
+          "observed_accepted_attempts": 1,
+          "reported_attempts": 1,
+          "tasks_missing_attempt_records": 0,
+          "tasks_with_excess_attempt_records": 0,
+          "full_attempt_history_available": true
+        },
+        "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+        "runtime_compatibility_scope": "first_dispatch",
+        "reported_runtimes": [
+          {
+            "accepted_attempts": 1,
+            "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36"
+          }
+        ],
+        "runtime_list_truncated": false,
+        "artifacts": [
+          {
+            "id": "file_22207d6a6cfa11ced12b7d415af43f86",
+            "kind": "input",
+            "bytes": 5602,
+            "sha256": "b6cf3e64ecdec418fa62f0aa4b5189f4d495778b8bddcc5ca0591fa92d2834df",
+            "hash_source": "verified_upload_metadata",
+            "storage_deleted_at": null,
+            "storage_expires_at": "2026-10-26T23:23:53.891687+00:00",
+            "archive_manifest_sha256": null
+          },
+          {
+            "id": "file_986e1cb8f57f414ea8f10b65fb255463",
+            "kind": "output",
+            "bytes": 0,
+            "sha256": null,
+            "hash_source": "not_published",
+            "storage_deleted_at": null,
+            "storage_expires_at": null,
+            "archive_manifest_sha256": null
+          }
+        ],
+        "quality": {
+          "state": "not_evaluated_by_this_receipt"
+        },
+        "verification_scope": [
+          "Single PostgreSQL statement snapshot, including retained-history counters",
+          "Runtime fingerprints are worker-reported, not independent hardware attestation",
+          "Artifact hashes are recorded metadata; verify downloaded bytes separately",
+          "SHA-256 checksum is not an issuer signature; no monetary cost is inferred"
+        ]
+      },
+      "receipt_sha256": "f1f1577f14f9d770e0c89bf79ee1c9014e60425735779bc8113f4d5f798dac4c",
+      "captured_at": "2026-10-25T23:25:15.809931+00:00"
+    }
+  ],
+  "artifact_readbacks": [
+    {
+      "file_id": "file_c70cc4b68e133aea8a0d408fae5c4fc1",
+      "sha256": "bdc8d47d5b088ad24fcb88853edb79e67e30393b2710d4cae88868bec94f6f07",
+      "bytes": 2954
+    },
+    {
+      "file_id": "file_067c00e869794904be1a34eb3a78d4a7",
+      "sha256": "f033e426666c33a019f98c929bc530da7fec0fe989cc9fdf580d59d5f7c49b87",
+      "bytes": 906
+    },
+    {
+      "file_id": "file_a063c64f3a787b965c033eac44617234",
+      "sha256": "05bdf5b8386ea3155589c82c8561741ed8ea96c51bee551cd70d676da643647a",
+      "bytes": 4538
+    },
+    {
+      "file_id": "file_a32cb1bc92eb4f1c93153fcc56fc1ec1",
+      "sha256": "ed53bbabf76c3fc119c2f87c5e79ffe06a3a29665bb48c0885d2fa2e06c74501",
+      "bytes": 862
+    },
+    {
+      "file_id": "file_1f43fd6bb4d3a0882635fb89ebdd708f",
+      "sha256": "222e4d9592234018eb1619d3c19db6fe5bd02cac7a4467d463a79330e87fc3f7",
+      "bytes": 2954
+    },
+    {
+      "file_id": "file_5f0c4def90164fce83ad9eefd2c5fc99",
+      "sha256": "93bd33a69bc9465e3d7851c3762ea0bbc23980b2fea66d73bd000a7c63d912cd",
+      "bytes": 906
+    },
+    {
+      "file_id": "file_91afdc529e59ddde75b6030f2b261170",
+      "sha256": "3ca739f5dbf086b8828ed19da3302dca922a48ba26e41ef71d7b1323d5eacf28",
+      "bytes": 4538
+    },
+    {
+      "file_id": "file_e56c71f0a0654da5a59d47dcc11a630c",
+      "sha256": "abe535cfe4221e0c1f2b07ef4a3f03648e534c42d9795a92cae1598f7d60a4bb",
+      "bytes": 862
+    },
+    {
+      "file_id": "file_db362839669aadc4a15d705435b6d375",
+      "sha256": "22ab83c5a9fc8d4f9f9da95bbebf4c26a7815c15efbd6cc40a7226ca926affd8",
+      "bytes": 3127
+    },
+    {
+      "file_id": "file_4e8a48b1c3e540719c81fd29f0390b86",
+      "sha256": "12372dabc9d2678bcc71ea3785dbb4a72720a494b3a16d4b660414e65999e843",
+      "bytes": 911
+    },
+    {
+      "file_id": "file_fd1da171ab64c05355742dcbc6b7b573",
+      "sha256": "2e9d5f8db6166c03767f5d1f594fdc22bfbfda20278d5341f8d8b08ac28d5649",
+      "bytes": 5352
+    },
+    {
+      "file_id": "file_ec414f05e790464c9db85ec006853ff9",
+      "sha256": "7c912b14b21b855d8c989ce8b72ffc9a10a532ee86642d0a628043acf1ee01b8",
+      "bytes": 987
+    },
+    {
+      "file_id": "file_72e2f499fbc5647f8f6cb9cf5e9e0f9f",
+      "sha256": "1d3754be03990b41053f947c1b33ffbef094885c2ea7094b4504a457329948f7",
+      "bytes": 3127
+    },
+    {
+      "file_id": "file_784906bd2c424132a2e10e48b82caa07",
+      "sha256": "4360372980559f325591c79edeefa76c66c8f035f7e940132cad6cfb2b56f9c8",
+      "bytes": 911
+    },
+    {
+      "file_id": "file_ce2436cd25fb4eab1338fa5896df46e1",
+      "sha256": "f3e1443df4525b0f4f53bb7a3a81c7572d0c03fc79a9afa61a5a03f9f2defaf9",
+      "bytes": 5352
+    },
+    {
+      "file_id": "file_beec5a56c9f14e7498b9a902ceea6952",
+      "sha256": "7f7e695be11490016a89ff45bb84a87ec9945c3e15fab9f7d01fd4402af38c50",
+      "bytes": 987
+    },
+    {
+      "file_id": "file_1f15ba887c3cfa1dd7a6b417fc6bd431",
+      "sha256": "ab8d12c69d7e23fda1681435959c69f887a0c69b9e6b72f2aea24819a3be470f",
+      "bytes": 3098
+    },
+    {
+      "file_id": "file_275697f3b8cb444688c202cfb6aa96ec",
+      "sha256": "b986f3cc3b1273ce4b8838c5955d6a0b1669c1921d9bf4fb294eecdf366a7049",
+      "bytes": 909
+    },
+    {
+      "file_id": "file_816131bd8f44482037f1b7d6846e46b2",
+      "sha256": "64877c69adeccef98140321a8c87c273d6802f1085143e2e59614e724c5f17bc",
+      "bytes": 5145
+    },
+    {
+      "file_id": "file_9d76d54dbf884b52968e6f13c4c473a1",
+      "sha256": "f89a68a6439d3110a1610ab106d1eeb1e6d8fd0dcfd2ebeb3e08edfa67b6901f",
+      "bytes": 987
+    },
+    {
+      "file_id": "file_f310671f6e47f2f87d3a7a7cf8586cf8",
+      "sha256": "329e6accc5c335a1ccea0b0d923ae6880abbc4bc6f6bf10277c8d159045ebd61",
+      "bytes": 3188
+    },
+    {
+      "file_id": "file_3aa6163ae16b4014810d3238814aac64",
+      "sha256": "86a35d39dad386c6c7d9c8e6e44c068c4004db39cdfa881159825f4b7e47b6ee",
+      "bytes": 909
+    },
+    {
+      "file_id": "file_e4614502fab53b9eff1fe720df59fa60",
+      "sha256": "85daf15439ec39fdc2b74f33ae05f1296695f14c760123a1ad698d4d0e35f9a5",
+      "bytes": 3878
+    },
+    {
+      "file_id": "file_46635c67fdae40be91531f7decae098f",
+      "sha256": "4587b6d45486ad9e2bf9b5293bf289685e42f4db545687488f52d98762d29237",
+      "bytes": 900
+    },
+    {
+      "file_id": "file_03c3ae2bce755688ab5cfdedeeff0b2b",
+      "sha256": "ab3a23d0560f0bbdb3455998c0170742a4b169e5f8d01b6823fc0f33ce35ffd5",
+      "bytes": 5602
+    },
+    {
+      "file_id": "file_c6c4abf508b54110a1fe8493e8355855",
+      "sha256": "eea7eaba98d657922b937ac9f1fe25d340a60f7af3bce720a24ce3fa2714b7c3",
+      "bytes": 981
+    },
+    {
+      "file_id": "file_9e2a10888e848d4a58c1c68d7b3d8838",
+      "sha256": "af72e0ed32974f39f996b46a5f8c8c27a229150657912a8f22279b868e9f1032",
+      "bytes": 2954
+    },
+    {
+      "file_id": "file_5cf833933f7d48aabe95f804c31b5886",
+      "sha256": "e37d4c2928d4f0efb92d6dcf248bad5bc0b9b0ad9b995a6b5137e98a68fb4854",
+      "bytes": 906
+    },
+    {
+      "file_id": "file_f19250ed59158796a4cb1244121322dc",
+      "sha256": "29b0f55bfe519014d71acc84fbf87a122486fdde95905d5e6623703776e60f30",
+      "bytes": 4538
+    },
+    {
+      "file_id": "file_a9abd782dccd4c5886508afc410561f7",
+      "sha256": "31b1d3307b3c629ea9843fb3048733b1de35af823b80806f1364c46d65f83fec",
+      "bytes": 862
+    },
+    {
+      "file_id": "file_58badb11444f22a83d39ef2246ee6dc1",
+      "sha256": "074caecd113569d0ce54465d99ac7d2586c48fea440fc8a5c12a6f682acfc5b5",
+      "bytes": 2954
+    },
+    {
+      "file_id": "file_4bb7e54b34e948beb292693c9f79f3c0",
+      "sha256": "e273bbfa380b9d2f9e55c0c84290d0ad5489a5e4f751f935f079cc6b97544456",
+      "bytes": 906
+    },
+    {
+      "file_id": "file_56d350410688b4a326c782a2d76dc7ba",
+      "sha256": "582c51c946531a879d6c58bbd5728b8e829768146dfdb31c5374080c6a22ea37",
+      "bytes": 4538
+    },
+    {
+      "file_id": "file_afc8614daf2b4f0c8a55358cbb189ce3",
+      "sha256": "b040140db6b170d884541286d62f1cdbb6004744ab4628f070e7b476129424bc",
+      "bytes": 862
+    },
+    {
+      "file_id": "file_f84e5584996266e6cadaf0b9620997cd",
+      "sha256": "480859392e6fe3c3c6468e9df12545d05b8d7f638f847ea353b08be1531eaa87",
+      "bytes": 3188
+    },
+    {
+      "file_id": "file_6d088bbb432b47be862aae5fefc3f540",
+      "sha256": "e5797be54369e40923e1cf464325d5a084430e03cb7f6a59bde90d2f2805aa6c",
+      "bytes": 909
+    },
+    {
+      "file_id": "file_ae5ff9ff75d01a669b523fae64347aa1",
+      "sha256": "0ef56f768239f5d357e5fe2df9b0810b60bf28a9050d640e4f00f2ffe6dd1ac5",
+      "bytes": 3878
+    },
+    {
+      "file_id": "file_e9ad7b135ef944afad1248e6caa3132f",
+      "sha256": "5f8d9a4ed4955e6c04b884229bfc304fcf89b0ea225c5f7035dc1e078a7be58a",
+      "bytes": 908
+    },
+    {
+      "file_id": "file_1cdada3a08b27b879d98d748489ec943",
+      "sha256": "184965cc6a52513b7b0385dfa0fc84806fab1fb3a1684fa3170ccabe71c5f080",
+      "bytes": 5602
+    },
+    {
+      "file_id": "file_9d4507f7e0504c3fbe174398e181de86",
+      "sha256": "aea1d3d4c2b83152ac8413bdaaf58562f5265b55660b259904634882f964a684",
+      "bytes": 981
+    },
+    {
+      "file_id": "file_bb58814cebda441cb3702d87c12308a3",
+      "sha256": "6cf9eab8a1e6baf999a06a2425832a1a9e44c2df3f5ac2b9153f8869ca46ebd3",
+      "bytes": 2954
+    },
+    {
+      "file_id": "file_8468ec76aa1041909fe07bdfa34ca6f7",
+      "sha256": "5d01d297c4d6f35f647e61b8549f9a008a1536987d90da9a74da3b0181309cca",
+      "bytes": 906
+    },
+    {
+      "file_id": "file_fd6f7805d8542683e4d2c9d256af1edc",
+      "sha256": "28a9b3b5862e81bf8af71556e162b3ab945cf578b05b4ddbe410dfdded6433a2",
+      "bytes": 4538
+    },
+    {
+      "file_id": "file_0addfa2292784e7d81187d14fa0ccb8b",
+      "sha256": "5eda7cece74fad5d46ebeb0f2f1ea05c1dc872d3f4f6a2a620365f11722cb3ea",
+      "bytes": 862
+    },
+    {
+      "file_id": "file_633867cdea5ac72ed5e6f243515f0aaa",
+      "sha256": "88aa825f9847a4b53aa72a0bab00de4ff8c4466f8fd1ee1c9729c1b2035ed897",
+      "bytes": 2954
+    },
+    {
+      "file_id": "file_f1a47537e12d4500ab2cc4356c2087fd",
+      "sha256": "5e94e19accef47dc23ff289beea765b3d779d3b19816f4f95b6631915947016b",
+      "bytes": 906
+    },
+    {
+      "file_id": "file_f1442b7820b2fecff6345cb7da8ccc30",
+      "sha256": "b31509c77f4733ec76f5bfb55cd85cf17246bddfca58f2935d6160f6219ae401",
+      "bytes": 4538
+    },
+    {
+      "file_id": "file_9072efa0d4304054ab5b26af09ae2c27",
+      "sha256": "821b882bdbc174114bddba67fe7a737c0dff858a5b093477ecdbbf0e2373bebb",
+      "bytes": 862
+    },
+    {
+      "file_id": "file_17c7733b9030b4f9708c9db678e9fe4f",
+      "sha256": "5b97847e03894e93ac76515af68ea346b42bc3af59cf185b71d41382eb9ef8d0",
+      "bytes": 3127
+    },
+    {
+      "file_id": "file_c341d222679841d6bfd549fc684456d1",
+      "sha256": "32437a9545a968db630dfb984d96bbb15e05f45ceb8a7a2a19468703910f2b85",
+      "bytes": 911
+    },
+    {
+      "file_id": "file_ff2f299466965074b2567c8b7a556606",
+      "sha256": "9d71c2f760e4bce543224f9168c6e172614e81b6a7e9b06d4cc8302b01569fcf",
+      "bytes": 5352
+    },
+    {
+      "file_id": "file_308e051452aa4271805e7a05b9b3c4c5",
+      "sha256": "78b5591bc6bb1ca5bfb6d04a333048e67533cf3585354d7944720adf2bd6835f",
+      "bytes": 987
+    },
+    {
+      "file_id": "file_4cc10d28f3beba9c600358f6c93fa46a",
+      "sha256": "ac8d16268f75aaa1ecdf2547e589915e6f5152cab75f635824cd79ee2ac065a0",
+      "bytes": 3098
+    },
+    {
+      "file_id": "file_e6fd7631b9014934929a514e8b1be41e",
+      "sha256": "2ade0a7043d3a01e2dc68fb26aac9490df63b10835620069b6b3ab5ec7adcf31",
+      "bytes": 909
+    },
+    {
+      "file_id": "file_c478e78ad24b6319feac9c46f8c877ab",
+      "sha256": "8e9597113f372a1d3b7f35f31ff332dabff5ec4450f06e9e63699f61f0977a84",
+      "bytes": 5145
+    },
+    {
+      "file_id": "file_20ce0fdfd9774f819c20ee6406b389ff",
+      "sha256": "721273dd82c80b4b07114f6e45d6728940eb7835531367f8d100a67c84306678",
+      "bytes": 987
+    },
+    {
+      "file_id": "file_2a5da956666ae234c361b0ca82656b51",
+      "sha256": "0dfd6d5f2bee148c1396974a656f8f970637dae17c27563e44c0294da1106569",
+      "bytes": 2954
+    },
+    {
+      "file_id": "file_62f4faa7c25d488cb6abf421a13a948b",
+      "sha256": "e3f4e3b15f46ca43788edcb9cb97424f990fa84514b5eb56d1d2fc275b34b857",
+      "bytes": 906
+    },
+    {
+      "file_id": "file_f209ff46bdb7b3c3802cc319339e9aba",
+      "sha256": "f0f3d81bbdde91f17eaa5f0b08c3c178a8868bcdfc79ae9930bf49e8ccea4a08",
+      "bytes": 4538
+    },
+    {
+      "file_id": "file_1def6014a2864a75af241545d107cf77",
+      "sha256": "10fb08acffd8d5ad906b158afc663e855e892c9aeaf0e4f53abf668a57c1fc87",
+      "bytes": 862
+    },
+    {
+      "file_id": "file_0c4acf9c32e1ad585be37dbe5ae09ffc",
+      "sha256": "e5d575a3b41719d81c1cfb6ba69cb17f91b41d0c6ba1899ec0ba8d8dab5555d2",
+      "bytes": 3188
+    },
+    {
+      "file_id": "file_3f57848ba9684118905f8001350fece8",
+      "sha256": "a6c1f35f086dfe4a861c84f3ac610afe5b521512c976f6b73a86433467c50030",
+      "bytes": 915
+    },
+    {
+      "file_id": "file_ea4ed51b03b98202694e8c4b7aa1f097",
+      "sha256": "11beeef1b282b85aab3a9061c6dcd76e712db4fc45033240a6faa9ae3a9fed62",
+      "bytes": 3878
+    },
+    {
+      "file_id": "file_50f7d8fd99ce4f8f92fada472ef69e63",
+      "sha256": "e5be5ffca788946fff5475e9ef5a8cc51cb40534c3ce831043d5347385ec282b",
+      "bytes": 900
+    },
+    {
+      "file_id": "file_f6fdd74986013d4e08b18a7138c84ba6",
+      "sha256": "763859e2a83c35cc649cbb2d99eab9c4fac3ea2d853c66aac2de576538cc0cf7",
+      "bytes": 5602
+    },
+    {
+      "file_id": "file_b9f7ddc337e04a48a01658b35da8f408",
+      "sha256": "8d998658398f9deae8a2745e389ac875764703caf992bbe945af2b945580bab7",
+      "bytes": 982
+    },
+    {
+      "file_id": "file_fb15de8a112296bf46b24abf93d28d48",
+      "sha256": "92c56aa31bca375f6744e702d44d79c8837dacbfe1ce235674642cc9f0018b08",
+      "bytes": 3098
+    },
+    {
+      "file_id": "file_cdd933379cd74a33a1f508bebe7ba78b",
+      "sha256": "bef8bb33c5e84dbdde8b2bf7fd575e2d4f06e2b42842cb0077e8dd13f02e878d",
+      "bytes": 909
+    },
+    {
+      "file_id": "file_f4184921173770bbf7686281de252b98",
+      "sha256": "e24a90f8124faa01c3a5b9a741387adf8353e1cfc035a9b53420a9d4c7259142",
+      "bytes": 5145
+    },
+    {
+      "file_id": "file_474f15f183ee49d492682b66acfed5db",
+      "sha256": "63f61cf8e2c4ce8743263f43f8cac0ba1e187349b22a9205786cd6bc0cbca2ff",
+      "bytes": 987
+    },
+    {
+      "file_id": "file_783514c2f4ec1487873c10328629a812",
+      "sha256": "5a4ed05cb14403e5525459a51f8a6272a5bb674cab3ca0f6b1ff6cce3397776d",
+      "bytes": 2954
+    },
+    {
+      "file_id": "file_00555f5f77284c268488a172c3d62c29",
+      "sha256": "39a69d20032a8a0aeb05c4f5cf6f2560ecddb73306995ccf47b1cdb50f273d6c",
+      "bytes": 906
+    },
+    {
+      "file_id": "file_1b523b83470583a97ce224b34f6be6bb",
+      "sha256": "9d0251d91d798a8235d137134e3b79f6ecca6788fd4a1725ebb1a1b18805bafd",
+      "bytes": 4538
+    },
+    {
+      "file_id": "file_fb38870489c844e490f00f5162046edd",
+      "sha256": "283305577d082699746cba92e3656996f9556c8bcd971d8ac98ec2baebb462a8",
+      "bytes": 862
+    },
+    {
+      "file_id": "file_94c4fda41b59a10a4d04b6ed130a6103",
+      "sha256": "5658d76b6940229ddc0eb425f5d09f73719df3e9efbb4ebfd639ebfbbb20b4ba",
+      "bytes": 3098
+    },
+    {
+      "file_id": "file_37a7968744824d2682266161e05da93f",
+      "sha256": "4be1323f26420bebdb8851b8249babd5502fb26e50f98ba61267e5843f6cf692",
+      "bytes": 909
+    },
+    {
+      "file_id": "file_6e34778f45347d2374e6b0679d4f4880",
+      "sha256": "09f652644b63d3324aaa5552e6257ebf431cb22cea852753705e96a1e02b130b",
+      "bytes": 5145
+    },
+    {
+      "file_id": "file_105c17d435f64af584b877dda1f08428",
+      "sha256": "e85a26f6a6a11534b171930b1c06718754f1f8bc75034e89d4f83de837972faf",
+      "bytes": 987
+    },
+    {
+      "file_id": "file_06dc6621b53415a002814620ee0b4c5f",
+      "sha256": "21235208159a5682f872744023ec138de4a3b13491bb557fa5de33f5ddac3629",
+      "bytes": 3127
+    },
+    {
+      "file_id": "file_f323e4b80b4a4f6b9c25beddd9931cbd",
+      "sha256": "bd060f63fa84fbf156d6940d891eeafe1cbfae7699e53bca8ee8863ad31789ca",
+      "bytes": 911
+    },
+    {
+      "file_id": "file_c0f71bb00f18daf37b8cd4e7c58d18c1",
+      "sha256": "07dab78275688a1a5359b5c41cb0df77ba162253f8fc744c497b8fe9ee873083",
+      "bytes": 5352
+    },
+    {
+      "file_id": "file_d2a76485fade4aa295fba35e4dc5821a",
+      "sha256": "de74d32b1b5f0ae27ed275b651ec8584fa997ec574f0cded092d23899a5e8dee",
+      "bytes": 987
+    },
+    {
+      "file_id": "file_771facbe0ed9119bd9f67285a59075e1",
+      "sha256": "a78d4b9410138905d017ecac32f908dac12a9b168c84f768647968b711e4f7ed",
+      "bytes": 3188
+    },
+    {
+      "file_id": "file_25eec698c01d4a65b187a7d17b0e91fe",
+      "sha256": "f0004558271598d97dd4f16f96474ff86d74aa060b5df29cc66f12c9ef6a92f6",
+      "bytes": 909
+    },
+    {
+      "file_id": "file_ceaa97a5d87866956e1fbb1af3fed09c",
+      "sha256": "f7b273a8fed5664706d7cbd7c2f954578e984d44e993fc31416eb1bef66b7433",
+      "bytes": 3878
+    },
+    {
+      "file_id": "file_2eadf32bdb974580829e011492b8e353",
+      "sha256": "078eac231c8b98fc4e4f84fe6a1b80b27fa53078b044be840c46d2430689f650",
+      "bytes": 906
+    },
+    {
+      "file_id": "file_22207d6a6cfa11ced12b7d415af43f86",
+      "sha256": "b6cf3e64ecdec418fa62f0aa4b5189f4d495778b8bddcc5ca0591fa92d2834df",
+      "bytes": 5602
+    },
+    {
+      "file_id": "file_986e1cb8f57f414ea8f10b65fb255463",
+      "sha256": "4fefa13a4db33c80da0dadf6f250b5a7f87653e0a9ce8310a53a9dbb71430b0d",
+      "bytes": 982
+    }
+  ],
+  "primary_identities_after": {
+    "api-a": {
+      "pid": 641686,
+      "start_ticks": "48004878",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 641694,
+      "start_ticks": "48005158",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 641677,
+      "start_ticks": "48004600",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 641702,
+      "start_ticks": "48005394",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "headroom_after": 118,
+  "isolated_pg_stopped": true,
+  "whole_controller_seconds": 355.05505956400884,
+  "whole_pod_allocation_usd": 1.587885127494595,
+  "cost_scope": "Operator-confirmed whole Pod $16.10/hour wall allocation, includes orchestration/fault/readback; not invoice/marginal cost"
+}

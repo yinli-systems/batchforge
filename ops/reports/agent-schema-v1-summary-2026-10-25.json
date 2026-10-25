@@ -1,0 +1,27 @@
+{
+  "source_report": "docs/benchmarks/platform480-2026-10-25/soak480-agent-runtime-schema-20261025-v1-quality-failed/report.json",
+  "source_report_sha256": "6a538253b6847003c764a6d0aac888a5ec0cf3fd05b701d3c11a80f07ec06bc7",
+  "source_commit": "da4ad45be0c0b47d2e5d07d5a545d62470870ccf",
+  "phase": "quality_failed",
+  "cohort_passed": false,
+  "delivered_agent_runs": 20,
+  "strict_quality_passed_runs": 8,
+  "cases": 20,
+  "accepted_model_tasks": 32,
+  "observed_attempts": 32,
+  "accepted_tokens": {
+    "prompt_tokens": 18403,
+    "completion_tokens": 1565
+  },
+  "artifact_reads": 64,
+  "distinct_artifact_ids": 64,
+  "agent_api_restart_state_readback": true,
+  "primary_epoch_unchanged": true,
+  "isolated_pg_stopped": true,
+  "remaining_task_headroom": 166,
+  "whole_controller_seconds": 355.30928376998054,
+  "whole_pod_allocation_usd": 1.5890220746379686,
+  "invoice": null,
+  "qualified_cohort_cost": null,
+  "scope": "Shape decoding qualified; only8/20 Agent tasks passed actual tool/answer/citation requirements; native Agent state, not Azure Agent rollout"
+}
