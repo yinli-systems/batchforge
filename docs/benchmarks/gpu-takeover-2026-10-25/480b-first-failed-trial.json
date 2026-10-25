@@ -1,0 +1,75 @@
+{
+  "started_at": "2026-10-25T09:35:19.105644+00:00",
+  "phase": "failed",
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "revision": "9ce3eaa67fe88609afec235117e97eb03d9b3cda",
+  "total_parameters": 480154875392,
+  "active_parameters_approx": 35000000000,
+  "quantization": "AWQ INT4; kernel must be confirmed in actual startup log",
+  "manifest_sha256": "ecbec45bfa6da34d6d1aba7ff63e49cbdbb7ff9c2b9280af5c2c1a01fc65dcf6",
+  "events": [
+    {
+      "at": "2026-10-25T09:35:19.444817+00:00",
+      "event": "watchdog_paused"
+    },
+    {
+      "at": "2026-10-25T09:35:19.904414+00:00",
+      "event": "original_worker_drained"
+    },
+    {
+      "at": "2026-10-25T09:35:23.604670+00:00",
+      "event": "original_engine_stopped"
+    },
+    {
+      "at": "2026-10-25T09:35:27.788083+00:00",
+      "event": "480b_engine_loading"
+    },
+    {
+      "at": "2026-10-25T09:35:28.190215+00:00",
+      "event": "control_plane_process_recovered"
+    },
+    {
+      "at": "2026-10-25T09:35:28.534569+00:00",
+      "event": "control_plane_process_recovered"
+    },
+    {
+      "at": "2026-10-25T09:35:30.941951+00:00",
+      "event": "control_plane_process_recovered"
+    },
+    {
+      "at": "2026-10-25T09:35:30.976113+00:00",
+      "event": "trial_failed"
+    },
+    {
+      "at": "2026-10-25T09:35:31.211513+00:00",
+      "event": "candidate_stopped"
+    },
+    {
+      "at": "2026-10-25T09:35:35.045682+00:00",
+      "event": "serving_pair_restore_failed"
+    },
+    {
+      "at": "2026-10-25T09:35:35.361862+00:00",
+      "event": "watchdog_restored"
+    }
+  ],
+  "controller_sha256": "b5560a4921520a67e6cc31fb7dbbc424fcfee130e51559689b342135c27ef35d",
+  "checkpoint_verified_bytes": 252341633360,
+  "gpu_inventory_csv": [
+    "0, GPU-c43133f3-8aec-31fb-3ccd-06cc7b64de08, NVIDIA H100 80GB HBM3, 81559 MiB",
+    "1, GPU-635baa6f-767c-a497-55ba-c5e9b453131e, NVIDIA H100 80GB HBM3, 81559 MiB",
+    "2, GPU-8d6feb38-a161-e269-a1de-39c63eef2699, NVIDIA H100 80GB HBM3, 81559 MiB",
+    "3, GPU-04ad4dbe-0838-169d-b041-42126335b711, NVIDIA H100 80GB HBM3, 81559 MiB"
+  ],
+  "limitations": [
+    "One existing four-H100 Pod, no independent-node HA",
+    "Local staging is not Pod-loss durable; evidence must be exported off Pod",
+    "Finite engine benchmark; no tenant routing or production capacity claim"
+  ],
+  "control_plane_restarts": 3,
+  "error_type": "RuntimeError",
+  "restore_failures": [
+    "RuntimeError"
+  ],
+  "finished_at": "2026-10-25T09:35:35.363707+00:00"
+}

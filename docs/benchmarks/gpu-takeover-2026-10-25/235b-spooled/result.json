@@ -1,0 +1,237 @@
+{
+  "passed": true,
+  "finished_at": "2026-10-25T09:34:42.781925+00:00",
+  "phases": [
+    {
+      "phase": "00-shortest",
+      "passed": true,
+      "summary": {
+        "offered": 20,
+        "completed": 20,
+        "errors": 0,
+        "elapsed_seconds": 271.5006788090104,
+        "successful_inferences_per_second": 0.07366464086842736,
+        "final_text_present": 20,
+        "no_final_text": 0,
+        "prompt_tokens": 109056,
+        "generated_tokens": 13600,
+        "prompt_tokens_per_second": 401.67855372736074,
+        "generated_tokens_per_second": 50.091955790530605,
+        "completion_seconds": {
+          "samples": 20,
+          "p50": 39.35679,
+          "p95": 270.878629,
+          "p99": 271.375771,
+          "max": 271.500057,
+          "mean": 88.769282
+        },
+        "queue_seconds": {
+          "samples": 20,
+          "p50": 0.006222,
+          "p95": 5.392176,
+          "p99": 5.760975,
+          "max": 5.853174,
+          "mean": 1.097749
+        },
+        "http_ttft_seconds": {
+          "samples": 20,
+          "p50": 0.582093,
+          "p95": 4.42727,
+          "p99": 4.486859,
+          "max": 4.501757,
+          "mean": 1.289975
+        },
+        "first_final_content_seconds": {
+          "samples": 20,
+          "p50": 0.582093,
+          "p95": 4.42727,
+          "p99": 4.486859,
+          "max": 4.501757,
+          "mean": 1.289975
+        },
+        "stream_span_per_reported_output_token_proxy_seconds": {
+          "samples": 20,
+          "p50": 0.126506,
+          "p95": 0.161887,
+          "p99": 0.1645,
+          "max": 0.165154,
+          "mean": 0.128015
+        },
+        "visible_text_codepoints": 52818,
+        "final_text_codepoints": 52818,
+        "reasoning_text_codepoints": 0,
+        "http_service_seconds": {
+          "samples": 20,
+          "p50": 39.350247,
+          "p95": 265.819015,
+          "p99": 268.435433,
+          "max": 269.089538,
+          "mean": 87.671533
+        },
+        "all_terminal_completion_seconds": {
+          "samples": 20,
+          "p50": 39.35679,
+          "p95": 270.878629,
+          "p99": 271.375771,
+          "max": 271.500057,
+          "mean": 88.769282
+        },
+        "cost": null
+      }
+    },
+    {
+      "phase": "01-class-fair",
+      "passed": true,
+      "summary": {
+        "offered": 20,
+        "completed": 20,
+        "errors": 0,
+        "elapsed_seconds": 203.2710317519959,
+        "successful_inferences_per_second": 0.09839080279968924,
+        "final_text_present": 20,
+        "no_final_text": 0,
+        "prompt_tokens": 109056,
+        "generated_tokens": 13600,
+        "prompt_tokens_per_second": 536.5053695061455,
+        "generated_tokens_per_second": 66.90574590378868,
+        "completion_seconds": {
+          "samples": 20,
+          "p50": 45.689203,
+          "p95": 203.269271,
+          "p99": 203.269945,
+          "max": 203.270114,
+          "mean": 76.904371
+        },
+        "queue_seconds": {
+          "samples": 20,
+          "p50": 0.006543,
+          "p95": 9.160724,
+          "p99": 11.94865,
+          "max": 12.645632,
+          "mean": 1.899098
+        },
+        "http_ttft_seconds": {
+          "samples": 20,
+          "p50": 1.985294,
+          "p95": 4.176072,
+          "p99": 4.176307,
+          "max": 4.176365,
+          "mean": 2.150405
+        },
+        "first_final_content_seconds": {
+          "samples": 20,
+          "p50": 1.985294,
+          "p95": 4.176072,
+          "p99": 4.176307,
+          "max": 4.176365,
+          "mean": 2.150405
+        },
+        "stream_span_per_reported_output_token_proxy_seconds": {
+          "samples": 20,
+          "p50": 0.133672,
+          "p95": 0.169216,
+          "p99": 0.169217,
+          "max": 0.169218,
+          "mean": 0.130779
+        },
+        "visible_text_codepoints": 59500,
+        "final_text_codepoints": 59500,
+        "reasoning_text_codepoints": 0,
+        "http_service_seconds": {
+          "samples": 20,
+          "p50": 44.351916,
+          "p95": 203.265244,
+          "p99": 203.266835,
+          "max": 203.267233,
+          "mean": 75.005272
+        },
+        "all_terminal_completion_seconds": {
+          "samples": 20,
+          "p50": 45.689203,
+          "p95": 203.269271,
+          "p99": 203.269945,
+          "max": 203.270114,
+          "mean": 76.904371
+        },
+        "cost": null
+      }
+    },
+    {
+      "phase": "02-fifo",
+      "passed": true,
+      "summary": {
+        "offered": 20,
+        "completed": 20,
+        "errors": 0,
+        "elapsed_seconds": 172.41701302002184,
+        "successful_inferences_per_second": 0.11599783368058644,
+        "final_text_present": 20,
+        "no_final_text": 0,
+        "prompt_tokens": 109056,
+        "generated_tokens": 13600,
+        "prompt_tokens_per_second": 632.5129874935018,
+        "generated_tokens_per_second": 78.87852690279878,
+        "completion_seconds": {
+          "samples": 20,
+          "p50": 29.749116,
+          "p95": 171.776777,
+          "p99": 172.288173,
+          "max": 172.416022,
+          "mean": 59.993913
+        },
+        "queue_seconds": {
+          "samples": 20,
+          "p50": 0.00777,
+          "p95": 6.760739,
+          "p99": 8.387268,
+          "max": 8.793901,
+          "mean": 1.362135
+        },
+        "http_ttft_seconds": {
+          "samples": 20,
+          "p50": 1.963248,
+          "p95": 4.061226,
+          "p99": 4.061361,
+          "max": 4.061394,
+          "mean": 2.275284
+        },
+        "first_final_content_seconds": {
+          "samples": 20,
+          "p50": 1.963248,
+          "p95": 4.061226,
+          "p99": 4.061361,
+          "max": 4.061394,
+          "mean": 2.275284
+        },
+        "stream_span_per_reported_output_token_proxy_seconds": {
+          "samples": 20,
+          "p50": 0.085137,
+          "p95": 0.102735,
+          "p99": 0.116773,
+          "max": 0.120282,
+          "mean": 0.088971
+        },
+        "visible_text_codepoints": 59493,
+        "final_text_codepoints": 59493,
+        "reasoning_text_codepoints": 0,
+        "http_service_seconds": {
+          "samples": 20,
+          "p50": 27.961827,
+          "p95": 171.773313,
+          "p99": 172.280001,
+          "max": 172.406673,
+          "mean": 58.631778
+        },
+        "all_terminal_completion_seconds": {
+          "samples": 20,
+          "p50": 29.749116,
+          "p95": 171.776777,
+          "p99": 172.288173,
+          "max": 172.416022,
+          "mean": 59.993913
+        },
+        "cost": null
+      }
+    }
+  ]
+}

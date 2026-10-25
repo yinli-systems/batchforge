@@ -1,0 +1,27 @@
+{"phase": "00-fifo", "passed": true, "summary": {"offered": 20, "completed": 20, "errors": 0, "elapsed_seconds": 177.5878994759987, "successful_inferences_per_second": 0.1126202858359898, "final_text_present": 20, "no_final_text": 0, "prompt_tokens": 109056, "generated_tokens": 13600, "prompt_tokens_per_second": 614.0958946064852, "generated_tokens_per_second": 76.58179436847307, "completion_seconds": {"samples": 20, "p50": 32.515654, "p95": 177.054216, "p99": 177.418563, "max": 177.509649, "mean": 63.159686}, "queue_seconds": {"samples": 20, "p50": 0.875389, "p95": 8.823535, "p99": 10.596124, "max": 11.039271, "mean": 2.407772}, "http_ttft_seconds": {"samples": 20, "p50": 3.292501, "p95": 4.719288, "p99": 4.839275, "max": 4.869272, "mean": 3.12428}, "first_final_content_seconds": {"samples": 20, "p50": 3.292501, "p95": 4.719288, "p99": 4.839275, "max": 4.869272, "mean": 3.12428}, "stream_span_per_reported_output_token_proxy_seconds": {"samples": 20, "p50": 0.086283, "p95": 0.104254, "p99": 0.118203, "max": 0.121691, "mean": 0.090648}, "visible_text_codepoints": 54024, "final_text_codepoints": 54024, "reasoning_text_codepoints": 0, "http_service_seconds": {"samples": 20, "p50": 29.252692, "p95": 176.367014, "p99": 176.434246, "max": 176.451054, "mean": 60.751913}, "all_terminal_completion_seconds": {"samples": 20, "p50": 32.515654, "p95": 177.054216, "p99": 177.418563, "max": 177.509649, "mean": 63.159686}, "cost": null}}
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/batchforge/campaigns/takeover-20261025-v1/source/ops/gpu_campaign.py", line 158, in <module>
+    main()
+  File "/workspace/batchforge/campaigns/takeover-20261025-v1/source/ops/gpu_campaign.py", line 154, in main
+    execute(args)
+  File "/workspace/batchforge/campaigns/takeover-20261025-v1/source/ops/gpu_campaign.py", line 120, in execute
+    report = asyncio.run(engine_matrix.run(config, event_sink=journal))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/batchforge/campaigns/takeover-20261025-v1/source/scripts/engine_matrix.py", line 217, in run
+    await asyncio.gather(*(consumer() for _ in range(min(args.concurrency, len(rows)))))
+  File "/workspace/batchforge/campaigns/takeover-20261025-v1/source/scripts/engine_matrix.py", line 215, in consumer
+    event_sink({"event": "terminal", "record": record})
+  File "/workspace/batchforge/campaigns/takeover-20261025-v1/source/ops/gpu_campaign.py", line 52, in __call__
+    self.output.flush()
+OSError: [Errno 12] Cannot allocate memory

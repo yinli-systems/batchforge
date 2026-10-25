@@ -1,0 +1,13 @@
+{
+  "container": {
+    "passed": true,
+    "writes": 50,
+    "max_flush_s": 0.0005830939626321197,
+    "mean_flush_s": 6.450418033637106e-05
+  },
+  "persistent": {
+    "passed": false,
+    "writes": 24,
+    "errno": 12
+  }
+}

@@ -1,0 +1,1 @@
+{"repaired":[{"name":"a","pid":475899,"port":8082,"command_matches":true,"runtime_database_env_matches_private_config":true,"ready_before_adoption":true},{"name":"b","pid":475900,"port":8083,"command_matches":true,"runtime_database_env_matches_private_config":true,"ready_before_adoption":true}],"time":"2026-10-25T09:39:21.973421+00:00","api_processes_restarted":false}

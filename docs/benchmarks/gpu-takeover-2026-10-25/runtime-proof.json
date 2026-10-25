@@ -1,0 +1,35 @@
+{
+  "created_at": "2026-10-25T09:50:19.180751+00:00",
+  "versions": {
+    "vllm": "0.10.2",
+    "torch": "2.8.0",
+    "transformers": "4.55.2",
+    "huggingface_hub": "0.34.4"
+  },
+  "engine_log_sha256": "b23d8ca651cc4d2650977ad68fe64776b5d03b03196f56014602276c1e4f4c5d",
+  "startup_evidence": [
+    "(APIServer pid=544774) INFO 10-25 09:40:47 [utils.py:328] non-default args: {'host': '127.0.0.1', 'port': 8348, 'model': '/root/batchforge-runtime/gpu-takeover-20261025/model-spool', 'dtype': 'half', 'revision': '9ce3eaa67fe88609afec235117e97eb03d9b3cda', 'max_model_len': 18440, 'enforce_eager': True, 'served_model_name': ['QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ'], 'generation_config': 'vllm', 'tensor_parallel_size': 4, 'enable_prefix_caching': False, 'max_num_batched_tokens': 4096, 'max_num_seqs': 32, 'enable_chunked_prefill': True}",
+    "(APIServer pid=544774) INFO 10-25 09:40:56 [awq_marlin.py:117] The model is convertible to awq_marlin during runtime. Using awq_marlin kernel.",
+    "(EngineCore_DP0 pid=544850) INFO 10-25 09:41:01 [core.py:76] Initializing a V1 LLM engine (v0.10.2) with config: model='/root/batchforge-runtime/gpu-takeover-20261025/model-spool', speculative_config=None, tokenizer='/root/batchforge-runtime/gpu-takeover-20261025/model-spool', skip_tokenizer_init=False, tokenizer_mode=auto, revision=9ce3eaa67fe88609afec235117e97eb03d9b3cda, tokenizer_revision=9ce3eaa67fe88609afec235117e97eb03d9b3cda, trust_remote_code=False, dtype=torch.float16, max_seq_len=18440, download_dir=None, load_format=auto, tensor_parallel_size=4, pipeline_parallel_size=1, data_parallel_size=1, disable_custom_all_reduce=False, quantization=awq_marlin, enforce_eager=True, kv_cache_dtype=auto, device_config=cuda, decoding_config=DecodingConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_backend=''), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None), seed=0, served_model_name=QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ, enable_prefix_caching=False, chunked_prefill_enabled=True, use_async_output_proc=True, pooler_config=None, compilation_config={\"level\":0,\"debug_dump_path\":\"\",\"cache_dir\":\"\",\"backend\":\"\",\"custom_ops\":[],\"splitting_ops\":null,\"use_inductor\":true,\"compile_sizes\":[],\"inductor_compile_config\":{\"enable_auto_functionalized_v2\":false},\"inductor_passes\":{},\"cudagraph_mode\":0,\"use_cudagraph\":true,\"cudagraph_num_of_warmups\":0,\"cudagraph_capture_sizes\":[],\"cudagraph_copy_inputs\":false,\"full_cuda_graph\":false,\"pass_config\":{},\"max_capture_size\":0,\"local_cache_dir\":null}",
+    "(Worker_TP0 pid=544898) INFO 10-25 09:41:41 [gpu_model_runner.py:2392] Model loading took 58.9256 GiB and 28.382384 seconds",
+    "(Worker_TP1 pid=544899) INFO 10-25 09:41:42 [gpu_model_runner.py:2392] Model loading took 58.9256 GiB and 29.273820 seconds",
+    "(Worker_TP2 pid=544900) INFO 10-25 09:41:43 [gpu_model_runner.py:2392] Model loading took 58.9256 GiB and 29.491086 seconds",
+    "(Worker_TP3 pid=544901) INFO 10-25 09:41:43 [gpu_model_runner.py:2392] Model loading took 58.9256 GiB and 30.636398 seconds",
+    "(Worker_TP0 pid=544898) INFO 10-25 09:41:46 [gpu_worker.py:298] Available KV cache memory: 10.22 GiB",
+    "(Worker_TP1 pid=544899) INFO 10-25 09:41:46 [gpu_worker.py:298] Available KV cache memory: 10.22 GiB",
+    "(Worker_TP2 pid=544900) INFO 10-25 09:41:46 [gpu_worker.py:298] Available KV cache memory: 10.22 GiB",
+    "(Worker_TP3 pid=544901) INFO 10-25 09:41:46 [gpu_worker.py:298] Available KV cache memory: 10.22 GiB",
+    "(EngineCore_DP0 pid=544850) INFO 10-25 09:41:46 [kv_cache_utils.py:864] GPU KV cache size: 172,912 tokens",
+    "(EngineCore_DP0 pid=544850) INFO 10-25 09:41:46 [kv_cache_utils.py:864] GPU KV cache size: 172,912 tokens",
+    "(EngineCore_DP0 pid=544850) INFO 10-25 09:41:46 [kv_cache_utils.py:864] GPU KV cache size: 172,912 tokens",
+    "(EngineCore_DP0 pid=544850) INFO 10-25 09:41:46 [kv_cache_utils.py:864] GPU KV cache size: 172,912 tokens",
+    "(APIServer pid=544774) WARNING 10-25 09:43:14 [launcher.py:98] /root/batchforge-runtime/engine-venv/bin/python -m vllm.entrypoints.openai.api_server --model /root/batchforge-runtime/gpu-takeover-20261025/model-spool --served-model-name QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ --host 127.0.0.1 --port 8348 --tensor-parallel-size 4 --dtype half --max-model-len 18440 --max-num-seqs 32 --gpu-memory-utilization .90 --enforce-eager --disable-log-requests --revision 9ce3eaa67fe88609afec235117e97eb03d9b3cda --max-num-batched-tokens 4096 --generation-config vllm --enable-chunked-prefill --no-enable-prefix-caching"
+  ],
+  "serving_source_sha256": {
+    "backend/app.py": "bccab8acbab54fc5024aa1cb11868af22f1fce0b9223b80c869591dbac20b875",
+    "backend/store.py": "62d7d94b2ea7b77d0a8838a26de17e98724e24d3bde493f2422f1dcf0a77890a",
+    "worker/runtime.py": "56be1af6502a617540cdabf8c65e0662a833909dd2b8746df0910f3fd96eb04d",
+    "ops/manage.py": "159fc37c6f9a64e36e5e0f20bc97a8adf08d6ce93934f988339bab534879d0a0",
+    "ops/supervise.py": "3af116dc9558a6d8abfd288554fc6e541314b41a352ad21f28a4ab9d5eac87b0"
+  }
+}
