@@ -15,12 +15,15 @@ Immutable source `831b839` passed independent read-only Azure qualification at
 authentication, 166-batch linkage, other-owner hiding and exact response-body
 checksums. The [qualification evidence](benchmarks/platform480-2026-10-25/quality-api-review-20261025-v1-qualified/validation.json)
 is exported with SHA-256 verification. This did not deploy the feature.
-The running primary remains immutable `398db6f` until the guarded release
-completes. Its single queued controller waits for the successful closed 2,400-task
-endurance report, then checks a private canary, drains both API enqueue paths,
-rolls only the APIs and validates both replicas and the gateway before cleanup.
-A failed check restores compatible API configuration. It never switches the
-480B runtime, changes retention, or creates cloud resources.
+The guarded release completed **2026-10-25 15:20:51 UTC**, after the successful
+closed 2,400-task endurance report. A private canary passed, both API enqueue
+paths drained, and both API replicas and the gateway passed validation before
+canary cleanup. The primary now uses immutable **`831b839`** with its pinned
+catalogue. The 480B worker and engine identities stayed unchanged. The
+[actual release receipt](benchmarks/platform480-2026-10-25/quality-api-release-20261025-v1-complete/release.json)
+is retained. Failed checks would restore compatible API configuration; no
+retention, schema, model or cloud resource changed. The separate input-reuse
+console and physical-fleet follow-ups are not in this published revision.
 
 ## Ownership and reconciliation
 

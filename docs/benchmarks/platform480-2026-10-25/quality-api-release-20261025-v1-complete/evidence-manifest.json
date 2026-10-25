@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-25T15:21:31.251516+00:00",
+  "source_run": "/root/batchforge-runtime/quality-api-release-20261025-v1",
+  "files": {
+    "release.json": {
+      "bytes": 2924,
+      "sha256": "c2f8bc5c69179db4906cc8e6623e49c0605f83011ff691d3526002d800ecdc52",
+      "source_relative_path": "release.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

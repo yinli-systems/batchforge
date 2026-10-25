@@ -31,7 +31,10 @@ API tasks, acceptance fencing, storage readback and process-fault evidence. The
 [quality/endurance campaign](benchmarks/quality-squad-2026-10-25.md) records its
 own workload, versions, failures and deployment state. The execution-evidence
 API rollout passed at 13:59:37 UTC on October 25; the primary uses immutable
-source `398db6f`, and the GPU worker/engine identities remain unchanged.
+source `398db6f` for that fixed experiment. After its successful 2,400-task
+closure, the quality-evidence and stronger-receipt API release `831b839`
+published at 15:20:51 UTC. GPU worker/engine identities remained unchanged;
+the separate reusable-input endurance then began against that primary.
 Historical two-Pod tests remain in [100B validation](100b-validation.md).
 
 ## Durability

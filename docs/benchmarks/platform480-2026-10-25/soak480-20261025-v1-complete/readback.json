@@ -1,0 +1,120 @@
+{
+  "passed": true,
+  "started_at": "2026-10-25T15:21:31.514676+00:00",
+  "source_sha256": "a490edffd59888f7d5a25926544a69a6a5befa14d3c1c7e65703ccee3e835232",
+  "sample_indices": [
+    0,
+    60,
+    119
+  ],
+  "services_changed": false,
+  "input_uploads": 0,
+  "inference_submissions": 0,
+  "overlap": "Read-only delivery probes overlap the successor endurance; no new tasks or raw payload export",
+  "database_read_only_verified": true,
+  "batches": [
+    {
+      "index": 0,
+      "readback": {
+        "protocol": "batchforge.readback.v1",
+        "captured_at": "2026-10-25T15:21:32.412872+00:00",
+        "receipt_sha256": "2c256c77c87757dee181b02b88d5dcd9e045c1a05b6d1066da97404abac9d974",
+        "batch_id": "batch_f772a03a958906438077e0dcc52726ac",
+        "checksum_verified": true,
+        "artifacts": [
+          {
+            "file_id": "file_6b9d59f509becff96c3e862ef40cd839",
+            "state": "matched",
+            "passed": true,
+            "bytes": 518830,
+            "sha256": "e7be6f16a59ff1880ce2a446844a0456d09be77f40e76e495c57257cb14b49d9",
+            "expected_sha256": "e7be6f16a59ff1880ce2a446844a0456d09be77f40e76e495c57257cb14b49d9"
+          },
+          {
+            "file_id": "file_966cdedf494148c0afc4b4d9b6a680ce",
+            "state": "matched",
+            "passed": true,
+            "bytes": 87647,
+            "sha256": "a6d4acb88a979fcb55aeebbb5c184175926d514a526148b7ade46f08c053e2df",
+            "expected_sha256": "a6d4acb88a979fcb55aeebbb5c184175926d514a526148b7ade46f08c053e2df"
+          }
+        ],
+        "passed": true,
+        "scope": "Authenticated bytes read now, compared to the recorded receipt; no payload persisted, no attestation or quality claim"
+      },
+      "accepted_usage": {
+        "prompt_tokens": 109056,
+        "completion_tokens": 13600
+      }
+    },
+    {
+      "index": 60,
+      "readback": {
+        "protocol": "batchforge.readback.v1",
+        "captured_at": "2026-10-25T15:21:33.151604+00:00",
+        "receipt_sha256": "566020c33d6cbe548d7aaa68035fb631245ebf2881c39d8157ddbedcd1b9b713",
+        "batch_id": "batch_1b18bdcccd73fc56f5b36e4f646bf45f",
+        "checksum_verified": true,
+        "artifacts": [
+          {
+            "file_id": "file_265190977254249d18e420dc9b8279ca",
+            "state": "matched",
+            "passed": true,
+            "bytes": 518830,
+            "sha256": "132e28b226181dc5743d4f3d136527e1d855b1434e7b4e15d9627b17597da229",
+            "expected_sha256": "132e28b226181dc5743d4f3d136527e1d855b1434e7b4e15d9627b17597da229"
+          },
+          {
+            "file_id": "file_78d8bd1d28534ea59345d5286eec31a6",
+            "state": "matched",
+            "passed": true,
+            "bytes": 81906,
+            "sha256": "642dd6344c35ea7ed001f9ad838246b9812d1555e501383ac83235b6c968d7ae",
+            "expected_sha256": "642dd6344c35ea7ed001f9ad838246b9812d1555e501383ac83235b6c968d7ae"
+          }
+        ],
+        "passed": true,
+        "scope": "Authenticated bytes read now, compared to the recorded receipt; no payload persisted, no attestation or quality claim"
+      },
+      "accepted_usage": {
+        "prompt_tokens": 109056,
+        "completion_tokens": 13600
+      }
+    },
+    {
+      "index": 119,
+      "readback": {
+        "protocol": "batchforge.readback.v1",
+        "captured_at": "2026-10-25T15:22:54.925057+00:00",
+        "receipt_sha256": "ceb9f24f05515936cd97bcd1d6c9aed3a941a8c46255e5c8c9effc0d32086fb7",
+        "batch_id": "batch_a28e5d88880926f99a4208d99ffb4bb5",
+        "checksum_verified": true,
+        "artifacts": [
+          {
+            "file_id": "file_177799a53b02a82c759be8527e26ec0a",
+            "state": "matched",
+            "passed": true,
+            "bytes": 518830,
+            "sha256": "3cc7b34ef08d6d515533d3670f55119315d9e42c3842f42b8390a3d8e7f7f6a7",
+            "expected_sha256": "3cc7b34ef08d6d515533d3670f55119315d9e42c3842f42b8390a3d8e7f7f6a7"
+          },
+          {
+            "file_id": "file_30fd01b7b6344c7ca4b408fffd89a1ed",
+            "state": "matched",
+            "passed": true,
+            "bytes": 75941,
+            "sha256": "5d01b061e1d67d442a012aa2dd3f2bd7d81a9b92d1ed50c20879492131cff439",
+            "expected_sha256": "5d01b061e1d67d442a012aa2dd3f2bd7d81a9b92d1ed50c20879492131cff439"
+          }
+        ],
+        "passed": true,
+        "scope": "Authenticated bytes read now, compared to the recorded receipt; no payload persisted, no attestation or quality claim"
+      },
+      "accepted_usage": {
+        "prompt_tokens": 109056,
+        "completion_tokens": 13600
+      }
+    }
+  ],
+  "finished_at": "2026-10-25T15:22:54.925248+00:00"
+}

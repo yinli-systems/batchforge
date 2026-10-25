@@ -1,0 +1,8 @@
+{
+  "identity": {
+    "pid": 589233,
+    "start_ticks": "46512824",
+    "cwd": "/root/batchforge-runtime/quality-api-review-20261025-v1/source"
+  },
+  "scope": "Read-only three-batch/six-artifact S3 delivery audit after API release"
+}

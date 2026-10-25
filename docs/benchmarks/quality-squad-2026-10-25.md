@@ -137,3 +137,17 @@ Only four outputs were capped; simply raising the token limit does not address
 most of these errors. A future prompt/output-contract experiment needs its own
 fixed cohort, preregistered scoring and actual measurements after the current
 GPU campaign closes. Raw predictions and benchmark thresholds remain unchanged.
+
+## Endurance closure and quality-product publication
+
+The separate fixed compute study subsequently completed **2,400/2,400** tasks
+at 15:20:28 UTC, with unique acceptance, conserved metering and exact output
+lengths. Its [closed report and analysis](endurance480-2026-10-25.md) retain
+336.499 output tokens/s, both durable and scheduled-arrival latency, all 758
+NVML samples per device and sampling gaps. This does not change the failed
+SQuAD quality gate above.
+
+After that closure, API source `831b839` published the authenticated Quality
+evidence page and stronger task-history receipts at 15:20:51 UTC. Worker and
+engine identities stayed unchanged. A 3,600-task reusable-input saturation study
+then started at 15:20:53 UTC; it has a separate protocol and no final result yet.

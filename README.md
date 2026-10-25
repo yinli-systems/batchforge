@@ -15,7 +15,10 @@ See [480B platform evidence](docs/benchmarks/platform480-2026-10-25.md).
 
 The complete 10,570-question public SQuAD campaign delivered every task, but
 measured **EM 53.82% / F1 75.82%**, below the predeclared 70% / 80% gates.
-The separate 2,400-task sustained compute workload is running. Delivery,
+The separate 2,400-task sustained compute workload completed with all checks
+passing: 336.499 completion tokens/s over 80.8 minutes, durable-acceptance P95
+103.648 s / P99 108.762 s. A separately preregistered 3,600-task input-reuse
+endurance is now running. [Closed study and release](docs/benchmarks/endurance480-2026-10-25.md). Delivery,
 answer quality and capacity are reported separately; original failures remain
 preserved.
 See [ground-truth evaluation and endurance protocol](docs/benchmarks/quality-squad-2026-10-25.md).

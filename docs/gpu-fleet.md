@@ -2,7 +2,7 @@
 
 This follow-up adds an opt-in worker reporter, a bounded read-only
 `GET /v1/fleet` endpoint and a physical-observations panel in Workers. It is
-prepared for qualification; it is not part of the immutable active endurance,
+independently qualified; it is not part of the immutable active endurance,
 queued quality release or queued reusable-input campaign. No deployment or
 new worker registration is claimed here.
 

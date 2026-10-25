@@ -1,0 +1,7 @@
+{
+  "source_file": "validator-source.py.txt",
+  "sha256": "a490edffd59888f7d5a25926544a69a6a5befa14d3c1c7e65703ccee3e835232",
+  "matches_executed_pod_source_digest": true,
+  "method": "Local exact constant AST extraction; never imported or rerun the launcher; compared to closed readback report source_sha256",
+  "original_transfer_manifest_unchanged": true
+}

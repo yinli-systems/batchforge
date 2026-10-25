@@ -1,0 +1,105 @@
+{
+  "phase": "complete",
+  "started_at": "2026-10-25T15:00:20.917636+00:00",
+  "source_run": "/root/batchforge-runtime/quality-api-review-20261025-v1",
+  "endurance_run": "/root/batchforge-runtime/soak480-20261025-v1",
+  "events": [
+    {
+      "phase": "waiting_endurance",
+      "at": "2026-10-25T15:00:20.917743+00:00"
+    },
+    {
+      "phase": "preflight",
+      "at": "2026-10-25T15:20:29.457873+00:00"
+    },
+    {
+      "phase": "starting_canary",
+      "at": "2026-10-25T15:20:29.868203+00:00"
+    },
+    {
+      "phase": "canary_passed",
+      "at": "2026-10-25T15:20:32.435760+00:00"
+    },
+    {
+      "phase": "closing_admission",
+      "at": "2026-10-25T15:20:32.696130+00:00"
+    },
+    {
+      "phase": "draining",
+      "at": "2026-10-25T15:20:38.142896+00:00"
+    },
+    {
+      "phase": "installing",
+      "at": "2026-10-25T15:20:38.160136+00:00"
+    },
+    {
+      "phase": "reopening_admission",
+      "at": "2026-10-25T15:20:44.478634+00:00"
+    },
+    {
+      "phase": "primary_published",
+      "at": "2026-10-25T15:20:51.085323+00:00"
+    },
+    {
+      "phase": "complete",
+      "at": "2026-10-25T15:20:51.345693+00:00"
+    }
+  ],
+  "controller_sha256": "e5bd7fd7582f938c8530865d1b1a7b29dd58478469f6ae574a91014c0430eaf9",
+  "cloud_resources_changed": false,
+  "gpu_services_changed": false,
+  "schema_changed": false,
+  "source_commit": "831b83926c46cbde7e05ece65b4ea3c5603cc8b0",
+  "qualification_sha256": "6333b3fb71d18c77b8ebce60cd847aa55c150fe5fb0c74015907e82f2376bd6b",
+  "endurance_report_sha256": "378fcfd0cec9ccaf95d5ac1a9057d5f14614a993ffe9d810e96d9fefda7efa7e",
+  "canary_evidence": [
+    {
+      "id": "squad480-dev-20261025-v4",
+      "quality_state": "failed",
+      "report_sha256": "22c924df3d4f0ab97345f07006ea74f956019c03c26dbc01ed9555b9c6950296"
+    }
+  ],
+  "original_identities": {
+    "api-a": {
+      "pid": 582321,
+      "start_ticks": "46020906",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 582329,
+      "start_ticks": "46021186",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 574316,
+      "start_ticks": "45307649",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 582338,
+      "start_ticks": "46021440",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "gateway_evidence": [
+    {
+      "id": "squad480-dev-20261025-v4",
+      "quality_state": "failed",
+      "report_sha256": "22c924df3d4f0ab97345f07006ea74f956019c03c26dbc01ed9555b9c6950296"
+    }
+  ],
+  "observed_gpu_identities_unchanged": true,
+  "primary_published": true,
+  "passed": true,
+  "canary_stop_error": null
+}

@@ -60,6 +60,9 @@ ledger inconsistency. Legacy checksum exports remain verifiable.
 
 This follow-up passed independent read-only Azure queries on the 20-task primary
 smoke batch and both 60-task fault batches (92 attempt rows apiece). It is a
-separate code revision and is **not** silently inserted into the running,
-immutable `398db6f` candidate or queued endurance source. Promotion must happen
-after that campaign closes and a new candidate qualifies.
+separate code revision and was not inserted into the immutable `398db6f`
+endurance source. After that 2,400-task campaign closed successfully, the
+qualified `831b839` API release published this stronger check at
+2026-10-25 15:20:51 UTC. Worker/engine identities remained unchanged. The
+[release receipt](benchmarks/platform480-2026-10-25/quality-api-release-20261025-v1-complete/release.json)
+keeps promotion separate from the original measurements.

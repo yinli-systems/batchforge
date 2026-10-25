@@ -1,0 +1,55 @@
+{
+  "collected_at": "2026-10-25T15:24:07.975785+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-20261025-v1",
+  "files": {
+    "rollout.json": {
+      "bytes": 20121,
+      "sha256": "43c3e7fcebc40f908f922807578ce67f86542865211298d378662302696f4498",
+      "source_relative_path": "rollout.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "readback.json": {
+      "bytes": 4664,
+      "sha256": "000ac0f43bfb92d286b1cda1ba04ed0dd76cd5f2ae7570bc593281d9cf00664d",
+      "source_relative_path": "readback.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "post-rollout-validation.json": {
+      "bytes": 1729,
+      "sha256": "a1271d3382607de64858a4bde17c408bdf887a6917f6443fd510a26e6a6e66fd",
+      "source_relative_path": "post-rollout-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 21293,
+      "sha256": "81d4a2db80e73f668743be73ed842830eb69a379f93f0aafaf3867819141cf30",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/report.json": {
+      "bytes": 1121677,
+      "sha256": "378fcfd0cec9ccaf95d5ac1a9057d5f14614a993ffe9d810e96d9fefda7efa7e",
+      "source_relative_path": ".runtime/run/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/observations.jsonl": {
+      "bytes": 8532524,
+      "sha256": "9564e1b89171ff568f3df0abcf6e921fd50f3ada527aef9528c5b0d53828490b",
+      "source_relative_path": ".runtime/run/observations.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation-launcher.json": {
+      "bytes": 235,
+      "sha256": "8143fc7c51156a349dd489b1c530beb1d40b5816b2f20804a2809979b3be7166",
+      "source_relative_path": "validation-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.log.txt": {
+      "bytes": 53,
+      "sha256": "17eaddc0ce63a68fe333e51bf3b43dad5793fd67fe8f78a33ee3c70be6a73265",
+      "source_relative_path": "validation.log",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

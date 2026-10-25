@@ -43,8 +43,11 @@ schema-11 compatibility, exact input metadata/expiry checks and independent
 authenticated S3 byte readback. The public mixture contains 13,600 requested
 output tokens per 20-task batch. The
 [qualification and launcher](platform480-2026-10-25/evidence-api-reuse-20261025-v1-qualified/evidence-manifest.json)
-are exported with SHA-256 verification. One successor is queued in
-`waiting_release`; qualification did not submit any GPU task or change services.
+are exported with SHA-256 verification. Qualification did not submit any GPU
+task or change services. The predecessor and guarded API release subsequently
+passed, and this successor entered **`sustained_running` at 15:20:53 UTC**.
+The first observed 80 accepts/47 completions used zero upload requests. This is
+an initial observation, not a completed 3,600-task success.
 
 This is a new endurance and artifact-reuse experiment. Fixed order and offered
 load differ from the original shuffled 0.5 task/s study, so its latency and
