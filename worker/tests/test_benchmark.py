@@ -128,3 +128,86 @@ async def test_malformed_choice_message_is_explicit_output_validation_failure(mo
     assert report["completed"] == 4  # Database durable state is not rewritten by an observer.
     assert report["output_validation_errors"]
     assert report["output_content"]["rows_with_valid_content_shape"] == 0
+
+
+@pytest.mark.asyncio
+async def test_completion_credit_window_bounds_accepted_nonterminal_batches(monkeypatch, tmp_path):
+    monkeypatch.setenv('BATCHFORGE_API_KEY', 'test-only-key')
+    args = arguments(tmp_path)
+    args.tasks = args.batches = 8
+    args.max_inflight_batches = 2
+    args.submission_concurrency = 8
+    base = fixture_transport()
+    active, polls, peak = set(), {}, 0
+
+    async def handle(request):
+        nonlocal peak
+        if request.url.path == '/v1/batches' and request.method == 'POST':
+            response = await base.handle_async_request(request)
+            active.add(response.json()['id'])
+            peak = max(peak, len(active))
+            assert len(active) <= 2
+            return response
+        if request.url.path.startswith('/v1/batches/'):
+            bid = request.url.path.rsplit('/', 1)[-1]
+            polls[bid] = polls.get(bid, 0) + 1
+            response = await base.handle_async_request(request)
+            if polls[bid] == 1:
+                row = response.json()
+                row['status'] = 'in_progress'
+                return httpx.Response(200, json=row)
+            active.remove(bid)
+            return response
+        return await base.handle_async_request(request)
+
+    report = await run(args, transport=httpx.MockTransport(handle))
+    assert report['passed'] and report['completed'] == 8
+    assert peak == 2 and not active
+    assert report['max_inflight_batches'] == 2
+    assert all(n == 2 for n in polls.values())
+
+
+@pytest.mark.asyncio
+async def test_unresolved_batch_stops_window_without_releasing_unknown_capacity(monkeypatch, tmp_path):
+    monkeypatch.setenv('BATCHFORGE_API_KEY', 'test-only-key')
+    args = arguments(tmp_path)
+    args.tasks = args.batches = 3
+    args.max_inflight_batches = 1
+    args.deadline = .01
+    base = fixture_transport()
+    creates = []
+
+    async def handle(request):
+        response = await base.handle_async_request(request)
+        if request.url.path == '/v1/batches':
+            creates.append(response.json()['id'])
+        if request.url.path.startswith('/v1/batches/'):
+            row = response.json(); row['status'] = 'in_progress'
+            return httpx.Response(200, json=row)
+        return response
+
+    report = await run(args, transport=httpx.MockTransport(handle))
+    assert report['passed'] is False and len(creates) == 1
+    assert len(report['unfinished_batch_ids']) == 1
+    assert {e['type'] for e in report['submission_errors']} == {'UnresolvedBatchAwaitingRecovery'}
+
+
+@pytest.mark.asyncio
+async def test_global_deadline_prevents_waiting_uploads(monkeypatch, tmp_path):
+    monkeypatch.setenv('BATCHFORGE_API_KEY', 'test-only-key')
+    args = arguments(tmp_path)
+    args.tasks = args.batches = 3
+    args.submission_concurrency = 1
+    args.run_deadline = .01
+    base = fixture_transport()
+    uploads = []
+
+    async def handle(request):
+        if request.url.path == '/v1/files' and request.method == 'POST':
+            uploads.append(request.url.path)
+            await asyncio.sleep(.02)
+        return await base.handle_async_request(request)
+
+    report = await run(args, transport=httpx.MockTransport(handle))
+    assert report['submitted_tasks'] == 0 and len(uploads) == 1
+    assert all(e['type'] == 'RunDeadlineExceeded' and not e['create_outcome_uncertain'] for e in report['submission_errors'])

@@ -152,14 +152,20 @@ async def run(args, *, transport=None) -> dict:
         for item in submissions:
             (args.workload_dir / f"{run_id}-{item.index}.jsonl").write_bytes(item.data)
     monitors: list[asyncio.Task] = []
+    monitor_by_index = {}
+    admission_blocked = asyncio.Event()
     attempted_requests = successful_requests = 0
     measurement_started_at = datetime.now(timezone.utc).isoformat()
     started = time.monotonic()
+    run_seconds=getattr(args,'run_deadline',None)
+    if run_seconds is not None and (type(run_seconds) not in (int,float) or not math.isfinite(run_seconds) or run_seconds<=0):
+        raise ValueError('run_deadline must be a finite positive number')
+    global_deadline=started+run_seconds if run_seconds is not None else float('inf')
     headers = {"Authorization": f"Bearer {key}"}
     async with httpx.AsyncClient(base_url=args.url.rstrip("/"), headers=headers,
                                 timeout=args.request_timeout, transport=transport, trust_env=False) as client:
         async def monitor(item: Submission) -> None:
-            deadline = item.accepted_at + args.deadline
+            deadline = min(item.accepted_at + args.deadline,global_deadline)
             while time.monotonic() < deadline:
                 try:
                     response = await client.get(f"/v1/batches/{item.batch['id']}",
@@ -186,6 +192,7 @@ async def run(args, *, transport=None) -> dict:
                 attempted_requests += 1
                 try:
                     response = await client.post("/v1/files", data={"purpose": "batch"},
+                        timeout=min(args.request_timeout,max(.1,global_deadline-time.monotonic())),
                         files={"file": (f"{run_id}-{item.index}.jsonl", item.data, "application/jsonl")})
                     response.raise_for_status()
                     item.file_id = response.json()["id"]
@@ -193,10 +200,13 @@ async def run(args, *, transport=None) -> dict:
                 finally:
                     item.upload_seconds = time.monotonic() - request_started
                 stage = "create"
+                if time.monotonic()>=global_deadline:
+                    item.error={'stage':'create','type':'RunDeadlineExceeded','http_status':None,'create_outcome_uncertain':False}
+                    return
                 request_started = item.create_started_at = time.monotonic()
                 attempted_requests += 1
                 try:
-                    response = await client.post("/v1/batches", json={"input_file_id": item.file_id,
+                    response = await client.post("/v1/batches", timeout=min(args.request_timeout,max(.1,global_deadline-time.monotonic())),json={"input_file_id": item.file_id,
                         "endpoint": "/v1/chat/completions", "completion_window": "24h",
                         "metadata": {**getattr(args,'metadata',{}), "benchmark_run": run_id, "engine_label": args.engine_label}},
                         headers={"Idempotency-Key": f"{run_id}-{item.index}"})
@@ -208,14 +218,37 @@ async def run(args, *, transport=None) -> dict:
                     item.create_seconds = time.monotonic() - request_started
                 # Observe each batch immediately: one slow create must not
                 # inflate all successful batches' measured turnaround.
-                monitors.append(asyncio.create_task(monitor(item)))
+                task=asyncio.create_task(monitor(item));monitors.append(task);monitor_by_index[item.index]=task
             except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
                 item.error = request_error(exc, stage)
 
         semaphore = asyncio.Semaphore(getattr(args, "submission_concurrency", 8))
-        async def bounded_submit(item):
+        window_size=getattr(args,'max_inflight_batches',None)
+        if window_size is not None and (type(window_size) is not int or window_size<1):
+            raise ValueError('max_inflight_batches must be a positive integer')
+        window=asyncio.Semaphore(window_size) if window_size is not None else None
+        async def submit_if_within_budget(item):
             async with semaphore:
+                if admission_blocked.is_set():
+                    item.error={'stage':'admission','type':'UnresolvedBatchAwaitingRecovery','http_status':None,'create_outcome_uncertain':False}
+                    return
+                if time.monotonic()>=global_deadline:
+                    item.error={'stage':'admission','type':'RunDeadlineExceeded','http_status':None,'create_outcome_uncertain':False}
+                    return
                 await submit(item)
+        async def bounded_submit(item):
+            if window is None:
+                await submit_if_within_budget(item)
+            else:
+                async with window:
+                    await submit_if_within_budget(item)
+                    if item.index in monitor_by_index:
+                        await monitor_by_index[item.index]
+                        if item.terminal_at is None:admission_blocked.set()
+                    elif item.error and item.error.get('create_outcome_uncertain'):
+                        # An ambiguous create may still own server-side capacity.
+                        # Do not spend another lifecycle credit by guessing.
+                        admission_blocked.set()
         await asyncio.gather(*(bounded_submit(item) for item in submissions))
         submission_elapsed = time.monotonic() - started
         if monitors:
@@ -279,6 +312,8 @@ async def run(args, *, transport=None) -> dict:
     passed = len(accepted) == args.batches and completed == args.tasks and not unfinished and not failed and not cancelled and integrity
     return {
         "schema_version": 2, "run_id": run_id, "observed_at": datetime.now(timezone.utc).isoformat(),
+        "max_inflight_batches":window_size,
+        "submission_rate_scope":"Includes completion-credit waits when max_inflight_batches is set",
         "measurement_started_at": measurement_started_at,
         "terminal_observation_ended_at": terminal_observation_ended_at,
         "passed": passed, "measurement": "client observed submission through terminal observation; output validation measured separately",
