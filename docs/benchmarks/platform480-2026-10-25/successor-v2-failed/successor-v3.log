@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/batchforge-runtime/platform480-20261025-v2/source-v1/ops/gpu_model_trial.py", line 253, in <module>
+    if __name__=='__main__': main()
+                             ^^^^^^
+  File "/root/batchforge-runtime/platform480-20261025-v2/source-v1/ops/gpu_model_trial.py", line 143, in main
+    require(not env_path.exists(), 'candidate_configuration_already_exists')
+  File "/root/batchforge-runtime/platform480-20261025-v2/source-v1/ops/gpu_model_trial.py", line 28, in require
+    raise RuntimeError(reason)
+RuntimeError: candidate_configuration_already_exists

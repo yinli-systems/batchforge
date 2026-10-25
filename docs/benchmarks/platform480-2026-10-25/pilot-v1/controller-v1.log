@@ -1,0 +1,25 @@
+watchdog_paused
+original_worker_drained
+original_engine_stopped
+480b_engine_loading
+480b_engine_ready
+{"event": "phase_passed", "index": 0, "study": "capacity", "treatment": "A"}
+{"event": "phase_passed", "index": 1, "study": "capacity", "treatment": "B"}
+{"event": "phase_passed", "index": 2, "study": "capacity", "treatment": "B"}
+{"event": "phase_passed", "index": 3, "study": "capacity", "treatment": "A"}
+{"event": "phase_passed", "index": 4, "study": "policy", "treatment": "A"}
+{"event": "phase_passed", "index": 5, "study": "policy", "treatment": "B"}
+{"event": "phase_passed", "index": 6, "study": "policy", "treatment": "B"}
+{"event": "phase_passed", "index": 7, "study": "policy", "treatment": "A"}
+{"event": "submission_intent", "label": "p480-329ec12bc5bf-worker-fault", "input_sha256": "bd15415a51a01d29801fc4bbbb685cdd47a7b7137b8d72592624a17bd4e1e621"}
+{"event": "fault_injected", "scope": "worker", "captured_leases": 8}
+{"event": "fault_recovery_passed", "scope": "worker_process_loss"}
+{"event": "submission_intent", "label": "p480-329ec12bc5bf-engine-fault", "input_sha256": "05e90168fc5a17e150f5cfc282966e03410e38cc296eec955b96ad5c4ff9792d"}
+{"event": "fault_injected", "scope": "engine_and_worker", "captured_leases": 8}
+{"event": "fault_recovery_passed", "scope": "engine_and_worker_process_loss"}
+{"event": "durable_input_and_archived_output_restart_readback_passed", "files": 20}
+{"event": "platform_campaign_passed"}
+480b_platform_canary_passed
+candidate_stopped
+serving_pair_restored
+watchdog_restored

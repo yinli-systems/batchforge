@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/root/batchforge-runtime/platform480-20261025-v2/queue-v2.py", line 9, in <module>
+    from ops.ha.retune_full_gpu import file_env
+  File "/root/batchforge-runtime/platform480-20261025-v2/source-v1/ops/ha/retune_full_gpu.py", line 23, in <module>
+    from ops.supervise import Manager, ROOT, load_manifest, private_read, private_write
+  File "/root/batchforge-runtime/platform480-20261025-v2/source-v1/ops/supervise.py", line 11, in <module>
+    from concurrent.futures import ThreadPoolExecutor
+  File "/usr/lib/python3.12/concurrent/futures/__init__.py", line 49, in __getattr__
+    from .thread import ThreadPoolExecutor as te
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 10, in <module>
+    import queue
+  File "/root/batchforge-runtime/platform480-20261025-v2/queue.py", line 8, in <module>
+    from ops.ha.retune_full_gpu import file_env
+ImportError: cannot import name 'file_env' from partially initialized module 'ops.ha.retune_full_gpu' (most likely due to a circular import) (/root/batchforge-runtime/platform480-20261025-v2/source-v1/ops/ha/retune_full_gpu.py)
