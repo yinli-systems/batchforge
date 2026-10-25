@@ -14,13 +14,15 @@ def summarize(report):
     for phase in phases:
         key=(phase['study'],phase['treatment'])
         groups.setdefault(key,[]).append(phase)
-    result={'campaign_passed':report.get('passed') is True,
+    result={'campaign_passed':report.get('passed') is True and not report.get('cleanup_error_type')
+                               and bool(report.get('finished_at')),
             'completed_phases':len(phases),'planned_phases':len(report['plan']),
             'model':report['model'],'revision':report['revision'],'cost':None,
             'groups':[],'abba_blocks':[],
             'limitations':['One existing four-H100 Pod; no heterogeneous hardware or cross-node HA claim',
                 'Task quantiles are descriptive mixed-workload quantiles; tasks within a burst are correlated',
                 'Throughput is sum of accepted output tokens divided by sum of measured platform phase walls',
+                'Allocation wall hours cover phase measurement windows, excluding model loading, inter-phase setup and faults',
                 'No confidence interval, independent run significance, monetary savings or daily SLA is claimed']}
     for (study,treatment),rows in sorted(groups.items()):
         wall=sum(p['elapsed_seconds'] for p in rows)
@@ -34,6 +36,7 @@ def summarize(report):
             'adaptive':sorted({p.get('adaptive',False) for p in rows}),
             'phase_wall_seconds':wall,'output_tokens':outputs,
             'output_tokens_per_second':outputs/wall,
+            'allocation_wall_hours_per_million_output_tokens':wall/3600*1_000_000/outputs,
             'tasks_per_second':sum(p['audit']['tasks'] for p in rows)/wall,
             'task_completion_seconds':distribution(completion),
             'queue_seconds':distribution([t['queue_seconds'] for t in observations]),

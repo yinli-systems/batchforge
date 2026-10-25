@@ -70,10 +70,15 @@ def test_analysis_weights_phase_walls_and_uses_pooled_observations():
             'audit':{'tasks':2,'completion_tokens':100,'task_observations':[
                 {'completion_seconds':i+1,'queue_seconds':0,'accepted_attempt_seconds':i+1},
                 {'completion_seconds':i+5,'queue_seconds':1,'accepted_attempt_seconds':i+4}]}})
-    summary=summarize({'phases':phases,'plan':phases,'model':'x','revision':'y','passed':True})
+    report={'phases':phases,'plan':phases,'model':'x','revision':'y','passed':True,'finished_at':'qualified'}
+    summary=summarize(report)
     assert summary['abba_blocks'][0]['b_over_a_throughput']==2
     assert summary['groups'][0]['task_completion_seconds']['p50']==4.5
     assert summary['groups'][1]['output_tokens_per_second']==20
+    assert summary['groups'][1]['allocation_wall_hours_per_million_output_tokens']==pytest.approx(1_000_000/20/3600)
+    assert summary['campaign_passed'] is True
+    assert not summarize({**report,'cleanup_error_type':'RuntimeError'})['campaign_passed']
+    assert not summarize({**report,'finished_at':None})['campaign_passed']
 
 
 def test_duplicate_accepted_result_or_drifted_metering_cannot_pass():
