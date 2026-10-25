@@ -63,6 +63,12 @@ WebCrypto checksum verification, independent artifact byte readback and logical
 admission headroom. Both replicas passed the guarded October 25 rollout, with
 unchanged GPU worker/engine identities and historical S3 byte readback. See [execution evidence](docs/execution-evidence.md).
 
+Separately qualified follow-ups cover [published quality evidence](docs/quality-evidence.md),
+[verified input reuse](docs/benchmarks/reusable-input-endurance-2026-10-25.md),
+and [physical GPU inventory](docs/gpu-fleet.md). Their documentation distinguishes
+prepared, queued and deployed features; new source is not inserted into fixed
+GPU studies while they run.
+
 - Upload JSONL chat-completion requests and submit a batch.
 - Follow progress, queue depth, worker health and measured token usage.
 - Cancel work, retry terminal failures and download result/error JSONL.

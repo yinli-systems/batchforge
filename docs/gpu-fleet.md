@@ -6,6 +6,25 @@ prepared for qualification; it is not part of the immutable active endurance,
 queued quality release or queued reusable-input campaign. No deployment or
 new worker registration is claimed here.
 
+## Independent qualification
+
+Immutable source `5cca488` passed source-isolated, read-only Azure/ASGI
+qualification at 15:13:47 UTC on October 25. Schema 11, verified TLS 1.3,
+authentication, cache policy, actual fleet SQL and the existing quality
+reconciliation passed. An independent NVML/topology observation then found
+the actual four H100s: each 81,559 MiB total / 74,125 MiB used, with all six
+GPU pairs reporting `NV18`. Utilization at that instant was 52%, 97%, 86%, 97%;
+temperature 49–50 °C. These are instantaneous device-wide observations, not
+sustained utilization, measured bandwidth or an allocation certificate.
+
+The [qualification report](benchmarks/platform480-2026-10-25/evidence-api-fleet-20261025-v1-qualified/validation.json)
+and full source receipt were exported with SHA-256 verification. The real
+database API query returned **zero reported inventory nodes**, because the
+running immutable worker has not enabled the new reporter. The independently
+observed four GPUs were not inserted as synthetic registrations. Local
+verification: 148 relevant Python tests passed, one external PostgreSQL test
+skipped; 22 frontend Node checks passed. Browser visual QA remains unavailable.
+
 The reporter needs both `WORKER_INVENTORY_NODE_ID` and
 `WORKER_INVENTORY_GPU_INDICES`, for example `0,1,2,3`. The operator explicitly
 selects the observed devices. It never assumes every GPU visible to NVIDIA is

@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-25T15:14:32.178369+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-fleet-20261025-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 20601,
+      "sha256": "78761792baae3428a740050e4d401297c85bfcf6dc086991d652edf693d146a6",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 3720,
+      "sha256": "f9e333b9c552cc54f01b4f20193374f0fe7bc265bb7432808d20147ede730326",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}
