@@ -16,6 +16,7 @@ from .runtime import Coordinator
 from .workflows import WorkflowCoordinator
 from .leases import UnstoppableAction
 from .executors import credentials
+from .retrieval import Registry
 
 
 async def run_coordinator(settings,keys,endpoint,seconds,*,workflow=False):
@@ -35,7 +36,8 @@ async def run_coordinator(settings,keys,endpoint,seconds,*,workflow=False):
         if workflow:
             if not settings.agent_workflows_enabled:raise ValueError('Workflow admission and compatible coordinators must be explicitly enabled together')
             coordinator=WorkflowCoordinator(AgentStore(pool),owner='workflow-coordinator-'+os.urandom(8).hex(),tenants=keys)
-        else:coordinator=Coordinator(AgentStore(pool),adapter,owner='agent-coordinator-'+os.urandom(8).hex(),tenants=keys)
+        else:coordinator=Coordinator(AgentStore(pool),adapter,owner='agent-coordinator-'+os.urandom(8).hex(),tenants=keys,
+            retrieval=Registry(settings.agent_retrieval_catalogue))
         deadline=time.monotonic()+seconds
         while not stop.is_set() and time.monotonic()<deadline:
             try:worked=await coordinator.tick()

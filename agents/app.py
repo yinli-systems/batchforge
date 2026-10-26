@@ -25,6 +25,7 @@ from .executors import credentials
 from .receipts import HTTPReceipts,reconcile
 from .tools import SPECS
 from .workflows import Workflow,WorkflowStore
+from .retrieval import Registry
 
 logger=logging.getLogger('batchforge.agents')
 
@@ -32,7 +33,7 @@ logger=logging.getLogger('batchforge.agents')
 class RunRequest(Strict):
     goal:str=Field(min_length=1,max_length=32768)
     model:str=Field(min_length=1,max_length=256)
-    allowed_tools:list[str]=Field(default_factory=lambda:list(Policy().allowed_tools),max_length=3)
+    allowed_tools:list[str]=Field(default_factory=lambda:list(Policy().allowed_tools),max_length=4)
     memory_namespace:str=Field(default='default',pattern=r'^[a-zA-Z0-9_-]{1,64}$')
     max_model_calls:int=Field(default=8,ge=1,le=32)
     max_tool_calls:int=Field(default=8,ge=0,le=64)
@@ -42,6 +43,7 @@ class RunRequest(Strict):
     require_citations:bool=False
     planner_protocol:str=Field(default='json-v1',pattern=r'^(json-v1|schema-v1)$')
     tool_sequence:list[str]=Field(default_factory=list,max_length=8)
+    retrieval_snapshot:str=Field(default='',pattern=r'^(|[0-9a-f]{64})$')
 
     def policy(self):
         return Policy(**{k:v for k,v in self.model_dump().items() if k not in ('goal','model','allowed_tools','tool_sequence')},
@@ -54,7 +56,7 @@ class MemoryWrite(Strict):
 
 
 def create_app(settings=None,*,store=None,auth=None,executor_tenants=(),shared_backend=None,
-               executor_keys_file=None,batch_endpoint=None,read_only=False):
+               executor_keys_file=None,batch_endpoint=None,read_only=False,retrieval=None):
     settings=settings or get_settings()
     @asynccontextmanager
     async def lifespan(app):
@@ -90,6 +92,7 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=(),shared_b
                 if not keys:raise ValueError('Protected executor registry required for child receipt lookup')
                 http=await stack.enter_async_context(HTTPReceipts(batch_endpoint,keys));reader=http.read
             app.state.store=selected;app.state.auth=authenticate;app.state.executor_tenants=tenants;app.state.receipts=reader
+            app.state.retrieval=retrieval if retrieval is not None else Registry(settings.agent_retrieval_catalogue)
             yield
     app=FastAPI(title='BatchForge Agents',version='0.1.0',lifespan=lifespan)
 
@@ -145,8 +148,10 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=(),shared_b
         return {'service':'batchforge-agents','state':'read_only_snapshot' if read_only else 'ready'}
     @app.get('/v1/agent-capabilities')
     async def capabilities(tid=Depends(tenant)):
+        snapshots=app.state.retrieval.visible(tid)
         return {'protocol':'batchforge.agent-capabilities.v1','tenant_id':tid,'models':list(settings.served_models()),
-            'tools':SPECS,'planner_protocols':['json-v1']+(['schema-v1'] if settings.json_schema_enabled else []),
+            'tools':[s for s in SPECS if s['name']!='retrieval.search' or snapshots],
+            'retrieval_snapshots':snapshots,'planner_protocols':['json-v1']+(['schema-v1'] if settings.json_schema_enabled else []),
             'answer_formats':['text','identifier','number'],'max_tool_sequence':8,
             'workflow_admission_enabled':not read_only and settings.agent_workflows_enabled and settings.batch_submission_enabled and tid in app.state.executor_tenants,
             'admission_enabled':not read_only and settings.batch_submission_enabled and tid in app.state.executor_tenants,
@@ -161,6 +166,9 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=(),shared_b
         if body.planner_protocol=='schema-v1' and not settings.json_schema_enabled:raise AgentError(400,'agent_schema_ingress_not_enabled')
         try:policy=body.policy()
         except ValueError:raise AgentError(422,'invalid_agent_policy') from None
+        if policy.retrieval_snapshot:
+            try:app.state.retrieval.require(tid,policy.memory_namespace,policy.retrieval_snapshot)
+            except PermissionError:raise AgentError(403,'retrieval_snapshot_not_granted') from None
         return await app.state.store.create(tid,idempotency_key,goal=body.goal,model=body.model,policy=policy)
     @app.post('/v1/agent-workflows')
     async def create_workflow(body:Workflow,tid=Depends(tenant),idempotency_key:str=Header(min_length=1,max_length=128)):
@@ -170,6 +178,9 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=(),shared_b
         if any(n.model not in settings.served_models() for n in body.nodes):raise AgentError(400,'agent_model_not_served')
         if not settings.json_schema_enabled and any(n.planner_protocol=='schema-v1' for n in body.nodes):
             raise AgentError(400,'agent_schema_ingress_not_enabled')
+        if body.retrieval_snapshot:
+            try:app.state.retrieval.require(tid,body.memory_namespace,body.retrieval_snapshot)
+            except PermissionError:raise AgentError(403,'retrieval_snapshot_not_granted') from None
         return await WorkflowStore(app.state.store).create(tid,idempotency_key,body)
     @app.get('/v1/agent-workflows/{rid}')
     async def workflow(rid:str,tid=Depends(tenant)):return await WorkflowStore(app.state.store).get(tid,rid)

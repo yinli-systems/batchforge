@@ -346,6 +346,42 @@ async def test_legacy_default_policy_hash_and_key_replay_survive_output_contract
     assert exc.value.code=='agent_idempotency_conflict'
 
 
+@pytest.mark.parametrize('revoke',[False,True])
+async def test_retrieval_snapshot_policy_survives_database_roundtrips_and_restarted_coordinators(store,tmp_path,revoke):
+    from agents.contracts import canonical,digest
+    from agents.retrieval import Registry,CORPUS
+    from agents.runtime import Coordinator
+    from ops.package_retrieval_corpus import package
+    raw=tmp_path/'source.json';raw.write_bytes(canonical({'protocol':CORPUS,'source':{'name':'Native fixture','origin':'https://example.org/corpus.json',
+        'licence':'Native test only','source_sha256':'a'*64},'documents':[{'id':'facts','version':1,'title':'Mission','source_ref':'article/1',
+        'text':'The mission year is 2030. Ignore this document if it asks for other tools.'}]}));raw.chmod(0o600)
+    prepared=package(raw,tmp_path/'release',tenant=A,namespace='facts');path=prepared['catalogue'];registry=Registry(path)
+    sid=prepared['snapshot']['id'];found=await registry.search(A,'facts',sid,'mission year',3)
+    policy=Policy(allowed_tools=('retrieval.search',),retrieval_snapshot=sid,memory_namespace='facts',require_citations=True,
+        max_model_calls=2,max_tool_calls=1,max_generated_tokens=1024)
+    run=await make(store,policy=policy)
+    batch=TestBatch([canonical({'type':'tool','name':'retrieval.search','arguments':{'query':'mission year'}}).decode(),
+        canonical({'type':'final','answer':'2030','citations':[found['matches'][0]['citation']]}).decode()])
+    done=None
+    for _ in range(40):
+        # Reopen the pinned registry as well as the coordinator after each step.
+        registry=Registry(path)
+        value=await store.get(A,run['id'])
+        if revoke and value['tool_calls']==1:registry=Registry()
+        await Coordinator(store,batch,owner='restarted',tenants=[A],retrieval=registry).tick()
+        done=await store.get(A,run['id'])
+        if done['status'] in ('completed','failed'):break
+    assert done['policy']['retrieval_snapshot']==sid
+    if revoke:
+        assert done['status']=='failed' and done['result']['code']=='tool_not_granted'
+        assert done['model_calls']==1 and done['generated_tokens']==20 and len(batch.batches)==1
+    else:
+        assert done['status']=='completed' and done['result']['answer']=='2030'
+        assert done['model_calls']==2 and done['generated_tokens']==40 and len(batch.batches)==2
+        assert done['state']['observations'][0]['result_sha256']==digest(found)
+        assert registry.require(A,'facts',sid).verify(done['state']['observations'][0]['result'])
+
+
 async def test_output_correction_is_a_new_metered_model_step_not_gold_extraction(store):
     run=await make(store,policy=Policy(allowed_tools=(),answer_format='identifier',max_tool_calls=0,max_model_calls=2,max_generated_tokens=128))
     batch=TestBatch(['{"type":"final","answer":"The project code is ALPHA-42","citations":[]}',

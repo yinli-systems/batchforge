@@ -4,6 +4,19 @@ export const terminal = status => ['completed','failed','cancelled'].includes(st
 const zero='0'.repeat(64), attemptKey='batchforge-agent-pending-v1';
 export class StaleWorkspace extends Error {}
 
+export function retrievalSelection(caps,id) {
+  if(!id)return null;
+  const selected=(caps.retrieval_snapshots||[]).find(v=>v.id===id);
+  if(!/^[0-9a-f]{64}$/.test(id)||!selected||! /^[A-Za-z0-9_-]{1,64}$/.test(selected.namespace)
+     ||!caps.tools.some(t=>t.name==='retrieval.search'))throw new Error('The selected knowledge snapshot is unavailable.');
+  return selected;
+}
+
+export function selectedTools(caps,snapshot) {
+  retrievalSelection(caps,snapshot);
+  return caps.tools.map(t=>t.name).filter(name=>name!=='retrieval.search'||!!snapshot);
+}
+
 export function canonical(value) {
   if(value===null || typeof value==='boolean')return JSON.stringify(value);
   if(typeof value==='string') {
@@ -144,9 +157,9 @@ export class AgentClient {
     if(epoch!==this.epoch||this.caps?.tenant_id!==tenant)throw new StaleWorkspace();
     if(!r.ok){
       const code=value?.error?.code;
-      if(!wasUncertain&&[400,413,422,429].includes(r.status)&&[
+      if(!wasUncertain&&[400,403,413,422,429].includes(r.status)&&[
         'invalid_agent_policy','invalid_agent_request','invalid_agent_value','invalid_agent_run',
-        'agent_schema_ingress_not_enabled','agent_model_not_served','agent_request_too_large','agent_quota_reached'].includes(code)) {
+        'agent_schema_ingress_not_enabled','agent_model_not_served','agent_request_too_large','agent_quota_reached','retrieval_snapshot_not_granted'].includes(code)) {
         // A definite first refusal permits correction under the SAME key. If
         // another request ever accepted it, the server's body hash still fences
         // the corrected request. An earlier lost ACK never takes this branch.

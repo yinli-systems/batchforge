@@ -132,12 +132,33 @@ test('the actual console startup and connection remain usable when the browser s
  const context=vm.createContext({document,location:{href:'http://127.0.0.1/console/'},URL,TextEncoder,setInterval(){},console,
    injectedCore:{...core,AgentClient:class extends core.AgentClient{constructor(options){super({...options,fetch,crypto:webcrypto});}}}});
  Object.defineProperty(context,'sessionStorage',{get(){throw new Error('Browser storage denied');}});
- const app=readFileSync(path.join(__dirname,'../../agents/console/app.js'),'utf8').replace(/^import[^\n]+/,'const {AgentClient,StaleWorkspace,terminal}=injectedCore;');
+ const app=readFileSync(path.join(__dirname,'../../agents/console/app.js'),'utf8').replace(/^import[^\n]+/,'const {AgentClient,StaleWorkspace,terminal,retrievalSelection,selectedTools}=injectedCore;');
  vm.runInContext(app,context);document.getElementById('key').value='test-key';
  document.getElementById('connect-form').handlers.submit({preventDefault(){}});
  for(let i=0;i<20&&document.getElementById('workspace').hidden!==false;i++)await new Promise(resolve=>setImmediate(resolve));
  assert.equal(document.getElementById('workspace').hidden,false);assert.equal(document.getElementById('submit').disabled,true);
  assert.match(document.getElementById('notice').textContent,/Submission-key storage is unavailable/);assert.ok(requests.every(method=>method==='GET'));
+});
+
+test('retrieval requires an explicit currently granted snapshot and never expands default tools',async()=>{
+ const {selectedTools,retrievalSelection}=await modulePromise,id='c'.repeat(64);
+ const capabilities={tools:[{name:'math.calculate'},{name:'retrieval.search'}],retrieval_snapshots:[{id,namespace:'facts',source:{name:'A'}}]};
+ assert.deepEqual(selectedTools(capabilities,''),['math.calculate']);
+ assert.deepEqual(selectedTools(capabilities,id),['math.calculate','retrieval.search']);
+ assert.equal(retrievalSelection(capabilities,id).namespace,'facts');
+ assert.throws(()=>retrievalSelection({...capabilities,retrieval_snapshots:[]},id),/unavailable/);
+ assert.throws(()=>retrievalSelection({...capabilities,tools:[]},id),/unavailable/);
+ assert.throws(()=>retrievalSelection(capabilities,'../private'),/unavailable/);
+});
+
+test('a definite first retrieval-grant refusal is corrected under the same submission key',async()=>{
+ const posts=[];const c=await client(async(url,r)=>{
+  if(url.endsWith('agent-capabilities'))return response(caps());posts.push(r);
+  return posts.length===1?response({error:{code:'retrieval_snapshot_not_granted'}},403):response({id:rid});
+ });
+ await assert.rejects(c.submit({...body,retrieval_snapshot:'a'.repeat(64)}),/retrieval_snapshot_not_granted/);
+ assert.ok(c.pending().rejected);await c.submit(body);
+ assert.equal(posts[0].headers['Idempotency-Key'],posts[1].headers['Idempotency-Key']);
 });
 
 test('child checks also verify the checksum and committed model usage in the client',async()=>{

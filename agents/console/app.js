@@ -1,4 +1,4 @@
-import {AgentClient,StaleWorkspace,terminal} from './core.js';
+import {AgentClient,StaleWorkspace,terminal,retrievalSelection,selectedTools} from './core.js';
 
 const $=id=>document.getElementById(id);
 const base=new URL('../v1/',location.href).pathname;
@@ -18,6 +18,7 @@ function human(error) {
   return ({agent_quota_reached:'Workspace capacity has been reached. Existing runs remain available.',
     invalid_api_key:'The workspace key was not accepted.',admission_paused:'New workflows are paused. Existing runs remain available.',
     agent_schema_ingress_not_enabled:'Structured planning is unavailable on this deployment.',
+    retrieval_snapshot_not_granted:'This knowledge snapshot is unavailable to the workspace or namespace.',
     agent_memory_version_conflict:'The memory version changed. Read its current version before saving.',
     agent_child_ledger_drift:'The current child ledger does not match this run. The receipt is not verified.',
     agent_read_only_snapshot:'This workspace is a read-only snapshot.'})[error.message]||error.message||'Request unavailable.';
@@ -51,25 +52,35 @@ function loadComposer(caps){
   $('model').replaceChildren(...caps.models.map(v=>{const e=element('option',v);e.value=v;return e;}));
   $('protocol').replaceChildren(...caps.planner_protocols.map(v=>{const e=element('option',v==='schema-v1'?'Structured decisions':'JSON decisions');e.value=v;return e;}));
   if(caps.planner_protocols.includes('schema-v1'))$('protocol').value='schema-v1';
+  $('retrieval').replaceChildren(...[{id:'',label:'Workspace memory only'},...(caps.retrieval_snapshots||[]).map(s=>({id:s.id,label:s.source.name+' · '+s.id.slice(0,12),namespace:s.namespace}))].map(s=>{
+    const e=element('option',s.label);e.value=s.id;return e;
+  }));
+  for(const option of Array.from($('sequence').options))if(option.value==='retrieval.search')option.remove();
+  if((caps.retrieval_snapshots||[]).length){
+    const e=element('option','Search knowledge corpus');e.value='retrieval.search';$('sequence').append(e);
+  }
   const pending=client.pending();
   if(pending){
     const body=JSON.parse(pending.body),mapping={'goal':'goal','model':'model','protocol':'planner_protocol','namespace':'memory_namespace',
-      'answer-format':'answer_format','model-budget':'max_model_calls','tool-budget':'max_tool_calls','token-budget':'max_generated_tokens','wall-budget':'max_wall_seconds'};
+      'answer-format':'answer_format','model-budget':'max_model_calls','tool-budget':'max_tool_calls','token-budget':'max_generated_tokens','wall-budget':'max_wall_seconds','retrieval':'retrieval_snapshot'};
     for(const [id,key] of Object.entries(mapping))if(body[key]!==undefined){
-      if(['model','protocol'].includes(id)&&![...$(id).options].some(v=>v.value===body[key])){const o=element('option',body[key]);o.value=body[key];$(id).append(o);}
+      if(['model','protocol','retrieval'].includes(id)&&![...$(id).options].some(v=>v.value===body[key])){const o=element('option',body[key]);o.value=body[key];$(id).append(o);}
       $(id).value=body[key];
     }
     $('sequence').value=(body.tool_sequence||[]).join(',');$('require-citations').checked=!!body.require_citations;
   }
   $('mode').textContent=caps.read_only_snapshot?'Read-only snapshot':client.storageError?'Submission storage unavailable':caps.admission_enabled?'Admission open':'Admission paused';
   $('memory-save').disabled=!caps.memory_writes_enabled;
+  $('namespace').readOnly=!!$('retrieval').value;
   $('batch-link').hidden=caps.batch_console_path!=='/';renderComposer();
 }
 function formBody(){
+  const snapshot=retrievalSelection(client.caps,$('retrieval').value);
   const body={goal:$('goal').value,model:$('model').value,planner_protocol:$('protocol').value,
-    allowed_tools:client.caps.tools.map(t=>t.name),memory_namespace:$('namespace').value,
+    allowed_tools:selectedTools(client.caps,$('retrieval').value),memory_namespace:snapshot?snapshot.namespace:$('namespace').value,
     answer_format:$('answer-format').value,require_citations:$('require-citations').checked,
     tool_sequence:$('sequence').value?$('sequence').value.split(','):[]};
+  if(snapshot)body.retrieval_snapshot=snapshot.id;
   for(const [id,key] of [['model-budget','max_model_calls'],['tool-budget','max_tool_calls'],['token-budget','max_generated_tokens'],['wall-budget','max_wall_seconds']]) {
     const value=Number($(id).value);if(!Number.isSafeInteger(value))throw new Error('Execution limits must be whole numbers.');body[key]=value;
   }
@@ -96,6 +107,7 @@ function renderDetail(){
   panel.replaceChildren(header,actions,metrics);
   panel.append(element('p',run.model+' · Deadline '+date(run.deadline_at),'muted'));
   panel.append(element('h3','Required tool order'),element('p',(run.policy.tool_sequence||[]).join(' → ')||'Agent chooses from its granted tools.','copy-note'));
+  if(run.policy.retrieval_snapshot)panel.append(element('h3','Pinned knowledge snapshot'),element('code',run.policy.retrieval_snapshot));
   panel.append(element('h3',run.status==='completed'?'Final answer':'Current result'));
   const result=run.result;panel.append(element('pre',result?.answer??(result?JSON.stringify(result,null,2):'No final result delivered.')));
   if(result?.citations?.length){const list=element('ul');for(const c of result.citations)list.append(element('li',c));panel.append(element('h3','Retrieved citations'),list);}
@@ -131,6 +143,11 @@ async function refreshList(more=false){await client.list(more);renderRuns();}
 async function refresh(){if(refreshing)return;refreshing=true;try{await refreshList();if(selectedId)await openRun(selectedId);}finally{refreshing=false;}}
 
 // DOM event registration stays separate from the testable client/state module.
+$('retrieval').addEventListener('change',()=>perform(async()=>{
+  const snapshot=retrievalSelection(client.caps,$('retrieval').value);$('namespace').readOnly=!!snapshot;
+  if(snapshot)$('namespace').value=snapshot.namespace;
+  else if($('sequence').value==='retrieval.search')$('sequence').value='';
+}));
 $('connect-form').addEventListener('submit',event=>{event.preventDefault();
   const key=$('key').value.trim();if(!key)return;
   selectedId=null;client.setKey(key);$('workspace').hidden=true;$('run-form').reset();$('memory-form').reset();rememberKey('');

@@ -30,10 +30,10 @@ def canary_environment(original,source):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',required=True,type=Path)
-    p.add_argument('--fixture-set',choices=['schema-contract-heldout-v1','workflow-contract-heldout-v1','lease-contract-heldout-v1'],default='schema-contract-heldout-v1')
+    p.add_argument('--fixture-set',choices=['schema-contract-heldout-v1','workflow-contract-heldout-v1','lease-contract-heldout-v1','retrieval-squad-v1'],default='schema-contract-heldout-v1')
     p.add_argument('--apply',action='store_true');args=p.parse_args()
     if not args.apply:
-        cases=4 if args.fixture_set=='lease-contract-heldout-v1' else 20
+        cases=4 if args.fixture_set=='lease-contract-heldout-v1' else 8 if args.fixture_set=='retrieval-squad-v1' else 20
         print(json.dumps({'decoder_tasks':4,'agent_cases':cases,'max_child_tasks':4+4*cases,
             'primary_changes':False,'extra_gpu_worker':False,'private_api_lifetime_seconds':2700}));return
     def interrupted(_signum,_frame):raise InterruptedError('Finite schema qualification interrupted')
@@ -44,7 +44,7 @@ def main():
         raise ValueError('New owned run and at least one hour recovery margin required')
     os.umask(0o077);base.mkdir(mode=0o700);start=time.monotonic();api=None;child=None
     report={'phase':'prepared','passed':False,'primary_changes':False,'azure_agent_migration':False,
-        'private_api':ENDPOINT,'max_child_tasks':20 if args.fixture_set=='lease-contract-heldout-v1' else 84,'extra_gpu_worker':False}
+        'private_api':ENDPOINT,'max_child_tasks':20 if args.fixture_set=='lease-contract-heldout-v1' else 36 if args.fixture_set=='retrieval-squad-v1' else 84,'extra_gpu_worker':False}
     def save():write(base/'validation.json',report)
     save()
     try:
@@ -57,6 +57,15 @@ def main():
         apis=[s for s in pins.services if s['role']=='api']
         for service in apis:canary_environment(file_env(service['env_file']),source)
         env=canary_environment(file_env(apis[0]['env_file']),source)
+        if args.fixture_set=='retrieval-squad-v1':
+            key=file_env(root.parent/'access.env')['BATCHFORGE_API_KEY']
+            with httpx.Client(base_url='http://127.0.0.1:8080',headers={'Authorization':'Bearer '+key},trust_env=False,timeout=10) as http:
+                response=http.get('/v1/capacity');response.raise_for_status();capacity=response.json()
+            maximum=report['max_child_tasks']
+            if capacity['retained_tasks']['available']<maximum or capacity['task_payload_bytes']['available']<maximum*(capacity['new_task_reservation']['fixed_bytes_per_task']+131072):
+                raise ValueError('Whole decoder+RAG plan exceeds existing workspace headroom')
+            report['whole_plan_capacity_preflight']={'max_child_tasks':maximum,'retained_headroom':capacity['retained_tasks']['available'],
+                'payload_headroom':capacity['task_payload_bytes']['available']}
         with socket.socket() as probe:probe.bind(('127.0.0.1',18172))
         command=['/usr/bin/timeout','--signal=TERM','--kill-after=15','2700',sys.executable,'-m','uvicorn',
             'backend.app:app','--app-dir',str(source),'--host','127.0.0.1','--port','18172','--no-access-log']

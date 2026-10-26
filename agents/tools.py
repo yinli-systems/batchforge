@@ -29,8 +29,13 @@ class MemorySearch(Strict):
     limit:int=Field(default=5,ge=1,le=20)
 
 
+class RetrievalSearch(Strict):
+    query:str=Field(min_length=1,max_length=1024)
+    limit:int=Field(default=3,ge=1,le=5)
+
+
 SPECS=[{'name':name,'arguments':schema.model_json_schema()} for name,schema in
-       [('math.calculate',Calculate),('memory.get',MemoryGet),('memory.search',MemorySearch)]]
+       [('math.calculate',Calculate),('memory.get',MemoryGet),('memory.search',MemorySearch),('retrieval.search',RetrievalSearch)]]
 
 
 def calculate(expression):
@@ -65,6 +70,7 @@ class Context:
     tenant_id:str
     policy:Policy
     memory:Memory|None=None
+    retrieval:object|None=None
 
     def __post_init__(self):
         if not isinstance(self.tenant_id,str) or not 1<=len(self.tenant_id)<=128:raise ValueError('Explicit tenant required')
@@ -85,6 +91,11 @@ async def execute(decision,context):
         args=MemorySearch.model_validate(decision.arguments)
         if context.memory is None:raise RuntimeError('Persistent memory adapter unavailable')
         value=await context.memory.search(context.tenant_id,context.policy.memory_namespace,args.query,args.limit)
+    elif decision.name=='retrieval.search':
+        args=RetrievalSearch.model_validate(decision.arguments)
+        if context.retrieval is None:raise PermissionError('Retrieval snapshot unavailable')
+        value=await context.retrieval.search(context.tenant_id,context.policy.memory_namespace,
+            context.policy.retrieval_snapshot,args.query,args.limit)
     else:raise PermissionError('Tool implementation is unavailable')
     encoded=canonical(value)
     if len(encoded)>16384:raise ValueError('Tool result exceeds observation bound')

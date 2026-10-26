@@ -6,7 +6,7 @@ disk, pending Azure owner migration. This is not an Azure Agent rollout.
 No existing API, worker, model, guard configuration or quota is modified.
 """
 from __future__ import annotations
-import argparse,asyncio,contextlib,fcntl,hashlib,json,os,pwd,signal,subprocess,sys,time
+import argparse,asyncio,contextlib,fcntl,hashlib,json,os,pwd,signal,subprocess,sys,time,threading
 from ops.agent_endpoint import qualification_endpoint
 from datetime import datetime,timezone
 from decimal import Decimal,InvalidOperation
@@ -87,6 +87,10 @@ def selected_fixtures(name):
     if name=='schema-contract-heldout-v1':return schema_fixtures()
     if name=='workflow-contract-heldout-v1':return workflow_fixtures()
     if name=='lease-contract-heldout-v1':return lease_fixtures()
+    if name=='retrieval-squad-v1':
+        from ops.retrieval_squad import inputs
+        import copy
+        return copy.deepcopy(inputs()[1])
     raise ValueError('Unknown frozen fixture set')
 
 
@@ -151,6 +155,9 @@ def lease_fixtures():
 
 
 def grade(case,run):
+    if case['kind']=='retrieval-squad':
+        from ops.retrieval_squad import grade as rag_grade
+        return rag_grade(case,run)
     if run['status']!='completed':return {'passed':False,'completed':False,'answer_correct':False,'required_tools':False,'citation_verified':False}
     answer=run['result']['answer'];observations=run['state'].get('observations',[])
     tools={o['tool'] for o in observations};correct=answer==case['expected']
@@ -174,13 +181,17 @@ def plan(now,headroom,fixture_set='baseline'):
     cases=selected_fixtures(fixture_set);maximum=len(cases)*4
     if now.tzinfo is None or (FINAL_STOP-now).total_seconds()<2100:raise ValueError('Insufficient bounded qualification/recovery time')
     if type(headroom) is not int or headroom<maximum:raise ValueError('Insufficient existing tenant task headroom')
-    return {'fixture_set':fixture_set,'cases':len(cases),'max_model_calls_per_run':4,'max_new_tasks':maximum,
+    result={'fixture_set':fixture_set,'cases':len(cases),'max_model_calls_per_run':4,'max_new_tasks':maximum,
         'fixture_sha256':digest(cases),'control_state':'isolated native PostgreSQL; not Azure Agent deployment',
         'model_tasks':'existing Batch API/Azure/S3/real480B','new_cloud_resources':False,
         'service_changes':False,'quota_changes':False,'external_effect_tools':False,
         'action_lease':{'seconds':LEASE_SECONDS,'renew_interval_seconds':RENEW_INTERVAL,'action_deadline_seconds':ACTION_SECONDS},
-        'fault_reclaim_gate_seconds':30 if fixture_set=='lease-contract-heldout-v1' else None,
+        'fault_reclaim_gate_seconds':30 if fixture_set in ('lease-contract-heldout-v1','retrieval-squad-v1') else None,
         'fault':'one Agent coordinator exits after child Batch ACK, before Agent state commit'}
+    if fixture_set=='retrieval-squad-v1':
+        result['quality_gate']={'em_percent':75,'f1_percent':80,'supported_citation_percent':75,'task_success_percent':75}
+        result['public_dev_not_hidden']=True
+    return result
 
 
 def write(path,value):
@@ -208,7 +219,9 @@ async def worker(config_path):
                 stream.flush();os.fsync(stream.fileno())
             os._exit(42)  # This exact canary process, never engine/worker/API.
     adapter=FaultAdapter(lookup_pool,base_url=qualification_endpoint(cfg['batch_url']),tenant_keys={cfg['tenant']:cfg['api_key']})
-    coordinator=Coordinator(AgentStore(state_pool),adapter,owner='canary-'+os.urandom(8).hex(),tenants=[cfg['tenant']])
+    from agents.retrieval import Registry
+    coordinator=Coordinator(AgentStore(state_pool),adapter,owner='canary-'+os.urandom(8).hex(),tenants=[cfg['tenant']],
+        retrieval=Registry(cfg.get('retrieval_catalogue','')))
     deadline=time.monotonic()+1200
     try:
         while time.monotonic()<deadline:
@@ -231,6 +244,8 @@ def create_runs_http(client,run_name,fixture_set):
               'max_tool_calls':3,'max_generated_tokens':2048,'max_wall_seconds':1200,
               'answer_format':case.get('answer_format','text'),'require_citations':case.get('require_citations',False),
               'planner_protocol':case.get('planner_protocol','json-v1'),'tool_sequence':case.get('tool_sequence',[])}
+        if case.get('snapshot_id'):
+            body.update(allowed_tools=['retrieval.search'],retrieval_snapshot=case['snapshot_id'])
         headers={'Idempotency-Key':run_name+'.'+case['id']}
         response=client.post('/v1/agent-runs',headers=headers,json=body);response.raise_for_status();run=response.json()
         replay=client.post('/v1/agent-runs',headers=headers,json=body);replay.raise_for_status()
@@ -258,7 +273,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path);p.add_argument('--apply',action='store_true')
     p.add_argument('--worker-config',type=Path)
     p.add_argument('--batch-url',type=qualification_endpoint,default='http://127.0.0.1:8080')
-    p.add_argument('--fixture-set',choices=['baseline','value-contract-heldout-v1','schema-contract-heldout-v1','workflow-contract-heldout-v1','lease-contract-heldout-v1'],default='baseline');args=p.parse_args()
+    p.add_argument('--fixture-set',choices=['baseline','value-contract-heldout-v1','schema-contract-heldout-v1','workflow-contract-heldout-v1','lease-contract-heldout-v1','retrieval-squad-v1'],default='baseline');args=p.parse_args()
     if args.worker_config:return asyncio.run(worker(args.worker_config))
     if not args.apply:
         print(json.dumps(plan(datetime.now(timezone.utc),80,args.fixture_set),indent=2));return
@@ -273,6 +288,7 @@ def main():
     def event(phase):
         report['phase']=phase;report['events'].append({'phase':phase,'at':datetime.now(timezone.utc).isoformat()});write(base/'report.json',report)
     event('prepared');children=[];server_started=False;start=time.monotonic();azure=None
+    sampling_stop=threading.Event();sampling=None
     account=pwd.getpwnam('nobody');stage=Path('/tmp')/('bf-'+base.name)
     def drop():os.setgroups([]);os.setgid(account.pw_gid);os.setuid(account.pw_uid)
     toolchain=Path('/tmp/bf-ci-20261025-v14/toolchain');binary=toolchain/'usr/lib/postgresql/17/bin'
@@ -304,6 +320,17 @@ def main():
         if azure.info.get_parameters().get('sslmode')!='verify-full':raise RuntimeError('Azure certificate/hostname verification required')
         report['azure_readonly_tls_verify_full']=True
         tid=azure.execute('SELECT tenant_id FROM api_keys WHERE key_hash=%s AND NOT revoked',(hashlib.sha256(key.encode()).hexdigest(),)).fetchone()['tenant_id']
+        retrieval_catalogue=''
+        if args.fixture_set=='retrieval-squad-v1':
+            from ops.retrieval_squad import inputs,DATASET,evaluate
+            from ops.package_retrieval_corpus import package
+            corpus,_=inputs();(private/'corpus-source.json').write_bytes(corpus)
+            prepared=package(private/'corpus-source.json',private/'retrieval-release',tenant=tid,namespace='canary')
+            retrieval_catalogue=prepared['catalogue'];write(base/'retrieval-index.json',prepared['snapshot'])
+            report['retrieval_evaluation']=evaluate(DATASET.read_bytes(),base/'run')
+            from ops.gpu_campaign import sample
+            sampling=threading.Thread(target=sample,args=('http://127.0.0.1:8348',base/'run/observations.jsonl',sampling_stop),
+                kwargs={'interval':5},daemon=True);sampling.start()
         quota=azure.execute('''SELECT l.max_retained_tasks-u.retained_tasks AS headroom,
             l.max_payload_bytes-u.charged_payload_bytes AS payload_headroom,l.max_response_bytes FROM tenant_retention_limits l
             JOIN tenant_retention_usage u USING(tenant_id) WHERE l.tenant_id=%s''',(tid,)).fetchone()
@@ -336,6 +363,7 @@ def main():
         write(private/'executors.json',{tid:key})
         api_env={'PATH':'/usr/bin:/bin','HOME':'/root','LANG':'C.UTF-8','PYTHONDONTWRITEBYTECODE':'1',
             'DATABASE_URL':state_dsn,'MODEL_NAME':MODEL,
+            'AGENT_RETRIEVAL_CATALOGUE':retrieval_catalogue,
             'JSON_SCHEMA_ENABLED':'true' if any(c.get('planner_protocol')=='schema-v1' for c in selected_fixtures(args.fixture_set)) else 'false'}
         def spawn_api():
             verify_source();pins.check(full=True)
@@ -355,7 +383,8 @@ def main():
         with httpx.Client(base_url='http://127.0.0.1:18170',headers={'Authorization':'Bearer '+key},trust_env=False,timeout=10) as client:
             run_ids=create_runs_http(client,base.name,args.fixture_set)
         report['runs']=run_ids;report['agent_api_idempotent_replays_verified']=len(run_ids)
-        write(private/'config.json',{'state_dsn':state_dsn,'azure_dsn':env['DATABASE_URL'],'tenant':tid,'api_key':key,'batch_url':args.batch_url})
+        write(private/'config.json',{'state_dsn':state_dsn,'azure_dsn':env['DATABASE_URL'],'tenant':tid,'api_key':key,'batch_url':args.batch_url,
+            'retrieval_catalogue':retrieval_catalogue})
         cfg=private/'config.json'
         event('running')
         def spawn():
@@ -435,10 +464,29 @@ def main():
         verify_source();pins.check(full=True)
         report['headroom_after']=int(azure.execute('''SELECT l.max_retained_tasks-u.retained_tasks AS n
             FROM tenant_retention_limits l JOIN tenant_retention_usage u USING(tenant_id) WHERE l.tenant_id=%s''',(tid,)).fetchone()['n'])
-        report['passed']=all(r['passed'] for r in report['task_results']) and report['fault_reclaim_gate_passed'];event('complete' if report['passed'] else 'quality_failed')
+        if args.fixture_set=='retrieval-squad-v1':
+            write(base/'report.json',report)
+            with (private/'client-private.log').open('xb') as output:
+                tested=subprocess.run(['/tmp/bf-ci-20261025-v19/runner/externals/node24/bin/node',str(source/'ops/verify_agent_rag.mjs'),
+                    str(source),str(base),str(base/'readback.json')],stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,timeout=90)
+            if tested.returncode:raise RuntimeError('Actual RAG client readback failed')
+            report['actual_client_readback']=json.loads((base/'readback.json').read_bytes())
+            if report['actual_client_readback']['passed'] is not True:raise RuntimeError('RAG client proof not verified')
+            rows=report['task_results'];n=len(rows)
+            report['rag_quality']={'cases':n,'completed':sum(r['completed'] for r in rows),
+                'em_percent':100*sum(r['exact_match'] for r in rows)/n,'f1_percent':100*sum(r['f1'] for r in rows)/n,
+                'supported_citation_percent':100*sum(r['citation_verified'] for r in rows)/n,
+                'task_success_percent':100*sum(r['passed'] for r in rows)/n,
+                'all_retrieval_replayed':all(r['retrieval_replay_verified'] for r in rows),
+                'gate':report['plan']['quality_gate']}
+            q=report['rag_quality'];report['passed']=q['completed']==n and q['all_retrieval_replayed'] and all(q[k]>=v for k,v in q['gate'].items()) and report['fault_reclaim_gate_passed']
+        else:report['passed']=all(r['passed'] for r in report['task_results']) and report['fault_reclaim_gate_passed']
+        event('complete' if report['passed'] else 'quality_failed')
     except BaseException as exc:
         report.update(passed=False,error_type=type(exc).__name__,phase_before_failure=report['phase']);event('failed')
     finally:
+        sampling_stop.set()
+        if sampling:sampling.join(timeout=10)
         for child,fd in children:
             if child.poll() is None:
                 with contextlib.suppress(ProcessLookupError):signal.pidfd_send_signal(fd,signal.SIGTERM)

@@ -35,9 +35,10 @@ def citations(observations):
 
 
 class Coordinator:
-    def __init__(self,store,batch,*,owner,tenants,memory=None,lease_seconds=LEASE_SECONDS,renew_interval=RENEW_INTERVAL,action_seconds=ACTION_SECONDS):
+    def __init__(self,store,batch,*,owner,tenants,memory=None,retrieval=None,lease_seconds=LEASE_SECONDS,renew_interval=RENEW_INTERVAL,action_seconds=ACTION_SECONDS):
         self.store=store;self.batch=batch;self.owner=owner;self.tenants=tuple(tenants)
         self.memory=memory or StoreMemory(store)
+        self.retrieval=retrieval
         self.lease_seconds=lease_seconds;self.renew_interval=renew_interval;self.action_seconds=action_seconds
         # Validate before claiming anything; durations are operator settings,
         # never model-supplied policy or request fields.
@@ -88,6 +89,9 @@ class Coordinator:
             raise ValueError('Only activated Agent executions can call the model')
         step=state.get('step',0)
         if phase=='plan':
+            if policy.retrieval_snapshot:
+                if self.retrieval is None:raise PermissionError('Retrieval executor unavailable')
+                self.retrieval.require(run['tenant_id'],policy.memory_namespace,policy.retrieval_snapshot)
             if run['model_calls']>=run['max_model_calls']:return await self.fail(run,'model_call_budget_exceeded')
             remaining=run['max_generated_tokens']-run['generated_tokens']
             if remaining<64:return await self.fail(run,'generated_token_budget_exceeded')
@@ -170,7 +174,7 @@ class Coordinator:
                 return await self.change(run,'final',kind='run.completed',state=state,status='completed',
                     result={**decision.model_dump(),'batch_receipts':state.get('receipts',[])})
             if run['tool_calls']>=run['max_tool_calls']:return await self.fail(run,'tool_call_budget_exceeded')
-            checkpoint();observation=await execute(decision,Context(run['tenant_id'],policy,self.memory))
+            checkpoint();observation=await execute(decision,Context(run['tenant_id'],policy,self.memory,self.retrieval))
             state.setdefault('observations',[]).append(observation)
             state.pop('model_content');state['phase']='plan'
             for key in ('request','batch_id','file_id','upload_attempted','delivery_invalid'):state.pop(key,None)

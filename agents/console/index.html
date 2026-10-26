@@ -18,9 +18,10 @@
           <form id="run-form"><fieldset id="run-fields">
             <label>Goal<textarea id="goal" rows="5" maxlength="32768" placeholder="Retrieve the invoice facts, calculate the total, and cite the source." required></textarea></label>
             <div class="field-grid"><label>Model<select id="model" required></select></label><label>Planner protocol<select id="protocol"></select></label></div>
+            <label>Knowledge snapshot<select id="retrieval"><option value="">Workspace memory only</option></select></label>
             <label>Required tools, in order<select id="sequence"><option value="">Agent chooses tools</option><option value="math.calculate">Calculate</option><option value="memory.get">Retrieve memory</option><option value="memory.get,math.calculate">Retrieve memory → calculate</option></select></label>
             <div class="field-grid"><label>Memory namespace<input id="namespace" value="default" pattern="[a-zA-Z0-9_-]{1,64}" required></label><label>Answer format<select id="answer-format"><option value="text">Text</option><option value="number">Number</option><option value="identifier">Identifier</option></select></label></div>
-            <label class="checkbox"><input id="require-citations" type="checkbox">Require a retrieved memory citation</label>
+            <label class="checkbox"><input id="require-citations" type="checkbox">Require a retrieved source citation</label>
             <details><summary>Execution limits</summary><div class="field-grid limits">
               <label>Model steps<input id="model-budget" type="number" min="1" max="32" value="8" required></label>
               <label>Tool calls<input id="tool-budget" type="number" min="0" max="64" value="8" required></label>
@@ -28,7 +29,7 @@
               <label>Deadline, seconds<input id="wall-budget" type="number" min="30" max="3600" value="900" required></label>
             </div></details>
           </fieldset><button class="primary" id="submit" type="submit">Start workflow</button></form>
-          <p class="muted">Available tools are bounded arithmetic and read-only workspace memory. A required tool must actually run before the workflow can finish.</p>
+          <p class="muted">Tools read the granted workspace memory or knowledge snapshot and perform bounded arithmetic. A required tool must actually run before the workflow can finish.</p>
         </section>
         <section class="panel runs"><div class="section-title"><h2>Your runs</h2><span class="muted" id="run-count"></span></div><div id="run-list"></div><button id="more" type="button" hidden>Load more</button></section>
       </div>

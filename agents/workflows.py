@@ -19,7 +19,7 @@ class Node(Strict):
     goal:str=Field(min_length=1,max_length=16384)
     model:str=Field(min_length=1,max_length=256)
     depends_on:list[str]=Field(default_factory=list,max_length=16)
-    allowed_tools:list[str]=Field(default_factory=lambda:['math.calculate'],max_length=3)
+    allowed_tools:list[str]=Field(default_factory=lambda:['math.calculate'],max_length=4)
     max_model_calls:int=Field(default=4,ge=1,le=32)
     max_tool_calls:int=Field(default=2,ge=0,le=64)
     max_generated_tokens:int=Field(default=2048,ge=64,le=32768)
@@ -34,6 +34,7 @@ class Node(Strict):
             max_generated_tokens=self.max_generated_tokens,max_wall_seconds=spec.max_wall_seconds,
             answer_format=self.answer_format,require_citations=self.require_citations,
             planner_protocol=self.planner_protocol,tool_sequence=tuple(self.tool_sequence),
+            retrieval_snapshot=spec.retrieval_snapshot if 'retrieval.search' in self.allowed_tools else '',
             parent_workflow=parent,parent_node=node)
 
 
@@ -41,8 +42,9 @@ class Workflow(Strict):
     nodes:list[Node]=Field(min_length=1,max_length=16)
     outputs:list[str]=Field(min_length=1,max_length=16)
     max_parallel:int=Field(default=2,ge=1,le=8)
-    allowed_tools:list[str]=Field(default_factory=lambda:list(Policy().allowed_tools),max_length=3)
+    allowed_tools:list[str]=Field(default_factory=lambda:list(Policy().allowed_tools),max_length=4)
     memory_namespace:str=Field(default='default',pattern=r'^[a-zA-Z0-9_-]{1,64}$')
+    retrieval_snapshot:str=Field(default='',pattern=r'^(|[0-9a-f]{64})$')
     max_model_calls:int=Field(default=16,ge=1,le=32)
     max_tool_calls:int=Field(default=16,ge=0,le=64)
     max_generated_tokens:int=Field(default=16384,ge=64,le=32768)
@@ -53,7 +55,13 @@ class Workflow(Strict):
         return Policy(allowed_tools=tuple(self.allowed_tools),memory_namespace=self.memory_namespace,
             max_model_calls=self.max_model_calls,max_tool_calls=self.max_tool_calls,
             max_generated_tokens=self.max_generated_tokens,max_wall_seconds=self.max_wall_seconds,
-            execution_kind='workflow')
+            execution_kind='workflow',retrieval_snapshot=self.retrieval_snapshot)
+
+    def document(self):
+        # Adding an absent optional snapshot must not alter old request keys.
+        value=self.model_dump()
+        if not self.retrieval_snapshot:value.pop('retrieval_snapshot')
+        return value
 
     @model_validator(mode='after')
     def valid_graph(self):
@@ -108,7 +116,7 @@ class WorkflowStore:
 
     async def create(self,tenant,key,spec):
         if not isinstance(spec,Workflow):raise AgentError(422,'invalid_workflow')
-        goal=canonical(spec.model_dump()).decode();policy=spec.policy()
+        goal=canonical(spec.document()).decode();policy=spec.policy()
         async with self.store.pool.connection() as conn,conn.transaction():
             await self.store.tenant_lock(conn,tenant)
             old=await one(conn,'SELECT * FROM bf_agents.runs WHERE tenant_id=%s AND request_key=%s',(tenant,key))
