@@ -92,6 +92,38 @@ def test_missing_managed_record_does_not_hide_a_live_original_process(tmp_path,m
     assert p.identity({'role':'worker','name':'test'},optional=True) is None
 
 
+def test_duplicate_actual_environment_keys_are_not_silently_collapsed():
+    assert q.process_environment(b'A=1\0B=with=equals\0')=={'A':'1','B':'with=equals'}
+    with pytest.raises(ValueError):q.process_environment(b'A=1\0A=2\0')
+
+
+def test_real_manager_subprocess_uses_frozen_profile_instead_of_operator_safe_path(tmp_path,monkeypatch):
+    root=tmp_path/'app';(root/'ops').mkdir(parents=True)
+    (root/'ops/peer.py').write_text('VALUE="original-script-directory"\n')
+    (root/'ops/manage.py').write_text('import json,os\nfrom peer import VALUE\nassert VALUE=="original-script-directory"\nassert "PYTHONSAFEPATH" not in os.environ and "PYTHONPATH" not in os.environ\nprint(json.dumps({"status":"started","running":True}))\n')
+    monkeypatch.setenv('PYTHONSAFEPATH','1');monkeypatch.setenv('PYTHONPATH',str(tmp_path/'operator-source'))
+    m=q.ProfileManager(root=root,profiles={'supervisor-primary':{'PATH':os.environ.get('PATH',''),'LANG':'C.UTF-8'}})
+    value,error=m.invoke({'role':'supervisor','name':'primary','env_file':'unused','python':sys.executable},'start')
+    assert error is None and value['status']=='started'
+
+
+def test_public_evidence_exports_runner_identity_but_never_private_profiles_or_responses(tmp_path,capsys):
+    from ops.collect_platform480 import remote_script
+    import io,tarfile
+    (tmp_path/'runner.json').write_text('{"identity":{"pid":42}}')
+    (tmp_path/'restore-private.json').write_text('PRIVATE_PROCESS_ENVIRONMENT')
+    (tmp_path/'restore-private.log').write_text('PRIVATE_ERROR_LOG')
+    (tmp_path/'private-responses').mkdir();(tmp_path/'private-responses/x.json').write_text('PRIVATE_MODEL_OUTPUT')
+    script=remote_script('/root/batchforge-runtime/soak480-engine-quality-fixture')
+    code=script.split("python3 - <<'BF_COLLECT_PY'\n",1)[1].split('\nBF_COLLECT_PY',1)[0]
+    code=code.replace("root='/root/batchforge-runtime/soak480-engine-quality-fixture'",'root='+repr(str(tmp_path)),1)
+    exec(compile(code,'public-evidence-fixture','exec'),{})
+    output=capsys.readouterr().out;payload=base64.b64decode(output.split('BF_EVIDENCE_BEGIN\n')[1].split('BF_EVIDENCE_END')[0])
+    with tarfile.open(fileobj=io.BytesIO(payload),mode='r:gz') as tar:
+        assert set(tar.getnames())=={'runner.json','evidence-manifest.json'}
+        assert b'PRIVATE_' not in b''.join(tar.extractfile(p).read() for p in tar.getnames())
+
+
 @pytest.mark.skipif(sys.platform!='linux',reason='Native isolated process restoration qualification')
 @pytest.mark.parametrize('mode',['controller_exit','normal','nonquiescent'])
 def test_native_restoration_owner_after_controller_loss_keeps_unsafe_window_closed(tmp_path,mode):

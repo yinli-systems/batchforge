@@ -33,7 +33,7 @@ if root.name.startswith('soak480-agent-runtime-'):
  if p.is_file() and not p.is_symlink():paths.append(p)
 for name in ['source-receipt.json','storage-preflight.json','launcher-v1.json',
              'launcher.json','deployment.json','sql-validation.json','rollout.json','readback.json',
-             'campaign-launcher.json','initial-failure.json','passive-preflight.json',
+             'campaign-launcher.json','runner.json','initial-failure.json','passive-preflight.json',
              'admission-observation.json','admission-observer.py',
              'replay-validation.json','future-receipt-validation.json',
              'post-rollout-validation.json',

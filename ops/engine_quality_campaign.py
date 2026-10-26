@@ -29,6 +29,44 @@ def save(path,value):atomic_bytes(path,(json.dumps(value,indent=2,allow_nan=Fals
 def read(path,limit=262144):return json.loads(private_read(path,limit))
 
 
+def process_environment(raw):
+    result={}
+    for part in raw.split(b'\0'):
+        if not part:continue
+        key,sep,value=part.partition(b'=')
+        if not sep or not key or key.decode() in result:raise ValueError('Unique actual process environment required')
+        result[key.decode()]=value.decode()
+    return result
+
+
+class ProfileManager(PolicyManager):
+    """Do not let an operator's safe-path/PYTHONPATH become a service's env.
+
+    The frozen actual profile is private. The existing root manager applies
+    the current env file over it and retains its own per-service PID lock.
+    """
+    def __init__(self,*,root,profiles):super().__init__(root=root,timeout=30);self.profiles=profiles
+    def invoke(self,service,action):
+        if action not in ('start','stop','status'):raise ValueError('Only bounded existing service actions allowed')
+        key=service['role']+'-'+service['name']
+        command=[sys.executable,str(self.root/'ops/manage.py'),action,service['role'],'--name',service['name']]
+        if action=='stop':command+=['--grace-seconds','10']
+        elif action=='start':
+            command+=['--env-file',service['env_file'],'--python',service['python']]
+            for field in ('port','gpu'):
+                if service.get(field) is not None:command+=['--'+field,str(service[field])]
+        try:
+            r=subprocess.run(command,cwd=self.root,env=self.profiles[key],stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=30,check=False)
+            if r.returncode or len(r.stdout)>4096:return None,'profile_manager_failed'
+            value=json.loads(r.stdout)
+            expected={'start':('started','already_running'),'stop':('stopped','not_running')}
+            if not isinstance(value,dict) or (action in expected and value.get('status') not in expected[action]):return None,'profile_manager_protocol'
+            if action=='status' and type(value.get('running')) is not bool:return None,'profile_manager_status'
+            return value,None
+        except (OSError,ValueError,subprocess.TimeoutExpired):return None,'profile_manager_unavailable'
+
+
 def gated(raw):
     """Change one key only; preserve all other bytes, reject ambiguous files."""
     rows=raw.decode().splitlines(keepends=True);count=0;result=[]
@@ -107,11 +145,19 @@ def capture(base,guard_run,seconds,count):
     if (guard_run.parent!=ROOT.parent or guard_run.resolve()!=guard_run
         or not guard_run.name.startswith('evidence-api-worker-latch-guard-')):raise ValueError('Owned existing guard run required')
     pins=Pins();end=window_end(time.time(),seconds)
+    profiles={}
     for s in pins.all:
         identity=pins.identities[s['role']+'-'+s['name']]
-        require_effective_configuration(file_env(s['env_file']),Path(f'/proc/{identity["pid"]}/environ').read_bytes())
+        env=file_env(s['env_file']);raw=Path(f'/proc/{identity["pid"]}/environ').read_bytes()
+        require_effective_configuration(env,raw);actual=process_environment(raw)
+        for key in ('PYTHONPATH','PYTHONSAFEPATH','PYTHONHOME'):
+            if actual.get(key)!=env.get(key):raise ValueError('Undeclared Python source controls in live service environment')
+        profiles[s['role']+'-'+s['name']]=actual
     guard=read(guard_run/'validation.json');launcher=read(guard_run/'launcher.json')
     identity=launcher['identity'];command=launcher['command']
+    guard_environment=process_environment(Path(f'/proc/{identity["pid"]}/environ').read_bytes())
+    if any(guard_environment.get(k) for k in ('PYTHONPATH','PYTHONSAFEPATH','PYTHONHOME')):
+        raise ValueError('Qualified legacy guard must retain its clean original import environment')
     actual=Path(f'/proc/{identity["pid"]}/cmdline').read_bytes().split(b'\0')[:-1]
     if (guard.get('phase') not in ('armed','waiting_campaign_boundary') or guard.get('recovery_invocations')!=0
         or process_identity(identity['pid'])!=identity or actual!=[x.encode() for x in command]
@@ -128,7 +174,8 @@ def capture(base,guard_run,seconds,count):
         'managers':{str(p):v for p,v in pins.managers.items()},'identities':pins.identities,
         'worker_source':str(pins.source),'worker_receipt_path':str(pins.receipt_path),'worker_receipt_sha256':sha(pins.receipt_raw),
         'worker_files':pins.receipt['files'],'plan':public_plan,'physical_kv_tokens':cache,'end_epoch':end,
-        'guard_run':str(guard_run),'guard_identity':identity,'guard_command':command,'guard_deadline':guard['deadline_epoch']}
+        'guard_run':str(guard_run),'guard_identity':identity,'guard_command':command,'guard_deadline':guard['deadline_epoch'],
+        'process_environments':profiles,'guard_environment':guard_environment}
     guard_source=Path(identity['cwd']);guard_receipt=read(guard_source.parent/'source-receipt.json')
     if any(sha((guard_source/n).read_bytes())!=v for n,v in guard_receipt['files'].items()):raise ValueError('Qualified guard source drift')
     config['guard_source_files']=guard_receipt['files'];config['guard_source_commit']=guard_receipt['git_commit']
@@ -156,7 +203,7 @@ def load_config(path,digest):
 
 class Platform:
     def __init__(self,c):
-        self.c=c;self.base=Path(c['base']);self.manager=PolicyManager(root=ROOT,timeout=30)
+        self.c=c;self.base=Path(c['base']);self.manager=ProfileManager(root=ROOT,profiles=c['process_environments'])
         self.services=c['services'];self.apis=sorted((s for s in self.services if s['role']=='api'),key=lambda s:s['name'])
         self.worker=next(s for s in self.services if s['role']=='worker');self.watch=next(s for s in self.services if s['role']=='supervisor')
         self.original={Path(p):base64.b64decode(v) for p,v in c['originals'].items()}
@@ -177,7 +224,8 @@ class Platform:
         current=process_identity(identity['pid'])
         if current is None and optional:return None
         if current!=identity or current['cwd']!=str(ROOT):raise ValueError('Managed process identity differs')
-        require_effective_configuration(file_env(s['env_file']),Path(f'/proc/{current["pid"]}/environ').read_bytes())
+        expected={**self.c['process_environments'][s['role']+'-'+s['name']],**file_env(s['env_file'])}
+        require_effective_configuration(expected,Path(f'/proc/{current["pid"]}/environ').read_bytes())
         return current
 
     def check(self,exclusive=False):
@@ -324,7 +372,7 @@ def restore_config(path,digest):
         args=[sys.executable,'-m','ops.worker_latch_guard','--run',str(run),'--qualified-trial',trial,
             '--qualified-audit',audit,'--active-campaign',str(boundary),'--seconds',str(remaining),'--apply']
         with (base/'guard-private.log').open('xb') as log:
-            env=os.environ.copy();env.update(PYTHONSAFEPATH='1',PYTHONPATH=str(guard_source))
+            env=c['guard_environment']
             child=subprocess.Popen(args,cwd=guard_source,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
         save(run.with_name(run.name+'-launcher.json'),{'identity':process_identity(child.pid),'command':args})
         until=time.monotonic()+35
