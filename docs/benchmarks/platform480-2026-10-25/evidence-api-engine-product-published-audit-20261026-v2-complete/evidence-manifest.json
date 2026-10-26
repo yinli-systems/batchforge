@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-26T03:05:00.349478+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-engine-product-published-audit-20261026-v2",
+  "files": {
+    "readback.json": {
+      "bytes": 783,
+      "sha256": "2ac6ab297f8b7eb2bdcda6c1c54c6d0d229775c4cf86defab29d426bf6d65ad4",
+      "source_relative_path": "readback.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 3463,
+      "sha256": "7a6c253d6f57dbf3bbbd4c13dbe1b53e0d490c4d893fde944ff45fb6db6adc03",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

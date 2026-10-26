@@ -1,0 +1,1 @@
+{"phase": "controller_exited", "observed_exit_code": 42, "elapsed_seconds": 10.696481943130493, "scope": "OS wait status of timeout-wrapped controller; restoration has separate receipt"}

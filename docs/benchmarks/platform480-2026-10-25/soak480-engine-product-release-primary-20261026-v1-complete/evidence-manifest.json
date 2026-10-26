@@ -1,0 +1,31 @@
+{
+  "collected_at": "2026-10-26T03:05:00.292642+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-engine-product-release-primary-20261026-v1",
+  "files": {
+    "launcher.json": {
+      "bytes": 159,
+      "sha256": "db678a34b9dea1bfe546c3e72cc9c5deeb877126585b04e89a50a8d7e203bfc6",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "recovery-validation.json": {
+      "bytes": 3445,
+      "sha256": "d0b7c401265393410a84c6c85518c7413162c9f6034c960f23204ae1f5354abc",
+      "source_relative_path": "recovery-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "guard-launcher.json": {
+      "bytes": 300,
+      "sha256": "16b11ec7577be44c2bfbada50777eddeda35433ceb4f502ece1ef35e29150d99",
+      "source_relative_path": "guard-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 2513,
+      "sha256": "6c7ab8b896ebacce7489d03959024fc553ac255a6e75f9ffac1ed8cb3d3d0f7f",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

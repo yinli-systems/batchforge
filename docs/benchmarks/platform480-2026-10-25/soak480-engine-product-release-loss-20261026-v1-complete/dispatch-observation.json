@@ -1,0 +1,22 @@
+{
+  "intentional_controller_exit": 42,
+  "first_api_gate_verified": true,
+  "at": "2026-10-26T03:02:24.616155+00:00",
+  "protected_identities": {
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 735322,
+      "start_ticks": "50346265",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  }
+}

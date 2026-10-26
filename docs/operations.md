@@ -1,6 +1,6 @@
 # Operations
 
-## Current deployment — October 25, 2026
+## Current deployment — October 26, 2026
 
 There is **one existing Pod with four H100 80GB GPUs**, serving
 `QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ` on TP4: 480B total / about
@@ -11,19 +11,24 @@ metering; the existing private S3 endpoint holds verified input/result archives.
 
 | Service | Active configuration |
 | --- | --- |
-| API replicas | `api-a` / `api-b`, loopback 8082 / 8083, immutable API source `748dc10` |
+| API replicas | `api-a` / `api-b`, loopback 8082 / 8083, immutable API source `5a0a446` |
 | Private gateway | `gateway-edge`, loopback 8080 |
 | Engine | `engine-qwen480bench`, loopback 8348, TP4 |
-| Worker | `worker-qwen480`, health/metrics 9105, exact-token admission, 32 slots |
+| Worker | `worker-qwen480`, source `748dc10`, health/metrics 9105, exact-token admission, 32 slots |
 | KV admission | 164,256-token budget; last qualified physical KV 172,912 tokens |
 | Context / durable lease | 18,440 tokens / 15 seconds |
 | Supervision | `supervisor-primary`, exact PID/start-time/cwd checks |
 | GPU Fleet reporting | **Enabled**; four selected H100s, Azure metadata, fresh views on both APIs and gateway |
+| Engine quality evidence | **Published**; tenant-scoped engine catalogue, corrected full-dev EM82.00/F190.94, separate from Batch ledger evidence |
 
 Worker and API source selection differ: `UVICORN_APP_DIR` selects API source,
 not `python -m worker`. A worker candidate requires the source-origin probe,
 `PYTHONSAFEPATH=1` and a single immutable `PYTHONPATH`; never copy over a live
 package. Check the live manifest and source receipts before maintenance.
+The API's `ENGINE_EVIDENCE_CATALOGUE` points to an owner-only evidence release;
+its existing `QUALITY_EVIDENCE_CATALOGUE` still points to the unchanged748dc10
+Batch reports. [Independent publication and recovery receipts](benchmarks/engine-product-publication-2026-10-26.md)
+record this deliberately mixed source state. The Agent API mount is still off.
 
 Connect through the already authorized RunPod SSH proxy:
 

@@ -1,0 +1,82 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "started_at": "2026-10-26T03:03:04.427385+00:00",
+  "new_gpu_tasks": 0,
+  "worker_actions": false,
+  "engine_actions": false,
+  "new_cloud_resources": false,
+  "operator_commit": "5a0a4461d4b469875335549524bed0c52ca35cbe",
+  "config_sha256": "84a251cd4d87bf88f20f5fafa0523d66ba514d1c183b6c5c47dd5e9b73a1a0e7",
+  "loss_qualification_sha256": "4baaa0e80de09ad3d0fa7b757f644b8e631580a44cc9581b90f33ec5e67e64c9",
+  "drain_observations": [
+    {
+      "at": "2026-10-26T03:03:13.965971+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    },
+    {
+      "at": "2026-10-26T03:03:15.296677+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    }
+  ],
+  "precommit_readback": [
+    {
+      "port": 8082,
+      "ready": true,
+      "batch_states": [
+        "failed",
+        "passed"
+      ],
+      "fleet_readable": true,
+      "engine_evidence_sha256": "bd580e453973815abc0e865e2ea0e8d95b88616b32378c6c83d36bf2b09d8fff"
+    },
+    {
+      "port": 8083,
+      "ready": true,
+      "batch_states": [
+        "failed",
+        "passed"
+      ],
+      "fleet_readable": true,
+      "engine_evidence_sha256": "bd580e453973815abc0e865e2ea0e8d95b88616b32378c6c83d36bf2b09d8fff"
+    },
+    {
+      "port": 8080,
+      "ready": true,
+      "batch_states": [
+        "failed",
+        "passed"
+      ],
+      "fleet_readable": true,
+      "engine_evidence_sha256": "bd580e453973815abc0e865e2ea0e8d95b88616b32378c6c83d36bf2b09d8fff"
+    }
+  ],
+  "restoration_passed": true,
+  "outcome": "published",
+  "recovery_report_sha256": "d0b7c401265393410a84c6c85518c7413162c9f6034c960f23204ae1f5354abc",
+  "finished_at": "2026-10-26T03:03:34.390486+00:00"
+}

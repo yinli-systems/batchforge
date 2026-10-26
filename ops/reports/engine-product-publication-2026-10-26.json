@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "source_commit": "5a0a4461d4b469875335549524bed0c52ca35cbe",
+  "published_at": "2026-10-26T03:03:34.390486+00:00",
+  "scope": "API and evidence product publication, not another inference cohort or Agent database rollout",
+  "observed_controller_loss_exit_code": 42,
+  "restore_handler_elapsed_seconds": 9.619137,
+  "new_gpu_tasks": 0,
+  "new_cloud_resources": false,
+  "protected_worker_engine_gateway_unchanged": true,
+  "corrected_exact": 8667,
+  "corrected_em_percent": 81.99621570482498,
+  "f1_percent": 90.94000661220909,
+  "batch_quality_states": [
+    "failed",
+    "passed"
+  ],
+  "engine_view_sha256": "bd580e453973815abc0e865e2ea0e8d95b88616b32378c6c83d36bf2b09d8fff",
+  "actual_client_webcrypto_verified": true,
+  "workspace_retained_tasks": 49910,
+  "workspace_retained_headroom": 90,
+  "database_total_task_rows": 49930,
+  "post_full_evaluation_task_insertions": 0,
+  "browser_visual_qa": false,
+  "full_platform_complete": false,
+  "limitations": [
+    "Initial read-only qualification failed on SPA route ordering; preserved unchanged.",
+    "Initial post-release audit launch failed to parse before execution; no remote audit directory or primary action.",
+    "Post-release audit v2 counted all database task rows against a tenant limit; retained raw report is not tenant admission authority. V3 reconciles authenticated capacity API with Azure counters:49910/50000.",
+    "No new inference, quality score, physical fault, whole-Pod HA or invoice verification established by this release."
+  ]
+}

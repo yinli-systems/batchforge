@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-26T03:02:17.852078+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-engine-product-qualification-20261026-v2",
+  "files": {
+    "readback.json": {
+      "bytes": 783,
+      "sha256": "2ac6ab297f8b7eb2bdcda6c1c54c6d0d229775c4cf86defab29d426bf6d65ad4",
+      "source_relative_path": "readback.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 2348,
+      "sha256": "61b984c3420be0df41f7fd5af2c4e6972c1ee4f8958453ea33fc3e14f96853d2",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

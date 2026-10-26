@@ -1,0 +1,25 @@
+{
+  "collected_at": "2026-10-26T03:03:12.417626+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-engine-release-dispatch-loss-20261026-v1",
+  "files": {
+    "launcher.json": {
+      "bytes": 591,
+      "sha256": "d86afb919198f96c0828ba8559d41a42fd489e8c1858b62ae5343edd7b511fb5",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 187,
+      "sha256": "40e407edc0a89e98a4142c388618883bb6756cdfff5462d022ffd0a90e7d3ad4",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 719,
+      "sha256": "8603df6b6997e31b41fec0d12385005a29fb8371a82669f32372010c9d65390f",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

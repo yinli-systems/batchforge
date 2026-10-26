@@ -1,8 +1,11 @@
 # Engine quality evidence
 
-Implementation and local qualification complete; production publication is a
-separate controlled API release. This catalogue is off unless configured. No
-new database table or owner role is needed.
+Published on both existing private APIs and their gateway at03:03:34UTC on
+October26, from immutable source5a0a446. Source-matched native CI, actual Azure
+read-only canary, real API controller-loss rollback and independent post-release
+HTTP/console-client checks passed. [Receipts and limitations](benchmarks/engine-product-publication-2026-10-26.md).
+This catalogue remains off unless explicitly configured in another deployment.
+No new database table or owner role was needed.
 
 `GET /v1/engine-evaluations` lists only operator-published records explicitly
 assigned to the authenticated tenant. `GET /v1/engine-evaluations/{id}` returns
@@ -95,6 +98,7 @@ state pins. A failed publication attempts one compatible rollback; unknown
 activity or foreign configuration keeps the window closed for inspection.
 The persistent recovery budget is never reset. Actual controller-loss
 qualification on the same source is required before normal publication.
-This controller has local safety tests; native CI, real read-only validation,
-real API controller-loss recovery and main publication are still separate
-steps and are not established by this implementation description.
+The controller subsequently passed native CI, real read-only validation,
+actual API controller-loss rollback and primary publication. The independent
+post-release audit checked all three endpoints and actual console functions.
+The retained first qualification failure is not rewritten as a pass.

@@ -1,0 +1,11 @@
+{
+  "phase": "failed_before_remote_execution",
+  "error_type": "SyntaxError",
+  "cause": "A generic CODE placeholder also substituted inside PYTHONDONTWRITEBYTECODE in the outer launcher. New launcher uses a unique placeholder.",
+  "local_failed_source_sha256": "efd124d77fa2e0b4a5a7dfc377ab6964cbd2ef8f33b85a757830a2806bf4ca6a",
+  "local_private_log_sha256": "8407ef98bf071cd6d4e7d2a4432e4f57966e1714dc1ce73594e16c2eeab3f9b2",
+  "new_gpu_tasks": 0,
+  "primary_services_changed": false,
+  "remote_audit_directories_created": false,
+  "retry_scope": "New source/run v2, followed by scope-corrected capacity audit v3; original local failure preserved."
+}

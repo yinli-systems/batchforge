@@ -1,0 +1,22 @@
+{
+  "identity": {
+    "pid": 754105,
+    "start_ticks": "50715207",
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261026-v18/source"
+  },
+  "command": [
+    "/usr/bin/timeout",
+    "--signal=TERM",
+    "--kill-after=15",
+    "900",
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "ops.qualify_engine_evidence",
+    "--run",
+    "/root/batchforge-runtime/evidence-api-engine-product-qualification-20261026-v2"
+  ],
+  "source_commit": "5a0a4461d4b469875335549524bed0c52ca35cbe",
+  "run": "/root/batchforge-runtime/evidence-api-engine-product-qualification-20261026-v2",
+  "native_ci_run": 40261699502,
+  "scope": "Read-only real Azure API and actual console client; no GPU or primary deployment"
+}

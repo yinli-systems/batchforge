@@ -1,0 +1,11 @@
+{
+  "phase": "first_api_gate_verified",
+  "passed": false,
+  "started_at": "2026-10-26T03:02:14.199975+00:00",
+  "new_gpu_tasks": 0,
+  "worker_actions": false,
+  "engine_actions": false,
+  "new_cloud_resources": false,
+  "operator_commit": "5a0a4461d4b469875335549524bed0c52ca35cbe",
+  "config_sha256": "fe4afbfe34b7fef318a038caadfe18febc8b7f29865d67ee591a2386cb75195e"
+}

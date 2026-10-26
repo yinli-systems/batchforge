@@ -33,14 +33,16 @@ tasks and20 artifact reads; four decoder calibration tasks are accounted for
 separately. This finite observation is not a P99 or throughput improvement claim.
 
 The [full-dev engine quality run](docs/benchmarks/engine-quality-full-2026-10-26.md)
-now passed all10,570 public SQuAD cases: **corrected EM82.00% / F1 90.94%**,477.515seconds,
+delivered all10,570 public SQuAD cases and passed the cohort gate: **corrected EM82.00% / F1 90.94%**,477.515seconds,
 zero unknown inference outcomes. Publication validation corrected one invalid-format
 legacy score; the raw82.005676 report remains unchanged. Every private response was replay-audited and
 copied off-Pod; the independent service restore passed after a real controller-loss
 qualification. Whole controller allocation was **$2.2319** at the operator-confirmed
 $16.10/h, not an invoice. This is engine-only evidence; the original full Batch
-quality failure remains. The optional [engine evidence API/console](docs/engine-quality-evidence.md) is implemented
-and locally tested; its production publication remains separate.
+quality failure remains. The authenticated [engine evidence API/console](docs/engine-quality-evidence.md)
+is now published on both private APIs and the gateway. A real controller-loss
+rollback, source-matched read-only canary and independent post-release client
+readback passed. [Publication receipts](docs/benchmarks/engine-product-publication-2026-10-26.md).
 
 The candidate [Agent workspace](docs/agent-console.md) adds same-origin submission,
 required tool order, versioned memory, cancellation and client-verified history/
@@ -73,9 +75,9 @@ See [ground-truth evaluation and endurance protocol](docs/benchmarks/quality-squ
 A frozen JSON-span answer contract subsequently passed a disjoint 1,000-question
 public holdout: **EM82.8% / F1 91.43%** versus matched baseline 56.9% / 77.10%.
 The original full-dev Batch API gate remains failed. [Protocol, paired outcomes and cost](docs/benchmarks/quality-contract-2026-10-25.md)
-retain both results. Serving source748dc10 passed1,415 native PostgreSQL17
-tests; Agent action-lease source8ddc2ca passed **1,727 Python tests and39 console
-tests**. See [actual CI evidence](docs/ci.md).
+retain both results. Current API source5a0a446 passed **1,862 Python tests and45
+console tests**, zero skipped, using native PostgreSQL17. Worker source remains
+748dc10. See [actual CI evidence](docs/ci.md).
 
 The post-Fleet800-task workload closed at428.166 output tokens/s, with four-card
 sample means87.95–96.22%; it is not a matched speedup or daily capacity claim.
@@ -135,8 +137,9 @@ WebCrypto checksum verification, independent artifact byte readback and logical
 admission headroom. Both replicas passed the guarded October 25 rollout, with
 unchanged GPU worker/engine identities and historical S3 byte readback. See [execution evidence](docs/execution-evidence.md).
 
-The guarded `748dc10` release now serves four-H100 physical inventory, verified
-input reuse and both quality/cost reports through the current worker/APIs.
+The guarded `748dc10` worker release added four-H100 physical inventory and
+verified input reuse. API source5a0a446 preserves both Batch quality/cost reports
+and separately publishes the corrected engine-only report.
 [Native release evidence](docs/benchmarks/platform480-2026-10-25/evidence-api-fleet-release-20261025-v2-complete/release.json)
 retains exact checks. The [closed 800-task post-release workload](docs/benchmarks/fleet-endurance-2026-10-25.md)
 completed all tasks, conserved metering and verified sampled S3 delivery. Its

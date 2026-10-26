@@ -1,0 +1,120 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "config_sha256": "84a251cd4d87bf88f20f5fafa0523d66ba514d1c183b6c5c47dd5e9b73a1a0e7",
+  "started_at": "2026-10-26T03:03:22.947271+00:00",
+  "engine_actions": false,
+  "worker_actions": false,
+  "new_gpu_tasks": 0,
+  "outcome": "published",
+  "drain_observations": [
+    {
+      "at": "2026-10-26T03:03:23.317039+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    },
+    {
+      "at": "2026-10-26T03:03:24.650115+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    }
+  ],
+  "readback": [
+    {
+      "port": 8082,
+      "ready": true,
+      "batch_states": [
+        "failed",
+        "passed"
+      ],
+      "fleet_readable": true,
+      "engine_evidence_sha256": "bd580e453973815abc0e865e2ea0e8d95b88616b32378c6c83d36bf2b09d8fff"
+    },
+    {
+      "port": 8083,
+      "ready": true,
+      "batch_states": [
+        "failed",
+        "passed"
+      ],
+      "fleet_readable": true,
+      "engine_evidence_sha256": "bd580e453973815abc0e865e2ea0e8d95b88616b32378c6c83d36bf2b09d8fff"
+    },
+    {
+      "port": 8080,
+      "ready": true,
+      "batch_states": [
+        "failed",
+        "passed"
+      ],
+      "fleet_readable": true,
+      "engine_evidence_sha256": "bd580e453973815abc0e865e2ea0e8d95b88616b32378c6c83d36bf2b09d8fff"
+    }
+  ],
+  "identities": {
+    "api-a": {
+      "pid": 754368,
+      "start_ticks": "50724295",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 754376,
+      "start_ticks": "50724615",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 735322,
+      "start_ticks": "50346265",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 754391,
+      "start_ticks": "50724938",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "state_sha256": "2b1324f83a2baa08ebc3a996b672fe1ad6a659d2e8a1e1908c7e87420dfc9b54",
+  "finite_guard": {
+    "run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-soak480-engine-product-release-primary-20261026-v1",
+    "identity": {
+      "pid": 754403,
+      "start_ticks": "50725028",
+      "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+    },
+    "recovery_invocations": 0,
+    "deadline_epoch": 1793005200.0
+  },
+  "finished_at": "2026-10-26T03:03:34.294664+00:00"
+}

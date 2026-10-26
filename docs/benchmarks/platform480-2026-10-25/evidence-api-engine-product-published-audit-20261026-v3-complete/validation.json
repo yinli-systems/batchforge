@@ -1,0 +1,121 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "new_gpu_tasks": 0,
+  "production_database_mutated": false,
+  "browser_visual_qa": false,
+  "endpoints": [
+    {
+      "port": 8080,
+      "ready": true,
+      "engine_evidence_sha256": "bd580e453973815abc0e865e2ea0e8d95b88616b32378c6c83d36bf2b09d8fff",
+      "batch_quality_states": [
+        "failed",
+        "passed"
+      ],
+      "fresh_fleet_devices": 4,
+      "invalid_key_401": true,
+      "missing_evidence_404": true
+    },
+    {
+      "port": 8082,
+      "ready": true,
+      "engine_evidence_sha256": "bd580e453973815abc0e865e2ea0e8d95b88616b32378c6c83d36bf2b09d8fff",
+      "batch_quality_states": [
+        "failed",
+        "passed"
+      ],
+      "fresh_fleet_devices": 4,
+      "invalid_key_401": true,
+      "missing_evidence_404": true
+    },
+    {
+      "port": 8083,
+      "ready": true,
+      "engine_evidence_sha256": "bd580e453973815abc0e865e2ea0e8d95b88616b32378c6c83d36bf2b09d8fff",
+      "batch_quality_states": [
+        "failed",
+        "passed"
+      ],
+      "fresh_fleet_devices": 4,
+      "invalid_key_401": true,
+      "missing_evidence_404": true
+    }
+  ],
+  "actual_console_client": {
+    "passed": true,
+    "scope": "Actual console source functions and WebCrypto over real candidate HTTP; no browser visual QA",
+    "frontend_source_sha256": "0e8a2369caf66b6d77e6806401da8a5f66ee14143a51339aef0d06b4f3c6e075",
+    "engine_evidence_id": "engine-squad-jsonspan-20261026",
+    "corrected_exact_match_percent": 81.99621570482498,
+    "f1_percent": 90.94000661220909,
+    "download_bytes": 3880,
+    "download_sha256": "bd580e453973815abc0e865e2ea0e8d95b88616b32378c6c83d36bf2b09d8fff",
+    "batch_quality_states": [
+      "failed",
+      "passed"
+    ],
+    "engine_quality_state": "passed",
+    "legacy_batch_failure_preserved": true,
+    "corrected_score_rendered": true,
+    "nested_cost_labelled": true,
+    "webcrypto_download_verified": true,
+    "new_gpu_tasks": 0,
+    "browser_visual_qa": false
+  },
+  "database_total_task_rows": 49930,
+  "workspace_retained_tasks": 49910,
+  "workspace_max_retained_tasks": 50000,
+  "remaining_workspace_retained_headroom": 90,
+  "workspace_payload_bytes": 205947844,
+  "workspace_payload_limit": 335544320,
+  "active_batch_tasks": 0,
+  "capacity_api_and_azure_counters_match": true,
+  "post_full_evaluation_task_insertions": 0,
+  "source_commit": "5a0a4461d4b469875335549524bed0c52ca35cbe",
+  "protected_inference_gateway_identities_unchanged": true,
+  "effective_api_sources_and_admission_verified": true,
+  "finite_guard": {
+    "run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-soak480-engine-product-release-primary-20261026-v1",
+    "identity": {
+      "pid": 754403,
+      "start_ticks": "50725028",
+      "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+    },
+    "recovery_invocations": 0,
+    "deadline_epoch": 1793005200.0
+  },
+  "identities": {
+    "api-a": {
+      "pid": 754368,
+      "start_ticks": "50724295",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 754376,
+      "start_ticks": "50724615",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 735322,
+      "start_ticks": "50346265",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 754391,
+      "start_ticks": "50724938",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "source_files": 337
+}

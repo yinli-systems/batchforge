@@ -1,3 +1,19 @@
+Current API/operator source **5a0a446** passed actual
+[run40261699502](https://github.com/yinli-systems/batchforge/actions/runs/40261699502):
+**1,862 Python/zero skips,45 Node tests/compileall**, native PG17.11,
+Node24.22.1/UID65534, zero remaining runners.
+[Authenticated receipt](../ops/reports/github-native-ci-5a0a446-2026-10-26.json)
+and public bootstrap pin the check. A source-matched actual read-only canary,
+API controller-loss rollback and primary evidence publication subsequently
+passed; [closed runtime receipts](benchmarks/engine-product-publication-2026-10-26.md)
+are distinct from CI. No GPU task or production credential entered the CI job.
+
+Earlier engine API source5a4a3c7 passed1852/45, then its actual canary failed
+on readiness/SPA route ordering. Source d2fe4e7 passed1861/45 and the final
+follow-up adds a schema-valid gate probe regression. All exact-head jobs used
+new one-job runners and zero skips. Passing earlier tests did not turn the real
+canary failure into a pass. Hosted billing restrictions remain unchanged.
+
 Core contract-score fix599b2fb passed actual
 [run40258605416](https://github.com/yinli-systems/batchforge/actions/runs/40258605416):
 **1,806 Python/zero skips,39 Node tests/compileall**, PG17.11/Node24.22.1,
