@@ -319,6 +319,73 @@ test('evidence UI escapes task identifiers and exposes limited verification scop
 });
 
 const qualityFixture = JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'quality-evaluation.json'), 'utf8'));
+const engineFixture = JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'engine-evaluation.json'), 'utf8'));
+
+test('engine score correction stays separate from failed Batch quality and nested cost is explicit', () => {
+  const app = harness(async () => {throw new Error('No network expected');});
+  app.state.connected = true;app.state.qualityLoaded = true;
+  app.state.evaluations = [structuredClone(qualityFixture)];app.state.engineEvaluations = [structuredClone(engineFixture)];
+  const html = app.qualityView();
+  assert.match(html, /Batch API evidence/);assert.match(html, /Quality gate failed/);
+  assert.match(html, /Engine benchmarks/);assert.match(html, /Engine quality gate passed/);
+  assert.match(html, /82\.00/);assert.doesNotMatch(html, /82\.01/);
+  assert.match(html, /1 legacy scores corrected; original report preserved/);
+  assert.match(html, /\$2\.23 at \$16\.10\/h/);assert.match(html, /\$2\.14 · do not add/);
+  assert.match(html, /no Batch delivery or usage-ledger verification/);
+  assert.match(html, /not an invoice/);assert.match(html, /does not prove current availability/);
+});
+
+test('unverified engine scope hides scores and cost while escaping publisher names', () => {
+  const app = harness(async () => {throw new Error('No network expected');});
+  app.state.connected = true;app.state.qualityLoaded = true;
+  const e = structuredClone(engineFixture);e.scope.batch_ledger_verified = true;e.name = '<img src=x onerror=alert(1)>';
+  app.state.engineEvaluations = [e];const html = app.qualityView();
+  assert.match(html, /Engine evidence unverified/);assert.match(html, /&lt;img/);
+  assert.doesNotMatch(html, /<img|82\.00|\$2\.23/);
+});
+
+test('both quality sources are invalidated when workspace changes while responses are pending', async () => {
+  const releases = [];
+  const app = harness(async (url, request) => {
+    assert.equal(request.headers.get('Authorization'), 'Bearer test-tenant-key');
+    assert.ok(['/v1/evaluations', '/v1/engine-evaluations'].includes(url));
+    return new Promise(resolve => releases.push(() => resolve(jsonResponse({data: [url.includes('engine-') ? engineFixture : qualityFixture]}))));
+  });
+  const pending = app.loadEvaluations();assert.equal(releases.length, 2);
+  app.state.key = 'new-workspace';app.resetQualityEvidence();releases.forEach(f => f());await pending;
+  assert.equal(app.state.evaluations.length, 0);assert.equal(app.state.engineEvaluations.length, 0);
+  assert.equal(app.state.qualityLoaded, false);assert.equal(app.state.qualityLoading, false);
+});
+
+test('missing engine endpoint on an old deployment does not hide Batch reports', async () => {
+  const app = harness(async url => url === '/v1/evaluations' ? jsonResponse({data: [qualityFixture]}) :
+    {ok: false, status: 404, json: async () => ({error: {message: 'Not deployed'}})});
+  app.state.connected = true;await app.loadEvaluations();
+  assert.equal(app.state.engineQualityError, '');assert.match(app.qualityView(), /Quality gate failed/);
+});
+
+test('a failed Batch evidence request does not erase a valid separate engine benchmark', async () => {
+  const app = harness(async url => url === '/v1/engine-evaluations' ? jsonResponse({data: [engineFixture]}) :
+    {ok: false, status: 503, json: async () => ({error: {message: 'Batch evidence unavailable'}})});
+  app.state.connected = true;await app.loadEvaluations();
+  const html = app.qualityView();assert.match(html, /Batch evidence unavailable/);assert.match(html, /Engine quality gate passed/);
+});
+
+test('engine evidence download verifies exact bytes and rejects a checksummed Batch substitution', async () => {
+  const crypto = require('node:crypto');
+  for (const substituted of [false, true]) {
+    const value = structuredClone(engineFixture);
+    if (substituted) value.object = 'quality_evaluation';
+    const raw = JSON.stringify(value), hash = crypto.createHash('sha256').update(raw).digest('hex');
+    const app = harness(async url => {
+      assert.equal(url, `/v1/engine-evaluations/${engineFixture.id}`);
+      return {ok: true, status: 200, headers: new Headers({'X-BatchForge-Evidence-SHA256': hash}), arrayBuffer: async () => new TextEncoder().encode(raw).buffer};
+    });
+    await app.downloadEvaluation({disabled: false, dataset: {evaluationId: engineFixture.id, evidenceKind: 'engine'}});
+    if (substituted) {assert.equal(app.observed.downloads.length, 0);assert.match(app.observed.notices[0].message, /scope changed/);}
+    else {assert.equal(app.observed.downloads.length, 1);assert.equal(await app.observed.blobs[0].text(), raw);}
+  }
+});
 
 test('published allocation cannot imply an invoice or turn a failed gate into a pass', () => {
   const app = harness(async () => {throw new Error('Unexpected fetch');});

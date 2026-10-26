@@ -1,3 +1,11 @@
+Core contract-score fix599b2fb passed actual
+[run40258605416](https://github.com/yinli-systems/batchforge/actions/runs/40258605416):
+**1,806 Python/zero skips,39 Node tests/compileall**, PG17.11/Node24.22.1,
+UID65534, zero runners. It exercises invalid-format empty-reference normalization
+and the one-case correction bound to the actual full journal; no GPU reran.
+[Exact result](../ops/reports/github-native-ci-599b2fb-2026-10-26.json).
+The later engine catalogue/API/console implementation has separate qualification.
+
 Source0657482 passed actual
 [run40255880147](https://github.com/yinli-systems/batchforge/actions/runs/40255880147):
 **1,787 Python/zero skips,39 Node tests and compileall**, PG17.11/Node24.22.1,

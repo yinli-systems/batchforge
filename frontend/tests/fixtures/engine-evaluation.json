@@ -1,0 +1,98 @@
+{
+  "id": "engine-full-squad",
+  "object": "engine_quality_evaluation",
+  "name": "Full engine SQuAD",
+  "verification_state": "operator_report_replayed",
+  "quality_state": "passed",
+  "scope": {
+    "kind": "engine_only",
+    "batch_ledger_verified": false,
+    "dataset": "SQuAD1.1 complete public dev including prior calibration IDs",
+    "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+    "case_manifest_sha256": "3df3ccf00f3d7c9610cacdf4d53980320777b9516a748c60e2cacbd82bb8ca66",
+    "hidden_test": false
+  },
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+  "tasks": 10570,
+  "exact_results": 8667,
+  "metrics": {
+    "exact_match_percent": 81.99621570482498,
+    "f1_percent": 90.94000661220909,
+    "invalid_answer_contracts": 220,
+    "prompt_tokens": 3475192,
+    "completion_tokens": 115239,
+    "exact_results_per_second": 18.150198693543352
+  },
+  "gate": {
+    "minimum_exact_match_percent": 70,
+    "minimum_f1_percent": 80
+  },
+  "latency": {
+    "http_service_seconds": {
+      "samples": 10570,
+      "p50": 1.219181,
+      "p95": 2.321162,
+      "p99": 3.688555,
+      "max": 13.325873,
+      "mean": 1.314286
+    },
+    "offered_cohort_completion_seconds": {
+      "samples": 10570,
+      "p50": 238.702578,
+      "p95": 452.182134,
+      "p99": 472.799577,
+      "max": 477.515094,
+      "mean": 237.49259
+    }
+  },
+  "cost": {
+    "kind": "operator_rate_time_allocation",
+    "hourly_rate_usd": 16.1,
+    "controller_window_seconds": 499.057373,
+    "engine_window_seconds": 477.5154336510459,
+    "controller_window_usd": 2.2318954736944443,
+    "nested_engine_window_usd": 2.1355551338282885,
+    "controller_usd_per_1000_reference_exact_answers": 0.2575164963302693,
+    "invoice_verified": false
+  },
+  "answer_contract": {
+    "id": "json-span-v1",
+    "source_sha256": "a7359175cc5bb7d8e1a462ae1121b01a8d00cdacd8871fa89b3957f441e96e09",
+    "scorer_sha256": "ba6ce8d53a3cab9e856660e8f31483a7e13457b6ac3a93aa450943240aa087c8",
+    "client_source_sha256": "4e9fae2a80cbb58092e8c685a73ba2cadbe47c2ed10a00c13e2c3a60f1fab679"
+  },
+  "scoring_correction": {
+    "policy": "invalid-contract-zero-v1",
+    "policy_source_sha256": "d6f7b9eabf71d0d2d1deb2209c6c3373924ab457e8e8ddaa46e9a458a3f92b03",
+    "changed_cases": 1,
+    "original_exact_match_percent": 82.00567644276254,
+    "original_f1_percent": 90.94000661220909,
+    "original_report_preserved": true
+  },
+  "post_run_restore": {
+    "verified": true,
+    "finished_at": "2026-10-26T02:00:31.510216+00:00",
+    "scope": "Recorded post-run audit; not current availability or whole-Pod failover"
+  },
+  "evidence": {
+    "report_sha256": "e63fb2537a259fbe845bcdab1ba6061f24c8046020f7159ab617dd99b465133b",
+    "plan_sha256": "ef17de0b51935ba2be3161ced17ba1aeafe8fce27a34435f54a0f1e2568fdde0",
+    "scores_sha256": "da00f90a0a8c891ce26aa3c64aceed0de81d6c496d7b554410038fefd9f9a1c3",
+    "audit_sha256": "007124d39ddddfb59abc204e18045854b040ed127ed7b1ba13dc3e0cf64f2396",
+    "campaign_sha256": "14cdc2a76c60f0454a5369a98d7de60ca2d9877c89d5b2a9d1b297adb5fc596d",
+    "restore_sha256": "8a6b8bde7208d3dae4c21126b3ff721fe6653a4d53c94e182e81308edd193b77",
+    "correction_sha256": "a09a74e9ada6de28d78f62a0e3d133260cb8da43ba1071421ddbbcaa638bd6dd",
+    "correction_audit_sha256": "509e7806c2f77809a67329e97f5ecc2285dc1a4b2e3171e67e99c01281d13f58",
+    "operator_commit": "0657482f50c51a87ea4e20c388070ee01553fe03"
+  },
+  "limitations": [
+    "Engine-only results have no Batch acceptance/usage ledger link and do not replace earlier Batch cohorts",
+    "Operator-published hash-bound evidence, not an issuer signature or independent hardware attestation",
+    "Raw-response replay uses the frozen grader, not a second independent scoring implementation",
+    "Public dev includes prior calibration IDs; not hidden testing or a contamination audit",
+    "HTTP service and offered-cohort completion latency are separate; neither is Batch durable-acceptance latency",
+    "Engine cost is nested inside controller cost; never add the windows. Operator allocation excludes unverified extra charges and is not invoice or marginal cost",
+    "Reference-exact answers are not business-quality certification; one Pod remains one compute failure domain"
+  ]
+}

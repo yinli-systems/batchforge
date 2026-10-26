@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-26T02:23:56.144369+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-engine-contract-correction-20261026-v1",
+  "files": {
+    "validation.json": {
+      "bytes": 1385,
+      "sha256": "509e7806c2f77809a67329e97f5ecc2285dc1a4b2e3171e67e99c01281d13f58",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/report.json": {
+      "bytes": 1422,
+      "sha256": "a09a74e9ada6de28d78f62a0e3d133260cb8da43ba1071421ddbbcaa638bd6dd",
+      "source_relative_path": "run/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

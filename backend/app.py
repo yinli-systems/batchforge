@@ -398,6 +398,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def capacity(request: Request, tenant_id: str = Depends(tenant)):
         return await request.app.state.store.capacity(tenant_id)
 
+    @app.get('/v1/engine-evaluations')
+    async def engine_evaluations(request: Request, tenant_id: str = Depends(tenant)):
+        return JSONResponse(await request.app.state.store.list_engine_evaluations(tenant_id),headers={'Cache-Control':'no-store'})
+
+    @app.get('/v1/engine-evaluations/{eid}')
+    async def engine_evaluation(eid: str, request: Request, tenant_id: str = Depends(tenant)):
+        response=JSONResponse(await request.app.state.store.get_engine_evaluation(tenant_id,eid))
+        response.headers['X-BatchForge-Evidence-SHA256']=hashlib.sha256(response.body).hexdigest()
+        response.headers['Cache-Control']='no-store'
+        return response
+
     @app.get('/v1/fleet')
     async def fleet(request: Request, tenant_id: str = Depends(tenant)):
         return JSONResponse(await request.app.state.store.fleet(tenant_id),headers={'Cache-Control':'no-store'})

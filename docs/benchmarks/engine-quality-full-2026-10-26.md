@@ -2,13 +2,14 @@
 
 Status: **complete and quality passed**. Immutable0657482 delivered all10,570
 public SQuAD1.1 dev cases on the existing480B-total/~35B-active AWQ MoE/4H100:
-**EM82.005676% / F1 90.940007%**,8,668 exact answers,220 invalid formats scored
-without repair, zero unknown inference outcomes. The engine window was477.515434s;
+**corrected EM81.996216% / F1 90.940007%**,8,667 exact answers. A
+post-publication contract check removed one invalid-format legacy EM point; all220
+invalid formats score zero under the explicit correction, without repair, zero unknown inference outcomes. The engine window was477.515434s;
 the complete maintenance/evaluation/restoration window was499.057373s.
 The independent restore and post-restore raw-response replay/profile audit passed.
 All10,570 raw responses have a separate owner-only Mac copy outside Git.
-[Machine-readable analysis](../../ops/reports/engine-quality-full-2026-10-26.json),
-[immutable raw report](platform480-2026-10-25/soak480-engine-quality-full-20261026-v1-complete/run/report.json)
+[Current corrected analysis](../../ops/reports/engine-quality-current-2026-10-26.json),
+[original uncorrected raw report](platform480-2026-10-25/soak480-engine-quality-full-20261026-v1-complete/run/report.json)
 and [post-restore replay audit](platform480-2026-10-25/evidence-api-engine-quality-full-audit-20261026-v1/validation.json).
 
 This is **engine-only** evidence; the old full Batch API cohort remains failed.
@@ -223,12 +224,12 @@ implementation or a hardware attestation.
 | Measurement | Result |
 |---|---:|
 | Known prompt / output tokens | 3,475,192 / 115,239 |
-| Engine completions / exact answers per second | 22.1354 / 18.1523 |
+| Engine completions / corrected exact answers per second | 22.1354 / 18.1502 |
 | HTTP service P50 / P95 / P99 | 1.219181 / 2.321162 / 3.688555s |
 | Offered-cohort completion P50 / P95 / P99 | 238.702578 / 452.182134 / 472.799577s |
 | GPU sample means, cards0–3 | 95.096 / 95.149 / 95.809 / 86.989% |
 | Whole controller allocation | $2.231895 |
-| Allocation per1,000 reference-exact answers | $0.257487 |
+| Allocation per1,000 reference-exact answers | $0.257516 |
 
 The whole corpus was offered at the start; its completion distribution includes
 waiting behind earlier questions. HTTP service latency is a separate interval.
@@ -243,7 +244,7 @@ between samples. Power is parsed separately from utilization.
 The engine-only subwindow allocation was$2.135555; it overlaps the$2.231895
 controller window and must not be added to it. These numbers use the confirmed
 $16.10 whole-Pod hourly rate, exclude unverified extra charges and are not an
-invoice, marginal cost or price guarantee. The per-exact denominator is8,668
+invoice, marginal cost or price guarantee. The per-exact denominator is8,667
 answers matching public references; it is not a business-quality certification.
 
 The final independent audit found schema11, configured TLS verify-full,
@@ -254,3 +255,26 @@ Engine/gateway PIDs remained573119/219738. Worker/API/watchdog epochs changed
 through deliberate maintenance. Container free space was418,843,594,752 bytes;
 there was no model/driver/cloud restart, quota increase, history deletion or
 new Batch task. The single Pod remains a single GPU failure domain.
+
+## Publication correction: one invalid-format EM point
+
+The new publication validator found that the legacy raw scorer awarded EM1/F10
+to one format-invalid output whose fallback empty prediction and article-only
+reference normalized identically. The earlier assertion that all220 invalid
+formats were zero-scored was incorrect. The original source/report/scores and
+shared-grader replay are preserved, not rewritten.
+
+Source599b2fb adds explicit invalid-contract-zero enforcement to both clients,
+retains the official valid-answer normalization semantics and passed1806 native
+Python/zero-skip and39 Node tests. A separate actual replay of all10570 unchanged
+raw responses verified identical reference-metric function ASTs, one changed
+record and zero inference reruns. Exact answers8668→8667; EM82.005676→81.996216,
+F1 unchanged90.940007. The original70/80 gate still passes. Input/response hashes,
+token counts, timings, controller allocation and private exports are unchanged.
+
+[Correction and case ID](platform480-2026-10-25/evidence-api-engine-contract-correction-20261026-v1/run/report.json),
+[all-response replay](platform480-2026-10-25/evidence-api-engine-contract-correction-20261026-v1/validation.json)
+and [publication contract](../engine-quality-evidence.md) distinguish the
+legacy raw score from the corrected displayed score. No reference assisted a
+parser repair. Current per1000 reference-exact allocation is$0.257516 rather
+than the legacy$0.257487. Historical engine/Batch scopes remain separate.

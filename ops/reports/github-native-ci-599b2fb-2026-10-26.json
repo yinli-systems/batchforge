@@ -1,0 +1,90 @@
+{
+  "captured_at": "2026-10-26T02:32:12.895010+00:00",
+  "commit": "599b2fbfb67e7a1862f0db360d4f27cac7b261ab",
+  "run_id": 40258605416,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40258605416",
+  "conclusion": "success",
+  "job": {
+    "id": 121365790929,
+    "name": "existing-pod-cpu",
+    "conclusion": "success",
+    "started_at": "2026-10-26T02:21:16Z",
+    "completed_at": "2026-10-26T02:23:43Z",
+    "runner_name": "batchforge-cpu-20261025-v31",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-10-26T02:21:17Z",
+        "completed_at": "2026-10-26T02:21:18Z"
+      },
+      {
+        "name": "Set up runner",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-10-26T02:21:18Z",
+        "completed_at": "2026-10-26T02:21:18Z"
+      },
+      {
+        "name": "Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-10-26T02:21:18Z",
+        "completed_at": "2026-10-26T02:21:21Z"
+      },
+      {
+        "name": "Locked CPU dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-10-26T02:21:21Z",
+        "completed_at": "2026-10-26T02:21:29Z"
+      },
+      {
+        "name": "Native PostgreSQL17, worker failures and console regressions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-10-26T02:21:29Z",
+        "completed_at": "2026-10-26T02:23:40Z"
+      },
+      {
+        "name": "Post Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10,
+        "started_at": "2026-10-26T02:23:40Z",
+        "completed_at": "2026-10-26T02:23:41Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11,
+        "started_at": "2026-10-26T02:23:41Z",
+        "completed_at": "2026-10-26T02:23:41Z"
+      }
+    ]
+  },
+  "registration_remaining": 0,
+  "python_tests": {
+    "passed": 1806,
+    "skipped": 0,
+    "elapsed_seconds": 127.71
+  },
+  "node_tests": {
+    "passed": 39,
+    "failed": 0
+  },
+  "postgres_version": "17.11",
+  "node_version": "24.22.1",
+  "runner_os_uid": 65534,
+  "full_log_sha256": "0942b56a7e5a16914762930f1fcead7582bf9a1b0951feb2a2e4d3cc65330542",
+  "new_cloud_resources": false,
+  "production_credentials_transferred": false,
+  "scope": "Core invalid-answer scoring correction and offline overlay generator; actual response replay is separate. Engine catalogue/UI feature is not part of this source commit."
+}

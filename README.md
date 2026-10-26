@@ -6,7 +6,7 @@ an OpenAI-shaped batch API, and an operations console backed by live data.
 An additive [durable Agent runtime](docs/agent-runtime.md) now implements typed
 planning, capability-checked data tools, tenant memory, fenced coordinator
 leases and receipt-linked model steps through the existing Batch queue.
-The latest native check passes1,787 Python/zero-skip and39 console tests. A
+The latest core scoring check passes1,806 Python/zero-skip and39 console tests. A
 finite real480B qualification passed20/20 fresh ordered-tool Agent goals,
 44 model tasks and88 artifact byte readbacks, including post-ACK coordinator
 loss and API restart. Agent state used an isolated native PostgreSQL cluster;
@@ -33,12 +33,14 @@ tasks and20 artifact reads; four decoder calibration tasks are accounted for
 separately. This finite observation is not a P99 or throughput improvement claim.
 
 The [full-dev engine quality run](docs/benchmarks/engine-quality-full-2026-10-26.md)
-now passed all10,570 public SQuAD cases: **EM82.01% / F1 90.94%**,477.515seconds,
-zero unknown inference outcomes. Every private response was replay-audited and
+now passed all10,570 public SQuAD cases: **corrected EM82.00% / F1 90.94%**,477.515seconds,
+zero unknown inference outcomes. Publication validation corrected one invalid-format
+legacy score; the raw82.005676 report remains unchanged. Every private response was replay-audited and
 copied off-Pod; the independent service restore passed after a real controller-loss
 qualification. Whole controller allocation was **$2.2319** at the operator-confirmed
 $16.10/h, not an invoice. This is engine-only evidence; the original full Batch
-quality failure remains. The new result is not yet published in the product UI.
+quality failure remains. The optional [engine evidence API/console](docs/engine-quality-evidence.md) is implemented
+and locally tested; its production publication remains separate.
 
 The candidate [Agent workspace](docs/agent-console.md) adds same-origin submission,
 required tool order, versioned memory, cancellation and client-verified history/

@@ -1,0 +1,27 @@
+{
+  "protocol": "batchforge.engine-contract-correction-audit.v1",
+  "passed": true,
+  "phase": "complete",
+  "new_inference_requests": 0,
+  "original_artifacts_modified": false,
+  "scope": "Read-only replay of unchanged public benchmark raw bytes under invalid-contract-zero policy; no model rerun",
+  "original_report_sha256": "e63fb2537a259fbe845bcdab1ba6061f24c8046020f7159ab617dd99b465133b",
+  "original_scores_sha256": "da00f90a0a8c891ce26aa3c64aceed0de81d6c496d7b554410038fefd9f9a1c3",
+  "correction_sha256": "a09a74e9ada6de28d78f62a0e3d133260cb8da43ba1071421ddbbcaa638bd6dd",
+  "policy_source_sha256": "d6f7b9eabf71d0d2d1deb2209c6c3373924ab457e8e8ddaa46e9a458a3f92b03",
+  "private_response_count": 10570,
+  "private_response_bytes": 7045415,
+  "all_raw_responses_replayed": true,
+  "original_reference_metric_functions_unchanged": true,
+  "reference_functions_ast_sha256": "8d83a401dc8bd75014ee799fe7a2de594d543da6547769e71c6d912c08b4e713",
+  "correction_builder_source_sha256": "1ec3cb126e8d4142cfda5880071ffe5d5d34b10b81732dd162f0c363cfdda842",
+  "correction_operator_commit": "599b2fbfb67e7a1862f0db360d4f27cac7b261ab",
+  "changed_records": 1,
+  "changed_case_ids": [
+    "5725bad5271a42140099d0c1"
+  ],
+  "corrected_exact_results": 8667,
+  "corrected_exact_match_percent": 81.99621570482498,
+  "corrected_f1_percent": 90.94000661220909,
+  "corrected_quality_passed": true
+}

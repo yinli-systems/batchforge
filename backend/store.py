@@ -87,6 +87,10 @@ class Store:
         if catalogue:
             from .evaluations import EvidenceCatalogue
             self.quality_evidence=EvidenceCatalogue(catalogue)
+        self.engine_evidence=None
+        if getattr(settings,'engine_evidence_catalogue',''):
+            from .engine_evaluations import EngineEvidenceCatalogue
+            self.engine_evidence=EngineEvidenceCatalogue(settings.engine_evidence_catalogue)
         if settings.blob_storage_backend != 'inline':
             if settings.blob_storage_backend == 'local':
                 adapter = LocalBlobStore(settings.blob_storage_root)
@@ -263,6 +267,14 @@ class Store:
         for view in views:
             if view['id']==eid:return view
         raise APIError(404,'Quality evaluation not found','not_found')
+
+    async def list_engine_evaluations(self, tenant):
+        return {'object':'list','data':self.engine_evidence.visible(tenant) if self.engine_evidence else []}
+
+    async def get_engine_evaluation(self, tenant, eid):
+        for view in (await self.list_engine_evaluations(tenant))['data']:
+            if view['id']==eid:return view
+        raise APIError(404,'Engine evaluation not found','not_found')
 
     async def capacity(self, tenant):
         from .capacity import CAPACITY_SQL,capacity_view

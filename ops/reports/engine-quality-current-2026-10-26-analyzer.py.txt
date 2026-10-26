@@ -1,0 +1,20 @@
+"""Compose current corrected metrics without altering original measured artifacts."""
+from pathlib import Path
+import json,hashlib
+root=Path('docs/benchmarks/platform480-2026-10-25/evidence-api-engine-contract-correction-20261026-v1')
+original=Path('ops/reports/engine-quality-full-2026-10-26.json')
+old=json.loads(original.read_text());c=json.loads((root/'run/report.json').read_text());a=json.loads((root/'validation.json').read_text())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+assert a['passed'] and a['correction_sha256']==sha(root/'run/report.json') and a['new_inference_requests']==0
+assert c['original_report_sha256']==old['report_sha256'] and c['original_scores_sha256']==old['scores_sha256']
+s=json.loads(json.dumps(old));s.update(protocol='batchforge.engine-quality-analysis.v2',
+ quality_metrics_origin='Original raw report plus explicit invalid-contract-zero correction; no new inference',
+ original_summary_sha256=sha(original),original_exact_results=old['exact_results'],original_exact_match_percent=old['exact_match_percent'],
+ exact_results=c['corrected_exact_results'],exact_match_percent=c['corrected_exact_match_percent'],f1_percent=c['corrected_f1_percent'],
+ exact_results_per_second=c['corrected_exact_results']/old['engine_measurement_seconds'],quality_passed=c['corrected_quality_passed'],
+ correction_sha256=sha(root/'run/report.json'),correction_audit_sha256=sha(root/'validation.json'),
+ correction_policy=c['policy'],correction_policy_source_sha256=c['policy_source_sha256'],correction_operator_commit=a['correction_operator_commit'],
+ changed_cases=c['changed_cases'],new_inference_requests=0)
+s['cost']['controller_usd_per_1000_reference_exact_answers']=old['cost']['controller_window_usd']/c['corrected_exact_results']*1000
+Path('ops/reports/engine-quality-current-2026-10-26.json').write_text(json.dumps(s,indent=2,allow_nan=False)+'\n')
+print(json.dumps({'corrected_exact':s['exact_results'],'corrected_em':s['exact_match_percent'],'f1':s['f1_percent']}))

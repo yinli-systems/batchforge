@@ -2,6 +2,7 @@ from functools import lru_cache
 from datetime import datetime
 import json
 from typing import Literal
+from pathlib import Path
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -64,6 +65,7 @@ class Settings(BaseSettings):
     retention_admission_enabled: bool = False
     frontend_dir: str = "frontend"
     quality_evidence_catalogue: str = ""
+    engine_evidence_catalogue: str = ""
 
     @model_validator(mode="after")
     def valid_pool(self):
@@ -73,6 +75,8 @@ class Settings(BaseSettings):
             raise ValueError('Leased result readers require an external artifact backend')
         if self.result_archive_enabled and not self.result_readers_enabled:
             raise ValueError('Enable leased readers on every replica before result archival')
+        if self.engine_evidence_catalogue and Path(self.engine_evidence_catalogue).resolve().is_relative_to(Path(self.frontend_dir).resolve()):
+            raise ValueError('Engine evidence release must be outside the static frontend directory')
         self.served_models()
         return self
 

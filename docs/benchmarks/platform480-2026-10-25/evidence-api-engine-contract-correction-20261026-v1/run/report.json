@@ -1,0 +1,38 @@
+{
+  "protocol": "batchforge.engine-score-contract-correction.v1",
+  "original_report_sha256": "e63fb2537a259fbe845bcdab1ba6061f24c8046020f7159ab617dd99b465133b",
+  "original_scores_sha256": "da00f90a0a8c891ce26aa3c64aceed0de81d6c496d7b554410038fefd9f9a1c3",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "policy": "invalid-contract-zero-v1",
+  "policy_source_sha256": "d6f7b9eabf71d0d2d1deb2209c6c3373924ab457e8e8ddaa46e9a458a3f92b03",
+  "tasks": 10570,
+  "invalid_answer_contracts": 220,
+  "original_exact_results": 8668,
+  "original_exact_match_percent": 82.00567644276254,
+  "original_f1_percent": 90.94000661220909,
+  "corrected_exact_results": 8667,
+  "corrected_exact_match_percent": 81.99621570482498,
+  "corrected_f1_percent": 90.94000661220909,
+  "quality_gate": {
+    "minimum_exact_match_percent": 70,
+    "minimum_f1_percent": 80
+  },
+  "corrected_quality_passed": true,
+  "changed_cases": [
+    {
+      "id": "5725bad5271a42140099d0c1",
+      "original": {
+        "exact_match": 1,
+        "f1": 0.0
+      },
+      "corrected": {
+        "exact_match": 0,
+        "f1": 0.0
+      },
+      "reason": "invalid_answer_contract"
+    }
+  ],
+  "new_inference_requests": 0,
+  "original_artifacts_modified": false,
+  "scope": "Format-invalid output is zero before reference normalization. Original report, raw responses, inputs, usage, times and cost remain unchanged."
+}

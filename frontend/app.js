@@ -119,6 +119,8 @@ const state = {
   loadedMore: false,
   models: [],
   evaluations: [],
+  engineEvaluations: [],
+  engineQualityError: '',
   fleet: null,
   fleetError: '',
   qualityLoaded: false,
@@ -397,6 +399,8 @@ function codeBlock(label, text) {
 function resetQualityEvidence() {
   state.qualityVersion++;
   state.evaluations = [];
+  state.engineEvaluations = [];
+  state.engineQualityError = '';
   state.qualityLoaded = false;
   state.qualityLoading = false;
   state.qualityError = '';
@@ -407,11 +411,14 @@ async function loadEvaluations() {
   if (!key) return;
   state.qualityLoading = true;
   try {
-    const result = await api('/v1/evaluations');
+    const [batch, engine] = await Promise.allSettled([api('/v1/evaluations'), api('/v1/engine-evaluations')]);
     if (state.key !== key || state.qualityVersion !== version) return;
-    state.evaluations = Array.isArray(result.data) ? result.data : [];
+    state.evaluations = batch.status === 'fulfilled' && Array.isArray(batch.value.data) ? batch.value.data : [];
+    state.engineEvaluations = engine.status === 'fulfilled' && Array.isArray(engine.value.data) ? engine.value.data : [];
     state.qualityLoaded = true;
-    state.qualityError = '';
+    state.qualityError = batch.status === 'rejected' ? batch.reason.message : '';
+    // Older deployments have no engine catalogue route; Batch evidence still works.
+    state.engineQualityError = engine.status === 'rejected' && engine.reason.status !== 404 ? engine.reason.message : '';
   } catch (error) {
     if (state.key === key && state.qualityVersion === version)
       state.qualityError = error.status === 404 ? 'Quality evidence is unavailable on this deployment.' : error.message;
@@ -420,15 +427,15 @@ async function loadEvaluations() {
   }
 }
 
-function qualityView() {
+function batchQualityView() {
   const heading = pageHeading('Quality evidence', 'Inspect answer quality separately from durable execution.',
     '<button class="button button-secondary" data-action="refresh">Refresh evidence</button>');
   if (!state.connected) return heading + connectionBanner();
   if (state.qualityError) return heading + emptyState('alert', 'Could not load quality evidence', state.qualityError, 'Try again', 'refresh');
   if (!state.qualityLoaded) return heading + emptyState('clock', 'Loading quality evidence', 'Checking published reports against your batch ledger.');
-  if (!state.evaluations.length) return heading + emptyState('check', 'No published quality evaluations', 'Reference-based reports for this workspace will appear here after publication.');
+  if (!state.evaluations.length) return heading + emptyState('check', 'No published Batch evaluations', 'Reports linked to this workspace’s Batch ledger will appear here after publication.');
   const score = value => typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : '—';
-  return heading + `<div class="quality-evidence-list">${state.evaluations.map(e => {
+  return heading + `<h2>Batch API evidence</h2><div class="quality-evidence-list">${state.evaluations.map(e => {
     const verified = e.verification_state === 'batch_ledger_reconciled', m = verified ? e.metrics : null;
     const label = !verified ? 'Ledger linkage unverified' : e.quality_state === 'passed' ? 'Quality gate passed' : 'Quality gate failed';
     const style = verified && e.quality_state === 'passed' ? 'completed' : 'failed';
@@ -451,11 +458,42 @@ function qualityView() {
   }).join('')}</div>`;
 }
 
+function qualityView() {
+  const batch = batchQualityView();
+  if (!state.connected || !state.qualityLoaded) return batch;
+  if (state.engineQualityError) return batch + emptyState('alert', 'Could not load engine benchmarks', state.engineQualityError);
+  if (!state.engineEvaluations.length) return batch;
+  const score = value => typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : '—';
+  return batch + `<h2>Engine benchmarks</h2><p class="drawer-note">Measured directly at the model endpoint. These results have no Batch delivery or usage-ledger verification.</p><div class="quality-evidence-list">${state.engineEvaluations.map(e => {
+    const verified = e.object === 'engine_quality_evaluation' && e.verification_state === 'operator_report_replayed' && e.scope?.kind === 'engine_only' && e.scope?.batch_ledger_verified === false;
+    const m = verified ? e.metrics : null, cost = verified && e.cost?.kind === 'operator_rate_time_allocation' ? e.cost : null;
+    const label = !verified ? 'Engine evidence unverified' : e.quality_state === 'passed' ? 'Engine quality gate passed' : 'Engine quality gate failed';
+    return `<section class="panel"><div class="panel-header"><div><h2>${esc(e.name)}</h2><p class="panel-subtitle">Engine only · ${esc(e.scope?.dataset)}</p></div><span class="status-badge ${verified && e.quality_state === 'passed' ? 'completed' : 'failed'}">${label}</span></div>
+      <div class="quality-evidence-body"><p class="drawer-note">${esc(e.model)}</p><div class="metric-grid">
+      ${metricCard('Exact match', score(m?.exact_match_percent), 'Format checks applied before scoring', 'check', '%')}
+      ${metricCard('Token F1', score(m?.f1_percent), 'Public references; no model judge', 'tasks', '%')}
+      ${metricCard('Engine responses', verified ? number(e.tasks) : '—', 'No Batch task identities claimed', 'activity')}
+      ${metricCard('Reference-exact answers', verified ? number(e.exact_results) : '—', 'Not business-quality certification', 'check')}
+      </div><dl class="detail-list">
+      <div><dt>HTTP service P95 / P99</dt><dd>${score(verified ? e.latency?.http_service_seconds?.p95 : null)} / ${score(verified ? e.latency?.http_service_seconds?.p99 : null)} seconds</dd></div>
+      <div><dt>Whole-cohort completion P95 / P99</dt><dd>${score(verified ? e.latency?.offered_cohort_completion_seconds?.p95 : null)} / ${score(verified ? e.latency?.offered_cohort_completion_seconds?.p99 : null)} seconds</dd></div>
+      <div><dt>Controller window allocation</dt><dd>${cost ? '$' + score(cost.controller_window_usd) + ' at $' + score(cost.hourly_rate_usd) + '/h' : 'Not verified'}</dd></div>
+      <div><dt>Engine window included above</dt><dd>${cost ? '$' + score(cost.nested_engine_window_usd) + ' · do not add' : 'Not verified'}</dd></div>
+      <div><dt>Per 1,000 reference-exact answers</dt><dd>${cost?.controller_usd_per_1000_reference_exact_answers != null ? '$' + score(cost.controller_usd_per_1000_reference_exact_answers) : 'Not verified'}</dd></div>
+      <div><dt>Scoring correction</dt><dd>${verified ? number(e.scoring_correction?.changed_cases) + ' legacy scores corrected; original report preserved' : 'Not verified'}</dd></div>
+      <div><dt>Original report SHA-256</dt><dd>${esc(e.evidence?.report_sha256)}</dd></div>
+      <div><dt>Correction SHA-256</dt><dd>${esc(e.evidence?.correction_sha256)}</dd></div></dl>
+      <p class="drawer-note">Operator-published reports and raw-response replay are not an issuer signature or independent hardware attestation. Public dev includes prior calibration IDs. These engine results do not replace failed Batch cohorts. HTTP service and whole-cohort completion are different intervals; neither is Batch durable-acceptance latency. Time allocation is not an invoice or marginal price. Recorded post-run restoration does not prove current availability or whole-Pod failover.</p>
+      <button class="button button-secondary" data-action="download-evaluation" data-evidence-kind="engine" data-evaluation-id="${esc(e.id)}">${icon('download')}Download engine evidence JSON</button></div></section>`;
+  }).join('')}</div>`;
+}
+
 async function downloadEvaluation(button) {
   const id = button.dataset.evaluationId, key = state.key;
+  const engine = button.dataset.evidenceKind === 'engine';
   button.disabled = true;
   try {
-    const response = await api(`/v1/evaluations/${encodeURIComponent(id)}`, {raw: true});
+    const response = await api(`/v1/${engine ? 'engine-evaluations' : 'evaluations'}/${encodeURIComponent(id)}`, {raw: true});
     if (state.key !== key) return;
     const bytes = await response.arrayBuffer();
     if (state.key !== key) return;
@@ -466,6 +504,8 @@ async function downloadEvaluation(button) {
     if (actual !== expected) throw new Error('Evidence download checksum does not match');
     const evidence = JSON.parse(new TextDecoder('utf-8', {fatal: true}).decode(bytes));
     if (evidence.id !== id) throw new Error('Evaluation identity changed');
+    if (engine && (evidence.object !== 'engine_quality_evaluation' || evidence.scope?.kind !== 'engine_only' || evidence.scope?.batch_ledger_verified !== false)) throw new Error('Engine evidence scope changed');
+    if (!engine && evidence.object === 'engine_quality_evaluation') throw new Error('Batch evidence scope changed');
     if (state.key !== key) return;
     const url = URL.createObjectURL(new Blob([bytes], {type: 'application/json'}));
     const anchor = document.createElement('a');
