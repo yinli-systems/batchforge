@@ -143,6 +143,9 @@ def response_record(case,value,*,prompt_count):
 class Evaluator:
     def __init__(self,cohort,client,*,authority,emit,private_response,runtime_fingerprint,deadline_seconds=3600):
         if not all(callable(x) for x in (authority,emit,private_response)):raise ValueError('Live authority, durable journal and private raw-response sink required')
+        if (not isinstance(client,httpx.AsyncClient) or str(client.base_url).rstrip('/')!=ENDPOINT
+            or client.trust_env is not False or client.follow_redirects is not False):
+            raise ValueError('Exact private8348 endpoint without ambient proxies or redirects required')
         self.cohort=cohort;self.client=client;self.authority=authority;self.emit=emit;self.private_response=private_response
         self.plan=plan(cohort,runtime_fingerprint=runtime_fingerprint,deadline_seconds=deadline_seconds)
         self.limiter=WeightedLimiter(BUDGET);self.halted=False;self.records=[];self.inference_intents=0
@@ -153,7 +156,7 @@ class Evaluator:
 
     async def json(self,method,path,**kwargs):
         self.checkpoint()
-        async with self.client.stream(method,path,**kwargs) as response:
+        async with self.client.stream(method,path,follow_redirects=False,**kwargs) as response:
             response.raise_for_status();raw=bytearray()
             async for part in response.aiter_bytes():
                 raw.extend(part)
@@ -167,7 +170,7 @@ class Evaluator:
         if any(not isinstance(m,dict) for m in models['data']):raise ValueError('Model catalogue differs')
         ids=[m.get('id') for m in models['data']]
         if ids!=[MODEL] or models['data'][0].get('max_model_len')!=CONTEXT:raise ValueError('Qualified480B context/model required')
-        r=await self.client.get('/metrics',timeout=5);r.raise_for_status()
+        r=await self.client.get('/metrics',timeout=5,follow_redirects=False);r.raise_for_status()
         if len(r.content)>2*1024**2 or not engine_quiescent(r.text):raise ValueError('Exclusive engine must start quiescent')
 
     async def invoke(self,case,offered):
@@ -246,3 +249,7 @@ class Evaluator:
             'exact_results_per_second':sum(r['exact_match'] for r in complete)/elapsed if delivered else None,
             'cost':{'operator_whole_pod_usd_per_hour':16.10,'window_allocation_usd':16.10*elapsed/3600,
                 'scope':'Engine measurement wall allocation; excludes maintenance/restoration; not invoice or marginal cost'}}
+
+
+if __name__=='__main__':
+    raise SystemExit('Use the qualified exclusive maintenance controller; this module grants no execution window.')

@@ -5,6 +5,14 @@ the platform-specific maintenance/restore handler and its real qualification
 are not yet complete. **No full engine evaluation has started or passed.**
 Serving primary748dc10, its worker and guard remain unchanged.
 
+Prerequisite source1bfada3 passed actual native
+[CI40252909143](https://github.com/yinli-systems/batchforge/actions/runs/40252909143):
+1,759 Python/zero skips,39 Node tests and compileall on PG17.11/Node24.22.1,
+UID65534; the one-job runner deregistered. This includes actual isolated Linux
+guardian/controller processes, including TERM-ignoring controller KILL, parent
+exit, guardian TERM, handler failure/timeout and log failure. These tests use
+dummy restore handlers and do not qualify restoration of the primary services.
+
 The target is the complete10,570-question public SQuAD1.1 dev set on the existing
 480B-total/~35B-active AWQ MoE/four H100 engine. The earlier full **Batch API**
 quality gate53.8221/75.8213 remains failed. The improved1,000-question public
@@ -28,6 +36,9 @@ explicitly detected and never publish a full quality pass.
 `scripts.engine_quality.Evaluator` requires a live exclusive-window authority
 callback, durable intent/terminal journal and a separate private raw-response
 sink. It validates vLLM0.10.2, the sole served model,18440 context and initial
+engine quiescence. The client must target only loopback8348, with ambient
+proxies/redirects disabled; standalone module execution refuses instead of
+silently submitting work or exiting as a successful evaluation. It validates
 engine quiescence. Each request uses the actual chat-tokenizer protocol, padded
 to16-token blocks, reserving prompt+128 output against164256 tokens and at most
 32 concurrent requests. The engine's actual fresh physical KV capacity must be

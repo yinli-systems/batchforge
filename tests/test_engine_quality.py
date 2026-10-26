@@ -106,3 +106,20 @@ def test_dataset_hash_label_cannot_relabel_synthetic_cases_as_full_public_evalua
     assert not fake.complete_public_dev and not fake.verified_public_dev
     assert plan(fake,runtime_fingerprint='fake')['test_fixture_detected']
     with pytest.raises(ValueError):Case('id','passage','question',['mutable gold'])
+
+
+@pytest.mark.parametrize('kwargs',[
+    {'base_url':'https://paid-provider.invalid'}, {'base_url':'http://127.0.0.1:8349'},
+    {'base_url':'http://127.0.0.1:8348/proxy'}, {'trust_env':True}, {'follow_redirects':True}])
+async def test_evaluator_refuses_other_endpoint_proxies_or_redirects_before_any_request(kwargs):
+    async with httpx.AsyncClient(**{'base_url':'http://127.0.0.1:8348','trust_env':False,**kwargs}) as c:
+        with pytest.raises(ValueError):Evaluator(cases(),c,authority=lambda:True,emit=lambda _:None,
+            private_response=lambda *_:None,runtime_fingerprint='synthetic')
+
+
+def test_standalone_module_cannot_silently_start_inference_or_report_success():
+    import subprocess,sys
+    from pathlib import Path
+    p=subprocess.run([sys.executable,'-m','scripts.engine_quality'],cwd=Path(__file__).resolve().parents[1],
+        stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=10)
+    assert p.returncode!=0 and b'qualified exclusive maintenance controller' in p.stderr
