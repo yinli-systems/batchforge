@@ -1,0 +1,25 @@
+{
+  "collected_at": "2026-10-26T05:08:20.748764+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-agent-runtime-dag-source-lineage-20261026-v1",
+  "files": {
+    "report.json": {
+      "bytes": 76620,
+      "sha256": "ac3ba779f4e47ce4459a520eddc092090d5be2e574989557df40da4011e77072",
+      "source_relative_path": "report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "readback.json": {
+      "bytes": 4101,
+      "sha256": "9d11ac06bfd2914f734649f2708a7206474aae3b6739482d1c77bfbfbc90614b",
+      "source_relative_path": "readback.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "retrieval-index.json": {
+      "bytes": 981,
+      "sha256": "952fa2b4dc4da5c07b2f2ab0d91e8874449de7a8c4333c1ce68e266ecb480d7a",
+      "source_relative_path": "retrieval-index.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

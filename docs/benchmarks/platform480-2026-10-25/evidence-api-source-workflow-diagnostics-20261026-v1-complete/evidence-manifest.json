@@ -1,0 +1,25 @@
+{
+  "collected_at": "2026-10-26T05:23:16.398162+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-source-workflow-diagnostics-20261026-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 150,
+      "sha256": "7b9900c58edb76148188474037b7cd85d465ebeecb9851f95974ac715a3647a4",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 3733,
+      "sha256": "7faa47199793854a8dc735dd3813100549522d9b9ec797953184b468c38acf8d",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 5626,
+      "sha256": "2b210932fdfae1354f760eefa5693210af777054b1bfaa366f58de30f056b55e",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

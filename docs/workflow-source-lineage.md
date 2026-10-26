@@ -46,6 +46,15 @@ quality. No browser visual QA has been performed.
 [The frozen three-graph protocol](../ops/reports/source-workflow-preregistration-2026-10-26.json)
 uses synthetic memory, two new public questions disjoint from both prior RAG
 cohorts, transitive relays and mixed-source fan-in. Maximum allocation is28 tasks
-in the original workspace. Native PostgreSQL, actual client and real480B runtime
-qualification are required before claiming this candidate qualified or deployed.
+in the original workspace. Native PostgreSQL and independent client checks passed. The real480B run
+verified source transport for six inheriting roles but **failed semantic quality**:
+only one of three workflow goals was correct. Both public retrieval root answers
+were wrong despite available reference spans. See the [full qualification and
+diagnostics](benchmarks/workflow-source-lineage-2026-10-26.md). It is not qualified
+as a successful end-to-end answer workflow or deployed to production.
 The primary service and Azure Agent owner migration are unchanged.
+
+Registry grants are loaded once per process. Fresh source resolution rechecks that
+loaded authority and live DB commitments; hot registry-file reload/revocation is
+not implemented or qualified. Controlled process replacement is required to load
+a changed registry.

@@ -1,0 +1,61 @@
+{
+  "source_commit": "bda7eb5bbe82bd8414055a296b09ffeb8e0016bb",
+  "phase": "quality_failed",
+  "passed": false,
+  "roles_completed": 10,
+  "workflow_root_correct": 1,
+  "workflows": 3,
+  "public_root_exact": 0,
+  "public_roots": 2,
+  "nonquality_checks_passed": true,
+  "client_verified_source_inheriting_roles": 6,
+  "client_events": 466,
+  "unique_accepted_tasks": 14,
+  "attempts": 14,
+  "accepted_usage": {
+    "prompt_tokens": 21584,
+    "completion_tokens": 1538
+  },
+  "all_distinct_s3_artifacts_read": 28,
+  "independent_audit_passed": true,
+  "native_pg_and_api_restart_readback": true,
+  "whole_controller_seconds": 239.9084699379746,
+  "whole_pod_allocation_usd": 1.072923990555942,
+  "invoice_verified": false,
+  "gpu_sampling_scope": "11 samples while workflow loop was running; excludes most archival wait and is not a saturation study",
+  "gpu_busy_means": [
+    66.72727272727273,
+    34.45454545454545,
+    64.0909090909091,
+    69.54545454545455
+  ],
+  "gpu_busy_maxima": [
+    100,
+    100,
+    100,
+    100
+  ],
+  "public_root_diagnostics": [
+    {
+      "id": "56e1a38de3433e1400423060",
+      "exact_match": 0,
+      "f1": 0.8,
+      "actual_search_limit": 3,
+      "reference_span_available_and_cited": true
+    },
+    {
+      "id": "56f8046faef2371900625d72",
+      "exact_match": 0,
+      "f1": 0.8571428571428571,
+      "actual_search_limit": 3,
+      "reference_span_available_and_cited": true
+    }
+  ],
+  "primary_changed": false,
+  "azure_agent_ddl_deployed": false,
+  "remaining_retained_headroom_at_audit": 36,
+  "off_pod_private_control_copy": true,
+  "this_specific_control_copy_restore_qualified": false,
+  "evidence_files_hash_verified": 12,
+  "scope": "Finite real source-transport and persistence evidence; semantic quality failed. Not production Agent rollout, physical GPU fault tolerance or whole-Pod HA."
+}

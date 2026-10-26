@@ -1,0 +1,99 @@
+{
+  "passed": true,
+  "at": "2026-10-26T05:08:59.133564+00:00",
+  "quality_passed": false,
+  "source_report_sha256": "ac3ba779f4e47ce4459a520eddc092090d5be2e574989557df40da4011e77072",
+  "validator_sha256": "2b210932fdfae1354f760eefa5693210af777054b1bfaa366f58de30f056b55e",
+  "records": [
+    {
+      "case_id": "56e1a38de3433e1400423060",
+      "workflow_case": "lineage-retrieval",
+      "run_id": "agrun_bbc31f89e5e2f27e7a5ff249cf76c119",
+      "batch_id": "batch_4f4e4dc9a5a4015373f63da8564d3cda",
+      "answer_sha256": "52f7c7cb905d987be30a93779487d499368958daa35bf826f316711ce64213d4",
+      "answer_utf8_bytes": 21,
+      "answer_words": 5,
+      "exact_match": 0,
+      "f1": 0.8,
+      "normalized_reference_is_substring": false,
+      "retrieval": [
+        {
+          "query_sha256": "83856e2052078679e2bdf25e82e87230ff4fce7bfe11694a7eb122630d09bdf0",
+          "query_is_original_question": false,
+          "limit": 3,
+          "matches": 3,
+          "gold_document_rank": 3,
+          "gold_span_rank": 3,
+          "cited_reference_span": true
+        }
+      ],
+      "original_question_document_rank_at5": 3,
+      "original_question_span_rank_at5": 3,
+      "observable_failure_pattern": "different_answer_despite_reference_span_available",
+      "scope": "Read-only diagnostic association; not proof of a causal mechanism"
+    },
+    {
+      "case_id": "56f8046faef2371900625d72",
+      "workflow_case": "lineage-mixed",
+      "run_id": "agrun_eaed53b4af196e2ffad92126c55ca347",
+      "batch_id": "batch_da78fdcf6e08c8c61c4917a0101ccd48",
+      "answer_sha256": "c694f9d4fccd235a50db3ae6670f3f77a6e4a304756e92d14bc97ab07c32e80f",
+      "answer_utf8_bytes": 26,
+      "answer_words": 4,
+      "exact_match": 0,
+      "f1": 0.8571428571428571,
+      "normalized_reference_is_substring": true,
+      "retrieval": [
+        {
+          "query_sha256": "b3b6c70f7e2a909b96ce374fc991aea02b2abd822c82f7c61e2ada13b6c929db",
+          "query_is_original_question": false,
+          "limit": 3,
+          "matches": 3,
+          "gold_document_rank": 2,
+          "gold_span_rank": 2,
+          "cited_reference_span": true
+        }
+      ],
+      "original_question_document_rank_at5": 2,
+      "original_question_span_rank_at5": 2,
+      "observable_failure_pattern": "nonexact_span_includes_normalized_reference",
+      "scope": "Read-only diagnostic association; not proof of a causal mechanism"
+    }
+  ],
+  "verified_artifact_reads": [
+    {
+      "file_id": "file_2f2208db1c6f49bbb25522f2844331ae",
+      "bytes": 1006,
+      "sha256": "3b05ddade316153faf1913692340f2cf76968042daaee208be96cd9f339fa60c"
+    },
+    {
+      "file_id": "file_733de39f8229452f8c9df9c10b4178b1",
+      "bytes": 1044,
+      "sha256": "a22fb0471a082238f025288fb7b18917dcc2bdc6bec11630385673bc928f6e3f"
+    },
+    {
+      "file_id": "file_6238fcbc8ba257155aacfb9f389eac97",
+      "bytes": 9224,
+      "sha256": "99fc90cd88500a6dabcce196ce728fe885eb400c012fe2b784dfb83046ff48ee"
+    },
+    {
+      "file_id": "file_bc62dbf4f93f473a830c919f0082d0c3",
+      "bytes": 938,
+      "sha256": "f66215ffc42835988a7b8a28444cf409a22a6cd3f8e245bef5b91a1342bcb1df"
+    },
+    {
+      "file_id": "file_f8242cbca164401883544132d02ae203",
+      "bytes": 1049,
+      "sha256": "e4a8ed53c4dea47731bcd91eb5065bca29d5a1f2c9b758a0c45c679200d9f370"
+    },
+    {
+      "file_id": "file_bd97c891da0937f147258ab5938b1fde",
+      "bytes": 9673,
+      "sha256": "68bb9a2e3ba745b868643ab07fb6562bf10c1f44d5be5d49ef5643eabcd66836"
+    }
+  ],
+  "new_gpu_tasks": 0,
+  "database_connections": 0,
+  "service_changes": false,
+  "scope": "Preserved failed root answers diagnosed from actual SHA-verified S3 Batch artifacts and frozen corpus, no output repair or rerun"
+}

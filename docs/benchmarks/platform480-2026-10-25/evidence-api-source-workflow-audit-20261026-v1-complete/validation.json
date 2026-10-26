@@ -1,0 +1,188 @@
+{
+  "passed": true,
+  "workflow_quality_passed": false,
+  "workflows_reference_correct": 1,
+  "workflows": 3,
+  "roles_completed": 10,
+  "source_report_sha256": "ac3ba779f4e47ce4459a520eddc092090d5be2e574989557df40da4011e77072",
+  "validator_sha256": "388941684845fb2024609a4a40c6eb0047d237afaee76100e49472f8cf427d27",
+  "at": "2026-10-26T05:13:13.037092+00:00",
+  "checks": {
+    "quality_failure_preserved": true,
+    "all_nonquality_workflow_checks_passed": true,
+    "primary_identity_source_configuration_unchanged": true,
+    "controller_stopped": true,
+    "all_trial_processes_stopped": true,
+    "native_pg_stopped": true,
+    "native_and_api_restart_readback": true,
+    "client_verified_all_six_inheriting_roles": true,
+    "committed_activation_fault_recorded": true,
+    "closed_18170": true,
+    "closed_18172": true,
+    "ready_8080": true,
+    "ready_8082": true,
+    "ready_8083": true,
+    "ready_9105": true,
+    "guard_live_zero_actions": true,
+    "azure_unique_tasks_and_attempts": true,
+    "azure_usage_matches": true,
+    "azure_purged_payloads_retained_identities": true,
+    "all_archives_ready_purged": true,
+    "queue_empty": true,
+    "all_distinct_artifacts_read": true,
+    "quota_unchanged": true
+  },
+  "source_commit": "bda7eb5bbe82bd8414055a296b09ffeb8e0016bb",
+  "accepted_tasks": 14,
+  "attempts": 14,
+  "accepted_usage": {
+    "prompt_tokens": 21584,
+    "completion_tokens": 1538
+  },
+  "artifact_byte_readbacks": [
+    {
+      "file_id": "file_4da65257049ca56b1e66b9e553f75d51",
+      "sha256": "9e87aab2231e2dc0f2f4d6bfe85fdcf03242540759d5aa589194663de8e0581e",
+      "bytes": 4754
+    },
+    {
+      "file_id": "file_c1313ed17b0b4adca6c2e74867d2eebb",
+      "sha256": "845e0fee2506eaa4fad76b24023bd599a7a83711ef723d74603fd3db07125fff",
+      "bytes": 976
+    },
+    {
+      "file_id": "file_6c64d91b60e948bebffe78ce922296f6",
+      "sha256": "578ba60436c8bab7aee87ea09f9d4a8983aa5f545f4bcf6d46b656ade1ebaff6",
+      "bytes": 7419
+    },
+    {
+      "file_id": "file_2ff26b5534f046c080af6da0f5f9f7c5",
+      "sha256": "73762870d529a52315e5b1386b4cd2a88944c8a06becd5289281177e1e1aaecb",
+      "bytes": 1170
+    },
+    {
+      "file_id": "file_5b5f39b777c3c1edb9ee1bfecbcba06a",
+      "sha256": "9aa79d389309b0675318a946ed616fb1878a97ab640fc8522f0edfe20a681963",
+      "bytes": 2611
+    },
+    {
+      "file_id": "file_39221c680add4ae28798dc52dd220777",
+      "sha256": "e7737cbe419849917d84127254c20ee5f2ed74f9de9a27803954282c3aa775c6",
+      "bytes": 890
+    },
+    {
+      "file_id": "file_f72f88c42b5e7c0b86b5f27500746396",
+      "sha256": "1896c278e18d7a0d825faa041108a08347c07407dad3f8fdad0a9e8b3bca0790",
+      "bytes": 3450
+    },
+    {
+      "file_id": "file_8adcc36453d745aeb9bb9268f6a005fc",
+      "sha256": "79ed3ed4d54ee46a4670bf013a2eaebfab96b7ac056df079d80cbf31c32d9bf5",
+      "bytes": 974
+    },
+    {
+      "file_id": "file_cd0dd92e56449269e9ba9fc3b8b4282c",
+      "sha256": "d57f02b580f59b1585f376bd10e073fac1f911d044687d10d062be99585b087f",
+      "bytes": 6677
+    },
+    {
+      "file_id": "file_cff5a5a27cc5428cb927d1c4f2487f8f",
+      "sha256": "06da7c155b82b5a20dfc23c020f5b3c16f73daa446181bb93a41dbac8d3ad49b",
+      "bytes": 1044
+    },
+    {
+      "file_id": "file_f092a74934e81fcb48441a784ebbc819",
+      "sha256": "4503e218292daca46e9b7f1202bd689d7849d66cd12e09ddbe14b3cdd15c01fc",
+      "bytes": 7123
+    },
+    {
+      "file_id": "file_2462d94cb392453f92d438d5d37545be",
+      "sha256": "572f127976758f207692b862ccc5272b3368e52dddda3bbd9142825110e563ef",
+      "bytes": 1170
+    },
+    {
+      "file_id": "file_56b4084e7e7a862b60655d812b4a637c",
+      "sha256": "f74fc908db439fbfda49fe9a3675433c7984942b4841148b43b664f393b2e725",
+      "bytes": 3510
+    },
+    {
+      "file_id": "file_2f2208db1c6f49bbb25522f2844331ae",
+      "sha256": "3b05ddade316153faf1913692340f2cf76968042daaee208be96cd9f339fa60c",
+      "bytes": 1006
+    },
+    {
+      "file_id": "file_6238fcbc8ba257155aacfb9f389eac97",
+      "sha256": "99fc90cd88500a6dabcce196ce728fe885eb400c012fe2b784dfb83046ff48ee",
+      "bytes": 9224
+    },
+    {
+      "file_id": "file_733de39f8229452f8c9df9c10b4178b1",
+      "sha256": "a22fb0471a082238f025288fb7b18917dcc2bdc6bec11630385673bc928f6e3f",
+      "bytes": 1044
+    },
+    {
+      "file_id": "file_c4b723b78ef1e69634e04547d2c4b5ed",
+      "sha256": "4f1b679baeccb7a8acdeb248d1f0b8b0ab901089c6e6dd1196d47ff89480aaaf",
+      "bytes": 2610
+    },
+    {
+      "file_id": "file_08d362fbb75042879c638a8afc8217dc",
+      "sha256": "f7616a28550960e83374841aab1e32178c043808d4136bb7a08eab1ba4a09158",
+      "bytes": 889
+    },
+    {
+      "file_id": "file_abd01c4c271e9b48bf76b7746c250889",
+      "sha256": "9e76c12f0c2b3dc8655a709516cc03d22f0bdeaeed19a1c5b00785ccaeb458a0",
+      "bytes": 3447
+    },
+    {
+      "file_id": "file_3c890daee0af41a3a35e9b1a77dfa0fe",
+      "sha256": "fe8fac4e19894d646ff9505ce85f13516fe3d7b361b561cf5b43e2e521eb6dea",
+      "bytes": 974
+    },
+    {
+      "file_id": "file_ea861a845adb26828f5dfedebf0dc627",
+      "sha256": "8d024af769e08c81075313d85f0625d8a9eccecfc8a09c7c707c322385d1cb4c",
+      "bytes": 3442
+    },
+    {
+      "file_id": "file_bc62dbf4f93f473a830c919f0082d0c3",
+      "sha256": "f66215ffc42835988a7b8a28444cf409a22a6cd3f8e245bef5b91a1342bcb1df",
+      "bytes": 938
+    },
+    {
+      "file_id": "file_bd97c891da0937f147258ab5938b1fde",
+      "sha256": "68bb9a2e3ba745b868643ab07fb6562bf10c1f44d5be5d49ef5643eabcd66836",
+      "bytes": 9673
+    },
+    {
+      "file_id": "file_f8242cbca164401883544132d02ae203",
+      "sha256": "e4a8ed53c4dea47731bcd91eb5065bca29d5a1f2c9b758a0c45c679200d9f370",
+      "bytes": 1049
+    },
+    {
+      "file_id": "file_d33c5d590dfe3f04cd0a5c0350c69d9e",
+      "sha256": "ddc133b07890fa8341f055b697ba86d6d407a879ab4dbdd8080ca40c94d21f6c",
+      "bytes": 7061
+    },
+    {
+      "file_id": "file_471bf3acbffb4dbd8f5ec69218ac7dbc",
+      "sha256": "4d2373e0d7bf7fe738694197103b338eaaade22b33eafaa0af558b4daf6f23af",
+      "bytes": 1044
+    },
+    {
+      "file_id": "file_fba153404db293d36fc8d245fbc42389",
+      "sha256": "0e7af41624109f45e0ec0eff2dac30429988a556c4360c65ed0ac1b195661555",
+      "bytes": 4374
+    },
+    {
+      "file_id": "file_bf253cf168ef4f5a8702fea934468850",
+      "sha256": "c5ce51624b5719dae880781ee715e6c3fbd94edc019b22d80dcbf0a75b6de040",
+      "bytes": 976
+    }
+  ],
+  "remaining_retained_headroom": 36,
+  "new_gpu_tasks": 0,
+  "database_writes": 0,
+  "scope": "Independent closure/ledger/storage/client verification that preserves failed root answer quality, not a passed workflow task qualification or Azure Agent production rollout"
+}

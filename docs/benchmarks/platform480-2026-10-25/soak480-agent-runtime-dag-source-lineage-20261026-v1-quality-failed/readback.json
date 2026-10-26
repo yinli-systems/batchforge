@@ -1,0 +1,112 @@
+{
+  "passed": true,
+  "new_gpu_tasks": 0,
+  "browser_visual_qa": false,
+  "records": [
+    {
+      "workflow_id": "agrun_faac4aa80342056f8e8c93194fd40010",
+      "node": "relay",
+      "run_id": "agrun_f4eb98e425ea7d46d7330fd3d3d7e9a2",
+      "status": "completed",
+      "event_head_sha256": "186dab6ed30bb5eb3ed3fb62454ef8ca5185840ddcd6a47febfec06aa11cec13",
+      "source_verified": true,
+      "source_count": 1,
+      "verified_lineage_runs": 3
+    },
+    {
+      "workflow_id": "agrun_faac4aa80342056f8e8c93194fd40010",
+      "node": "memory",
+      "run_id": "agrun_4b9039613983eb1c8703d7ac8f11577a",
+      "status": "completed",
+      "event_head_sha256": "7a1bc8a1954799ef73e30e65cd18162d3a579cb80358a4d36370157c0e568e43",
+      "source_verified": false,
+      "source_count": 0,
+      "verified_lineage_runs": 0
+    },
+    {
+      "workflow_id": "agrun_faac4aa80342056f8e8c93194fd40010",
+      "node": "reader",
+      "run_id": "agrun_0198e0dfb1de3a1d4e7b3c16a9166b47",
+      "status": "completed",
+      "event_head_sha256": "60469b870a866e9d50fe33eb4ec9baabf1e950365d53439a9419084d31767622",
+      "source_verified": true,
+      "source_count": 1,
+      "verified_lineage_runs": 4
+    },
+    {
+      "workflow_id": "agrun_6a42b5e57af46973e294fc79d22ce82d",
+      "node": "relay",
+      "run_id": "agrun_a741fcebd1bdd2f92cddbcdc9fe36aa6",
+      "status": "completed",
+      "event_head_sha256": "3d062b52e16b44b7e15c62337ccf802f883a8913b08a0d5d29ebda953d6143be",
+      "source_verified": true,
+      "source_count": 1,
+      "verified_lineage_runs": 3
+    },
+    {
+      "workflow_id": "agrun_6a42b5e57af46973e294fc79d22ce82d",
+      "node": "reader",
+      "run_id": "agrun_ebc6403a3705ff874d4b2722076afd61",
+      "status": "completed",
+      "event_head_sha256": "2dcdedd13fb980233f2d0b42fd9e155fd106bdbd66680d13f0bd34554d6ad110",
+      "source_verified": true,
+      "source_count": 1,
+      "verified_lineage_runs": 4
+    },
+    {
+      "workflow_id": "agrun_6a42b5e57af46973e294fc79d22ce82d",
+      "node": "document",
+      "run_id": "agrun_bbc31f89e5e2f27e7a5ff249cf76c119",
+      "status": "completed",
+      "event_head_sha256": "7aa170b8b0ae137b2e997c20c95e895c92c6d7ef882431042755b7d95e645af8",
+      "source_verified": false,
+      "source_count": 0,
+      "verified_lineage_runs": 0
+    },
+    {
+      "workflow_id": "agrun_2be9a0977e6abfee1d090c4f73953d4a",
+      "node": "relay",
+      "run_id": "agrun_b70ff4dc251c8e133d28d1214f0a9ac4",
+      "status": "completed",
+      "event_head_sha256": "c082667f93f75c636b1e19a17344c1002efb881e6b7cf874e2869520773770ed",
+      "source_verified": true,
+      "source_count": 2,
+      "verified_lineage_runs": 4
+    },
+    {
+      "workflow_id": "agrun_2be9a0977e6abfee1d090c4f73953d4a",
+      "node": "memory",
+      "run_id": "agrun_e7a8f2e77b0ef262b91d204905ef1a9b",
+      "status": "completed",
+      "event_head_sha256": "b6c8c8376a8f5379b62a5c659ba4185f44d48d5433e258ad2620b618acc6b328",
+      "source_verified": false,
+      "source_count": 0,
+      "verified_lineage_runs": 0
+    },
+    {
+      "workflow_id": "agrun_2be9a0977e6abfee1d090c4f73953d4a",
+      "node": "reader",
+      "run_id": "agrun_2fec5289de6c3b0457132d93950400bc",
+      "status": "completed",
+      "event_head_sha256": "8580ec271c252f7d2cd5a1045c504a746e0a494f57271264968be7acea239756",
+      "source_verified": true,
+      "source_count": 2,
+      "verified_lineage_runs": 5
+    },
+    {
+      "workflow_id": "agrun_2be9a0977e6abfee1d090c4f73953d4a",
+      "node": "document",
+      "run_id": "agrun_eaed53b4af196e2ffad92126c55ca347",
+      "status": "completed",
+      "event_head_sha256": "e90321b62c1d8e9406770d8ef4bcf3cd5aa2b32a5206232a264c686b10b1ef73",
+      "source_verified": false,
+      "source_count": 0,
+      "verified_lineage_runs": 0
+    }
+  ],
+  "roles": 10,
+  "events": 466,
+  "child_receipts": 14,
+  "verified_inheriting_roles": 6,
+  "scope": "Actual same-origin client verifies workflow declarations, complete event/snapshot chains, source membership/lineage and current child receipts; not semantic correctness or browser visual QA"
+}

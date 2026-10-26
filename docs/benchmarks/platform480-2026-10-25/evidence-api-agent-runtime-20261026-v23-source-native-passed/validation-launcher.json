@@ -1,0 +1,23 @@
+{
+  "identity": {
+    "pid": 781987,
+    "start_ticks": "51434052",
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261026-v23/source"
+  },
+  "command": [
+    "/usr/bin/timeout",
+    "--signal=TERM",
+    "--kill-after=60",
+    "2100",
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "ops.qualify_agent_dag",
+    "--run",
+    "/root/batchforge-runtime/soak480-agent-runtime-dag-source-lineage-20261026-v1",
+    "--fixture-set",
+    "source-lineage-v1",
+    "--apply"
+  ],
+  "source_commit": "bda7eb5bbe82bd8414055a296b09ffeb8e0016bb",
+  "scope": "Existing four-H100 480B, max28 tasks, three source workflows/ten roles, no primary or cloud resource changes"
+}

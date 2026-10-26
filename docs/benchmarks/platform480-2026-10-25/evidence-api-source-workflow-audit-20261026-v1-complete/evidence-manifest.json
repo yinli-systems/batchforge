@@ -1,0 +1,25 @@
+{
+  "collected_at": "2026-10-26T05:23:16.402029+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-source-workflow-audit-20261026-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 150,
+      "sha256": "c73dfc6e3b2895ff8a7a6b6e7c7c4231920438e022075199feb02e3dd7da5335",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 6625,
+      "sha256": "5ec0e35c2e0823f0b7b30433070f73608c68d3cae6335b35707588bfb5e287b5",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 6423,
+      "sha256": "388941684845fb2024609a4a40c6eb0047d237afaee76100e49472f8cf427d27",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

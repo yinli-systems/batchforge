@@ -245,3 +245,10 @@ UID65534/compileall. Both jobs deregistered. Native healthy refusal, actual
 finite-guard fault integration and the800-task study passed. The derived
 800-task preflight separately passed8 local CPU safety checks; those are not
 part of the1,542-test CI count.
+
+Cross-Agent source-provenance exact head **bda7eb5** passed [run40271674578](https://github.com/yinli-systems/batchforge/actions/runs/40271674578):
+**1955 Python/zero skips,50 Node tests/compileall**, PG17.11/Node24.22.1,
+UID65534, zero remaining runners. Prior88dc2a9 failed one fixture because it
+omitted the required test-only worker token; its failure receipt is preserved.
+The correction supplied only a test credential. Independent real workflow
+qualification subsequently failed root-answer quality; passing CI is separate.
