@@ -1,0 +1,76 @@
+{
+  "passed": true,
+  "phase": "complete",
+  "started_at": "2026-10-26T05:57:17.304277+00:00",
+  "config_sha256": "270e5ac189f536652bf24a6ac8942069537b920bf3e9db55e46c1f95319889db",
+  "engine_actions": false,
+  "cloud_actions": false,
+  "errors": [],
+  "identity": {
+    "pid": 795339,
+    "start_ticks": "51767413",
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261026-v25/source"
+  },
+  "engine_quiescence": [
+    {
+      "at": "2026-10-26T05:57:17.473459+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true
+    },
+    {
+      "at": "2026-10-26T05:57:18.807913+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true
+    }
+  ],
+  "direct_runner_stopped": true,
+  "restored_identities": {
+    "api-a": {
+      "pid": 795350,
+      "start_ticks": "51767762",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 795358,
+      "start_ticks": "51768077",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 795341,
+      "start_ticks": "51767606",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 795365,
+      "start_ticks": "51768274",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "restored_state_sha256": "60a5482536d74b75e2696ffef94cd504ff7993952b4ff35cae6035d74046b575",
+  "guard_run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-soak480-engine-quality-adapter-matched-20261026-v1",
+  "guard_identity": {
+    "pid": 795378,
+    "start_ticks": "51768355",
+    "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+  },
+  "guard_recovery_invocations": 0,
+  "finished_at": "2026-10-26T05:57:27.560300+00:00"
+}

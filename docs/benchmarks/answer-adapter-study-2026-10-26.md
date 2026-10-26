@@ -32,9 +32,9 @@ inference or changing the recovery result. Two earlier launcher refusals also
 occurred before controller launch or service changes: missing system-Python
 dependencies, then exact pre-inference request-hash mismatch.
 
-## Active matched experiment, results pending
+## Matched experiment closed with a transport failure
 
-The sole current study is `soak480-engine-quality-adapter-matched-20261026-v1`:
+The study was `soak480-engine-quality-adapter-matched-20261026-v1`:
 500 fixed public questions, excluding all18 earlier RAG cases and the100 canary
 questions, repeated ABBA for2000 total direct-engine requests. Both arms receive
 the same original question and top5 BM25 excerpts, without filtering for hits.
@@ -49,6 +49,25 @@ quality, API acceptance, invoice cost or whole-platform SLO evidence. Correlated
 ABBA repetitions cannot establish independent-sample significance. Packing and
 ordinal encoding change together; their separate causal effects are not isolated.
 Public dev has been seen in prior full engine work and is not a hidden benchmark.
+
+It dispatched210 requests in the first old-protocol phase:209 responses were
+received and one exceeded its120s absolute HTTP lifetime. It stopped new
+admission without retrying the uncertain request. Later arms did not run and
+all full-cohort quality/comparison metrics remain null. The independent owner
+restored services at05:57:27UTC; the separate audit replayed all209 raw responses,
+checked exact usage/request hashes and original profiles, and preserved the failure.
+The209 known responses consumed784536 prompt/31506 output tokens; the unknown
+request's usage is **not zero**. Its accepted-response latency is censored, so
+known-delivery P95/P99 cannot describe the full attempted cohort.
+
+The386.243236s whole-controller window allocates$1.727366 at$16.10/h, including
+restore/control. It overlaps the343.020330s engine phase and must not be summed
+with it. The209 public benchmark responses are SHA-verified in owner-only Mac
+storage outside Git. [Original failure](platform480-2026-10-25/soak480-engine-quality-adapter-matched-20261026-v1-failed/campaign.json)
+and [independent audit](platform480-2026-10-25/evidence-api-adapter-failure-audit-20261026-v1-complete/validation.json)
+are retained. This is not a completed500-case comparison or evidence that the
+new adapter passed. A follow-up requires a fresh frozen protocol/cohort and
+source-matched recovery qualification; the old failure must remain unchanged.
 
 Pre-inference comparison found nine of100 old-protocol Mac/Pod request hashes
 differed only in floating BM25 scores and their result digest (max7.11e-15);
