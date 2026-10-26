@@ -468,6 +468,13 @@ async def test_agent_mount_reuses_actual_parent_pool_auth_and_stays_off_by_defau
         assert caps['admission_enabled'] and caps['batch_console_path']=='/' and caps['planner_protocols']==['json-v1']
         result=await c.post('/agents/v1/agent-runs',headers={**headers,'Idempotency-Key':'shared-agent'},json={'goal':'test only','model':'test-model'})
         assert result.status_code==200,result.text
+        corrected_headers={**headers,'Idempotency-Key':'corrected-under-original-key'}
+        invalid={'goal':'test correction','model':'test-model','tool_sequence':['math.calculate'],'max_tool_calls':0}
+        assert (await c.post('/agents/v1/agent-runs',headers=corrected_headers,json=invalid)).status_code==422
+        corrected=await c.post('/agents/v1/agent-runs',headers=corrected_headers,json={**invalid,'max_tool_calls':1})
+        assert corrected.status_code==200,corrected.text
+        replay=await c.post('/agents/v1/agent-runs',headers=corrected_headers,json={**invalid,'max_tool_calls':1})
+        assert replay.json()['id']==corrected.json()['id']
         assert (await c.get('/v1/overview',headers=headers)).json()['features']['agent_console']=='/agents/console/'
     assert app.state.pool.closed
     disabled=batch_app(Settings(database_url=DSN,model_name='test-model',batchforge_worker_token=token,db_pool_min=1,db_pool_max=2))

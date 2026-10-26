@@ -51,6 +51,7 @@ def main():
     p.add_argument('--read-only',action='store_true',help='Inspect a preserved Agent database without mutation routes')
     args=p.parse_args()
     if not 1<=args.port<=65535 or not 30<=args.seconds<=50400:p.error('Bounded port and lifetime required')
+    if args.read_only and args.service!='api':p.error('Read-only mode is available only for the inspection API; no coordinator starts')
     keys=credentials(args.executor_keys);settings=get_settings()
     if args.service=='api':uvicorn.run(create_app(settings,executor_keys_file=args.executor_keys,batch_endpoint=args.batch_url,read_only=args.read_only),host='127.0.0.1',port=args.port,access_log=False)
     else:asyncio.run(run_coordinator(settings,keys,args.batch_url,args.seconds))

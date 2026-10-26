@@ -54,3 +54,12 @@ async def test_unqualified_schema_request_is_refused_before_store_admission():
     async with app.router.lifespan_context(app),httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as c:
         r=await c.post('/v1/agent-runs',headers={'Authorization':'Bearer test','Idempotency-Key':'key'},json={'goal':'Compute','model':'test-model','planner_protocol':'schema-v1'})
         assert r.status_code==400 and r.json()['error']['code']=='agent_schema_ingress_not_enabled'
+
+
+def test_read_only_cli_never_silently_starts_a_mutating_coordinator(monkeypatch):
+    from agents import __main__ as cli
+    import sys
+    monkeypatch.setattr(sys,'argv',['agents','coordinator','--executor-keys','/must-not-read','--read-only'])
+    monkeypatch.setattr(cli,'credentials',lambda _:pytest.fail('No credential or database access before refusal'))
+    with pytest.raises(SystemExit) as exc:cli.main()
+    assert exc.value.code==2

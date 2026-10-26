@@ -4,6 +4,7 @@ const {test}=require('node:test');
 const {readFileSync}=require('node:fs');
 const {webcrypto}=require('node:crypto');
 const path=require('node:path');
+const vm=require('node:vm');
 const source=readFileSync(path.join(__dirname,'../../agents/console/core.js'),'utf8');
 const modulePromise=import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 const rid='agrun_'+'a'.repeat(32),other='agrun_'+'b'.repeat(32);
@@ -26,6 +27,18 @@ test('lost create acknowledgement survives reload with the original body and key
 test('changing an unresolved goal cannot silently allocate another task identity',async()=>{
  let posts=0;const c=await client(async(url)=>{if(url.endsWith('agent-capabilities'))return response(caps());posts++;throw new Error('uncertain');});
  await assert.rejects(c.submit(body));await assert.rejects(c.submit({...body,goal:'Other goal'}),/pending submission/);assert.equal(posts,1);
+});
+
+test('a definite first validation refusal can be corrected using the same key',async()=>{
+ let posts=[];const c=await client(async(url,r)=>{if(url.endsWith('agent-capabilities'))return response(caps());posts.push(r);return posts.length===1?response({error:{code:'invalid_agent_policy'}},422):response({id:rid});});
+ await assert.rejects(c.submit(body),/invalid_agent_policy/);assert.ok(c.pending().rejected);
+ await c.submit({...body,max_tool_calls:2});assert.equal(posts[0].headers['Idempotency-Key'],posts[1].headers['Idempotency-Key']);assert.equal(c.pending(),null);
+});
+
+test('a lost ACK followed by a validation refusal stays unresolved and cannot change body',async()=>{
+ let posts=0;const c=await client(async url=>{if(url.endsWith('agent-capabilities'))return response(caps());if(++posts===1)throw new Error('lost ACK');return response({error:{code:'agent_model_not_served'}},400);});
+ await assert.rejects(c.submit(body));await assert.rejects(c.submit(body),/unresolved/);assert.ok(!c.pending().rejected);
+ await assert.rejects(c.submit({...body,goal:'different'}),/pending submission/);assert.equal(posts,2);
 });
 
 test('an old workspace create acknowledgement cannot expose or clear its pending request in the next workspace',async()=>{
@@ -57,6 +70,11 @@ test('storage failure does not prevent reading but forbids an unpreserved create
  let calls=0;const s={getItem(){throw new Error('disabled');},setItem(){throw new Error('disabled');}};
  const c=await client(async()=>{calls++;return response(caps());},s);
  assert.equal(c.caps.tenant_id,'tenant-A');await assert.rejects(c.submit(body),/storage/);assert.equal(calls,1);
+});
+
+test('tenant identifiers cannot inherit a phantom pending submission from Object.prototype',async()=>{
+ const c=await client(async()=>response(caps('constructor')));assert.equal(c.pending(),null);
+ c.caps.tenant_id='__proto__';assert.equal(c.pending(),null);
 });
 
 async function fixture(cancel=false) {
@@ -97,6 +115,29 @@ test('same-origin API paths reject an external or traversal target',async()=>{
  const {AgentClient}=await modulePromise;
  for(const base of ['https://other/v1/','//other/v1/','/../v1/'])assert.throws(()=>new AgentClient({base,storage:storage()}));
  const c=await client(async()=>response(caps()));await assert.rejects(c.request('../admin'),/Invalid API path/);
+});
+
+test('the actual console startup and connection remain usable when the browser storage getter throws',async()=>{
+ const core=await modulePromise,nodes=new Map(),requests=[];
+ class Element {
+   constructor(){this.handlers={};this.children=[];this.options=[];this.value='';}
+   addEventListener(name,fn){this.handlers[name]=fn;}
+   replaceChildren(...values){this.children=values;this.options=values;}
+   append(...values){this.children.push(...values);this.options=this.children;}
+   reset(){}
+   set innerHTML(_){throw new Error('Untrusted renderer must use text nodes');}
+ }
+ const document={getElementById(id){if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);},createElement(){return new Element();},hidden:false};
+ const fetch=async(url,options)=>{requests.push(options.method);return url.endsWith('agent-capabilities')?response({...caps(),tools:[{name:'math.calculate'}],memory_writes_enabled:true}):response({data:[],has_more:false});};
+ const context=vm.createContext({document,location:{href:'http://127.0.0.1/console/'},URL,TextEncoder,setInterval(){},console,
+   injectedCore:{...core,AgentClient:class extends core.AgentClient{constructor(options){super({...options,fetch,crypto:webcrypto});}}}});
+ Object.defineProperty(context,'sessionStorage',{get(){throw new Error('Browser storage denied');}});
+ const app=readFileSync(path.join(__dirname,'../../agents/console/app.js'),'utf8').replace(/^import[^\n]+/,'const {AgentClient,StaleWorkspace,terminal}=injectedCore;');
+ vm.runInContext(app,context);document.getElementById('key').value='test-key';
+ document.getElementById('connect-form').handlers.submit({preventDefault(){}});
+ for(let i=0;i<20&&document.getElementById('workspace').hidden!==false;i++)await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(document.getElementById('workspace').hidden,false);assert.equal(document.getElementById('submit').disabled,true);
+ assert.match(document.getElementById('notice').textContent,/Submission-key storage is unavailable/);assert.ok(requests.every(method=>method==='GET'));
 });
 
 test('child checks also verify the checksum and committed model usage in the client',async()=>{

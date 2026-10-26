@@ -37,6 +37,12 @@ another tenant's unresolved identity. No automatic model task is submitted on
 page load or refresh. If session storage cannot preserve a key, creation fails
 before network I/O while authenticated reads remain usable.
 
+A definite first validation refusal allows correction under that same request
+key. An earlier lost acknowledgement keeps the body frozen even if a later
+retry encounters a validation error; it cannot establish that the first attempt
+was never accepted. The CLI rejects `--read-only` with coordinator mode before
+reading credentials or opening a database, rather than silently starting work.
+
 Cancellation reads the server's resulting state because completion can win.
 Already accepted model work remains in the Batch ledger. Memory writes use the
 explicit expected version; a conflict does not silently increase that version

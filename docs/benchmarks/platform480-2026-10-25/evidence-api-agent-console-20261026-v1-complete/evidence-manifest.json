@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-26T00:01:51.579013+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-agent-console-20261026-v1",
+  "files": {
+    "readback.json": {
+      "bytes": 22983,
+      "sha256": "fa0ddb094699c71f4c33aecac69fb3ee39afba20b4393ae4bec09ac6efc6b2d6",
+      "source_relative_path": "readback.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 26001,
+      "sha256": "23efd4bc8e88281e0017bd31a8f963cc8e2b08302c9efce3eabfcbbbe71d96c5",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

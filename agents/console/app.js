@@ -2,9 +2,13 @@ import {AgentClient,StaleWorkspace,terminal} from './core.js';
 
 const $=id=>document.getElementById(id);
 const base=new URL('../v1/',location.href).pathname;
-const client=new AgentClient({base});
+// Browser storage access itself can throw. Delay it until the client's guarded
+// read, keeping authenticated inspection usable when persistence is disabled.
+const tabStorage={getItem:key=>globalThis.sessionStorage.getItem(key),setItem:(key,value)=>globalThis.sessionStorage.setItem(key,value),removeItem:key=>globalThis.sessionStorage.removeItem(key)};
+const client=new AgentClient({base,storage:tabStorage});
 let busy=false,selectedId=null,refreshing=false,verifying=false;
 const keyStorage='batchforge-api-key';
+function rememberKey(key){try{key?tabStorage.setItem(keyStorage,key):tabStorage.removeItem(keyStorage);}catch{}}
 const count=n=>Number.isSafeInteger(n)?new Intl.NumberFormat().format(n):'—';
 const date=value=>value?new Date(value).toLocaleString():'—';
 const element=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=String(text);if(cls)e.className=cls;return e;};
@@ -38,9 +42,10 @@ function renderRuns(){
 function renderComposer(){
   const caps=client.caps,pending=client.pending();
   $('pending-note').hidden=!pending;
-  $('run-fields').disabled=busy||!!pending||!caps?.admission_enabled;
-  $('submit').disabled=busy||!caps?.admission_enabled;
-  $('submit').textContent=busy?'Submitting…':pending?'Retry saved submission':'Start workflow';
+  $('pending-note').textContent=pending?.rejected?'The request was refused before acceptance. Correct it and submit using the same request key.':'A submission is unresolved. Retry its saved goal and policy with the same request key.';
+  $('run-fields').disabled=busy||!!pending&&!pending.rejected||!caps?.admission_enabled;
+  $('submit').disabled=busy||!caps?.admission_enabled||!!client.storageError;
+  $('submit').textContent=busy?'Submitting…':pending?.rejected?'Submit corrected request':pending?'Retry saved submission':'Start workflow';
 }
 function loadComposer(caps){
   $('model').replaceChildren(...caps.models.map(v=>{const e=element('option',v);e.value=v;return e;}));
@@ -56,7 +61,7 @@ function loadComposer(caps){
     }
     $('sequence').value=(body.tool_sequence||[]).join(',');$('require-citations').checked=!!body.require_citations;
   }
-  $('mode').textContent=caps.read_only_snapshot?'Read-only snapshot':caps.admission_enabled?'Admission open':'Admission paused';
+  $('mode').textContent=caps.read_only_snapshot?'Read-only snapshot':client.storageError?'Submission storage unavailable':caps.admission_enabled?'Admission open':'Admission paused';
   $('memory-save').disabled=!caps.memory_writes_enabled;
   $('batch-link').hidden=caps.batch_console_path!=='/';renderComposer();
 }
@@ -128,19 +133,19 @@ async function refresh(){if(refreshing)return;refreshing=true;try{await refreshL
 // DOM event registration stays separate from the testable client/state module.
 $('connect-form').addEventListener('submit',event=>{event.preventDefault();
   const key=$('key').value.trim();if(!key)return;
-  selectedId=null;client.setKey(key);$('workspace').hidden=true;$('run-form').reset();$('memory-form').reset();sessionStorage.removeItem(keyStorage);
+  selectedId=null;client.setKey(key);$('workspace').hidden=true;$('run-form').reset();$('memory-form').reset();rememberKey('');
   perform(async()=>{
-  await client.connect();sessionStorage.setItem(keyStorage,key);$('key').value='';
+  await client.connect();rememberKey(key);$('key').value='';
   $('connect-panel').hidden=true;$('workspace').hidden=false;$('disconnect').hidden=false;$('refresh').disabled=false;
-  $('connection').textContent='Workspace connected';$('connection').className='chip good';loadComposer(client.caps);await refreshList();renderDetail();notice('Workspace connected.');
+  $('connection').textContent='Workspace connected';$('connection').className='chip good';loadComposer(client.caps);await refreshList();renderDetail();notice(client.storageError?'Connected. Submission-key storage is unavailable; existing runs remain accessible.':'Workspace connected.');
 });});
 $('disconnect').addEventListener('click',()=>{
-  client.setKey('');selectedId=null;sessionStorage.removeItem(keyStorage);$('workspace').hidden=true;$('connect-panel').hidden=false;
+  client.setKey('');selectedId=null;rememberKey('');$('workspace').hidden=true;$('connect-panel').hidden=false;
   $('disconnect').hidden=true;$('refresh').disabled=true;$('connection').textContent='Disconnected';$('connection').className='chip';$('run-form').reset();$('memory-form').reset();notice('Workspace key cleared from this tab.');
 });
 $('run-form').addEventListener('submit',event=>{event.preventDefault();perform(async()=>{
   if(busy)return;busy=true;renderComposer();
-  try{const body=client.pending()?JSON.parse(client.pending().body):formBody(),run=await client.submit(body);notice('Workflow accepted.');await refreshList();await openRun(run.id);}
+  try{const pending=client.pending(),body=pending&&!pending.rejected?JSON.parse(pending.body):formBody(),run=await client.submit(body);notice('Workflow accepted.');await refreshList();await openRun(run.id);}
   finally{busy=false;renderComposer();}
 });});
 $('refresh').addEventListener('click',()=>perform(refresh));$('more').addEventListener('click',()=>perform(()=>refreshList(true)));
@@ -160,5 +165,5 @@ $('memory-form').addEventListener('submit',event=>{event.preventDefault();perfor
   $('memory-version').value=doc.version;$('memory-state').textContent='Saved version '+doc.version+' · SHA-256 '+doc.sha256+($('memory-text').value!==text?' · Current edits are not saved yet.':'');
 });});
 
-const saved=sessionStorage.getItem(keyStorage);if(saved)$('key').value=saved;
+let saved;try{saved=tabStorage.getItem(keyStorage);}catch{}if(saved)$('key').value=saved;
 setInterval(()=>{if(!document.hidden&&client.caps&&client.detail&&!terminal(client.detail.run.status)&&!busy&&!verifying&&!refreshing)perform(refresh);},5000);

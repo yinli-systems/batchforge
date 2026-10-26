@@ -115,7 +115,7 @@ export class AgentClient {
     if(value.protocol!=='batchforge.agent-capabilities.v1'||typeof value.tenant_id!=='string'||!Array.isArray(value.models))throw new Error('Agent capability response is invalid.');
     this.caps=value;return value;
   }
-  pending() {return this.caps?this.attempts[this.caps.tenant_id]||null:null;}
+  pending() {return this.caps&&Object.hasOwn(this.attempts,this.caps.tenant_id)?this.attempts[this.caps.tenant_id]:null;}
   saveAttempts(value) {
     const raw=JSON.stringify(value);this.storage.setItem(attemptKey,raw);
     if(this.storage.getItem(attemptKey)!==raw)throw new Error('Cannot preserve the submission key in this tab.');
@@ -125,20 +125,36 @@ export class AgentClient {
     if(this.storageError)throw this.storageError;
     if(!this.caps?.admission_enabled)throw new Error('Agent admission is unavailable.');
     const epoch=this.epoch,tenant=this.caps.tenant_id,raw=JSON.stringify(body);let a=this.pending();
+    if(raw.length>65536)throw new Error('Submission JSON exceeds the64 KiB client limit.');
     if(!a&&(!this.caps.models.includes(body.model)||!this.caps.planner_protocols.includes(body.planner_protocol)))throw new Error('The selected model or planner protocol is unavailable.');
-    if(a&&a.body!==raw)throw new Error('Resolve the pending submission before changing its goal or policy.');
+    if(a&&a.body!==raw&&!a.rejected)throw new Error('Resolve the pending submission before changing its goal or policy.');
     if(!a) {
       if(Object.keys(this.attempts).length>=16)throw new Error('Resolve existing pending submissions first.');
       const bytes=this.crypto.getRandomValues(new Uint8Array(16));
-      a={key:'console-agent-'+[...bytes].map(b=>b.toString(16).padStart(2,'0')).join(''),body:raw};
+      a={key:'console-agent-'+[...bytes].map(b=>b.toString(16).padStart(2,'0')).join(''),body:raw,uncertain:false};
       this.saveAttempts({...this.attempts,[tenant]:a});
     }
+    if(a.rejected)a={...a,body:raw,rejected:false};
+    const wasUncertain=a.uncertain!==false;
+    a={...a,uncertain:true};this.saveAttempts({...this.attempts,[tenant]:a});
     // No automatic creation retry with a new key, including after a reload.
     const r=await this.fetch(this.base+'agent-runs',{method:'POST',headers:{'Authorization':'Bearer '+this.key,'Content-Type':'application/json','Idempotency-Key':a.key},
       body:a.body,cache:'no-store',credentials:'omit',redirect:'error',referrerPolicy:'no-referrer'});
     const value=await r.json();
     if(epoch!==this.epoch||this.caps?.tenant_id!==tenant)throw new StaleWorkspace();
-    if(!r.ok)throw new Error('Submission is unresolved; retry the same saved request.');
+    if(!r.ok){
+      const code=value?.error?.code;
+      if(!wasUncertain&&[400,413,422,429].includes(r.status)&&[
+        'invalid_agent_policy','invalid_agent_request','invalid_agent_value','invalid_agent_run',
+        'agent_schema_ingress_not_enabled','agent_model_not_served','agent_request_too_large','agent_quota_reached'].includes(code)) {
+        // A definite first refusal permits correction under the SAME key. If
+        // another request ever accepted it, the server's body hash still fences
+        // the corrected request. An earlier lost ACK never takes this branch.
+        this.saveAttempts({...this.attempts,[tenant]:{...a,rejected:true,uncertain:false}});
+        throw new Error(code);
+      }
+      throw new Error('Submission is unresolved; retry the same saved request.');
+    }
     if(!/^agrun_[a-f0-9]{32}$/.test(value.id))throw new Error('Submission acknowledgement is invalid.');
     const rest={...this.attempts};delete rest[tenant];this.saveAttempts(rest);return value;
   }

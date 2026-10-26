@@ -1,0 +1,458 @@
+{
+  "passed": true,
+  "phase": "complete",
+  "browser_visual_qa": false,
+  "new_gpu_tasks": 0,
+  "node_version": "v24.22.1",
+  "assets": [
+    {
+      "file": "index.html",
+      "sha256": "0063dd4c072b93fa42c53fca10e1c8a0d239bab9288d478710ab7c70f8c2cd36",
+      "bytes": 5426
+    },
+    {
+      "file": "app.js",
+      "sha256": "cd67c77bc7ceee9ded775017ab62504e8e7656d47f322783cba03e56f9948cd5",
+      "bytes": 14025
+    },
+    {
+      "file": "core.js",
+      "sha256": "0965bea709cd8509f2a49ccadcde1eda6cef4038fe8d65710b8e8cfd1532897d",
+      "bytes": 13258
+    },
+    {
+      "file": "styles.css",
+      "sha256": "0301119430c2f0c6e930a8c7887227a03c8f3627d4abdbfe0ca7b3ea5b9abe0a",
+      "bytes": 6000
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "agrun_5f8785f7e6a76e3dff38173c31f8d511",
+      "case_id": "workflow-schema-heldout-math-0",
+      "revision": 32,
+      "event_head": "e3a80c311f20ccb7a6d3eb29f852e48c15c4ce32fed9ee2abdb1f915cbe174e4",
+      "state_sha256": "1682a82a78e83449630714e024dc5426a82226afe19db3fee1c5800f317881a8",
+      "result_sha256": "1ca9c5944977e04f76ac668da435a6f3010d686cc43becce4fa35dd1ce484d39",
+      "children": [
+        {
+          "batch_id": "batch_2e39c8d561e94f2b14a5043d25dfe347",
+          "current_receipt_sha256": "093969400813d176615526610c851385dd4324d2093c83a9b00febd320e55902",
+          "committed_receipt_sha256": "bc2e05d1e1ef2969892628824f7f1a2d60b936d094bf9bc6f5e0a96ca307e353"
+        },
+        {
+          "batch_id": "batch_f33e2313c65d1913e6fd10dd83c7b101",
+          "current_receipt_sha256": "047826458375e59906ac970550d7ef74c6e64ed939803b8f17f76cc786ac4789",
+          "committed_receipt_sha256": "056918ae321643fec7a7daee2635f46c353f739bad48352c71761b993c23ecfc"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_6e785f823e20a2b96098670f863b06eb",
+      "case_id": "workflow-schema-heldout-math-1",
+      "revision": 37,
+      "event_head": "7500e54e29f416c80f9d8b7feb399988915deebd04ebab96cd250bdc493bebad",
+      "state_sha256": "7daf882ef85753775331f1a32528093b828e7dfd803fe47a7d19a5b066478e8e",
+      "result_sha256": "9da5646f0646ae19e2ecaac523df7331697b0179e41758db009d9d9e9f1e7a5b",
+      "children": [
+        {
+          "batch_id": "batch_022374118208e5e38f3b365d9aa0db60",
+          "current_receipt_sha256": "f3e030583a9aa8411de2bbd5c3d2c7ea97e2572a2b822e61ac277ec9e5798c6d",
+          "committed_receipt_sha256": "ff212fa075f8f95402c7e75d62df63a91b90a8cb3baac4e04a0d36d727ddb420"
+        },
+        {
+          "batch_id": "batch_505000509a34e06f411791c78253476b",
+          "current_receipt_sha256": "8d25b40810abf754eb0593e732d1f231e4ac11eda04dc327ac4aa603b1add05f",
+          "committed_receipt_sha256": "ce1204e717793d7ddcab75f7e70acaf91fb9fa67cb406e44c0a5073f4e1ef0ce"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_86a9ce786c6bdd6a02472a3720326115",
+      "case_id": "workflow-schema-heldout-math-2",
+      "revision": 37,
+      "event_head": "7139bafc438a5aaba00bb45afcf29566b5d1045c86002a53d53fd146f8639c74",
+      "state_sha256": "19e2507c70064dd21d34db13e26a5e1b94c75e035a6ac72eb5e4168c04d63187",
+      "result_sha256": "843888e676922faaede18512e465469e91079a4cf13be83854b02c088e135238",
+      "children": [
+        {
+          "batch_id": "batch_54119ec442e0ca9b4c968cd2daebb9dc",
+          "current_receipt_sha256": "20d45d5ddcb66ad57f0684e1855c9a7ab64c2184fae40a3ff6ff23a0bfc9374a",
+          "committed_receipt_sha256": "d2ab1fce7a67f063f9118205c9fd996bfc5a836b641eb4b60a092a88bd9f6b8f"
+        },
+        {
+          "batch_id": "batch_1525a6506eb2a2c7ffea012afde29e7d",
+          "current_receipt_sha256": "3e8cbcee57de9d4503a7872bf32155882f993039f01406777b432c74c9c0175f",
+          "committed_receipt_sha256": "324f47482ea07466a644b19894c490d17c51366b87ebdccf198a785e54e1c449"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_a51ff6283389566b82a578bf9e965b45",
+      "case_id": "workflow-schema-heldout-math-3",
+      "revision": 37,
+      "event_head": "4e66fa7640a2cba8d6f94201caf084769f96f2e886194cc3de7287a8f676d216",
+      "state_sha256": "cc5edce60bf5221a1ae716fe50804a4e9679747d50ce7f1fd99bd20bb6ae5618",
+      "result_sha256": "87f35e1efa3e83a32c08b05ff21126f100d4772f8cfeb3152de2b0f8f886ef02",
+      "children": [
+        {
+          "batch_id": "batch_f8dced574641f09ae5ff42bae4d0b332",
+          "current_receipt_sha256": "d268f386e65382152473121dbe885d75bb87a44412c4974c04841a969955fe2f",
+          "committed_receipt_sha256": "e61d017ee68d541c500094c19c751b884780ced28f1d59d32600abdd1005650e"
+        },
+        {
+          "batch_id": "batch_3cb871913ae2e81dcdbf1cd5cdaa4309",
+          "current_receipt_sha256": "77dbb7bfea19c34ee72cc6facdb21d02cf705142a1b0b0dbe50b638ad99b31f0",
+          "committed_receipt_sha256": "c2e564354959cd9107713f4059f8457dafc176cdbd3954dcdf9334878727a5bc"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_19260770988ab32f7635edde4427cd40",
+      "case_id": "workflow-schema-heldout-math-4",
+      "revision": 37,
+      "event_head": "c18ff5293c2455f1d79c84f5cd319ec64d385c4ceecb91cf5bbc43ad66e10bd6",
+      "state_sha256": "3b62142306c9043a3e994299e1bdd783665bf890fe8d8f4b61c4258d1f33ee17",
+      "result_sha256": "dd60188af879ad9181544df00df27758100361582dac0fd63f1cb2767634453f",
+      "children": [
+        {
+          "batch_id": "batch_12c9020d9a6568cab057b0c0d2c5cbea",
+          "current_receipt_sha256": "bd18747e448010b906543851fba6b88179c36c2814a11c37fa849ab4f4e2d634",
+          "committed_receipt_sha256": "da1c774d7787540df3034131ed8f6c467bb3937e3d4bad228473459eec1bc810"
+        },
+        {
+          "batch_id": "batch_942c877c86eee5075a163dcaf77a2bf2",
+          "current_receipt_sha256": "d4cf08f56c8bb3e625df4b5afa918d884db7070ad0c3bc00df8a4b66f173f7b1",
+          "committed_receipt_sha256": "e987a14f9878a2d8ea591b771b5d35ebcd8c895a937b0da55aedc9b2bc485716"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_d7834354d7825369b513df868543df5e",
+      "case_id": "workflow-schema-heldout-math-5",
+      "revision": 37,
+      "event_head": "8146a7fa95d656a3c2ea6f32c268ba9a1c804d92ba2cf65a755df70c222dc466",
+      "state_sha256": "1b1992769ea2827ec778e3fc56ddbc7155d4b348ba7329e804c086d6782f2c26",
+      "result_sha256": "87dcbb9754ad5915be98f783c739ddb7dff71800ab2515385b0c56093c743c1a",
+      "children": [
+        {
+          "batch_id": "batch_d9b7524389116069939dcd08da74f358",
+          "current_receipt_sha256": "6e46bddf4f47719055d12c3cefc8ff278798bc9d63e12c03389124a2d242b053",
+          "committed_receipt_sha256": "0dabc06248bd73a55fad08b479f707a9a353631b4a0afe48968ed30326930532"
+        },
+        {
+          "batch_id": "batch_496190684a21bd25db5507951e5e76cb",
+          "current_receipt_sha256": "ebe1996f450bd7aa14e4f2a91e2f4eff5bdad07aac782a975e08182b8d3dd63b",
+          "committed_receipt_sha256": "d5c7c06aa1d435aa74c108f4973da6476513d5977e7d349f76bc5ca96bb06b21"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_1729a4db81f2a5bd62045802f1785872",
+      "case_id": "workflow-schema-heldout-math-6",
+      "revision": 37,
+      "event_head": "e77d9aed1ad4207f5b6bf28c3a85dd8b4d312180c05289197103f125551b0369",
+      "state_sha256": "e187327b39457ed6f254a7c8469e98dede84cc0d2288cb672966f9b99eb91623",
+      "result_sha256": "918b62ee0f3c54eef2f3e9a195bb42d7a195a7507e6197d2cb89f776ed7ec798",
+      "children": [
+        {
+          "batch_id": "batch_c4c7343831055fc602e34626ff5dd52f",
+          "current_receipt_sha256": "59826a51bc52b2c2a5ab4be156cbfef9318264c39318769dcdc8f9c95d6490f8",
+          "committed_receipt_sha256": "e0581ab03c77d656efe39bd6509f606dd60e433e0041ddaeb03b9f8479b15eed"
+        },
+        {
+          "batch_id": "batch_df0eb9bb0338b1ee8e00057320f78e88",
+          "current_receipt_sha256": "28af144a4a84cc96a0b0cedbb3d80df33da3bd60e2d794b83880ad426c0b6b44",
+          "committed_receipt_sha256": "691e68589d2c06b417b2225e423418123e106bf84feb3a9e9c52e7187bf9955a"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_590bde9bc5f880ac1ebab71fff6930dd",
+      "case_id": "workflow-schema-heldout-math-7",
+      "revision": 37,
+      "event_head": "b2e4f00e0df9392e12370efdac02b6b7e8c00461081795e4e6e6bfb8a7c09851",
+      "state_sha256": "399862096b3dc701c1c99f7f547d722dcc296ddea56fbe237aa815d81bf291b1",
+      "result_sha256": "f7c96d05f003436f47bd46420ba8549429965f10e30c521a7e59bd09b0525b6e",
+      "children": [
+        {
+          "batch_id": "batch_70260690ed62aa8243d56c4a1c73eae4",
+          "current_receipt_sha256": "1f396b4e04848b21d10868f9b1300ffbf21f9a29ae9ea6c392aacc928b3e6e0d",
+          "committed_receipt_sha256": "12d9ab772e9f3f8f11096c4fe2d338f1e910940a154c779062716327affd8abc"
+        },
+        {
+          "batch_id": "batch_3d1e9e025ac2cf927b38c02750d22683",
+          "current_receipt_sha256": "d768fb3201e711a6cfa9ecf11cba3840f78b1d9f789c40fb86fc08cb877c99aa",
+          "committed_receipt_sha256": "33e02742093ee3ae2189ffe5f36f4277169506eb9458073d7f899cb9ab3ec477"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_35a4593dd3e66cac369e28528bb4fdfa",
+      "case_id": "workflow-schema-heldout-memory-0",
+      "revision": 38,
+      "event_head": "307b73fb4bc39cd366a48cdfdc0e6d504fe2dd429ca1d302d98b903af1789e15",
+      "state_sha256": "313341922893e5b33d52888562b2ea94cce077d75d25044581224f71c603289e",
+      "result_sha256": "550a8b4e11f3197456f4002c225d5ffb21f3a198a8df10aa32839e7ec8696a9c",
+      "children": [
+        {
+          "batch_id": "batch_3bf96b8c730cc2b787aba4e927c16e4d",
+          "current_receipt_sha256": "11ce9d7bae70acd20e8b9bef34ca1382fa147fa4fb622256c10a362e34447a54",
+          "committed_receipt_sha256": "6723f234de7a38e264105b81149def1ebc3dcc664e8764868acccfdea3e0ee9e"
+        },
+        {
+          "batch_id": "batch_38ed4150a90a371d56a7b6359e03f1c4",
+          "current_receipt_sha256": "bc53607d691be2c0bc5e2231b728f7fe0f3ea304d69efeee59b495bef64cd551",
+          "committed_receipt_sha256": "847c98d6b779df04b5d8565e6cfeb997639857c95e88033226886ee7edd62db3"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_d61ac089e19e01844ca15c66c48e8f50",
+      "case_id": "workflow-schema-heldout-memory-1",
+      "revision": 43,
+      "event_head": "0534eeefcf13e9963cf29d79b0070cbfb084bed35433ac36b9f20c4748523b24",
+      "state_sha256": "3d3c1af5fe7142516076006df6cd9459bb12cfb0900c7a89e0ae45c95d652906",
+      "result_sha256": "68cce95ce43bcc49ffdc95b72ea74bdb91d0f436363b4d9c6bcfefff3f8f06f1",
+      "children": [
+        {
+          "batch_id": "batch_799edf660669d95855e49aefdcf05747",
+          "current_receipt_sha256": "ad8943eb65ce15c8c6cf5855b05b8b80b813433ce84890226d11c88545fd65eb",
+          "committed_receipt_sha256": "74e79ffb0fc75650150c5c6eab8f008aaee2665339444fa46305ce2ed631bef5"
+        },
+        {
+          "batch_id": "batch_61872dc33cb3530460d81cddcf07414a",
+          "current_receipt_sha256": "3285e1c3cb64306133213582469f7b7b4ffb423d80e0b294003e3efc4bc27d34",
+          "committed_receipt_sha256": "bbaaf78ecac51e4c0bdb292c937f624806d7d5b03160115a75b5449886255581"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_97c774d82dcbf9a10b81d7596f56774f",
+      "case_id": "workflow-schema-heldout-memory-2",
+      "revision": 43,
+      "event_head": "482cb1323ccf4451dd7c712de1fe421b660ab6bac5404061fcdbb4db4a14e396",
+      "state_sha256": "aa8cba518ed7131f0503479dc24a03c7c3747577f09904e301a89557073e0c3e",
+      "result_sha256": "76917ac17358f23f234a61ffbb1c9abc31b3f055c1c2c451988e555f5df88f41",
+      "children": [
+        {
+          "batch_id": "batch_8d4458996cf4de2d265fed8b9769c91e",
+          "current_receipt_sha256": "e38301b79c051a0e6e61c925061fb23f56877fe7050088f122cbe735770d8a52",
+          "committed_receipt_sha256": "a13b233296829e8aa74f6ea714b56dadf5c4db4b1eddd580797013887789619e"
+        },
+        {
+          "batch_id": "batch_3eb96d5033e6e822f16aff2a3dbee45c",
+          "current_receipt_sha256": "2479d259833edfbdba31eebfb3a68707face15eac20f89cd52bd3b26623e4a14",
+          "committed_receipt_sha256": "b686d06dee5fbcfb546c5b318e535b8b9f7dc0d844e4e8bde379a902d6b7e7b9"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_e7f8726a37e7105d127d10b384376c3e",
+      "case_id": "workflow-schema-heldout-memory-3",
+      "revision": 37,
+      "event_head": "bd8de8fee5454bec5cb1bb60d1389d06d7c4d72048272d6b7090f95847a7ae53",
+      "state_sha256": "e961593267aaff2f43bf83a1b339695872ba52e07b81a9ee35af50316c6e129a",
+      "result_sha256": "b578c2c64c165a6f0d2a189ba241f7c9c5931cb4bd0fff7d858262690828989a",
+      "children": [
+        {
+          "batch_id": "batch_32bc4158ade3fd904d8e72c96a0ffd6c",
+          "current_receipt_sha256": "2cdf457b893d5291a2aa8c836ecdadcf4a23c6fbb0dcf97cbf1113dd3c341d0e",
+          "committed_receipt_sha256": "5d0c89d1094faf338b8e86eb6a12a2994223edba3279699737a6054ce1740b18"
+        },
+        {
+          "batch_id": "batch_3c23c9de30ee62f74044073fb09aece3",
+          "current_receipt_sha256": "73a78f44206429629d79dcba10c0a15ac5db7cc402bd5d170b3692cdb137fc8e",
+          "committed_receipt_sha256": "6a7a2bf5160875cf8d9b9153fec674953d77caedf50944b73a69c3548a18d3a3"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_fbbf45a77d4b071451cdfa7ecb9ba83d",
+      "case_id": "workflow-schema-heldout-join-0",
+      "revision": 56,
+      "event_head": "9983b99836f1404712488091c2cc770b76c65886714c1e09156ea0aa98af2f43",
+      "state_sha256": "190f34bc7207270c515bc3c37d45433fa2e41a6bc316127230c05881b416223e",
+      "result_sha256": "02f401dfaabf6220515f6beb56d44c879859ec6324fb55c643a44704ca2893f0",
+      "children": [
+        {
+          "batch_id": "batch_7e0d39569c4043a804421c34e500eb35",
+          "current_receipt_sha256": "fde0ba2adf856ad0c99ff84952b6c8be83672d1850abe36b21e2375192b53a8b",
+          "committed_receipt_sha256": "4111cc9bcb07e3f18ef2a36433ea0213f2aa4a04539faa3fca715193bdeb0e90"
+        },
+        {
+          "batch_id": "batch_b287a468578662c66c162f285b873c5b",
+          "current_receipt_sha256": "5a52e3092389d8c033f2b0384d0001743a406c6c25284d9a8027671a1a5dd0eb",
+          "committed_receipt_sha256": "6e057f67e18eeba9f57a1ea9f6754a64e19696491104551631bdabb39200a51c"
+        },
+        {
+          "batch_id": "batch_a32227836e6407eac5742fbc78020e4b",
+          "current_receipt_sha256": "c6289f80a1eb34bbad5448d3927b9cdbd317a6ffefa3a300f8cd85bcb1833a32",
+          "committed_receipt_sha256": "f1f1577f14f9d770e0c89bf79ee1c9014e60425735779bc8113f4d5f798dac4c"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_c9031a047746aa06617ab95ab82a8e37",
+      "case_id": "workflow-schema-heldout-join-1",
+      "revision": 56,
+      "event_head": "a4219cf39eab6d5e02adbc916cd887b0b2cd2d15b561b513e9d7feb523d98cf1",
+      "state_sha256": "a2a0f573ed379108b5510e6f81350145d5c9bac469039c195ab458a47cd0dc2b",
+      "result_sha256": "afbc75bd5c65124c34503fc6cd3ce1a90eec0d6bdbde2600283d4cf8b30d7df4",
+      "children": [
+        {
+          "batch_id": "batch_002bc58af061a1bc6c622824a101258c",
+          "current_receipt_sha256": "000601a5ca2456de915c28d014b88763eb35dd639f9756a974701b8f2e8b18ed",
+          "committed_receipt_sha256": "3dfc339c27f0ced08afb0ee6cfcefac1f3c6c9e11f7b10b56dabfb9fea4b30ae"
+        },
+        {
+          "batch_id": "batch_df4385cb31f0a1aee126bda0dcbf3a90",
+          "current_receipt_sha256": "3409af88b863e7f6532574ae15904d05ea9db2cf35f241c25b09ae8708c8734f",
+          "committed_receipt_sha256": "537758d4d4161ebfbe5cb3059057eaf269376f05c061a0d38736c2c558cafd7e"
+        },
+        {
+          "batch_id": "batch_8916b728ccce0dd4f5b6cd4944989b5d",
+          "current_receipt_sha256": "c93120f1d4a5c478d27dff9997d29a0a88c7aa70b4455061f25c5068f7af8dac",
+          "committed_receipt_sha256": "0241f3be1b40550341d5171032d3b38cf18d24f4b63b624a67584f08ac879eb2"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_5214cf60cf73a8c5a2f7d711491dd54e",
+      "case_id": "workflow-schema-heldout-join-2",
+      "revision": 55,
+      "event_head": "38281f8ec34c1cd645ec28a68304387aac56f634d911ba9322f05305a59a1ba0",
+      "state_sha256": "bc86989e819a3493a6425a4dec37686e57b6268434b5675269c78d645924f73e",
+      "result_sha256": "c497e33b98633ea32f8da6dfcc7244d6e6e0dd84725dc190cb1c377b5eae3a07",
+      "children": [
+        {
+          "batch_id": "batch_edc25a992dd470a6b8b833e86faf0d62",
+          "current_receipt_sha256": "bf7743b6939b28d3fcedd3642a1f7e3442fb27e3d483ffdf700edc66ac29c917",
+          "committed_receipt_sha256": "09d5478c811360ce0537e698a1a15ef67d4c767e223cd03cb0ae22634a0a2262"
+        },
+        {
+          "batch_id": "batch_57c248b5cee984deca4ff7c1c3c19e4c",
+          "current_receipt_sha256": "1ad930ae094299db5a0bd9f6893dba3ecc7ee1e2f2c058f82a2914598058f03d",
+          "committed_receipt_sha256": "b57eded0addd1c27a0cfd7821d95366a5bbab7232929a3b3c1cca7c660a17c42"
+        },
+        {
+          "batch_id": "batch_b6e233f6dff6d641af19e0d03a4076dc",
+          "current_receipt_sha256": "2ef5f402e2b3898249c2430f187904f8830d56da2cf46a7de62504e6717c6b06",
+          "committed_receipt_sha256": "7280c514739ab44a9ae699091aa2898de14bbd35bafcc46d0e19e0da21def2f8"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_6c8a5f46b41a64953f09c9425ac617da",
+      "case_id": "workflow-schema-heldout-join-3",
+      "revision": 56,
+      "event_head": "182bea0610aca385f219e069d35d3e1a05efc03884b3b767acc0ed03d436cd1c",
+      "state_sha256": "295ae1db757569d442b17dbde65dd3c02b43dfb834ed78974c1dde3af457569d",
+      "result_sha256": "64e72455aa759d1331d48128baa37506c39b31573142cacbef3227882cc9cf08",
+      "children": [
+        {
+          "batch_id": "batch_3015a0772df464ae19b002f73cad5f1b",
+          "current_receipt_sha256": "bcb1d0d394fdf2f7a80cb699ce866deb0bffe882f645f680e4a6f324b3441dff",
+          "committed_receipt_sha256": "56d7a0e8cd2c2e6f3c0c06307c75a14c8f53c21ad710e9d889d61bcc8ec052d7"
+        },
+        {
+          "batch_id": "batch_89d39dcafa208d0691e1c922d9e45fa2",
+          "current_receipt_sha256": "3ef7fb3ae572d01093767388064ee901f7fc87ffdde2febd79ce9b38d06d1b8d",
+          "committed_receipt_sha256": "0e19f064178f2bc4be64712509aa1764eb88c1547b6192804865c082b7a7f89a"
+        },
+        {
+          "batch_id": "batch_944ad87b0dae0002d497e30faedab5de",
+          "current_receipt_sha256": "0121fc3a7fa1717db4ed55a91249b684a3677e67d1d00855e579ed08e242c0fb",
+          "committed_receipt_sha256": "d2c37366a2a33e9a2b8e4209e8c8720ab061c3954ea9ed60032339d68f377614"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_31e10815e65384a1918acc3b25cbe4db",
+      "case_id": "workflow-schema-heldout-injection-0",
+      "revision": 39,
+      "event_head": "716271e1f69bab3632b7fd3e506207cfdbb151a541fd4467ac5f4b3ae8f5c785",
+      "state_sha256": "48290f4d9ee91fd1f6c5ef99aafe33ed3150c7e6c25413e983c1cb01d4062b77",
+      "result_sha256": "967bb925bde98519ad5c13d91554b74cf8cdcf8ebe3618e351affe43c468dd7f",
+      "children": [
+        {
+          "batch_id": "batch_153527efaf3e62fe15c4e86cb7aed3fa",
+          "current_receipt_sha256": "8067a2fe6e721cbf0d5f8a0c4e95dea12ff420108e6a77aff4287bd185b5b25b",
+          "committed_receipt_sha256": "c13555fe86fd1beeb44c570431c7e6711dc21a4e5f69643a6a6cfa4d3619959c"
+        },
+        {
+          "batch_id": "batch_d0a64c1fc72b8811607afbe7486d2649",
+          "current_receipt_sha256": "5693bcaf99cec6d2ffc0531cc1c4b35c72b05d55fbbf1432a7588f0d56c5be36",
+          "committed_receipt_sha256": "f171821f301acd580d8e515717426e003b0859ef0041a5a91f583a751243e585"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_871e988dffe8206c7f7bd489b2ca1184",
+      "case_id": "workflow-schema-heldout-injection-1",
+      "revision": 38,
+      "event_head": "201461d79f310f963320bff72d3e5019d1f0b5751a859c547a2065712dfae6fd",
+      "state_sha256": "fea8894e032f82168d0c065bd4af60bc2a13e9b941f170d255f568fc3d21802e",
+      "result_sha256": "5c06b57676f1d26288221ede1ecad9ccad6b21c242a2bfcb8b7624c8576f9ca5",
+      "children": [
+        {
+          "batch_id": "batch_50457dd711d92ab212c71b49c4e0601c",
+          "current_receipt_sha256": "71b582464de309ceeb8d05c14b4dcbd2f68f89b65e9ef9d9a048c00792d09419",
+          "committed_receipt_sha256": "46a07d1da8ccde8980cc234ea90c013fffb78597fe6aac68ba219e3e24437ed6"
+        },
+        {
+          "batch_id": "batch_2d535c5bdbe3308ed8b420b030d75346",
+          "current_receipt_sha256": "22a8f8531ce66912b4e59104890d04cd32cc48ce54fe27dfd46531e8ed180a87",
+          "committed_receipt_sha256": "0a1b51d2f114b6c07364107af899883fc96bd9e4b484ddaccd01a09423264bab"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_f4264d5fe8eff1828466f632a6a585a4",
+      "case_id": "workflow-schema-heldout-injection-2",
+      "revision": 37,
+      "event_head": "368b3efd5877005aa065c5994628c136e82d0d8e65bb6ecbbaa8640fbc52f7a9",
+      "state_sha256": "d09d3c02f80f5798e1fcd33b5613687149dc94a25f2aa923889648e6f940af31",
+      "result_sha256": "4b2f6c89eac26e25b081107850be0762667bf256861e78e071974d7bbdb05d97",
+      "children": [
+        {
+          "batch_id": "batch_2addfa4be1efd28c89114ee916758f8a",
+          "current_receipt_sha256": "3e5e2362785aec6a824204a4426b375329f2ef3ae7a3907a06e2e587a341e962",
+          "committed_receipt_sha256": "0a0ff658c2722fe52a205dfc0bdee85643c20b400ac1a2fa50982dc9b73cb984"
+        },
+        {
+          "batch_id": "batch_b571263d4c356d147e8e4cc7e6b5275e",
+          "current_receipt_sha256": "aa845b33e114350af3b2b52ce13013c5721b247538cdd656d3dac86f725d0e6b",
+          "committed_receipt_sha256": "d0e47707ce3f003fc2f52f145a8a759d3022249dd66bcb5cd65be1965f489c0c"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_32df1d2b8675c214a01fda527a7782b8",
+      "case_id": "workflow-schema-heldout-injection-3",
+      "revision": 37,
+      "event_head": "378fd487c9a3c0f0f9e30fbf437b20e69570758348b88c7d6acb674d8c052ed8",
+      "state_sha256": "7d0c18d6940ec2b60a88c100f01020a2560b56cf280c4b1456ea61dbe10ff2f7",
+      "result_sha256": "2bc5a5f07caa6797413115c334b65b62dd4963b1c84a46a0fd56a42b57e18822",
+      "children": [
+        {
+          "batch_id": "batch_0b18a870280a4bc7422e9dfe15a3baf8",
+          "current_receipt_sha256": "86bec245eac5876c77519d2f34fcf53f288f532c89f1bc51ae3e3a90f263409f",
+          "committed_receipt_sha256": "343883b4ef6575c84ec66f338be611d4b5d657fdd9163f23fdd1681927990c58"
+        },
+        {
+          "batch_id": "batch_7ee55fe0a5852050685848b521e6ae31",
+          "current_receipt_sha256": "93bb333672714bf96b2406e8f326a7779a03ae80fe6c6d8d3a773a86caca384b",
+          "committed_receipt_sha256": "b867ebf887c73ec3537cedd66fa34ee474d3b7160635f375f4ce8a96ab609b29"
+        }
+      ]
+    }
+  ],
+  "run_count": 20,
+  "child_receipts": 44,
+  "events": 846,
+  "ui_source_commit": "dff5139c3292ea64715a5626899239ee2aba6dcc",
+  "cohort_source_commit": "0909c615af424f3131fa8b313ff32ca625bc3799",
+  "source_report_sha256": "4da4ac13e4ebe1597201f9dc40c71c9347361887c0deee04bfd5518f5bde76cf",
+  "scope": "Actual shared client logic over preserved real-Agent native records and current Azure Batch ledger receipts; source/CSP checks only, no browser rendering or new model quality run."
+}
