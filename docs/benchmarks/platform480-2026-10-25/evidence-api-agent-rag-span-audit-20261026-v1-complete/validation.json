@@ -1,0 +1,257 @@
+{
+  "passed": true,
+  "rag_quality_passed": true,
+  "checks": {
+    "primary_identity_source_configuration_unchanged": true,
+    "temporary_api_stopped": true,
+    "native_pg_stopped": true,
+    "controller_stopped": true,
+    "fault_reclaim_within_30s": true,
+    "all8_terminal": true,
+    "actual_client_consistency_verified": true,
+    "closed_18170": true,
+    "closed_18172": true,
+    "ready_8080": true,
+    "ready_8082": true,
+    "ready_8083": true,
+    "ready_9105": true,
+    "guard_live_zero_actions": true,
+    "no_cohort_coordinators_live": true,
+    "azure_unique_task_count_matches": true,
+    "azure_usage_matches": true,
+    "azure_payloads_purged_identities_preserved": true,
+    "all_archives_ready_purged": true,
+    "queue_empty": true,
+    "all_distinct_artifacts_read": true,
+    "quota_unchanged": true,
+    "headroom_matches_unique_acceptance": true
+  },
+  "at": "2026-10-26T04:14:24.287672+00:00",
+  "source_commit": "dc139375570339b4b109ed801887ca74756133be",
+  "source_reports_sha256": [
+    "ec25747264d48bb87d8ed2d06cec3ceb56787bda217f0baf2eaf69f4b78a3b69",
+    "185f036996dea80fd91864955b841628b758612f1c509aed3046017120344e95",
+    "b818f395ddcfcab978c52b7be2d434380ed0adcc211c2e249edd4ebc1d132eaf"
+  ],
+  "validator_sha256": "1c5d48a20d69096f9b182230b800a3eb24edb2a39b81d8a5b78b9a60ce5b3796",
+  "unique_tasks": 20,
+  "attempts": 20,
+  "archive_batches": 17,
+  "accepted_usage_including_decoder": {
+    "prompt_tokens": 26753,
+    "completion_tokens": 1664
+  },
+  "whole_wrapper_seconds": 293.8291166020208,
+  "whole_wrapper_pod_allocation_usd": 1.314069104803482,
+  "quality_qualified_results": 6,
+  "cost_per_quality_qualified_result": 0.219011517467247,
+  "cost_scope": "Whole wrapper wall allocation; nested child windows overlap; reference-exact plus supported-citation task, not invoice, marginal or business result price",
+  "artifact_byte_readbacks": [
+    {
+      "file_id": "file_31924c12cfcf8290e9984808939bd987",
+      "sha256": "346da051149d5891f124c2fa12315855d5c913f6047e151a593d96f548904442",
+      "bytes": 3468
+    },
+    {
+      "file_id": "file_33b7aac423094ae2ae066880a987c44c",
+      "sha256": "0817577585db7256f22dc63863c64e4cf8f62023d89c99289d622a1104bf8ca9",
+      "bytes": 1027
+    },
+    {
+      "file_id": "file_c2f8aa48f3521391bd5ad2f83df60aba",
+      "sha256": "0a6e8f365c0e8eb289f01cc81f9ae002818ede4beb3041c7324d8942a704a849",
+      "bytes": 9916
+    },
+    {
+      "file_id": "file_e5a5857adf614a23932eb4b60adfd8bf",
+      "sha256": "d19b858930128ef1285b01264d9ac307178ea3078159b9824525b3bb9b2c373a",
+      "bytes": 1040
+    },
+    {
+      "file_id": "file_b4ae2ff99c9b30bf6f9d21a0519a735b",
+      "sha256": "ed1d0f5b59679df8a046f75fb551189359ceb181b46cee0de44fa61e4098ab60",
+      "bytes": 3364
+    },
+    {
+      "file_id": "file_efd42872c271466d85603e7fdda11f05",
+      "sha256": "6db2caf2e12c0a43cff8e8b99d62d43176748123eddf9d5d80a87426144be370",
+      "bytes": 940
+    },
+    {
+      "file_id": "file_c75c9392e97b15e07584b68bc96c60e5",
+      "sha256": "5cf4bf161534dad144915bd635a78583d580eeee105f9680c4de8d09deac4220",
+      "bytes": 9577
+    },
+    {
+      "file_id": "file_3a122308a3d742f1a5b2a041791bd6f6",
+      "sha256": "0f8ba3fdf5f11e509fd5213d73aa3409905f2241152328e430259a95282303af",
+      "bytes": 1028
+    },
+    {
+      "file_id": "file_9643f6da8affa23a74ffa19ec32bf328",
+      "sha256": "7126baaab0cf56719783723e889395edcf7808aa49c56a65f5a3060938676575",
+      "bytes": 3416
+    },
+    {
+      "file_id": "file_e8f5e025c68941ad89fc6ab52dcf406e",
+      "sha256": "27c8c97ef70bbd51077d57c3ed92f659207ec4c26385d9f784aa39b62db1af58",
+      "bytes": 992
+    },
+    {
+      "file_id": "file_0b41d15fd86c0d275d885566afc74b33",
+      "sha256": "63d409bac3482197396aa1ae1dc01fb6b8c17a936addde436a4555b75a434519",
+      "bytes": 9233
+    },
+    {
+      "file_id": "file_3d3117e0ee1641d6af2d258b7c9a36f4",
+      "sha256": "a5daf286faefd76ca55266c2e87acd7aa5fb5d050ea7ca07f79b7ffcf39a67f2",
+      "bytes": 1043
+    },
+    {
+      "file_id": "file_a428a3a03ecc46b728742e9beb39c281",
+      "sha256": "24e4be49f05091aee6a6eda02baf74d3d30b5380f229762848ea330f83eb2529",
+      "bytes": 3353
+    },
+    {
+      "file_id": "file_3a8d0acaa9024bf388d4040fd68a6d0f",
+      "sha256": "911a4525c977b7dd544f96d3c302631ef0f5b4ee1cdd25356d96ed13a122bece",
+      "bytes": 929
+    },
+    {
+      "file_id": "file_2955adb1862b32c0b69abee53c918e69",
+      "sha256": "ae6e7dc16ada2098f4cbd7c03c8c8d24f46378da7f8547cb3119cbb413dfde89",
+      "bytes": 9202
+    },
+    {
+      "file_id": "file_eab465ff4bf846c1b57595528642afe2",
+      "sha256": "36804ee90d9d1e63b4566b16539cb8f02d9051915effcc80ba77b4adc2181858",
+      "bytes": 1029
+    },
+    {
+      "file_id": "file_7fa028db5b4279c1a2b9b9680fe4e06a",
+      "sha256": "1e3d385933bbe549235b5ccf973a797a240293a8564edef1266edea09dfff8e8",
+      "bytes": 3404
+    },
+    {
+      "file_id": "file_71953848890f40579a0763e696629a4a",
+      "sha256": "f30d358fc9e5c4336a5db258c45a3d8529c095a4c7a85db553a92296ca8753cb",
+      "bytes": 980
+    },
+    {
+      "file_id": "file_a49d6978fb615fd69ea8a70736e1fcf2",
+      "sha256": "aa493de91e3d2738e065350b99eb59fc5da3cfc5941f93b0e1182a26bbcb6d0c",
+      "bytes": 9412
+    },
+    {
+      "file_id": "file_350989d22de640faa3a84955d04b5791",
+      "sha256": "0509340d82e8db3a299a7c3492ae7c6f274a9f1c9877b9c8ca89ed21b9ddc316",
+      "bytes": 1037
+    },
+    {
+      "file_id": "file_2e444761c244b32a66bd7df4c52c9566",
+      "sha256": "be7b318a8647b0b72d453b9df801ede90edc75a7dd9d5d07fa299e4e1af7d7aa",
+      "bytes": 3397
+    },
+    {
+      "file_id": "file_24b1efaae1b04282bb9fe52301dfee2b",
+      "sha256": "8c8c4c54805577695d111f7baf7cff57629a55f0583f32d55ac55e22bc283222",
+      "bytes": 973
+    },
+    {
+      "file_id": "file_0e93fd1a32900ec20c3238ab8d2d177b",
+      "sha256": "c6f6d9ae1c7dec491738f6e459ac185e5234e47495221e507108ce4b8fcf8666",
+      "bytes": 9148
+    },
+    {
+      "file_id": "file_954d7c5068a1453bb5ca40b2b356565c",
+      "sha256": "5684fd339f4f30f8023b000f79f3678d0e429005201e6e1bf7cbc26bf5a35907",
+      "bytes": 1059
+    },
+    {
+      "file_id": "file_209b11a3f1fb7c84d5b841247284e839",
+      "sha256": "b3dd62ae41729b3ad64aad850af15af3d68a05e411edc1711b4e47cf7cd72d79",
+      "bytes": 3352
+    },
+    {
+      "file_id": "file_8d092b6f66d9437ba9c25ea38ea9a0de",
+      "sha256": "fc97b86af5ac217dd9a30046aa2b38410100f66016b3cb3813463eedf5ecaee7",
+      "bytes": 928
+    },
+    {
+      "file_id": "file_6fe992cbf948d7e322fc648b4b0d294f",
+      "sha256": "32b8e1c9f65e1771c81eb3f850072b740e247174948f8beb5840e46d960bf47d",
+      "bytes": 8969
+    },
+    {
+      "file_id": "file_7b75c68d1595423896bb13037ac72b3c",
+      "sha256": "922aeb617ce57b2b276834f49c3af375b31310c71e985ae0acc5036daf71d9f5",
+      "bytes": 1035
+    },
+    {
+      "file_id": "file_952143c59a85b467682d20b74f10f975",
+      "sha256": "753fa203ea5ca744050201fcdf79760f35ce78c5a6917872c6140e133ca584e7",
+      "bytes": 3383
+    },
+    {
+      "file_id": "file_17fb972c70ba48d0aa29ba5c74a2a85f",
+      "sha256": "6e06d829182993942c4b4145e414327a0f6c6d02ff5e553aedcb11fac066809e",
+      "bytes": 959
+    },
+    {
+      "file_id": "file_9810afb30ad39d05be5b87d0f38729f7",
+      "sha256": "6f45cbc250b9c78cb18f74b2d60af3fd90e33c9f10ed5abd30911a9a2f43d296",
+      "bytes": 9483
+    },
+    {
+      "file_id": "file_7006c4fe7acb455ca6bcc3e77f48b4c7",
+      "sha256": "191e947329f6295e97d356e208239b0f5cb191e1cdff799478c4839f0d7dfadc",
+      "bytes": 1102
+    },
+    {
+      "file_id": "file_1c9fb47b878aac1eab696590a3ec358e",
+      "sha256": "f3a2ba527e1701be92c91665c405cbe110d5c8ed4833d5b2d3749af815920f5e",
+      "bytes": 8487
+    },
+    {
+      "file_id": "file_a51743007f424717a81e8c5675569e8c",
+      "sha256": "def19f1e2a993ac7d20fdd5171866263e095245b200b6cbe6a9bb6e62efcd226",
+      "bytes": 3608
+    }
+  ],
+  "new_gpu_tasks": 0,
+  "database_writes": 0,
+  "primary_identities": {
+    "api-a": {
+      "pid": 754368,
+      "start_ticks": "50724295",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 754376,
+      "start_ticks": "50724615",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 735322,
+      "start_ticks": "50346265",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 754391,
+      "start_ticks": "50724938",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "remaining_retained_headroom": 50,
+  "scope": "Independent closure, identity, ledger, client and S3 verification. Quality gate remains separately reported; not an Azure Agent rollout or whole-Pod HA"
+}

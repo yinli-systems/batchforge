@@ -131,3 +131,8 @@ runs score zero. This is a new cohort, not a matched-question improvement or a
 hidden test. Native tests and an independent real qualification must close
 before this candidate can be described as qualified or deployed. Agent Azure
 schema creation still requires an owner credential that is not saved.
+
+[The real disjoint eight-question qualification](benchmarks/agent-rag-span-2026-10-26.md)
+subsequently passed EM75/F185.26/citation100/joint75, with all original source
+proofs and independent Azure/S3 closure. Two answers remain wrong. The old failed
+cohort is retained. This candidate has not been deployed as an Azure Agent service.

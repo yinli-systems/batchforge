@@ -1,0 +1,48 @@
+from pathlib import Path
+import subprocess,base64,gzip,hashlib,io,tarfile,json,re
+script=r"""stty -echo
+python3 - <<'BF_PRIVATE_AGENT_EXPORT'
+from pathlib import Path
+import io,tarfile,hashlib,base64,json,stat,os
+p=Path('/tmp/bf-soak480-agent-runtime-schema-retrieval-span-20261026-v1/data')
+assert p.resolve()==p and not p.is_symlink() and p.stat().st_uid==65534
+assert (p/'PG_VERSION').read_text().strip()=='17' and not (p/'postmaster.pid').exists()
+manifest={'protocol':'batchforge.stopped-pg-private-export.v1','source_run':'soak480-agent-runtime-schema-retrieval-span-20261026-v1','pg_major':'17','files':{},'scope':'Stopped native qualification state; physical backup, restore not yet qualified'}
+buffer=io.BytesIO();total=0
+with tarfile.open(fileobj=buffer,mode='w:gz') as t:
+ for f in sorted(p.rglob('*')):
+  s=f.lstat();assert not stat.S_ISLNK(s.st_mode)
+  if stat.S_ISDIR(s.st_mode):continue
+  assert stat.S_ISREG(s.st_mode) and s.st_uid==65534 and s.st_size<=32*1024**2
+  data=f.read_bytes();after=f.stat();assert (s.st_ino,s.st_size,s.st_mtime_ns)==(after.st_ino,after.st_size,after.st_mtime_ns)
+  total+=len(data);assert total<=128*1024**2
+  name=str(f.relative_to(p));manifest['files'][name]={'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
+  info=tarfile.TarInfo('data/'+name);info.size=len(data);info.mode=0o600;t.addfile(info,io.BytesIO(data))
+ assert not (p/'postmaster.pid').exists()
+ raw=(json.dumps(manifest,indent=2)+'\n').encode();info=tarfile.TarInfo('private-manifest.json');info.size=len(raw);info.mode=0o600;t.addfile(info,io.BytesIO(raw))
+print('BF_PRIVATE_AGENT_EXPORT_BEGIN',flush=True)
+print(base64.encodebytes(buffer.getvalue()).decode(),flush=True)
+print('BF_PRIVATE_AGENT_EXPORT_END',flush=True)
+BF_PRIVATE_AGENT_EXPORT
+exit
+"""
+r=subprocess.run(['ssh','-tt','-i',str(Path.home()/'.ssh/id_ed25519'),'-o','BatchMode=yes','-o','ConnectTimeout=10','4x7ej43hrqznjn-64410eb2@ssh.runpod.io'],input=script,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=75)
+m=re.findall(r'\nBF_PRIVATE_AGENT_EXPORT_BEGIN\n([A-Za-z0-9+/=\n]+)\nBF_PRIVATE_AGENT_EXPORT_END',r.stdout.replace('\r',''));assert len(m)==1
+payload=base64.b64decode(m[0]);assert len(payload)<=32*1024**2
+with tarfile.open(fileobj=io.BytesIO(payload),mode='r:gz') as t:
+ manifest=json.load(t.extractfile('private-manifest.json'));assert len(t.getmembers())==len(manifest['files'])+1
+ for name,info in manifest['files'].items():
+  assert name and '..' not in Path(name).parts and not name.startswith('/')
+  item=t.getmember('data/'+name);assert item.isfile() and item.size==info['bytes']
+  raw=t.extractfile(item).read();assert len(raw)==info['bytes'] and hashlib.sha256(raw).hexdigest()==info['sha256']
+base=Path.home()/'.codex/private-evidence/batchforge/soak480-agent-runtime-schema-retrieval-span-20261026-v1-control-db'
+base.mkdir(mode=0o700,parents=True,exist_ok=False);os_path=base/'pg17-data.tar.gz'
+with os_path.open('xb') as out:out.write(payload)
+os_path.chmod(0o600);(base/'private-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');(base/'private-manifest.json').chmod(0o600)
+receipt={'passed':True,'scope':'Off-Pod owner-only stopped-native-PG physical copy; not Azure Agent migration or a verified restore/whole-Pod HA',
+ 'source_run':manifest['source_run'],'pg_major':'17','files':len(manifest['files']),'uncompressed_bytes':sum(v['bytes'] for v in manifest['files'].values()),
+ 'compressed_bytes':len(payload),'archive_sha256':hashlib.sha256(payload).hexdigest(),'all_transferred_file_digests_verified':True,
+ 'directory_mode':'0700','file_modes':'0600','source_postmaster_pid_absent':True,'private_runtime_config_or_keys_copied':False,
+ 'contains_private_agent_database_state':True,'restore_qualified':False,'exporter_source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+Path('ops/reports/agent-rag-span-private-control-export-2026-10-26.json').write_text(json.dumps(receipt,indent=2)+'\n')
+print(json.dumps(receipt))

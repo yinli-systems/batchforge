@@ -1,0 +1,187 @@
+{
+  "passed": true,
+  "new_gpu_tasks": 0,
+  "browser_visual_qa": false,
+  "node_version": "v24.22.1",
+  "records": [
+    {
+      "run_id": "agrun_3d0944df6f373aca5e50eb6f8ae99905",
+      "status": "completed",
+      "answer_disposition": "completed",
+      "revision": 43,
+      "event_head_sha256": "7350208bfac1ea39ff1eb49516573555e28086244520f0724574d76d779fc19a",
+      "state_sha256": "9e9314604f1372c12767e7e6f927bcfbc34f7f368c3a39263d14213d65a9c0f4",
+      "result_sha256": "7296bf400eb91dd6380fb68a6d9372fd8877f25ad99a1ca896c80a983a2a0fbb",
+      "receipts": [
+        {
+          "batch_id": "batch_eccf04ece6fe26fb594a212714ef0032",
+          "current_receipt_sha256": "a117b8dd4482518eae61ff31d1f5571a9b2d68a288190030bd64607af5bc1e51"
+        },
+        {
+          "batch_id": "batch_e39bd517ec13cbf17af477697e5f749b",
+          "current_receipt_sha256": "e5e7b364b7a950b14c64decb5c4a50d342e95b9c30e45363b3b003294026448f"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_7c6769c246f273c36f0168c975ebede1",
+      "status": "completed",
+      "answer_disposition": "completed",
+      "revision": 49,
+      "event_head_sha256": "e5d0ed5e77d68f8a38512b130061a953b99a1f30dec4812220b823e4de676c96",
+      "state_sha256": "97ffc42b9a95500f87721fdd5fea75f5fc361f47d339b4ed66ee32826c0df711",
+      "result_sha256": "0032cb696f771dd4c8f870f3effc5d12d501de93113190ae1404c3c3588ff3e1",
+      "receipts": [
+        {
+          "batch_id": "batch_0fa25d5047433d9dd224f06b55946089",
+          "current_receipt_sha256": "cb01ff66837966866798c1b6bb4fb65a5cbf9092973d30900199e3ef80c8807b"
+        },
+        {
+          "batch_id": "batch_33650a3f719736403b5b3bfb7bc84878",
+          "current_receipt_sha256": "e4aa441a3ee9715ffe9e7a67d64526f796ab2ecb39bf28599149836c59d4a82d"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_254902356e5af7996511c8391df4de2f",
+      "status": "completed",
+      "answer_disposition": "completed",
+      "revision": 48,
+      "event_head_sha256": "0bdf841feee6abe6b82075a0b67c990fbc91694f3cece2af5cbf0020a30ae6b6",
+      "state_sha256": "6b11c3b5389fe89aef0aa83d8c809c9d39a1bb9419c5a14ce134b9fa5f119046",
+      "result_sha256": "ea3f2caa4414a48cc7c6323783a21c63da945fd57a50447c5f00dbdb32a31f43",
+      "receipts": [
+        {
+          "batch_id": "batch_61dad4da436a7f2030a3c9b8c27befe4",
+          "current_receipt_sha256": "3a4ca9afdef55c9dbfc5f159e736086b8329158f1adf20486567fd2aad41d265"
+        },
+        {
+          "batch_id": "batch_9a97781a5f71025c9c15c00d8d9bfd34",
+          "current_receipt_sha256": "35bdba74db680399c9b3db813f8468dbb4388c6841577d44281544e95efc7892"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_f9a0b1b21b36c98b0ed3b5cedcef82b9",
+      "status": "completed",
+      "answer_disposition": "completed",
+      "revision": 48,
+      "event_head_sha256": "4a6354a23dcbc42a70eecb88374a90f087125f00ad5436165f9c92235ce040b9",
+      "state_sha256": "3cd019050cc2eef6afa9b3889ca88091756d0f41d64df795b4517eb14f6b6fc7",
+      "result_sha256": "967910915e3589ea826df020034662705b109eec7f1246bf5879a7c2af2d15db",
+      "receipts": [
+        {
+          "batch_id": "batch_ece7af9acaf34dbbf82ca91ece7e33e5",
+          "current_receipt_sha256": "f8235a91ed4eaa6ffac3642bc9726dc3559de53f7d948078ed2befc557a769cc"
+        },
+        {
+          "batch_id": "batch_b291092d33872a18d623217779bff5dc",
+          "current_receipt_sha256": "36b9240dae1b7dbd04b63a84dfc123fd3a1a1a7e8cb9e8b4423fc705c0de1ffd"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_79b1a3ce08dab3df1a0ac0750d2cb283",
+      "status": "completed",
+      "answer_disposition": "completed",
+      "revision": 48,
+      "event_head_sha256": "b084109b5869bcc67e4797a83c4e84fd8ae598b349db3a90c212e70c38d695c4",
+      "state_sha256": "b5ae713c63d5d91214822e8c73b90d9f9d175563d20fd0921147585c88f71db0",
+      "result_sha256": "0fe9c048c0512b3508fbd18f5659403d6b917bf9060abcc841eef7653adab0a7",
+      "receipts": [
+        {
+          "batch_id": "batch_96df6a27966843572442922b98562781",
+          "current_receipt_sha256": "0a12ab7acef1d560d19b4ad9351cac7d2f8fee4937c293dc0d072ff82fd0f7a9"
+        },
+        {
+          "batch_id": "batch_0ceb5814d9f8ccf4578bfa2c6d8ea567",
+          "current_receipt_sha256": "ddb74faf33ce672943db687fd814d524a629f8cf1b1f192a11eb2d8e8f73d4d8"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_d0441a6f8e46e00a4b389a8a93de7440",
+      "status": "completed",
+      "answer_disposition": "completed",
+      "revision": 47,
+      "event_head_sha256": "f87ea1fbb394439f166eb7de1c8e6bb309cf4ccd6229ffc249237bc527f1059a",
+      "state_sha256": "353e299414d5a926bfc139d1b5b778b5dd3d34f388853022b2830ba63cbd83b3",
+      "result_sha256": "211eff390dc0d0910dbe241ff99115cd61995d0bbe6e01f659436c3ce444bbdd",
+      "receipts": [
+        {
+          "batch_id": "batch_c088924ec0c9fdf1c4dc3627855e7370",
+          "current_receipt_sha256": "aa8b0806646e9dbb03e860c07baa1692b0c93e11dc82b36c2b82c5d2f6bc7e87"
+        },
+        {
+          "batch_id": "batch_d45bd4b341e546defcdf1e1cd6b868c7",
+          "current_receipt_sha256": "14aff3f371df67bfeb7d3cfea03d37816f8da0c5f093243a3148da05115df5c9"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_467def0ba259f018fa2fb83360094525",
+      "status": "completed",
+      "answer_disposition": "completed",
+      "revision": 46,
+      "event_head_sha256": "aae63fa7ff835879c7701945cd432656a1a7cf2376dd0b217a371a1b65e86d7a",
+      "state_sha256": "359a8c3fc028bb5edb2a9866d57c25ced55fa9266edf3f3dc6ca0eaabf9060c4",
+      "result_sha256": "af6b4560755e8929770204fb644a8454fcb809fd3a7b6a388602908202267100",
+      "receipts": [
+        {
+          "batch_id": "batch_83f9ca5dc6b980166dd2fddc1f3628a2",
+          "current_receipt_sha256": "51f952ea974f662384e10fd1140d50b58d920f4f199f9e7d79c32dede087d56b"
+        },
+        {
+          "batch_id": "batch_0c7a7b2faab8c79aa4dd836162941c29",
+          "current_receipt_sha256": "a869ecc0621e1e6b695d63a6d09ba8a1a86edab02d11b96806a01df52e25d72a"
+        }
+      ]
+    },
+    {
+      "run_id": "agrun_409fbeb9450027d73180c9dbfcda5ee7",
+      "status": "completed",
+      "answer_disposition": "completed",
+      "revision": 48,
+      "event_head_sha256": "cbf9519ef9843e80287e5f2ca6d1ea28b9b709af891cee04e4e865e9e497c047",
+      "state_sha256": "f95e30e1de401b68adf45b3c28f903a444533939db90c91eeac9e6482ef79608",
+      "result_sha256": "baa2343f6a546be9f1b1f2ec991d6caec7e9c155dd2501028453a998a0c9e7e1",
+      "receipts": [
+        {
+          "batch_id": "batch_a4eebd36bd892c48b204e888baa5f007",
+          "current_receipt_sha256": "b99222632925c2c6c3993c1ce98b81be1296463b64a530dde9328f87d3958ffb"
+        },
+        {
+          "batch_id": "batch_a0bc3843ae3aa78ab59c55fd877981f5",
+          "current_receipt_sha256": "4bd297850399b34a1b43e7b02dda6da73f65c55a4c0ed071218d160b6b90a524"
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "file": "index.html",
+      "sha256": "e5660c45f16608fa265be58f34955b3edb85a6ec1f11478f092927bede65c344",
+      "bytes": 5574
+    },
+    {
+      "file": "app.js",
+      "sha256": "91d7a12e1155e07301adb58156b8fd8a2cb3538b732abeac267e91a0df9f6612",
+      "bytes": 17876
+    },
+    {
+      "file": "core.js",
+      "sha256": "ade36747e645c0ec540e3a83b2dfe09385e831b1c7859e8ec2afadd5bb1449e8",
+      "bytes": 15059
+    },
+    {
+      "file": "styles.css",
+      "sha256": "0301119430c2f0c6e930a8c7887227a03c8f3627d4abdbfe0ca7b3ea5b9abe0a",
+      "bytes": 6000
+    }
+  ],
+  "run_count": 8,
+  "child_receipts": 16,
+  "events": 385,
+  "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+  "scope": "Actual Agent client, event/snapshot byte commitments, pinned retrieval selection and current Azure child receipts; no browser visual QA or independent answer grading"
+}

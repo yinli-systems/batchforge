@@ -1,0 +1,102 @@
+{
+  "source_commit": "dc139375570339b4b109ed801887ca74756133be",
+  "quality_passed": true,
+  "rag_quality": {
+    "cases": 8,
+    "completed": 8,
+    "abstained": 0,
+    "answer_delivered": 8,
+    "em_percent": 75.0,
+    "f1_percent": 85.25641025641025,
+    "supported_citation_percent": 100.0,
+    "task_success_percent": 75.0,
+    "all_retrieval_replayed": true,
+    "gate": {
+      "em_percent": 75,
+      "f1_percent": 80,
+      "supported_citation_percent": 75,
+      "task_success_percent": 75
+    }
+  },
+  "all8_quoted_source_proofs_verified": true,
+  "abstention_exercised_in_real_cohort": false,
+  "abstention_native_postgres_tests_passed": true,
+  "agent_cases": 8,
+  "agent_model_children": 16,
+  "decoder_tasks": 4,
+  "unique_accepted_tasks_including_decoder": 20,
+  "accepted_attempts": 20,
+  "agent_accepted_usage": {
+    "prompt_tokens": 25583,
+    "completion_tokens": 1521
+  },
+  "accepted_usage_including_decoder": {
+    "prompt_tokens": 26753,
+    "completion_tokens": 1664
+  },
+  "coordinator_reclaim_seconds": 14.038092,
+  "completion_seconds": {
+    "p50": 44.6692005,
+    "p95": 47.2408782,
+    "p99": 47.79118124,
+    "scope": "Eight Agent runs; descriptive small cohort, not Batch/engine service latency or population P99"
+  },
+  "actual_client": {
+    "passed": true,
+    "run_count": 8,
+    "events": 385,
+    "child_receipts": 16,
+    "browser_visual_qa": false
+  },
+  "gpu_sampled_trial": {
+    "samples": 52,
+    "gpu_errors": 0,
+    "engine_errors": 0,
+    "max_internal_gap_seconds": 5.268712964956649,
+    "internal_gaps_over_10_seconds": 0,
+    "cards": {
+      "0": {
+        "samples": 52,
+        "mean_busy_percent": 3.673076923076923,
+        "max_busy_percent": 96.0
+      },
+      "1": {
+        "samples": 52,
+        "mean_busy_percent": 2.1538461538461537,
+        "max_busy_percent": 59.0
+      },
+      "2": {
+        "samples": 52,
+        "mean_busy_percent": 2.9423076923076925,
+        "max_busy_percent": 77.0
+      },
+      "3": {
+        "samples": 52,
+        "mean_busy_percent": 3.5961538461538463,
+        "max_busy_percent": 94.0
+      }
+    },
+    "scope": "Whole sampled Agent control and storage-readback interval including idle time; GPUbusy not FLOP saturation or capacity"
+  },
+  "whole_wrapper_seconds": 293.8291166020208,
+  "whole_wrapper_allocation_usd": 1.314069104803482,
+  "nested_agent_seconds": 280.8384096369846,
+  "nested_agent_allocation_usd": 1.2559717764320701,
+  "cost_per_reference_exact_and_supported_result_usd": 0.219011517467247,
+  "cost_scope": "Operator16.10USD/whole-Pod-hour wall allocation. Eight cases including archive/idle; windows overlap, not invoice, marginal or business qualified result price",
+  "independent_closure_passed": true,
+  "all_artifact_byte_reads": 34,
+  "archive_batches": 17,
+  "remaining_retained_headroom": 50,
+  "primary_api_source": "5a0a446",
+  "primary_worker_source": "748dc10",
+  "agent_production_deployed": false,
+  "whole_platform_complete": false,
+  "limits": [
+    "New disjoint eight public questions, not controlled matched improvement, hidden test or large-sample quality proof",
+    "Two wrong answers remain despite verified literal source bytes; quoted inclusion is not semantic correctness",
+    "Real cohort has zero abstentions; abstention only native-tested",
+    "Agent state native PostgreSQL copied privately off-Pod; Azure Agent namespace and actual backup restore unqualified"
+  ],
+  "next": "Cross-Agent source provenance, source-aware workflow qualification and measured archive/Agent control overhead; preserve old failure and fixed gates"
+}

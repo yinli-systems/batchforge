@@ -1,0 +1,210 @@
+{
+  "protocol": "batchforge.public-retrieval-evaluation.v1",
+  "evaluation_valid": true,
+  "source_sha256": "148c7d960ab7f0a1f82c47b42363ddd7f0f5a6bd254532e3caa272101595ffbc",
+  "retrieval_source_sha256": "573465494d430cd14db395c4a3c02c77e08cfef7e74e66d525e1dde3f1ca005c",
+  "scores_sha256": "2968e126a89fbf5d3f6e92aa694fad7f8d0bee7e2de24987c56cb6c2cea009b3",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "snapshot": {
+    "protocol": "batchforge.bm25-utf8-chunks.v1",
+    "id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+    "corpus_sha256": "d5efabb51800799e1303a3af87447886d26a8f8068e4cc56c74ba227b489e6e0",
+    "parameters": {
+      "k1": 1.2,
+      "b": 0.75,
+      "chunk_bytes": 1536,
+      "overlap_bytes": 128,
+      "tokenizer": "unicode-nfkc-casefold-word-v1",
+      "query_term_frequency": "binary",
+      "fields": "title+chunk",
+      "score": "idf*tf*(k1+1)/(tf+k1*(1-b+b*length/avg_length))",
+      "tie_break": "chunk_id_ascending"
+    },
+    "source": {
+      "name": "SQuAD1.1 public dev passages",
+      "origin": "https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v1.1.json",
+      "licence": "See original SQuAD release and source Wikipedia terms",
+      "source_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9"
+    },
+    "document_count": 2067,
+    "chunk_count": 2134,
+    "documents_sha256": "500944f7ab30a020ce05bc4a27e64487f667dea6002122b4d439d673b483425f"
+  },
+  "cases": 10570,
+  "fixture_set": "retrieval-span-v1",
+  "selected_cases": [
+    {
+      "id": "5728d5793acd2414000dffb5",
+      "question": "In Antigone, who was the target of civil disobedience?",
+      "document_id": "squad-28-1",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: In Antigone, who was the target of civil disobedience?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ],
+      "answer_format": "retrieved_span"
+    },
+    {
+      "id": "56f884cba6d7ea1400e17707",
+      "question": "Who noticed that Luther's view of the soul after death differed from later theologians?",
+      "document_id": "squad-6-66",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: Who noticed that Luther's view of the soul after death differed from later theologians?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ],
+      "answer_format": "retrieved_span"
+    },
+    {
+      "id": "5726d7faf1498d1400e8ecdc",
+      "question": "The entrepreneurs Josiah Wedgwood, Matthew Boulton and Eleanor Coade were influenced by what manufacturing process developed during the Industrial Revolution?",
+      "document_id": "squad-23-30",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: The entrepreneurs Josiah Wedgwood, Matthew Boulton and Eleanor Coade were influenced by what manufacturing process developed during the Industrial Revolution?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ],
+      "answer_format": "retrieved_span"
+    },
+    {
+      "id": "572751b4708984140094dc1c",
+      "question": "What is the exchange of a set of obligations between two or more parties?",
+      "document_id": "squad-29-14",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: What is the exchange of a set of obligations between two or more parties?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ],
+      "answer_format": "retrieved_span"
+    },
+    {
+      "id": "56d70e570d65d2140019833e",
+      "question": "What was given to high schools where former students went on to play or coach in a Super Bowl?",
+      "document_id": "squad-0-25",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: What was given to high schools where former students went on to play or coach in a Super Bowl?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ],
+      "answer_format": "retrieved_span"
+    },
+    {
+      "id": "572f6a0ba23a5019007fc5ec",
+      "question": "What gorge is between the Bingen and Bonn?",
+      "document_id": "squad-41-12",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: What gorge is between the Bingen and Bonn?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ],
+      "answer_format": "retrieved_span"
+    },
+    {
+      "id": "5727aec03acd2414000de994",
+      "question": "How many academic units make up the school?",
+      "document_id": "squad-31-2",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: How many academic units make up the school?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ],
+      "answer_format": "retrieved_span"
+    },
+    {
+      "id": "573005b9947a6a140053cf6c",
+      "question": "Secular Arab nationalism was blamed for both the defeat of Arab troops as well as what type of stagnation?",
+      "document_id": "squad-43-16",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: Secular Arab nationalism was blamed for both the defeat of Arab troops as well as what type of stagnation?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ],
+      "answer_format": "retrieved_span"
+    }
+  ],
+  "fixture_sha256": "38386fa3b8f75819a119f0025cfc4e17afec7aa25a37f2f6fda90d707df2eb52",
+  "corpus_contains_questions_or_reference_fields": false,
+  "build_seconds": 0.6488829050213099,
+  "query_wall_seconds": 17.00850828498369,
+  "elapsed_seconds": 17.657391190005,
+  "query_latency_seconds": {
+    "p50": 0.0016117694904096425,
+    "p95": 0.0022350411309162155,
+    "p99": 0.0029011329286731773
+  },
+  "document_recall_at_k": {
+    "1": 0.7635761589403973,
+    "3": 0.8860927152317881,
+    "5": 0.9180700094607379
+  },
+  "answer_span_coverage_at_k": {
+    "1": 0.7626300851466414,
+    "3": 0.8860927152317881,
+    "5": 0.9180700094607379
+  },
+  "document_mrr_at_5": 0.8267187007253232,
+  "new_gpu_tasks": 0,
+  "browser_visual_qa": false,
+  "scope": "CPU BM25 retrieval over complete public passages, not vector embedding search or inference/task success",
+  "real_agent_plan": {
+    "cases": 8,
+    "max_new_tasks": 32,
+    "selection_seed": "2026102604",
+    "selection": "SHA256(seed:public_case_id) ascending, before observing RAG answers",
+    "quality_gate": {
+      "em_percent": 75,
+      "f1_percent": 80,
+      "supported_citation_percent": 75,
+      "task_success_percent": 75
+    },
+    "public_dev_not_hidden": true
+  }
+}

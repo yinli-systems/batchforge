@@ -1,0 +1,25 @@
+{
+  "protocol": "batchforge.bm25-utf8-chunks.v1",
+  "id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+  "corpus_sha256": "d5efabb51800799e1303a3af87447886d26a8f8068e4cc56c74ba227b489e6e0",
+  "parameters": {
+    "k1": 1.2,
+    "b": 0.75,
+    "chunk_bytes": 1536,
+    "overlap_bytes": 128,
+    "tokenizer": "unicode-nfkc-casefold-word-v1",
+    "query_term_frequency": "binary",
+    "fields": "title+chunk",
+    "score": "idf*tf*(k1+1)/(tf+k1*(1-b+b*length/avg_length))",
+    "tie_break": "chunk_id_ascending"
+  },
+  "source": {
+    "name": "SQuAD1.1 public dev passages",
+    "origin": "https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v1.1.json",
+    "licence": "See original SQuAD release and source Wikipedia terms",
+    "source_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9"
+  },
+  "document_count": 2067,
+  "chunk_count": 2134,
+  "documents_sha256": "500944f7ab30a020ce05bc4a27e64487f667dea6002122b4d439d673b483425f"
+}

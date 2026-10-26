@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "scope": "Off-Pod owner-only stopped-native-PG physical copy; not Azure Agent migration or a verified restore/whole-Pod HA",
+  "source_run": "soak480-agent-runtime-schema-retrieval-span-20261026-v1",
+  "pg_major": "17",
+  "files": 1147,
+  "uncompressed_bytes": 43910550,
+  "compressed_bytes": 6060994,
+  "archive_sha256": "dec00c525ef073b06730592444f9643a6026591eda23472f603c146083c3a2f3",
+  "all_transferred_file_digests_verified": true,
+  "directory_mode": "0700",
+  "file_modes": "0600",
+  "source_postmaster_pid_absent": true,
+  "private_runtime_config_or_keys_copied": false,
+  "contains_private_agent_database_state": true,
+  "restore_qualified": false,
+  "exporter_source_sha256": "e9ab45ea34f4f717f4d0e4c0493db16dfddde32e6f6a9cfd32039dd9bf95b34f"
+}

@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "directories": [
+    "evidence-api-agent-runtime-20261026-v21-span-source",
+    "evidence-api-agent-schema-retrieval-span-20261026-v1-complete",
+    "soak480-agent-runtime-schema-retrieval-span-20261026-v1-complete",
+    "soak480-agent-runtime-grammar-retrieval-span-20261026-v1-complete",
+    "evidence-api-agent-rag-span-audit-20261026-v1-complete"
+  ],
+  "sha_checked_public_files": 14,
+  "raw_outputs_private": true,
+  "source_commit": "dc139375570339b4b109ed801887ca74756133be"
+}

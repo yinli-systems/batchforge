@@ -1,3 +1,11 @@
+Source-bound extractive/abstention candidate **dc13937** passed actual
+[run40267208834](https://github.com/yinli-systems/batchforge/actions/runs/40267208834):
+**1928 Python/zero skips,48 Node tests/compileall**, PG17.11/Node24.22.1,
+UID65534 and zero remaining runners. [Authenticated receipt](../ops/reports/github-native-ci-dc13937-2026-10-26.json).
+New native cases cover metered output rejection, abstention after real search,
+revoked grants before inference, bounded list disposition and workflow failure
+propagation. Real model answer quality and runtime rollout remain separate checks.
+
 Retrieval candidate **2360517** passed actual
 [run40264534343](https://github.com/yinli-systems/batchforge/actions/runs/40264534343):
 **1905 Python/zero skips,47 Node tests/compileall**, PG17.11/Node24.22.1,

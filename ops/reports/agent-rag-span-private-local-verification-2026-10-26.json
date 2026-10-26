@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "archive_sha256": "dec00c525ef073b06730592444f9643a6026591eda23472f603c146083c3a2f3",
+  "files_rechecked_from_local_disk": 1147,
+  "private_directory_mode": "0700",
+  "archive_mode": "0600",
+  "file_and_directory_fsync_completed": true,
+  "restore_qualified": false,
+  "scope": "Actual local disk readback of stopped native-PG physical archive; not application restore, Azure Agent migration or whole-Pod HA"
+}

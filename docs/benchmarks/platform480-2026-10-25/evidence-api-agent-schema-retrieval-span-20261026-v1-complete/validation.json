@@ -1,0 +1,113 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "primary_changes": false,
+  "azure_agent_migration": false,
+  "private_api": "http://127.0.0.1:18172",
+  "max_child_tasks": 36,
+  "extra_gpu_worker": false,
+  "source_commit": "dc139375570339b4b109ed801887ca74756133be",
+  "primary_before": {
+    "api-a": {
+      "pid": 754368,
+      "start_ticks": "50724295",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 754376,
+      "start_ticks": "50724615",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 735322,
+      "start_ticks": "50346265",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 754391,
+      "start_ticks": "50724938",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "whole_plan_capacity_preflight": {
+    "max_child_tasks": 36,
+    "retained_headroom": 70,
+    "payload_headroom": 129596476
+  },
+  "api_timeout_identity": {
+    "pid": 770441,
+    "start_ticks": "51115579",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "api_identity": {
+    "pid": 770442,
+    "start_ticks": "51115579",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "private_api_ready_and_source_bound": true,
+  "children": [
+    {
+      "kind": "decoder",
+      "run": "/root/batchforge-runtime/soak480-agent-runtime-grammar-retrieval-span-20261026-v1",
+      "phase": "complete",
+      "passed": true,
+      "report_sha256": "b818f395ddcfcab978c52b7be2d434380ed0adcc211c2e249edd4ebc1d132eaf"
+    },
+    {
+      "kind": "agent",
+      "run": "/root/batchforge-runtime/soak480-agent-runtime-schema-retrieval-span-20261026-v1",
+      "phase": "complete",
+      "passed": true,
+      "report_sha256": "185f036996dea80fd91864955b841628b758612f1c509aed3046017120344e95"
+    }
+  ],
+  "child_identity": {
+    "pid": 770461,
+    "start_ticks": "51116740",
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261026-v21/source"
+  },
+  "primary_after": {
+    "api-a": {
+      "pid": 754368,
+      "start_ticks": "50724295",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 754376,
+      "start_ticks": "50724615",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 735322,
+      "start_ticks": "50346265",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 754391,
+      "start_ticks": "50724938",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "private_api_stopped": true,
+  "controller_seconds": 293.8291166020208
+}
