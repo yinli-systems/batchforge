@@ -90,6 +90,7 @@ class Policy:
     tool_sequence:tuple[str,...]=()
     retrieval_snapshot:str=''
     inherit_sources:bool=False
+    answer_adapter:str=''
     # Assigned by trusted admission, never accepted from planner output or the
     # ordinary Agent request. The existing immutable policy column pins lineage.
     execution_kind:str='agent'
@@ -105,7 +106,8 @@ class Policy:
             or type(self.max_generated_tokens) is not int or not 64<=self.max_generated_tokens<=32768
             or type(self.max_wall_seconds) is not int or not 30<=self.max_wall_seconds<=3600
             or self.answer_format not in ('text','identifier','number','retrieved_span') or type(self.require_citations) is not bool
-            or self.planner_protocol not in ('json-v1','schema-v1') or type(self.inherit_sources) is not bool):
+            or self.planner_protocol not in ('json-v1','schema-v1') or type(self.inherit_sources) is not bool
+            or self.answer_adapter not in ('','source-span-v1')):
             raise ValueError('Bounded agent policy and known capabilities required')
         if (self.execution_kind not in ('agent','workflow')
             or not isinstance(self.parent_workflow,str) or not isinstance(self.parent_node,str)
@@ -129,6 +131,9 @@ class Policy:
             or any(name not in self.allowed_tools for name in self.tool_sequence)):
             raise ValueError('Bounded tool sequence must fit the existing grants and tool budget')
 
+        if self.answer_adapter and (self.answer_format!='retrieved_span' or self.planner_protocol!='schema-v1'):
+            raise ValueError('Source adapter requires explicit extractive schema policy')
+
     def authorize(self,decision):
         if isinstance(decision,ToolDecision) and decision.name not in self.allowed_tools:
             raise PermissionError('Tool capability is not granted to this run')
@@ -146,6 +151,7 @@ class Policy:
         if not self.tool_sequence:value.pop('tool_sequence')
         if not self.retrieval_snapshot:value.pop('retrieval_snapshot')
         if not self.inherit_sources:value.pop('inherit_sources')
+        if not self.answer_adapter:value.pop('answer_adapter')
         if self.execution_kind=='agent':value.pop('execution_kind')
         if not self.parent_workflow:value.pop('parent_workflow');value.pop('parent_node')
         return value

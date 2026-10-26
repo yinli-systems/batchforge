@@ -148,9 +148,11 @@ class Evaluator:
             or client.trust_env is not False or client.follow_redirects is not False):
             raise ValueError('Exact private8348 endpoint without ambient proxies or redirects required')
         self.cohort=cohort;self.client=client;self.authority=authority;self.emit=emit;self.private_response=private_response
-        self.plan=plan(cohort,runtime_fingerprint=runtime_fingerprint,deadline_seconds=deadline_seconds)
+        self.plan=self.make_plan(cohort,runtime_fingerprint=runtime_fingerprint,deadline_seconds=deadline_seconds)
         self.limiter=WeightedLimiter(BUDGET);self.halted=False;self.records=[];self.inference_intents=0
         self.active=0;self.peak_active=0
+
+    def make_plan(self,cohort,**kwargs):return plan(cohort,**kwargs)
 
     def checkpoint(self):
         if self.authority() is not True:raise AuthorityLost('Exclusive authority not confirmed')
@@ -182,12 +184,16 @@ class Evaluator:
         raw=await self.response_bytes('GET','/metrics',timeout=5)
         if not engine_quiescent(raw.decode()):raise ValueError('Exclusive engine must start quiescent')
 
+    def request(self,case):return body(case)
+
+    def score_response(self,case,value,*,prompt_count):return response_record(case,value,prompt_count=prompt_count)
+
     async def invoke(self,case,offered):
-        request=body(case);began=time.monotonic();dispatched=False;record={'id':case.id}
+        request=self.request(case);began=time.monotonic();dispatched=False;record={'id':case.id}
         try:
             self.checkpoint()
             tokenized,_=await self.json('POST','/tokenize',json=tokenizer_body(request,MODEL),timeout=10)
-            count=token_count(tokenized,CONTEXT);amount=reservation(count,128,CONTEXT)
+            count=token_count(tokenized,CONTEXT);amount=reservation(count,request['max_tokens'],CONTEXT)
             record.update(tokenize_seconds=time.monotonic()-began,prompt_count=count,reservation_tokens=amount)
             async with self.limiter.reserve(amount):
                 if self.halted:raise AdmissionPaused()
@@ -201,7 +207,7 @@ class Evaluator:
                 finally:self.active-=1
                 elapsed=time.monotonic()-start
                 self.private_response(case.id,raw)
-                record.update(response_record(case,value,prompt_count=count),response_bytes_sha256=hashlib.sha256(raw).hexdigest(),
+                record.update(self.score_response(case,value,prompt_count=count),response_bytes_sha256=hashlib.sha256(raw).hexdigest(),
                     admission_wait_seconds=start-began-record['tokenize_seconds'],http_service_seconds=elapsed)
         except asyncio.CancelledError:
             self.halted=True;self.limiter.pause()

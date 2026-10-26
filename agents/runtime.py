@@ -79,15 +79,22 @@ class Coordinator:
         state.setdefault('output_rejections',[]).append({'step':state['step'],'code':code,
             'content_sha256':digest(state['model_content']),'receipt_sha256':state['receipts'][-1]['receipt_sha256']})
         state['output_feedback']=code;state['phase']='plan'
-        for key in ('request','batch_id','file_id','upload_attempted','model_content','delivery_invalid','batch_attempted','authorization_lost'):state.pop(key,None)
+        for key in ('request','batch_id','file_id','upload_attempted','model_content','delivery_invalid','batch_attempted','authorization_lost','answer_adapter_context'):state.pop(key,None)
         return await self.change(run,'output_rejected',kind='output.rejected',state=state)
 
     async def dependency_sources(self,run,*,planned=False):
-        if not run['policy'].get('inherit_sources'):return None
-        from .provenance import resolve
-        proof=await resolve(self.store,run,self.retrieval)
-        if planned and run['state'].get('dependency_evidence')!=proof:
-            raise AgentError(409,'workflow_source_provenance_invalid')
+        proof=None
+        if run['policy'].get('inherit_sources'):
+            from .provenance import resolve
+            proof=await resolve(self.store,run,self.retrieval)
+            if planned and run['state'].get('dependency_evidence')!=proof:
+                raise AgentError(409,'workflow_source_provenance_invalid')
+        if planned and run['state'].get('answer_adapter_context') is not None:
+            from .answer_adapter import context
+            from .provenance import retrieval_matches
+            current=context(policy_from(run['policy']),run['state'].get('observations',[]),
+                self.retrieval,run['tenant_id'],inherited_matches=retrieval_matches(proof))
+            if current!=run['state']['answer_adapter_context']:raise AgentError(409,'workflow_source_provenance_invalid')
         return proof
 
     async def advance(self,run):
@@ -118,6 +125,14 @@ class Coordinator:
             body={'model':run['model'],'messages':planner_messages(run['goal'],policy,SPECS,observations,output_feedback=state.get('output_feedback'),workflow_inputs=state.get('workflow_inputs'),workflow_sources=dependency),
                   'max_tokens':min(512,remaining),'temperature':0,
                   'response_format':response_format(policy,observed_citations=citations(observations)|inherited.keys(),remaining_tools=run['max_tool_calls']-run['tool_calls'],executed_tools=[o['tool'] for o in observations],retrieval_observed=retrieval_observed)}
+            if policy.answer_adapter:
+                from .answer_adapter import context,messages,response_format as extract_format
+                source_context=context(policy,observations,self.retrieval,run['tenant_id'],inherited_matches=retrieval_matches(dependency))
+                state.pop('answer_adapter_context',None)
+                if source_context is not None:
+                    state['answer_adapter_context']=source_context
+                    body['messages']=messages(run['goal'],source_context,feedback=state.get('output_feedback'))
+                    body['response_format']=extract_format(source_context)
             state.update(phase='input_intent',step=step+1,request=body,
                          request_sha256=digest(body),child_key=f"agent.{run['id']}.{step+1}")
             return await self.change(run,'intent',kind='model.intent',state=state)
@@ -154,7 +169,7 @@ class Coordinator:
             state['phase']='batch_uncertain'
             return await self.change(run,'model_reserve',kind='model.reserved',state=state,model_calls=1)
         if phase=='batch_uncertain':
-            if policy.inherit_sources:
+            if policy.inherit_sources or state.get('answer_adapter_context') is not None:
                 lost=None
                 try:await self.dependency_sources(run,planned=True)
                 except (AgentError,PermissionError) as exc:lost='workflow_source_authorization_lost'
@@ -199,7 +214,11 @@ class Coordinator:
             inherited=mapping(dependency)
             if state.get('delivery_invalid'):
                 return await self.fail(run,'model_output_truncated' if state['delivery_invalid']=='model_output_truncated' else 'model_delivery_invalid')
-            try:decision=parse_decision(state['model_content'])
+            try:
+                if state.get('answer_adapter_context') is not None:
+                    from .answer_adapter import parse
+                    decision=parse(state['model_content'],state['answer_adapter_context'])
+                else:decision=parse_decision(state['model_content'])
             except ValueError:
                 if policy.planner_protocol!='schema-v1':raise
                 return await self.reject_output(run,state,'planner_json_invalid')
@@ -235,6 +254,6 @@ class Coordinator:
             checkpoint();observation=await execute(decision,Context(run['tenant_id'],policy,self.memory,self.retrieval))
             state.setdefault('observations',[]).append(observation)
             state.pop('model_content');state['phase']='plan'
-            for key in ('request','batch_id','file_id','upload_attempted','delivery_invalid','batch_attempted','authorization_lost'):state.pop(key,None)
+            for key in ('request','batch_id','file_id','upload_attempted','delivery_invalid','batch_attempted','authorization_lost','answer_adapter_context'):state.pop(key,None)
             return await self.change(run,'tool',kind='tool.completed',state=state,tool_calls=1)
         raise ValueError('Unknown durable phase')

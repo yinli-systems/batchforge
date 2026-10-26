@@ -26,6 +26,7 @@ class Node(Strict):
     answer_format:str=Field(default='text',pattern=r'^(text|identifier|number|retrieved_span)$')
     require_citations:bool=False
     inherit_sources:bool=False
+    answer_adapter:str=Field(default='',pattern=r'^(|source-span-v1)$')
     planner_protocol:str=Field(default='json-v1',pattern=r'^(json-v1|schema-v1)$')
     tool_sequence:list[str]=Field(default_factory=list,max_length=8)
 
@@ -33,6 +34,7 @@ class Node(Strict):
     def serialize(self,handler):
         value=handler(self)
         if not self.inherit_sources:value.pop('inherit_sources')
+        if not self.answer_adapter:value.pop('answer_adapter')
         return value
 
     def policy(self,spec,*,parent='',node=''):
@@ -42,7 +44,7 @@ class Node(Strict):
             answer_format=self.answer_format,require_citations=self.require_citations,
             planner_protocol=self.planner_protocol,tool_sequence=tuple(self.tool_sequence),
             retrieval_snapshot=spec.retrieval_snapshot if 'retrieval.search' in self.allowed_tools or self.inherit_sources else '',
-            inherit_sources=self.inherit_sources,
+            inherit_sources=self.inherit_sources,answer_adapter=self.answer_adapter,
             parent_workflow=parent,parent_node=node)
 
 

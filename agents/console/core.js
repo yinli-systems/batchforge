@@ -112,6 +112,7 @@ export function workflowChildPolicy(spec,node,parent) {
   if((node[key]??defaultValue)!==defaultValue)value[key]=node[key];
  if(node.tool_sequence?.length)value.tool_sequence=node.tool_sequence;
  if(node.inherit_sources)value.inherit_sources=true;
+ if(node.answer_adapter)value.answer_adapter=node.answer_adapter;
  if(spec.retrieval_snapshot&&(value.allowed_tools.includes('retrieval.search')||node.inherit_sources))value.retrieval_snapshot=spec.retrieval_snapshot;
  return value;
 }

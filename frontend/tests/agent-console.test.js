@@ -198,3 +198,13 @@ test('workflow-child cancellation keeps its own terminal result commitment',asyn
  f.snapshot.run.event_hash=f.final.event_hash;
  const result=await verifyHistory(f.snapshot,'tenant-A',f.page,webcrypto);assert.ok(result.resultVerified);
 });
+
+test('workflow child extraction adapter stays explicit in independently reconstructed policy',async()=>{
+ const {workflowChildPolicy}=await modulePromise;
+ const spec={retrieval_snapshot:'e'.repeat(64),memory_namespace:'facts'};
+ const node={id:'reader',allowed_tools:[],inherit_sources:true,require_citations:true,
+  answer_format:'retrieved_span',planner_protocol:'schema-v1',answer_adapter:'source-span-v1'};
+ assert.equal(workflowChildPolicy(spec,node,rid).answer_adapter,'source-span-v1');
+ delete node.answer_adapter;
+ assert.equal(Object.hasOwn(workflowChildPolicy(spec,node,rid),'answer_adapter'),false);
+});

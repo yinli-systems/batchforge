@@ -1,0 +1,38 @@
+# Source-bound answer extraction candidate
+
+`answer_adapter: "source-span-v1"` is explicit opt-in for `retrieved_span` with
+`schema-v1`. Default policy and workflow documents omit the new field, keeping
+old request hashes and planner behavior compatible. Production source is unchanged.
+
+After real pinned retrieval and all required tools complete, the model sees the
+question and the same original source excerpts with short zero-based ordinals.
+It returns exactly `{"answer":"short literal phrase","source":0}` or
+`{"answer":null,"source":null}`. The runtime freezes the complete ordinal-to-source
+mapping in its durable model intent. It alone maps the selected ordinal to the
+original full citation; it never rewrites or repairs the answer or uses references.
+
+Before new upload/dispatch and final acceptance the mapping is replayed against
+the granted snapshot and committed own/inherited evidence. A changed mapping or
+revoked loaded authority blocks new I/O. Accepted lost-ACK work reconciles read-only
+and retains its usage even if subsequent authorization fails. Unknown accepted
+work stays explicitly unresolved; this does not implement manual approval.
+
+Unknown/negative/bool ordinals, nonliteral text, duplicate/extra fields, malformed
+JSON and answers over128 UTF8 bytes/16 words are refused. An invalid accepted
+output remains charged. A correct literal quote can still be a wrong answer.
+Null abstention is typed and scores zero in answer-required evaluations.
+
+The frozen follow-up compares the original final Agent JSON/full citations with
+this compact extraction envelope on identical top5 BM25 excerpts/original
+questions. Its ABBA blocks are correlated repetitions. Prompt packing and ordinal
+encoding change together, so the experiment cannot isolate their separate causal
+effects. It measures the post-retrieval engine subsystem, not Agent tool selection,
+Batch acceptance/durability or whole-platform SLOs. Canary100 development cases
+and all18 prior RAG cases are excluded from the separate500-case study. Public
+SQuAD dev is not a hidden benchmark and prior full engine work has seen it.
+
+The exclusive maintenance controller preserves source-aware per-service profiles,
+closes both APIs' create/retry gates, drains accepted work, stops only the owned
+worker/guard and arms independent bounded restoration before direct inference.
+A new source-matched controller-loss canary must close before the full study.
+No engine/model/cloud resource is restarted, no quota or retention policy changes.

@@ -141,7 +141,7 @@ def physical_kv(log,identity):
     return 172912
 
 
-def capture(base,guard_run,seconds,count):
+def capture(base,guard_run,seconds,count,adapter_study=False):
     if (guard_run.parent!=ROOT.parent or guard_run.resolve()!=guard_run
         or not guard_run.name.startswith('evidence-api-worker-latch-guard-')):raise ValueError('Owned existing guard run required')
     pins=Pins();end=window_end(time.time(),seconds)
@@ -164,7 +164,10 @@ def capture(base,guard_run,seconds,count):
         or command[1:3]!=['-m','ops.worker_latch_guard'] or command[3:5]!=['--run',str(guard_run)]
         or guard.get('deadline_epoch')!=STOP):raise ValueError('Known zero-action finite guard required')
     from scripts.engine_quality import prepare,plan
-    cohort=prepare(DATASET.read_bytes(),count=count,seed=2026102601)
+    if adapter_study:
+        from scripts.answer_adapter_study import prepare,plan
+        cohort=prepare(DATASET.read_bytes(),count=count)
+    else:cohort=prepare(DATASET.read_bytes(),count=count,seed=2026102601)
     public_plan=plan(cohort,runtime_fingerprint=pins.probe['runtime_fingerprint'],deadline_seconds=seconds)
     cache=physical_kv((ROOT/'.runtime/engine-qwen480bench.log').read_text(errors='replace'),pins.identities['engine-qwen480bench'])
     config={'protocol':'batchforge.exclusive-quality.v1','base':str(base),'controller':process_identity(os.getpid()),
@@ -406,7 +409,10 @@ def runner(config_path,digest):
         if own.get('identity')!=process_identity(os.getpid()) or own.get('config_sha256')!=digest:raise ValueError('Runner identity not durably granted')
         platform=Platform(c)
         from scripts.engine_quality import prepare,Evaluator
-        cohort=prepare(DATASET.read_bytes(),count=c['plan']['tasks'],seed=2026102601)
+        if c['plan'].get('protocol')=='batchforge.post-retrieval-adapter-study.v1':
+            from scripts.answer_adapter_study import prepare,Evaluator
+            cohort=prepare(DATASET.read_bytes(),count=c['plan']['case_count'])
+        else:cohort=prepare(DATASET.read_bytes(),count=c['plan']['tasks'],seed=2026102601)
         deadline=time.monotonic()+min(c['plan']['deadline_seconds'],max(0,c['end_epoch']-time.time()))
         def authority():
             return (not select.select([parent_fd,0],[],[],0)[0] and time.monotonic()<deadline
@@ -432,7 +438,7 @@ def runner(config_path,digest):
 def qualified_canary(c,path):
     if path is None:raise ValueError('Actual controller-loss restoration qualification required before full inference')
     owned_run(path);old=read(path/'restore-private.json',1024**2);r=read(path/'recovery-validation.json');proof=read(path/'dispatch-observation.json')
-    if (old.get('operator_commit')!=c['operator_commit'] or old.get('operator_files')!=c['operator_files'] or old['plan']['tasks']!=100
+    if (old.get('operator_commit')!=c['operator_commit'] or old.get('operator_files')!=c['operator_files'] or old['plan'].get('case_count',old['plan']['tasks'])!=100 or old['plan'].get('protocol')!=c['plan'].get('protocol')
         or r.get('passed') is not True or r.get('config_sha256')!=sha(private_read(path/'restore-private.json',1024**2))
         or proof.get('intentional_controller_exit')!=42 or proof.get('engine_not_quiescent') is not True
         or proof.get('four_h100_sample_observed') is not True or process_identity(old['controller']['pid'])==old['controller']):
@@ -440,7 +446,7 @@ def qualified_canary(c,path):
     return sha(private_read(path/'recovery-validation.json'))
 
 
-def execute(base,guard_run,seconds,count,apply,qualify_loss,qualification=None):
+def execute(base,guard_run,seconds,count,apply,qualify_loss,qualification=None,adapter_study=False):
     owned_run(base);base.mkdir(mode=0o700,exist_ok=False);locks=acquire();guardian=None;platform=None
     report={'phase':'prepared','passed':False,'started_at':now(),'engine_actions':False,'new_cloud_resources':False,
         'scope':'Engine-only quality, separate from Batch API acceptance/usage and quality cohorts'}
@@ -448,12 +454,12 @@ def execute(base,guard_run,seconds,count,apply,qualify_loss,qualification=None):
     save(base/'launcher.json',{'identity':process_identity(os.getpid())})
     def stage(name):report['maintenance_stage']=name;save(base/'campaign.json',report)
     try:
-        c=capture(base,guard_run,seconds,count);platform=Platform(c);platform.check();platform.quiet(seconds=20)
+        c=capture(base,guard_run,seconds,count,adapter_study=adapter_study);platform=Platform(c);platform.check();platform.quiet(seconds=20)
         save(base/'run/plan.json',c['plan']);save(base/'restore-private.json',c);digest=sha(private_read(base/'restore-private.json',1024**2))
         report.update(operator_commit=c['operator_commit'],config_sha256=digest,physical_kv_tokens=c['physical_kv_tokens'],apply_requested=apply)
         stage('prepared')
         if not apply:report['passed']=True;return
-        if count==10570:report['qualified_canary_report_sha256']=qualified_canary(c,qualification)
+        if count>100:report['qualified_canary_report_sha256']=qualified_canary(c,qualification)
         # Guardian is active BEFORE stopping even the old finite observer.
         guardian=RestorationGuard(c['controller'],max(.1,c['end_epoch']-time.time()),
             [sys.executable,'-m','ops.engine_quality_campaign','--restore-config',str(base/'restore-private.json'),'--config-sha',digest],
@@ -523,9 +529,9 @@ def execute(base,guard_run,seconds,count,apply,qualify_loss,qualification=None):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path);p.add_argument('--guard-run',type=Path)
-    p.add_argument('--seconds',type=int,default=3600);p.add_argument('--count',type=int,choices=(100,10570),default=10570)
+    p.add_argument('--seconds',type=int,default=3600);p.add_argument('--count',type=int,choices=(100,500,10570),default=10570)
     p.add_argument('--apply',action='store_true');p.add_argument('--qualify-controller-loss',action='store_true')
-    p.add_argument('--qualified-canary',type=Path)
+    p.add_argument('--qualified-canary',type=Path);p.add_argument('--adapter-study',action='store_true')
     p.add_argument('--restore-config',type=Path);p.add_argument('--runner-config',type=Path);p.add_argument('--config-sha')
     a=p.parse_args();os.umask(0o077);signal.signal(signal.SIGHUP,signal.SIG_IGN)
     if a.restore_config or a.runner_config:
@@ -534,7 +540,8 @@ def main():
         return restore_config(a.restore_config,a.config_sha) if a.restore_config else runner(a.runner_config,a.config_sha)
     if not a.run or not a.guard_run:p.error('New run and existing finite guard required')
     if a.qualify_controller_loss and (a.count!=100 or not a.apply):p.error('Loss injection only on applied100-case qualification')
-    execute(a.run,a.guard_run,a.seconds,a.count,a.apply,a.qualify_controller_loss,a.qualified_canary)
+    if a.adapter_study and a.count not in (100,500) or not a.adapter_study and a.count==500:p.error('Adapter study supports100/500; original QA supports100/10570')
+    execute(a.run,a.guard_run,a.seconds,a.count,a.apply,a.qualify_controller_loss,a.qualified_canary,adapter_study=a.adapter_study)
 
 
 if __name__=='__main__':main()
