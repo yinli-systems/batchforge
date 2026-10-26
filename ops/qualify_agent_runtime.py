@@ -201,6 +201,13 @@ def write(path,value):
     temporary.replace(path)
 
 
+def finite_command(command,now,seconds=2100):
+    if now.tzinfo is None or type(seconds) is not int or not 60<=seconds<=2100:raise ValueError('Aware time and finite process lifetime required')
+    remaining=int((FINAL_STOP-now).total_seconds())-30
+    if remaining<60:raise ValueError('Independent process cleanup margin exhausted')
+    return ['/usr/bin/timeout','--signal=TERM','--kill-after=15',str(min(seconds,remaining)),*command]
+
+
 async def worker(config_path):
     cfg=json.loads(config_path.read_bytes())
     state_pool=AsyncConnectionPool(cfg['state_dsn'],min_size=1,max_size=2,open=False,kwargs={'autocommit':True,'row_factory':dict_row})
@@ -288,7 +295,7 @@ def main():
     def event(phase):
         report['phase']=phase;report['events'].append({'phase':phase,'at':datetime.now(timezone.utc).isoformat()});write(base/'report.json',report)
     event('prepared');children=[];server_started=False;start=time.monotonic();azure=None
-    sampling_stop=threading.Event();sampling=None
+    sampling_stop=threading.Event();sampling=None;pg_guard=None;pg_guard_fd=None
     account=pwd.getpwnam('nobody');stage=Path('/tmp')/('bf-'+base.name)
     def drop():os.setgroups([]);os.setgid(account.pw_gid);os.setuid(account.pw_uid)
     toolchain=Path('/tmp/bf-ci-20261025-v14/toolchain');binary=toolchain/'usr/lib/postgresql/17/bin'
@@ -353,8 +360,27 @@ def main():
         stage.mkdir(mode=0o700);os.chown(stage,account.pw_uid,account.pw_gid)
         socket=stage/'socket';socket.mkdir(mode=0o700);os.chown(socket,account.pw_uid,account.pw_gid)
         pg(['initdb','-D',stage/'data','-L',toolchain/'usr/share/postgresql/17','-U','agent_canary','--auth-local=trust','--auth-host=reject','--no-locale','--encoding=UTF8'])
-        pg(['pg_ctl','-D',stage/'data','-l',stage/'postgres-private.log','-o',f"-h '' -p 55484 -k {socket} -c shared_buffers=32MB -c max_connections=24",'-w','start']);server_started=True
         state_dsn='postgresql://agent_canary@/postgres?host='+str(socket)+'&port=55484'
+        if args.fixture_set=='retrieval-squad-v1':
+            # Unlike pg_ctl daemonization, this separate timeout also bounds
+            # the native cluster if the parent controller disappears.
+            command=finite_command([str(binary/'postgres'),'-D',str(stage/'data'),'-h','','-p','55484','-k',str(socket),
+                '-c','shared_buffers=32MB','-c','max_connections=24'],datetime.now(timezone.utc))
+            command[1]='--signal=INT'
+            with (private/'postgres-private.log').open('xb') as output:
+                pg_guard=subprocess.Popen(command,cwd=stage,env=pg_env,preexec_fn=drop,
+                    stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,start_new_session=True)
+            pg_guard_fd=os.pidfd_open(pg_guard.pid);server_started=True;until=time.monotonic()+30
+            while True:
+                if pg_guard.poll() is not None:raise RuntimeError('Finite native PostgreSQL stopped during startup')
+                try:
+                    with psycopg.connect(state_dsn,connect_timeout=2):pass
+                    break
+                except psycopg.OperationalError:
+                    if time.monotonic()>until:raise
+                    time.sleep(.2)
+            report['native_pg_independent_timeout_seconds']=int(command[3])
+        else:pg(['pg_ctl','-D',stage/'data','-l',stage/'postgres-private.log','-o',f"-h '' -p 55484 -k {socket} -c shared_buffers=32MB -c max_connections=24",'-w','start']);server_started=True
         migrate_database(state_dsn)
         with psycopg.connect(state_dsn) as state:
             state.execute('INSERT INTO tenants(id,name) VALUES(%s,%s)',(tid,'Real model canary; isolated Agent control state'))
@@ -367,8 +393,10 @@ def main():
             'JSON_SCHEMA_ENABLED':'true' if any(c.get('planner_protocol')=='schema-v1' for c in selected_fixtures(args.fixture_set)) else 'false'}
         def spawn_api():
             verify_source();pins.check(full=True)
+            command=[sys.executable,'-m','agents','api','--executor-keys',str(private/'executors.json'),'--port','18170','--batch-url',args.batch_url]
+            if args.fixture_set=='retrieval-squad-v1':command=finite_command(command,datetime.now(timezone.utc))
             with (private/'api-private.log').open('ab') as output:
-                child=subprocess.Popen([sys.executable,'-m','agents','api','--executor-keys',str(private/'executors.json'),'--port','18170','--batch-url',args.batch_url],
+                child=subprocess.Popen(command,
                     cwd=source,env=api_env,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,start_new_session=True)
             fd=os.pidfd_open(child.pid);children.append((child,fd))
             until=time.monotonic()+30
@@ -397,6 +425,7 @@ def main():
         fault_restarted=False;deadline=time.monotonic()+1500
         with psycopg.connect(state_dsn,autocommit=True,row_factory=dict_row) as state:
             while time.monotonic()<deadline:
+                if pg_guard is not None and pg_guard.poll() is not None:raise RuntimeError('Finite native control database stopped')
                 rows=state.execute('SELECT id,status,model_calls,tool_calls,generated_tokens FROM bf_agents.runs ORDER BY id').fetchall()
                 report['checkpoint']={'at':datetime.now(timezone.utc).isoformat(),'terminal':sum(r['status'] in TERMINAL for r in rows),'runs':rows}
                 write(base/'report.json',report)
@@ -490,12 +519,27 @@ def main():
         for child,fd in children:
             if child.poll() is None:
                 with contextlib.suppress(ProcessLookupError):signal.pidfd_send_signal(fd,signal.SIGTERM)
-                try:child.wait(timeout=10)
-                except subprocess.TimeoutExpired:signal.pidfd_send_signal(fd,signal.SIGKILL);child.wait(timeout=10)
+                try:child.wait(timeout=25 if args.fixture_set=='retrieval-squad-v1' else 10)
+                except subprocess.TimeoutExpired:
+                    # Each child owns a new session. A timeout wrapper must not
+                    # be killed alone while leaving its private API behind.
+                    with contextlib.suppress(ProcessLookupError):os.killpg(child.pid,signal.SIGKILL)
+                    child.wait(timeout=10)
             os.close(fd)
         if server_started:
             try:pg(['pg_ctl','-D',stage/'data','-m','fast','-w','stop']);report['isolated_pg_stopped']=True
             except Exception:report['isolated_pg_stopped']=False
+        if pg_guard is not None:
+            if pg_guard.poll() is None:
+                with contextlib.suppress(ProcessLookupError):signal.pidfd_send_signal(pg_guard_fd,signal.SIGINT)
+                try:pg_guard.wait(timeout=20)
+                except subprocess.TimeoutExpired:
+                    with contextlib.suppress(ProcessLookupError):os.killpg(pg_guard.pid,signal.SIGKILL)
+                    pg_guard.wait(timeout=10);report['native_pg_forced_group_cleanup']=True
+            report['native_pg_timeout_exited']=pg_guard.poll() is not None
+            os.close(pg_guard_fd)
+        if args.fixture_set=='retrieval-squad-v1' and server_started and (not report.get('isolated_pg_stopped') or not report.get('native_pg_timeout_exited')):
+            report.update(passed=False,phase='cleanup_failed')
         if azure:azure.close()
         report['whole_controller_seconds']=time.monotonic()-start
         report['whole_pod_allocation_usd']=report['whole_controller_seconds']*16.10/3600

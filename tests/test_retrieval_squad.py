@@ -60,3 +60,14 @@ def test_real_qualification_freezes_grants_and_snapshot_but_never_adds_gold_to_r
     plan=q.plan(datetime(2026,10,26,3,tzinfo=timezone.utc),4,'retrieval-squad-v1')
     assert plan['max_new_tasks']==4 and plan['fault_reclaim_gate_seconds']==30
     with pytest.raises(ValueError):q.plan(datetime(2026,10,26,3,tzinfo=timezone.utc),3,'retrieval-squad-v1')
+
+
+def test_independent_api_and_cluster_lifetime_cannot_outlive_final_cleanup_margin():
+    command=['/fixed/python','-m','agents','api']
+    early=q.finite_command(command,datetime(2026,10,26,3,tzinfo=timezone.utc))
+    assert early[0]=='/usr/bin/timeout' and early[3]=='2100' and early[4:]==command
+    late=q.finite_command(command,datetime(2026,10,26,8,58,tzinfo=timezone.utc))
+    assert late[3]=='90'
+    with pytest.raises(ValueError):q.finite_command(command,datetime(2026,10,26,8,59,tzinfo=timezone.utc))
+    with pytest.raises(ValueError):q.finite_command(command,datetime(2026,10,26,3))
+    with pytest.raises(ValueError):q.finite_command(command,datetime(2026,10,26,3,tzinfo=timezone.utc),seconds=True)
