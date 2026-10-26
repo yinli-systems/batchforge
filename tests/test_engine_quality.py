@@ -123,3 +123,26 @@ def test_standalone_module_cannot_silently_start_inference_or_report_success():
     p=subprocess.run([sys.executable,'-m','scripts.engine_quality'],cwd=Path(__file__).resolve().parents[1],
         stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=10)
     assert p.returncode!=0 and b'qualified exclusive maintenance controller' in p.stderr
+
+
+async def test_absolute_http_bound_covers_a_response_that_keeps_streaming_chunks():
+    class Drip(httpx.AsyncByteStream):
+        async def __aiter__(self):
+            for _ in range(100):await asyncio.sleep(.005);yield b' '
+    async def handle(_):return httpx.Response(200,stream=Drip())
+    async with httpx.AsyncClient(base_url='http://127.0.0.1:8348',trust_env=False,transport=httpx.MockTransport(handle)) as c:
+        e=Evaluator(cases(),c,authority=lambda:True,emit=lambda _:None,private_response=lambda *_:None,runtime_fingerprint='fixture')
+        with pytest.raises(TimeoutError):await e.response_bytes('GET','/metrics',timeout=.02)
+
+
+async def test_absolute_inference_timeout_latches_unknown_outcome_without_retry(monkeypatch):
+    engine=Engine()
+    async with httpx.AsyncClient(base_url='http://127.0.0.1:8348',trust_env=False,transport=httpx.MockTransport(engine)) as c:
+        e=Evaluator(cases(64),c,authority=lambda:True,emit=lambda _:None,private_response=lambda *_:None,runtime_fingerprint='fixture')
+        original=e.json
+        async def timed(method,path,**kw):
+            if path=='/v1/chat/completions':raise TimeoutError('Synthetic post-dispatch timeout')
+            return await original(method,path,**kw)
+        monkeypatch.setattr(e,'json',timed);r=await e.run()
+    assert r['unknown_inference_outcomes']>0 and not r['delivery_passed'] and e.limiter.paused
+    assert not r['all_inference_usage_known'] and r['exact_match_percent'] is None

@@ -154,14 +154,22 @@ class Evaluator:
     def checkpoint(self):
         if self.authority() is not True:raise AuthorityLost('Exclusive authority not confirmed')
 
-    async def json(self,method,path,**kwargs):
+    async def response_bytes(self,method,path,**kwargs):
         self.checkpoint()
-        async with self.client.stream(method,path,follow_redirects=False,**kwargs) as response:
+        seconds=kwargs.get('timeout',120)
+        if type(seconds) not in (int,float) or not 0<seconds<=120:raise ValueError('Bounded absolute HTTP lifetime required')
+        # HTTPX's per-operation inactivity timer is not a total request bound:
+        # a peer can keep sending small chunks. The action has its own deadline.
+        async with asyncio.timeout(seconds),self.client.stream(method,path,follow_redirects=False,**kwargs) as response:
             response.raise_for_status();raw=bytearray()
             async for part in response.aiter_bytes():
                 raw.extend(part)
                 if len(raw)>2*1024**2:raise ValueError('Engine response exceeds bound')
-        return protocol_json(raw),bytes(raw)
+        return bytes(raw)
+
+    async def json(self,method,path,**kwargs):
+        raw=await self.response_bytes(method,path,**kwargs)
+        return protocol_json(raw),raw
 
     async def preflight(self):
         version,_=await self.json('GET','/version',timeout=5)
@@ -170,8 +178,8 @@ class Evaluator:
         if any(not isinstance(m,dict) for m in models['data']):raise ValueError('Model catalogue differs')
         ids=[m.get('id') for m in models['data']]
         if ids!=[MODEL] or models['data'][0].get('max_model_len')!=CONTEXT:raise ValueError('Qualified480B context/model required')
-        r=await self.client.get('/metrics',timeout=5,follow_redirects=False);r.raise_for_status()
-        if len(r.content)>2*1024**2 or not engine_quiescent(r.text):raise ValueError('Exclusive engine must start quiescent')
+        raw=await self.response_bytes('GET','/metrics',timeout=5)
+        if not engine_quiescent(raw.decode()):raise ValueError('Exclusive engine must start quiescent')
 
     async def invoke(self,case,offered):
         request=body(case);began=time.monotonic();dispatched=False;record={'id':case.id}
@@ -198,7 +206,7 @@ class Evaluator:
             self.halted=True;self.limiter.pause()
             record.update(status='outcome_unknown' if dispatched else 'not_dispatched',error_type='CancelledError')
             raise
-        except (httpx.HTTPError,ValueError,TypeError,KeyError,AdmissionPaused,AuthorityLost,OSError) as exc:
+        except (httpx.HTTPError,ValueError,TypeError,KeyError,AdmissionPaused,AuthorityLost,OSError,TimeoutError) as exc:
             self.halted=True;self.limiter.pause()
             record.update(status='outcome_unknown' if dispatched else 'not_dispatched',error_type=type(exc).__name__)
         finally:
