@@ -6,7 +6,7 @@ authority to add nodes, change grants, move tenants or expand a total budget.
 """
 from __future__ import annotations
 import copy,secrets
-from pydantic import Field,model_validator
+from pydantic import Field,model_validator,model_serializer
 from psycopg.types.json import Jsonb
 from .contracts import Strict,Policy,canonical,digest,protocol_json
 from .store import AgentError,TERMINAL,one,view
@@ -25,8 +25,15 @@ class Node(Strict):
     max_generated_tokens:int=Field(default=2048,ge=64,le=32768)
     answer_format:str=Field(default='text',pattern=r'^(text|identifier|number|retrieved_span)$')
     require_citations:bool=False
+    inherit_sources:bool=False
     planner_protocol:str=Field(default='json-v1',pattern=r'^(json-v1|schema-v1)$')
     tool_sequence:list[str]=Field(default_factory=list,max_length=8)
+
+    @model_serializer(mode='wrap')
+    def serialize(self,handler):
+        value=handler(self)
+        if not self.inherit_sources:value.pop('inherit_sources')
+        return value
 
     def policy(self,spec,*,parent='',node=''):
         return Policy(allowed_tools=tuple(self.allowed_tools),memory_namespace=spec.memory_namespace,
@@ -34,7 +41,8 @@ class Node(Strict):
             max_generated_tokens=self.max_generated_tokens,max_wall_seconds=spec.max_wall_seconds,
             answer_format=self.answer_format,require_citations=self.require_citations,
             planner_protocol=self.planner_protocol,tool_sequence=tuple(self.tool_sequence),
-            retrieval_snapshot=spec.retrieval_snapshot if 'retrieval.search' in self.allowed_tools else '',
+            retrieval_snapshot=spec.retrieval_snapshot if 'retrieval.search' in self.allowed_tools or self.inherit_sources else '',
+            inherit_sources=self.inherit_sources,
             parent_workflow=parent,parent_node=node)
 
 
@@ -82,7 +90,8 @@ class Workflow(Strict):
         for output in self.outputs:visit(output)
         if visited!=nodes.keys():raise ValueError('Every node must contribute to an output')
         for n in self.nodes:
-            n.policy(self)
+            n.policy(self,parent='agrun_'+'0'*32,node=n.id)
+            if n.inherit_sources and not n.depends_on:raise ValueError('Source inheritance requires declared dependencies')
             if not set(n.allowed_tools)<=set(self.allowed_tools):raise ValueError('Child grants exceed workflow grants')
             if '\x00' in n.goal:raise ValueError('JSONB-safe goal required')
         for budget in ('max_model_calls','max_tool_calls','max_generated_tokens'):

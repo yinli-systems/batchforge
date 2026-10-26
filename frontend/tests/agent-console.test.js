@@ -179,3 +179,22 @@ test('typed abstention stays distinct from a completed answer in list and detail
  assert.equal(displayStatus({status:'completed',result:{type:'final'}}),'completed');
  assert.equal(displayStatus({status:'running',result:{type:'abstain'}}),'running');
 });
+
+test('source verification stops before follow-up requests when workspace or selection changes',async()=>{
+ for(const changed of ['workspace','selection']){
+  let c,calls=0;
+  c=await client(async url=>{calls++;if(url.endsWith('agent-capabilities'))return response({...caps(),source_lineage_enabled:true});
+   if(changed==='workspace')c.setKey('new-workspace');else c.selection++;
+   return response({});});
+  c.detail={run:{id:rid,policy:{inherit_sources:true}}};await assert.rejects(c.sources());
+  assert.equal(calls,2);assert.equal(c.sourceVerified,null);
+ }
+});
+
+test('workflow-child cancellation keeps its own terminal result commitment',async()=>{
+ const {verifyHistory,canonical,sha256}=await modulePromise,f=await fixture(true);
+ f.final.kind='workflow.cancelled';f.final.event_hash=await sha256(canonical({protocol:'batchforge.agent-event.v1',tenant_id:'tenant-A',run_id:rid,revision:1,
+  kind:f.final.kind,payload:f.final.payload,previous_hash:f.created.event_hash}),webcrypto);
+ f.snapshot.run.event_hash=f.final.event_hash;
+ const result=await verifyHistory(f.snapshot,'tenant-A',f.page,webcrypto);assert.ok(result.resultVerified);
+});

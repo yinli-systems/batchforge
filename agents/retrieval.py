@@ -91,6 +91,7 @@ class Snapshot:
                 number=len(chunks);chunks.append(MappingProxyType(value))
                 for term,count in counts.items():postings[term][number]=count
         self._chunks=tuple(chunks);self._lengths=tuple(lengths)
+        self._citations=MappingProxyType({c['citation']:c for c in self._chunks})
         self._postings=MappingProxyType({k:MappingProxyType(v) for k,v in postings.items()})
         self._average=sum(lengths)/len(lengths) or 1
         self._manifest={'protocol':INDEX,'id':self.id,'corpus_sha256':corpus_sha,'parameters':copy.deepcopy(PARAMETERS),
@@ -121,6 +122,11 @@ class Snapshot:
             result['matches'].append(item)
         result['truncated']=result['truncated'] or len(ranked)>len(result['matches'])
         return result
+
+    def verify_match(self,match):
+        if not isinstance(match,dict) or self._citations.get(match.get('citation'))!={k:v for k,v in match.items() if k!='score'}:
+            raise ValueError('Source chunk differs from pinned corpus')
+        return True
 
     def verify(self,result):
         if not isinstance(result,dict) or result.get('snapshot_id')!=self.id:raise ValueError('Wrong retrieval snapshot')
@@ -187,11 +193,18 @@ def evidence(observations,registry,tenant,policy):
     return matches,queries
 
 
-def quote_evidence(decision,observations,registry,tenant,policy):
+def quote_evidence(decision,observations,registry,tenant,policy,*,inherited_matches=None):
     if policy.answer_format!='retrieved_span':raise ValueError('Explicit extractive answer contract required')
     policy.validate_final(decision)
     matches,queries=evidence(observations,registry,tenant,policy)
-    if not queries:raise OutputContractError('retrieval_required')
+    if inherited_matches:
+        if not policy.inherit_sources:raise ValueError('Explicit source inheritance required')
+        snapshot=registry.require(tenant,policy.memory_namespace,policy.retrieval_snapshot)
+        for cite,match in inherited_matches.items():
+            snapshot.verify_match(match)
+            if cite!=match['citation'] or cite in matches and matches[cite]!=match:raise ValueError('Inherited source identity differs')
+            matches[cite]=match
+    if not queries and not inherited_matches:raise OutputContractError('retrieval_required')
     if not set(decision.citations)<=matches.keys():raise OutputContractError('retrieved_span')
     quotes=[];raw=decision.answer.encode()
     for citation in decision.citations:

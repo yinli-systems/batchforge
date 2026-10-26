@@ -107,6 +107,7 @@ function renderDetail(){
     if(!confirm('Cancel this workflow? Already accepted model work can still finish and remains metered.'))return;
     const result=await client.cancel();notice('Run is '+result.status+'. Accepted model work remains in the Batch ledger.');await openRun(run.id);await refreshList();
   },'danger'));
+  if(run.policy.inherit_sources&&client.caps?.source_lineage_enabled)actions.append(button('Verify upstream sources',async()=>{await client.sources();renderDetail();}));
   const verified=client.verified;
   actions.append(element('span',verified?(verified.stateVerified&&verified.resultVerified?'History and snapshot verified':'History verified; snapshot has no state commitment'):'History not verified','chip'+(verified?' good':'')));
   const metrics=element('div',undefined,'metrics');
@@ -141,6 +142,7 @@ function renderDetail(){
       element('p','Committed receipt: '+child.receipt_sha256,'copy-note'));list.append(li);
   }
   if(!(run.state.receipts||[]).length)list.append(element('li','No delivered child receipts yet.','muted'));children.append(list);columns.append(tools,children);panel.append(columns);
+  if(client.sourceVerified)panel.append(element('h3','Verified upstream source commits'),element('p',client.sourceVerified.scope,'copy-note'),element('pre',JSON.stringify(client.sourceVerified.document,null,2)));
   if(run.state.output_rejections?.length)panel.append(element('h3','Rejected model decisions'),element('pre',JSON.stringify(run.state.output_rejections,null,2)));
   if(verified){
     panel.append(element('h3','Verified event history'),element('p',verified.scope,'muted'));

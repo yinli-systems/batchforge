@@ -49,11 +49,21 @@ def fixtures():
     return values
 
 
-def plan(now,headroom):
+def selected_fixtures(name='baseline'):
+    if name=='baseline':return fixtures()
+    if name=='source-lineage-v1':
+        from ops.source_workflow_fixtures import fixtures as sources
+        return sources()
+    raise ValueError('Unknown DAG fixture set')
+
+
+def plan(now,headroom,fixture_set='baseline'):
     if now.tzinfo is None or now>=datetime(2026,10,26,8,20,tzinfo=timezone.utc):raise ValueError('Insufficient completion and recovery margin')
-    maximum=sum(sum(n['max_model_calls'] for n in c['spec']['nodes']) for c in fixtures())
+    cases=selected_fixtures(fixture_set)
+    maximum=sum(sum(n['max_model_calls'] for n in c['spec']['nodes']) for c in cases)
     if type(headroom) is not int or headroom<maximum:raise ValueError('Insufficient original task quota')
-    return {'graphs':2,'agent_nodes':6,'max_child_tasks':maximum,'fixture_sha256':digest(fixtures()),
+    return {'graphs':len(cases),'agent_nodes':sum(len(c['spec']['nodes']) for c in cases),'max_child_tasks':maximum,'fixture_sha256':digest(cases),
+        'fixture_set':fixture_set,
         'fault':'Workflow coordinator exits after committed dependency activation before returning its ACK',
         'control_state':'Native Unix-only PG17 on existing container disk, not Azure or Pod-loss durable',
         'model_tasks':'Existing four-H100 480B-total/35B-active MoE, Batch API, Azure ledger and S3',
@@ -86,7 +96,8 @@ async def worker(config_path,role):
                 'options':'-c default_transaction_read_only=on -c statement_timeout=5000 -c lock_timeout=2000'})
             await lookup.open(wait=True)
             adapter=BatchAdapter(lookup,base_url=qualification_endpoint(cfg['batch_url']),tenant_keys={cfg['tenant']:cfg['api_key']})
-            coordinator=Coordinator(store,adapter,owner='dag-agent-'+os.urandom(8).hex(),tenants=[cfg['tenant']])
+            from agents.retrieval import Registry
+            coordinator=Coordinator(store,adapter,owner='dag-agent-'+os.urandom(8).hex(),tenants=[cfg['tenant']],retrieval=Registry(cfg.get('retrieval_catalogue','')))
         else:
             class LostAck(WorkflowStore):
                 async def reconcile(self,run):
@@ -115,16 +126,17 @@ async def worker(config_path,role):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path);p.add_argument('--apply',action='store_true')
-    p.add_argument('--worker-config',type=Path);p.add_argument('--role',choices=['agent','workflow'],default='agent');args=p.parse_args()
+    p.add_argument('--fixture-set',choices=['baseline','source-lineage-v1'],default='baseline');p.add_argument('--worker-config',type=Path);p.add_argument('--role',choices=['agent','workflow'],default='agent');args=p.parse_args()
     if args.worker_config:return asyncio.run(worker(args.worker_config,args.role))
-    if not args.apply:print(json.dumps(plan(datetime.now(timezone.utc),24),indent=2));return
+    if not args.apply:print(json.dumps(plan(datetime.now(timezone.utc),32,args.fixture_set),indent=2));return
     def interrupted(_signum,_frame):raise InterruptedError('Finite DAG qualification interrupted')
     signal.signal(signal.SIGTERM,interrupted);signal.signal(signal.SIGINT,interrupted)
     root=Path('/root/batchforge-runtime/app');source=Path.cwd();base=args.run.resolve() if args.run else None
     if not base or base.parent!=root.parent or not base.name.startswith('soak480-agent-runtime-dag-') or base.exists():
         raise ValueError('New owned qualification directory required')
     os.umask(0o077);base.mkdir(mode=0o700);private=base/'.runtime';private.mkdir(mode=0o700)
-    start=time.monotonic();children=[];azure=None;pg_started=False
+    start=time.monotonic();children=[];azure=None;pg_started=False;pg_guards=[]
+    cases=selected_fixtures(args.fixture_set);expected_rows=sum(1+len(c['spec']['nodes']) for c in cases)
     report={'phase':'prepared','passed':False,'gpu_inference':True,'azure_agent_schema_modified':False,
         'controller_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'events':[]}
     def event(phase):
@@ -135,7 +147,27 @@ def main():
     def drop():os.setgroups([]);os.setgid(account.pw_gid);os.setuid(account.pw_uid)
     def pg(args):subprocess.run([str(binary/args[0]),*map(str,args[1:])],cwd=stage,env=pg_env,preexec_fn=drop,
         check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=60)
+    def start_pg():
+        from ops.qualify_agent_runtime import finite_command
+        command=finite_command([str(binary/'postgres'),'-D',str(stage/'data'),'-h','','-p','55485','-k',str(sock),
+            '-c','shared_buffers=32MB','-c','max_connections=32'],datetime.now(timezone.utc))
+        command[1]='--signal=INT'
+        with (private/'postgres-private.log').open('ab') as output:
+            child=subprocess.Popen(command,cwd=stage,env=pg_env,preexec_fn=drop,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,start_new_session=True)
+        fd=os.pidfd_open(child.pid);pg_guards.append((child,fd));until=time.monotonic()+30
+        while True:
+            if child.poll() is not None:raise RuntimeError('Independent native PG timeout stopped')
+            try:
+                with psycopg.connect('postgresql://dag_canary@/postgres?host='+str(sock)+'&port=55485',connect_timeout=2):pass
+                break
+            except psycopg.OperationalError:
+                if time.monotonic()>until:raise
+                time.sleep(.2)
+        report['native_pg_independent_timeout_seconds']=int(command[3])
     def spawn(command,env=None):
+        if len(command)>3 and command[1:4]==['-m','agents','api']:
+            from ops.qualify_agent_runtime import finite_command
+            command=finite_command(command,datetime.now(timezone.utc))
         with (private/'process-private.log').open('ab') as f:
             child=subprocess.Popen(command,cwd=source,env=env,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
         fd=os.pidfd_open(child.pid);children.append((child,fd));return child,fd
@@ -172,7 +204,7 @@ def main():
         tenant=azure.execute('SELECT tenant_id FROM api_keys WHERE key_hash=%s AND NOT revoked',(hashlib.sha256(key.encode()).hexdigest(),)).fetchone()['tenant_id']
         quota=azure.execute('''SELECT l.max_retained_tasks-u.retained_tasks AS headroom,l.max_payload_bytes-u.charged_payload_bytes AS bytes,
             l.max_response_bytes FROM tenant_retention_limits l JOIN tenant_retention_usage u USING(tenant_id) WHERE tenant_id=%s''',(tenant,)).fetchone()
-        report['plan']=plan(datetime.now(timezone.utc),int(quota['headroom']));maximum=report['plan']['max_child_tasks']
+        report['plan']=plan(datetime.now(timezone.utc),int(quota['headroom']),args.fixture_set);maximum=report['plan']['max_child_tasks']
         report['headroom_before']=int(quota['headroom'])
         if quota['bytes']<maximum*(quota['max_response_bytes']+32768):raise RuntimeError('Payload reservation headroom insufficient')
         auxiliary=azure.execute('''SELECT l.resource,l.max_rows-u.rows AS headroom FROM tenant_auxiliary_limits l
@@ -180,6 +212,13 @@ def main():
         required={'input_files':maximum,'idempotency':maximum,'blob_generations':maximum,'archive_runs':maximum,
                   'archive_chunks':maximum*2,'upload_reservations':4,'input_read_leases':4,'result_read_leases':4}
         if any(next((r['headroom'] for r in auxiliary if r['resource']==name),-1)<n for name,n in required.items()):raise RuntimeError('Auxiliary quota insufficient')
+        retrieval_catalogue=''
+        if args.fixture_set=='source-lineage-v1':
+            from ops.retrieval_squad import inputs
+            from ops.package_retrieval_corpus import package
+            raw=inputs()[0];(private/'corpus-source.json').write_bytes(raw)
+            prepared=package(private/'corpus-source.json',private/'retrieval-release',tenant=tenant,namespace='lineage-canary')
+            retrieval_catalogue=prepared['catalogue'];write(base/'retrieval-index.json',prepared['snapshot'])
         if azure.execute("SELECT count(*) n FROM tasks WHERE status IN ('pending','running')").fetchone()['n']:raise RuntimeError('Existing queue not empty')
         report['guard_scope']='Existing guard unmodified; unknown campaign lock waits, no automatic recovery coverage claimed'
         for port in (18170,18172):
@@ -192,28 +231,28 @@ def main():
         stage.mkdir(mode=0o700);os.chown(stage,account.pw_uid,account.pw_gid)
         sock=stage/'socket';sock.mkdir(mode=0o700);os.chown(sock,account.pw_uid,account.pw_gid)
         pg(['initdb','-D',stage/'data','-L',toolchain/'usr/share/postgresql/17','-U','dag_canary','--auth-local=trust','--auth-host=reject','--no-locale','--encoding=UTF8'])
-        pg(['pg_ctl','-D',stage/'data','-l',stage/'postgres-private.log','-o',f"-h '' -p 55485 -k {sock} -c shared_buffers=32MB -c max_connections=32",'-w','start']);pg_started=True
+        start_pg();pg_started=True
         dsn='postgresql://dag_canary@/postgres?host='+str(sock)+'&port=55485';migrate_database(dsn)
         with psycopg.connect(dsn) as db:
             db.execute('INSERT INTO tenants(id,name) VALUES(%s,%s)',(tenant,'Isolated real DAG qualification'))
             db.execute('INSERT INTO api_keys(key_hash,tenant_id) VALUES(%s,%s)',(hashlib.sha256(key.encode()).hexdigest(),tenant))
         migrate_agents(dsn);write(private/'executors.json',{tenant:key})
         agent_env={'PATH':'/usr/bin:/bin','HOME':'/root','LANG':'C.UTF-8','PYTHONDONTWRITEBYTECODE':'1',
-            'DATABASE_URL':dsn,'MODEL_NAME':MODEL,'JSON_SCHEMA_ENABLED':'true','AGENT_WORKFLOWS_ENABLED':'true'}
+            'DATABASE_URL':dsn,'MODEL_NAME':MODEL,'JSON_SCHEMA_ENABLED':'true','AGENT_WORKFLOWS_ENABLED':'true','AGENT_RETRIEVAL_CATALOGUE':str(retrieval_catalogue)}
         def spawn_agent_api():
             check();child,fd=spawn([sys.executable,'-m','agents','api','--executor-keys',str(private/'executors.json'),
                 '--port','18170','--batch-url','http://127.0.0.1:18172'],agent_env);ready(18170,child);return child,fd
         agent_api,agent_fd=spawn_agent_api();runs=[]
         with httpx.Client(base_url='http://127.0.0.1:18170',headers={'Authorization':'Bearer '+key},trust_env=False,timeout=10) as c:
-            for case in fixtures():
-                c.put('/v1/agent-memory/dag-canary/'+case['key'],json={'text':case['memory'],'expected_version':0}).raise_for_status()
+            for case in cases:
+                if case.get('key'):c.put('/v1/agent-memory/'+case['spec']['memory_namespace']+'/'+case['key'],json={'text':case['memory'],'expected_version':0}).raise_for_status()
                 h={'Idempotency-Key':base.name+'.'+case['id']}
                 r=c.post('/v1/agent-workflows',headers=h,json=case['spec']);r.raise_for_status();run=r.json()
                 replay=c.post('/v1/agent-workflows',headers=h,json=case['spec']);replay.raise_for_status()
                 if replay.json()['id']!=run['id'] or replay.json()['state']!=run['state']:raise RuntimeError('Admission replay changed graph')
                 runs.append({'case_id':case['id'],'run_id':run['id'],'nodes':run['state']['nodes']})
         report['runs']=runs
-        write(private/'config.json',{'state_dsn':dsn,'azure_dsn':env['DATABASE_URL'],'tenant':tenant,'api_key':key,'batch_url':'http://127.0.0.1:18172'})
+        write(private/'config.json',{'state_dsn':dsn,'azure_dsn':env['DATABASE_URL'],'tenant':tenant,'api_key':key,'batch_url':'http://127.0.0.1:18172','retrieval_catalogue':str(retrieval_catalogue)})
         def spawn_worker(role):
             check();return spawn([sys.executable,'-m','ops.qualify_agent_dag','--worker-config',str(private/'config.json'),'--role',role])
         control,_=spawn_worker('workflow');agents=[spawn_worker('agent')[0] for _ in range(2)]
@@ -234,7 +273,7 @@ def main():
                     report['gpu_samples'].append(sample);sample_at=time.monotonic()+5
                 report['checkpoint']={'terminal':sum(r['status'] in TERMINAL for r in rows),'rows':len(rows),'at':datetime.now(timezone.utc).isoformat()}
                 write(base/'report.json',report)
-                if len(rows)==8 and all(r['status'] in TERMINAL for r in rows):break
+                if len(rows)==expected_rows and all(r['status'] in TERMINAL for r in rows):break
                 time.sleep(1)
             else:raise RuntimeError('DAG completion deadline')
             raw=db.execute('SELECT * FROM bf_agents.runs ORDER BY id').fetchall()
@@ -243,17 +282,39 @@ def main():
         for child,fd in list(children):
             if child is not api and child is not agent_api:stop(child,fd)
         indexed={r['id']:r for r in raw};verdicts=[]
-        for run,case in zip(runs,fixtures()):
+        for run,case in zip(runs,cases):
             parent=indexed[run['run_id']];nodes={nid:indexed[v['run_id']] for nid,v in run['nodes'].items()}
+            grade_fn=grade
+            if args.fixture_set=='source-lineage-v1':
+                from ops.source_workflow_fixtures import grade as grade_fn
             checks={'parent_completed':parent['status']=='completed','all_nodes_completed':all(n['status']=='completed' for n in nodes.values()),
-                **grade(case,nodes),
+                **grade_fn(case,nodes),
                 'child_set_unchanged':parent['state']['nodes'].keys()==run['nodes'].keys() and all(parent['state']['nodes'][nid]['run_id']==n['id'] for nid,n in nodes.items())}
-            join=nodes['join'];inputs=join['state'].get('workflow_inputs',[])
-            checks['dependency_commits_bound']=len(inputs)==2 and all(i['result_sha256']==digest(nodes[i['node']]['result']) and i['event_head_sha256']==nodes[i['node']]['event_hash'] for i in inputs)
-            activation=next((e for e in events if e['run_id']==join['id'] and e['kind']=='workflow.inputs_ready'),None)
-            checks['join_after_both_complete']=activation is not None and all(activation['created_at']>=nodes[n]['updated_at'] for n in ('left','right'))
-            intervals=[(next((e['created_at'] for e in events if e['run_id']==nodes[n]['id'] and e['kind']=='model.intent'),None),nodes[n]['updated_at']) for n in ('left','right')]
-            checks['root_intervals_overlap']=all(x[0] is not None for x in intervals) and max(x[0] for x in intervals)<min(x[1] for x in intervals)
+            if args.fixture_set=='source-lineage-v1':
+                from agents.provenance import resolve
+                from agents.retrieval import Registry
+                async def source_checks():
+                    pool=AsyncConnectionPool(dsn,min_size=1,max_size=2,open=False,kwargs={'autocommit':True,'row_factory':dict_row});await pool.open(wait=True)
+                    try:
+                        store=AgentStore(pool);provider=Registry(retrieval_catalogue);proofs=[]
+                        for nid,r in nodes.items():
+                            if not r['policy'].get('inherit_sources'):continue
+                            proof=await resolve(store,r,provider)
+                            filtered={**proof,'sources':[s for s in proof['sources'] if s['citation'] in (r['result'] or {}).get('citations',[])]}
+                            if filtered!=(r['result'] or {}).get('dependency_evidence'):raise RuntimeError('Source proof drift')
+                            proofs.append({'node':nid,'run_id':r['id'],'source_sha256':digest(proof),'sources':len(proof['sources'])})
+                        return proofs
+                    finally:await pool.close()
+                if checks['all_nodes_completed']:
+                    checked=asyncio.run(source_checks());checks['source_commits_reverified']=len(checked)==2
+                else:checks['source_commits_reverified']=False
+            else:
+                join=nodes['join'];inputs=join['state'].get('workflow_inputs',[])
+                checks['dependency_commits_bound']=len(inputs)==2 and all(i['result_sha256']==digest(nodes[i['node']]['result']) and i['event_head_sha256']==nodes[i['node']]['event_hash'] for i in inputs)
+                activation=next((e for e in events if e['run_id']==join['id'] and e['kind']=='workflow.inputs_ready'),None)
+                checks['join_after_both_complete']=activation is not None and all(activation['created_at']>=nodes[n]['updated_at'] for n in ('left','right'))
+                intervals=[(next((e['created_at'] for e in events if e['run_id']==nodes[n]['id'] and e['kind']=='model.intent'),None),nodes[n]['updated_at']) for n in ('left','right')]
+                checks['root_intervals_overlap']=all(x[0] is not None for x in intervals) and max(x[0] for x in intervals)<min(x[1] for x in intervals)
             checks['usage_sum_matches']=parent['result'] is not None and parent['result'].get('usage')=={k:sum(n[k] for n in nodes.values()) for k in ('model_calls','tool_calls','generated_tokens')}
             verdicts.append({'case_id':case['id'],'run_id':parent['id'],'checks':checks,'passed':all(checks.values())})
         report['verdicts']=verdicts
@@ -261,7 +322,7 @@ def main():
         with httpx.Client(base_url='http://127.0.0.1:18170',headers={'Authorization':'Bearer '+key},trust_env=False,timeout=10) as c:
             heads=[verify_event_pages(c,tenant,r['id']) for r in raw]
         stop(agent_api,agent_fd);pg(['pg_ctl','-D',stage/'data','-m','fast','-w','stop']);pg_started=False
-        pg(['pg_ctl','-D',stage/'data','-l',stage/'postgres-private.log','-o',f"-h '' -p 55485 -k {sock} -c shared_buffers=32MB -c max_connections=32",'-w','start']);pg_started=True
+        start_pg();pg_started=True
         agent_api,agent_fd=spawn_agent_api()
         with httpx.Client(base_url='http://127.0.0.1:18170',headers={'Authorization':'Bearer '+key},trust_env=False,timeout=10) as c:
             after=[verify_event_pages(c,tenant,r['id']) for r in raw]
@@ -270,6 +331,14 @@ def main():
                 if digest(value.json()['state'])!=digest(r['state']) or digest(value.json()['result'])!=digest(r['result']):raise RuntimeError('Restart changed state or result')
         if heads!=after:raise RuntimeError('Restart changed event history')
         report.update(agent_event_heads=heads,native_postgres_and_api_restart_readback=True)
+        if args.fixture_set=='source-lineage-v1':
+            event('source_client_readback')
+            write(base/'report.json',report)
+            with (private/'client-private.log').open('xb') as output:
+                result=subprocess.run(['/tmp/bf-ci-20261025-v19/runner/externals/node24/bin/node',str(source/'ops/verify_live_workflow_sources.mjs'),str(source),str(base),str(base/'readback.json')],
+                    stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,timeout=120)
+            if result.returncode:raise RuntimeError('Actual source client did not verify')
+            report['actual_client_readback']=json.loads((base/'readback.json').read_bytes())
         bids=list(dict.fromkeys([p['batch_id'] for r in raw for p in r['state'].get('receipts',[])]+
             [r['state']['batch_id'] for r in raw if r['state'].get('batch_id')]))
         event('archive_readback');until=time.monotonic()+240
@@ -313,6 +382,16 @@ def main():
         if pg_started:
             try:pg(['pg_ctl','-D',stage/'data','-m','fast','-w','stop']);report['native_pg_stopped']=True
             except Exception:report['native_pg_stopped']=False
+        for guard,fd in pg_guards:
+            if guard.poll() is None:
+                with contextlib.suppress(ProcessLookupError):signal.pidfd_send_signal(fd,signal.SIGINT)
+                try:guard.wait(timeout=20)
+                except subprocess.TimeoutExpired:
+                    with contextlib.suppress(ProcessLookupError):signal.pidfd_send_signal(fd,signal.SIGKILL)
+                    guard.wait(timeout=10)
+            os.close(fd)
+        report['native_pg_timeout_exited']=all(c.poll() is not None for c,_ in pg_guards)
+        if pg_guards:report['native_pg_stopped']=not (stage/'data/postmaster.pid').exists()
         if azure:azure.close()
         report['all_child_processes_stopped']=all(c.poll() is not None for c,_ in children)
         report['private_ports_closed']=True
@@ -325,7 +404,7 @@ def main():
             report['primary_ready_after_cleanup']=all(httpx.get(f'http://127.0.0.1:{port}/readyz',trust_env=False,timeout=3).status_code==200 for port in (8080,9105))
         except Exception:report['primary_ready_after_cleanup']=False
         report['cleanup_errors']=cleanup
-        if cleanup or not report['all_child_processes_stopped'] or not report['private_ports_closed'] or not report['primary_ready_after_cleanup']:
+        if cleanup or not report['native_pg_timeout_exited'] or not report.get('native_pg_stopped') or not report['all_child_processes_stopped'] or not report['private_ports_closed'] or not report['primary_ready_after_cleanup']:
             report.update(passed=False,phase_before_cleanup_failure=report['phase'],phase='cleanup_failed')
         report['whole_controller_seconds']=time.monotonic()-start
         report['whole_pod_allocation_usd']=report['whole_controller_seconds']*16.10/3600

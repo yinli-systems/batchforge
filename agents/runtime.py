@@ -79,8 +79,16 @@ class Coordinator:
         state.setdefault('output_rejections',[]).append({'step':state['step'],'code':code,
             'content_sha256':digest(state['model_content']),'receipt_sha256':state['receipts'][-1]['receipt_sha256']})
         state['output_feedback']=code;state['phase']='plan'
-        for key in ('request','batch_id','file_id','upload_attempted','model_content','delivery_invalid'):state.pop(key,None)
+        for key in ('request','batch_id','file_id','upload_attempted','model_content','delivery_invalid','batch_attempted','authorization_lost'):state.pop(key,None)
         return await self.change(run,'output_rejected',kind='output.rejected',state=state)
+
+    async def dependency_sources(self,run,*,planned=False):
+        if not run['policy'].get('inherit_sources'):return None
+        from .provenance import resolve
+        proof=await resolve(self.store,run,self.retrieval)
+        if planned and run['state'].get('dependency_evidence')!=proof:
+            raise AgentError(409,'workflow_source_provenance_invalid')
+        return proof
 
     async def advance(self,run):
         checkpoint()
@@ -101,10 +109,15 @@ class Coordinator:
                 from .retrieval import evidence
                 _,queries=evidence(observations,self.retrieval,run['tenant_id'],policy)
                 retrieval_observed=bool(queries)
+            dependency=await self.dependency_sources(run)
+            from .provenance import mapping,retrieval_matches
+            inherited=mapping(dependency)
+            retrieval_observed=retrieval_observed or bool(retrieval_matches(dependency))
+            if dependency is not None:state['dependency_evidence']=dependency
             from .structured import response_format
-            body={'model':run['model'],'messages':planner_messages(run['goal'],policy,SPECS,observations,output_feedback=state.get('output_feedback'),workflow_inputs=state.get('workflow_inputs')),
+            body={'model':run['model'],'messages':planner_messages(run['goal'],policy,SPECS,observations,output_feedback=state.get('output_feedback'),workflow_inputs=state.get('workflow_inputs'),workflow_sources=dependency),
                   'max_tokens':min(512,remaining),'temperature':0,
-                  'response_format':response_format(policy,observed_citations=citations(observations),remaining_tools=run['max_tool_calls']-run['tool_calls'],executed_tools=[o['tool'] for o in observations],retrieval_observed=retrieval_observed)}
+                  'response_format':response_format(policy,observed_citations=citations(observations)|inherited.keys(),remaining_tools=run['max_tool_calls']-run['tool_calls'],executed_tools=[o['tool'] for o in observations],retrieval_observed=retrieval_observed)}
             state.update(phase='input_intent',step=step+1,request=body,
                          request_sha256=digest(body),child_key=f"agent.{run['id']}.{step+1}")
             return await self.change(run,'intent',kind='model.intent',state=state)
@@ -116,6 +129,7 @@ class Coordinator:
             await self.change(run,'upload_intent',kind='artifact.upload_intent',state=state)
             return  # Separate durable claim performs reconciliation first.
         if phase=='input_uncertain':
+            await self.dependency_sources(run,planned=True)
             checkpoint();fid=await self.batch.find_input(run,state)
             if fid:
                 state.update(phase='batch_intent',file_id=fid)
@@ -134,11 +148,31 @@ class Coordinator:
             state.update(phase='batch_intent',file_id=fid)
             return await self.change(run,'input_ready',kind='artifact.ready',state=state)
         if phase=='batch_intent':
+            await self.dependency_sources(run,planned=True)
             # Charge a reserved model call before the side effect. BatchForge's
             # stable key owns accepted-task uniqueness, including lost ACKs.
             state['phase']='batch_uncertain'
             return await self.change(run,'model_reserve',kind='model.reserved',state=state,model_calls=1)
         if phase=='batch_uncertain':
+            if policy.inherit_sources:
+                lost=None
+                try:await self.dependency_sources(run,planned=True)
+                except (AgentError,PermissionError) as exc:lost='workflow_source_authorization_lost'
+                checkpoint();existing=await self.batch.find_batch(run,state)
+                if existing:
+                    state.update(phase='waiting_model',batch_id=existing)
+                    if lost:state['authorization_lost']=lost
+                    return await self.change(run,'batch_reconciled',kind='model.reconciled',state=state,status='waiting_model')
+                if lost:
+                    if state.get('batch_attempted'):
+                        return await self.change(run,'batch_uncertain_after_revocation',kind='model.unresolved',state=state,status='waiting_approval',
+                            result={'code':'batch_acceptance_unresolved_after_revocation','action':'Inspect the original stable Batch key; no new POST is authorized'})
+                    return await self.fail(run,lost)
+                if not state.get('batch_attempted'):
+                    state['batch_attempted']=True
+                    value=await self.store.transition(run['tenant_id'],run['id'],run['lease_token'],run['revision'],
+                        f"batch.attempt.{step}",kind='model.post_started',state=state)
+                    run.update(value)
             checkpoint();bid=await self.batch.create(run,state)
             state.update(phase='waiting_model',batch_id=bid)
             return await self.change(run,'batch_ready',kind='model.enqueued',state=state,status='waiting_model')
@@ -159,6 +193,10 @@ class Coordinator:
             state['delivery_invalid']=delivery.get('invalid_code')
             return await self.change(run,'decision',kind='model.delivered',state=state,generated_tokens=usage['completion_tokens'])
         if phase=='decision':
+            if state.get('authorization_lost'):return await self.fail(run,state['authorization_lost'])
+            dependency=await self.dependency_sources(run,planned=True)
+            from .provenance import mapping,retrieval_matches,envelope
+            inherited=mapping(dependency)
             if state.get('delivery_invalid'):
                 return await self.fail(run,'model_output_truncated' if state['delivery_invalid']=='model_output_truncated' else 'model_delivery_invalid')
             try:decision=parse_decision(state['model_content'])
@@ -172,13 +210,14 @@ class Coordinator:
             if isinstance(decision,AbstainDecision):
                 from .retrieval import evidence
                 _,queries=evidence(state.get('observations',[]),self.retrieval,run['tenant_id'],policy)
-                if not queries:return await self.reject_output(run,state,'retrieval_required')
+                if not queries and not retrieval_matches(dependency):return await self.reject_output(run,state,'retrieval_required')
                 return await self.change(run,'abstain',kind='run.abstained',state=state,status='completed',
                     result={**decision.model_dump(),'batch_receipts':state.get('receipts',[]),
+                        **({'dependency_evidence':dependency} if dependency is not None else {}),
                         'abstention_evidence':{'snapshot_id':policy.retrieval_snapshot,'queries_sha256':queries,
                             'scope':'Retrieval executed; insufficient evidence is the model declaration, not a verified absence of an answer'}})
             if isinstance(decision,FinalDecision):
-                if not set(decision.citations)<=citations(state.get('observations',[])):
+                if not set(decision.citations)<=citations(state.get('observations',[]))|inherited.keys():
                     if policy.planner_protocol=='schema-v1':return await self.reject_output(run,state,'citation_unobserved')
                     raise ValueError('Unretrieved citation')
                 source_evidence=None
@@ -186,15 +225,16 @@ class Coordinator:
                     policy.validate_final(decision)
                     if policy.answer_format=='retrieved_span':
                         from .retrieval import quote_evidence
-                        source_evidence=quote_evidence(decision,state.get('observations',[]),self.retrieval,run['tenant_id'],policy)
+                        source_evidence=quote_evidence(decision,state.get('observations',[]),self.retrieval,run['tenant_id'],policy,inherited_matches=retrieval_matches(dependency))
                 except OutputContractError as exc:
                     return await self.reject_output(run,state,exc.code)
                 return await self.change(run,'final',kind='run.completed',state=state,status='completed',
-                    result={**decision.model_dump(),'batch_receipts':state.get('receipts',[]),**({'source_evidence':source_evidence} if source_evidence else {})})
+                    result={**decision.model_dump(),'batch_receipts':state.get('receipts',[]),**({'source_evidence':source_evidence} if source_evidence else {}),
+                        **({'dependency_evidence':envelope(policy.parent_workflow,policy.parent_node,inherited,decision.citations)} if dependency is not None else {})})
             if run['tool_calls']>=run['max_tool_calls']:return await self.fail(run,'tool_call_budget_exceeded')
             checkpoint();observation=await execute(decision,Context(run['tenant_id'],policy,self.memory,self.retrieval))
             state.setdefault('observations',[]).append(observation)
             state.pop('model_content');state['phase']='plan'
-            for key in ('request','batch_id','file_id','upload_attempted','delivery_invalid'):state.pop(key,None)
+            for key in ('request','batch_id','file_id','upload_attempted','delivery_invalid','batch_attempted','authorization_lost'):state.pop(key,None)
             return await self.change(run,'tool',kind='tool.completed',state=state,tool_calls=1)
         raise ValueError('Unknown durable phase')

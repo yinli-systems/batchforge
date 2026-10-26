@@ -72,10 +72,28 @@ class BatchAdapter:
         if not isinstance(document.get('id'),str) or not document['id'].startswith('file_'):raise DeliveryError('Invalid input file ACK')
         return document['id']
 
+    @staticmethod
+    def create_body(run,state):
+        return {'input_file_id':state['file_id'],'endpoint':'/v1/chat/completions','completion_window':'24h',
+            'metadata':{'agent_run_id':run['id'],'agent_step':str(state['step']),'request_sha256':state['request_sha256']}}
+
+    async def find_batch(self,run,state):
+        """Read-only reconciliation even after an inheritance grant is lost."""
+        from backend.validation import body_hash
+        checkpoint()
+        async with self.pool.connection() as conn:
+            row=await (await conn.execute("SELECT body_hash,response FROM public.idempotency WHERE tenant_id=%s AND scope='/v1/batches' AND key=%s",
+                (run['tenant_id'],state['child_key']))).fetchone()
+        if row is None:return None
+        if row['body_hash']!=body_hash(self.create_body(run,state)):raise DeliveryError('Committed Batch body differs')
+        if row['response'] is None:return None
+        bid=row['response'].get('id')
+        if not isinstance(bid,str) or not bid.startswith('batch_'):raise DeliveryError('Invalid committed Batch identity')
+        return bid
+
     async def create(self,run,state):
         response=await self.request(run,'POST','/v1/batches',headers={'Idempotency-Key':state['child_key']},
-            json={'input_file_id':state['file_id'],'endpoint':'/v1/chat/completions','completion_window':'24h',
-                  'metadata':{'agent_run_id':run['id'],'agent_step':str(state['step']),'request_sha256':state['request_sha256']}})
+            json=self.create_body(run,state))
         document=strict_json(response.content)
         if not isinstance(document.get('id'),str) or not document['id'].startswith('batch_'):raise DeliveryError('Invalid Batch ACK')
         return document['id']

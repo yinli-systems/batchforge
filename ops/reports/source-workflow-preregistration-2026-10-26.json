@@ -1,0 +1,78 @@
+{
+  "phase": "preregistered_not_executed",
+  "created_at": "2026-10-26T04:49:26.830097+00:00",
+  "plan": {
+    "graphs": 3,
+    "agent_nodes": 10,
+    "max_child_tasks": 28,
+    "fixture_sha256": "e55e701db6c7e0868cafd7ea3564e56a7b0240835d6309bff83f88ee80b66945",
+    "fixture_set": "source-lineage-v1",
+    "fault": "Workflow coordinator exits after committed dependency activation before returning its ACK",
+    "control_state": "Native Unix-only PG17 on existing container disk, not Azure or Pod-loss durable",
+    "model_tasks": "Existing four-H100 480B-total/35B-active MoE, Batch API, Azure ledger and S3",
+    "primary_changes": false,
+    "new_cloud_resources": false,
+    "quota_changes": false
+  },
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "selection_seed": "2026102605",
+  "public_dev_not_hidden": true,
+  "new_public_question_ids": [
+    "56e1a38de3433e1400423060",
+    "56f8046faef2371900625d72"
+  ],
+  "graphs": [
+    {
+      "id": "lineage-memory",
+      "kind": "memory",
+      "spec_sha256": "e7e5140752dfac4f80d5bbc6789107e8752980e80587dc9366b47823c0dbc3ea",
+      "roles": [
+        "memory",
+        "relay",
+        "reader"
+      ],
+      "question_id": null
+    },
+    {
+      "id": "lineage-retrieval",
+      "kind": "retrieval",
+      "spec_sha256": "8705b7a920b85c5fd13ae71c2654ae39bc26c3e7dc5a0a324adf01c7bcdc21b0",
+      "roles": [
+        "document",
+        "relay",
+        "reader"
+      ],
+      "question_id": "56e1a38de3433e1400423060"
+    },
+    {
+      "id": "lineage-mixed",
+      "kind": "mixed",
+      "spec_sha256": "4f2a7546b609f5709d1ad1fc2e99e5b33a7d924b401631db5f78f7ca3b7e2822",
+      "roles": [
+        "memory",
+        "document",
+        "relay",
+        "reader"
+      ],
+      "question_id": "56f8046faef2371900625d72"
+    }
+  ],
+  "synthetic_memory_facts": true,
+  "real_model_inference_required": true,
+  "required_gates": [
+    "All three graphs/ten roles completed with reference-correct roots and exact forwarded answers",
+    "Original source citation sets preserved through relay and reader, zero inherited-role tool calls",
+    "Tenant/declaration/state/result/event-head/source-byte lineage and actual same-origin client verification",
+    "Committed activation ACK loss preserves original children, native PostgreSQL/API restart readback",
+    "Azure unique acceptance and usage, ready/purged S3 archives and all input/output byte hashes",
+    "Primary configuration/PID identities unchanged and finite study children cleaned up"
+  ],
+  "maximum_new_tasks": 28,
+  "initial_headroom_observed_prior_study": 50,
+  "fresh_capacity_preflight_required": true,
+  "extra_decoder_tasks": 0,
+  "new_cloud_resources": false,
+  "quota_changes": false,
+  "owner_ddl": false,
+  "scope": "Functional source-provenance and task qualification, not a high-load, hidden test, large-sample quality or production HA claim"
+}

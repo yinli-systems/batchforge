@@ -19,7 +19,7 @@ from backend.config import get_settings
 from backend.store import APIError
 from backend.migrate import verify_schema
 from .migrate import verify
-from .contracts import Strict,Policy,canonical,protocol_json
+from .contracts import Strict,Policy,canonical,protocol_json,digest
 from .store import AgentStore,AgentError
 from .executors import credentials
 from .receipts import HTTPReceipts,reconcile
@@ -156,7 +156,7 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=(),shared_b
             'workflow_admission_enabled':not read_only and settings.agent_workflows_enabled and settings.batch_submission_enabled and tid in app.state.executor_tenants,
             'admission_enabled':not read_only and settings.batch_submission_enabled and tid in app.state.executor_tenants,
             'memory_writes_enabled':not read_only,'cancellation_enabled':not read_only,
-            'child_receipts_enabled':app.state.receipts is not None,'read_only_snapshot':read_only,
+            'source_lineage_enabled':True,'child_receipts_enabled':app.state.receipts is not None,'read_only_snapshot':read_only,
             'batch_console_path':'/' if shared_backend else None}
     @app.post('/v1/agent-runs')
     async def create(body:RunRequest,tid=Depends(tenant),idempotency_key:str=Header(min_length=1,max_length=128)):
@@ -202,6 +202,14 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=(),shared_b
             'state_json':canonical(run['state']).decode(),'result_json':canonical(run['result']).decode()})
         response.headers['X-BatchForge-Agent-Snapshot-SHA256']=hashlib.sha256(response.body).hexdigest()
         return response
+    @app.get('/v1/agent-runs/{rid}/sources')
+    async def sources(rid:str,tid=Depends(tenant)):
+        run=await app.state.store.get(tid,rid)
+        if not run['policy'].get('inherit_sources'):raise AgentError(404,'agent_source_inheritance_unavailable')
+        from .provenance import resolve
+        document=await resolve(app.state.store,run,app.state.retrieval,tenant=tid)
+        return {'protocol':'batchforge.workflow-sources-response.v1','run_id':rid,'revision':run['revision'],
+            'document':document,'document_sha256':digest(document)}
     @app.post('/v1/agent-runs/{rid}/cancel')
     async def cancel(rid:str,tid=Depends(tenant)):return await app.state.store.cancel(tid,rid)
     @app.get('/v1/agent-runs/{rid}/children/{bid}/receipt')

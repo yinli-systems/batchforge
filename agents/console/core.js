@@ -89,7 +89,7 @@ export async function verifyHistory(snapshot,tenant,page,crypto=globalThis.crypt
     if(!stateVerified)throw new Error('Snapshot state differs from event commitment');
   }
   const last=events.at(-1);
-  if(['run.cancelled','run.deadline'].includes(last?.kind))resultVerified=canonical(run.result)===canonical(last.payload);
+  if(['run.cancelled','run.deadline','workflow.cancelled'].includes(last?.kind))resultVerified=canonical(run.result)===canonical(last.payload);
   if(stateAnchor&&!resultVerified)throw new Error('Snapshot result differs from event commitment');
   return {revision:target,head:previous,events,stateVerified,resultVerified,
     scope:'Hash-chain consistency and available byte commitments; unsigned evidence.'};
@@ -103,14 +103,121 @@ function readAttempts(storage) {
   }catch{throw new Error('Pending submission storage is unavailable or invalid. Preserve this tab before submitting.');}
 }
 
+// Default documents are deliberately identical to server Policy.document().
+export function workflowChildPolicy(spec,node,parent) {
+ const value={allowed_tools:node.allowed_tools??['math.calculate'],memory_namespace:spec.memory_namespace??'default',
+  max_model_calls:node.max_model_calls??4,max_tool_calls:node.max_tool_calls??2,max_generated_tokens:node.max_generated_tokens??2048,
+  max_wall_seconds:spec.max_wall_seconds??900,parent_workflow:parent,parent_node:node.id};
+ for(const [key,defaultValue] of [['answer_format','text'],['require_citations',false],['planner_protocol','json-v1']])
+  if((node[key]??defaultValue)!==defaultValue)value[key]=node[key];
+ if(node.tool_sequence?.length)value.tool_sequence=node.tool_sequence;
+ if(node.inherit_sources)value.inherit_sources=true;
+ if(spec.retrieval_snapshot&&(value.allowed_tools.includes('retrieval.search')||node.inherit_sources))value.retrieval_snapshot=spec.retrieval_snapshot;
+ return value;
+}
+
+export async function verifySources(response,current,tenant,fetchSnapshot,page,crypto=globalThis.crypto) {
+ const run=current.run,doc=response.document,id=/^agrun_[a-f0-9]{32}$/;
+ if(response.protocol!=='batchforge.workflow-sources-response.v1'||response.run_id!==run.id||response.revision!==run.revision
+    ||!run.policy.inherit_sources||!id.test(doc?.workflow_id)||doc.workflow_id!==run.policy.parent_workflow
+    ||doc.consumer_node!==run.policy.parent_node||doc.protocol!=='batchforge.workflow-sources.v1'
+    ||!Array.isArray(doc.sources)||doc.sources.length>64||new TextEncoder().encode(canonical(doc)).length>16384
+    ||await sha256(canonical(doc),crypto)!==response.document_sha256)throw Error('Source envelope identity or checksum differs');
+ const verified=new Map(),snapshots=new Map([[run.id,current]]);
+ async function load(rid) {
+  if(!id.test(rid))throw Error('Invalid source run identity');
+  if(!snapshots.has(rid)){if(snapshots.size>=17)throw Error('Source graph exceeds bound');snapshots.set(rid,await fetchSnapshot(rid));}
+  const snapshot=snapshots.get(rid);
+  if(snapshot.protocol!=='batchforge.agent-snapshot.v1'||snapshot.run?.id!==rid)throw Error('Source snapshot identity differs');
+  if(!verified.has(rid)){
+   const v=await verifyHistory(snapshot,tenant,after=>page(rid,after),crypto);
+   if(!v.stateVerified||!v.resultVerified)throw Error('Source state and result commitments required');verified.set(rid,v);
+  }
+  return snapshot;
+ }
+ await load(run.id);const parent=await load(doc.workflow_id);
+ if(parent.run.model!=='batchforge/workflow-v1')throw Error('Workflow program differs');
+ const spec=JSON.parse(parent.run.goal),nodes=new Map((spec.nodes??[]).map(n=>[n.id,n]));
+ if(nodes.size<1||nodes.size>16||!nodes.has(doc.consumer_node)||nodes.size!==spec.nodes.length)throw Error('Frozen source graph differs');
+ const seen=new Set(),visiting=new Set();
+ async function ancestor(nid){
+  if(seen.has(nid))return;if(visiting.has(nid)||!nodes.has(nid))throw Error('Invalid source DAG');visiting.add(nid);
+  const definition=nodes.get(nid),rid=parent.run.state.nodes?.[nid]?.run_id,snapshot=await load(rid),r=snapshot.run;
+  if(r.goal!==definition.goal||r.model!==definition.model||canonical(r.policy)!==canonical(workflowChildPolicy(spec,definition,parent.run.id)))throw Error('Source policy differs from workflow declaration');
+  for(const d of definition.depends_on??[])await ancestor(d);
+  const expected=[];
+  for(const d of definition.depends_on??[]){
+   const child=snapshots.get(parent.run.state.nodes[d].run_id),c=child.run,result={answer:c.result?.answer,citations:c.result?.citations??[]};
+   if(c.status!=='completed'||c.result?.type!=='final')throw Error('Dependency is not a committed answer');
+   expected.push({node:d,run_id:c.id,result,result_sha256:await sha256(child.result_json,crypto),projection_sha256:await sha256(canonical(result),crypto),event_revision:c.revision,event_head_sha256:c.event_hash});
+  }
+  if(canonical(r.state.workflow_inputs??[])!==canonical(expected))throw Error('Declared dependency projection differs');
+  visiting.delete(nid);seen.add(nid);
+ }
+ await ancestor(doc.consumer_node);
+ const citations=new Set();
+ for(const value of doc.sources){
+  const c=value.citation,s=value.source;
+  if(typeof c!=='string'||citations.has(c)||!Array.isArray(value.nodes)||value.nodes.length>16
+    ||!Array.isArray(value.edges)||value.edges.length>256||!Array.isArray(value.origins)||!value.origins.length||value.origins.length>64)throw Error('Bounded unique source lineage required');
+  citations.add(c);const declared=new Set();
+  for(const anchor of value.nodes){
+   if(!seen.has(anchor.node)||anchor.node===doc.consumer_node||declared.has(anchor.node)||parent.run.state.nodes[anchor.node].run_id!==anchor.run_id)throw Error('Undeclared source node');
+   declared.add(anchor.node);const snapshot=await load(anchor.run_id),r=snapshot.run;
+   if(r.status!=='completed'||r.result?.type!=='final'||!r.result.citations.includes(c)||r.revision!==anchor.revision||r.event_hash!==anchor.event_head_sha256
+      ||await sha256(snapshot.state_json,crypto)!==anchor.state_sha256||await sha256(snapshot.result_json,crypto)!==anchor.result_sha256)throw Error('Upstream source commit differs');
+  }
+  for(const edge of value.edges){
+   if(!declared.has(edge.from)||!(declared.has(edge.to)||edge.to===doc.consumer_node)||!nodes.get(edge.to)?.depends_on?.includes(edge.from))throw Error('Source edge not declared by workflow');
+  }
+  function reaches(n,visited=new Set()){
+   if(n===doc.consumer_node)return true;if(visited.has(n))return false;visited.add(n);
+   return value.edges.filter(e=>e.from===n).some(e=>reaches(e.to,new Set(visited)));
+  }
+  if([...declared].some(n=>!reaches(n)))throw Error('Disconnected source lineage');
+  const text=s.kind==='retrieval'?s.match?.text:s.text;
+  if(typeof text!=='string'||new TextEncoder().encode(text).length>4096)throw Error('Bounded source text required');
+  if(s.kind==='memory'){
+   if(s.namespace!==run.policy.memory_namespace||c!==`memory:${s.namespace}:${s.key}:v${s.version}:${s.document_sha256}`
+      ||await sha256(text,crypto)!==s.text_sha256||!s.text_truncated&&s.document_sha256!==s.text_sha256)throw Error('Memory source bytes differ');
+  }else if(s.kind==='retrieval'){
+   const m=s.match;
+   if(s.snapshot_id!==run.policy.retrieval_snapshot||c!==m.citation||await sha256(text,crypto)!==m.text_sha256
+      ||m.end_byte-m.start_byte!==new TextEncoder().encode(text).length
+      ||c!==`retrieval:${s.snapshot_id}:${m.document_id}:v${m.document_version}:${m.start_byte}:${m.end_byte}:${m.text_sha256}`)throw Error('Retrieval source bytes differ');
+  }else throw Error('Unsupported source kind');
+  for(const origin of value.origins){
+   if(!declared.has(origin.node))throw Error('Source origin has no committed node');
+   const r=snapshots.get(parent.run.state.nodes[origin.node].run_id).run;
+   const matched=(r.state.observations??[]).some(o=>{
+    if(o.result_sha256!==origin.observation_sha256||!r.policy.allowed_tools.includes(o.tool))return false;
+    if(s.kind==='retrieval'){
+     if(o.tool!=='retrieval.search'||o.result.snapshot_id!==s.snapshot_id)return false;
+     return o.result.matches.some(m=>canonical(Object.fromEntries(Object.entries(m).filter(([k])=>k!=='score')))===canonical(s.match));
+    }
+    if(!['memory.get','memory.search'].includes(o.tool))return false;
+    return (o.tool==='memory.get'?[o.result]:o.result.matches).some(m=>m.citation===c&&m.namespace===s.namespace&&m.key===s.key&&m.version===s.version&&m.sha256===s.document_sha256&&m.text.startsWith(s.text));
+   });
+   if(!matched)throw Error('Source does not occur in committed upstream tool result');
+  }
+ }
+ if(run.status==='completed'&&run.result?.type==='final'){
+  const selected={...doc,sources:doc.sources.filter(s=>run.result.citations.includes(s.citation))};
+  if(canonical(selected)!==canonical(run.result.dependency_evidence))throw Error('Delivered source proof differs from committed result');
+ }
+ return {verified:true,document:doc,document_sha256:response.document_sha256,workflow_id:doc.workflow_id,
+  sources:doc.sources.length,verified_runs:verified.size,scope:'Independent event/snapshot, declaration and source-membership checks; not semantic correctness or proof of model attention.'};
+}
+
+
 export class AgentClient {
   constructor({base='/v1/',fetch=globalThis.fetch,crypto=globalThis.crypto,storage=globalThis.sessionStorage}={}) {
     if(!/^\/(?:[A-Za-z0-9_-]+\/)*v1\/$/.test(base))throw new Error('Same-origin Agent API path required');
-    Object.assign(this,{base,fetch,crypto,storage,epoch:0,selection:0,key:'',caps:null,runs:[],detail:null,verified:null});
+    Object.assign(this,{base,fetch,crypto,storage,epoch:0,selection:0,key:'',caps:null,runs:[],detail:null,verified:null,sourceVerified:null});
     try{this.attempts=readAttempts(storage);}catch(error){this.attempts={};this.storageError=error;}
   }
   setKey(value) {
-    this.epoch++;this.selection++;this.key=value;this.caps=null;this.runs=[];this.detail=null;this.verified=null;this.nextCursor=null;
+    this.epoch++;this.selection++;this.key=value;this.caps=null;this.runs=[];this.detail=null;this.verified=null;this.sourceVerified=null;this.nextCursor=null;
   }
   async request(path,{method='GET',body,key=this.key}={}) {
     if(!key)throw new Error('Connect a workspace first.');
@@ -183,7 +290,7 @@ export class AgentClient {
   }
   async select(id) {
     if(!/^agrun_[a-f0-9]{32}$/.test(id))throw new Error('Invalid run identity.');
-    const epoch=this.epoch,selection=++this.selection;this.detail=null;this.verified=null;
+    const epoch=this.epoch,selection=++this.selection;this.detail=null;this.verified=null;this.sourceVerified=null;
     const snapshot=await this.request('agent-runs/'+id+'/snapshot');
     if(epoch!==this.epoch||selection!==this.selection)throw new StaleWorkspace();
     if(snapshot.protocol!=='batchforge.agent-snapshot.v1'||snapshot.run?.id!==id)throw new Error('Snapshot identity differs.');
@@ -202,6 +309,16 @@ export class AgentClient {
     const result=await this.request('agent-runs/'+snapshot.run.id+'/cancel',{method:'POST'});
     if(epoch!==this.epoch||selection!==this.selection)throw new StaleWorkspace();
     return result;
+  }
+  async sources() {
+    const epoch=this.epoch,selection=this.selection,snapshot=this.detail,tenant=this.caps?.tenant_id;
+    if(!snapshot||!tenant||!this.caps.source_lineage_enabled)throw Error('Source verification is unavailable.');
+    const guard=()=>{if(epoch!==this.epoch||selection!==this.selection)throw new StaleWorkspace();};
+    const response=await this.request('agent-runs/'+snapshot.run.id+'/sources');guard();
+    const result=await verifySources(response,snapshot,tenant,
+      id=>{guard();return this.request('agent-runs/'+id+'/snapshot');},(id,after)=>{guard();return this.request('agent-runs/'+id+'/events?after='+after+'&limit=100');},this.crypto);
+    if(epoch!==this.epoch||selection!==this.selection)throw new StaleWorkspace();
+    this.sourceVerified=result;return result;
   }
   async receipt(bid) {
     if(!/^batch_[A-Za-z0-9_-]{1,80}$/.test(bid)||!this.detail)throw new Error('Invalid child identity.');
