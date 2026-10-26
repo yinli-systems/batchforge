@@ -95,3 +95,39 @@ or marginal cost. Public dev has been seen in prior engine evaluations and is
 not hidden testing. The full platform's vector adapters, cross-Agent citation
 provenance, owner migration, sandboxing, multimodal and learning layers remain
 separate unfinished work.
+
+## Optional exact source excerpts and abstention
+
+The additive `retrieved_span` contract requires a pinned, audience-granted
+snapshot, `retrieval.search`, a nonzero tool budget and citations. It leaves old
+policy hashes and old failed reports unchanged. The runtime replays committed
+search arguments/results against the frozen index before admitting a terminal
+answer. An answer must be an unchanged, contiguous UTF8 span in at least one
+actually cited chunk, at most128bytes/16words with no surrounding whitespace.
+Duplicate/unobserved citations fail. Invalid output consumes its accepted model
+usage and a retry consumes another model call within the original budget; there
+is no substring extraction, reference-assisted repair or free retry.
+
+Successful answers include a `batchforge.quoted-answer.v1` receipt with original
+document/version/hash, byte offsets and answer SHA. This proves byte inclusion,
+not semantic relevance or correctness. Decoder JSON-schema constraints assist
+reliability; byte/word limits, source membership and citation uniqueness are
+runtime checks. The generic `text` contract keeps its existing behavior.
+
+Only this explicit contract permits `{"type":"abstain","reason":
+"insufficient_evidence"}`, after a verified search even if no matches were
+found. Its lifecycle is terminal/completed but its disposition is **abstained**,
+not an answered or correct task. It has a distinct `run.abstained` event and
+retains all child usage/receipts. The declaration does not prove the corpus has
+no answer. A required workflow child abstention fails the parent with
+`workflow_child_abstained` and cancels unstarted descendants rather than
+silently treating missing evidence as dependency data.
+
+[The second preregistration](../ops/reports/retrieval-span-preregistration-2026-10-26.json)
+freezes eight new public questions by seed2026102604, excluding all eight prior
+RAG development IDs. No question is selected using a retrieval hit or a model
+answer. It retains EM75/F180/citation75/joint75 gates; abstentions and failed
+runs score zero. This is a new cohort, not a matched-question improvement or a
+hidden test. Native tests and an independent real qualification must close
+before this candidate can be described as qualified or deployed. Agent Azure
+schema creation still requires an owner credential that is not saved.

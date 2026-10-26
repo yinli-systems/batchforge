@@ -12,7 +12,7 @@ from types import MappingProxyType
 import copy,hashlib,math,os,re,unicodedata,stat
 from pydantic import Field
 from backend.evaluations import private_release_bytes
-from .contracts import Strict,canonical,digest,protocol_json
+from .contracts import Strict,canonical,digest,protocol_json,OutputContractError
 
 CORPUS='batchforge.retrieval-corpus.v1'
 REGISTRY='batchforge.retrieval-catalogue.v1'
@@ -165,3 +165,41 @@ class Registry:
 
     async def search(self,tenant,namespace,snapshot,query,limit):
         return self.require(tenant,namespace,snapshot).search(query,limit)
+
+
+def evidence(observations,registry,tenant,policy):
+    """Validate committed source observations before using them as authority."""
+    if registry is None:raise PermissionError('Retrieval executor unavailable')
+    snapshot=registry.require(tenant,policy.memory_namespace,policy.retrieval_snapshot)
+    matches={};queries=[]
+    for observation in observations:
+        if observation['tool']!='retrieval.search':continue
+        value=observation['result'];snapshot.verify(value)
+        permitted={digest({'query':value['query'],'limit':value['requested_limit']})}
+        if value['requested_limit']==3:permitted.add(digest({'query':value['query']}))
+        if observation['arguments_sha256'] not in permitted or observation['result_sha256']!=digest(value):
+            raise ValueError('Committed retrieval arguments or bytes differ')
+        queries.append(value['query_sha256'])
+        for match in value['matches']:
+            source={k:v for k,v in match.items() if k!='score'}
+            if match['citation'] in matches and matches[match['citation']]!=source:raise ValueError('Ambiguous committed source')
+            matches[match['citation']]=source
+    return matches,queries
+
+
+def quote_evidence(decision,observations,registry,tenant,policy):
+    if policy.answer_format!='retrieved_span':raise ValueError('Explicit extractive answer contract required')
+    policy.validate_final(decision)
+    matches,queries=evidence(observations,registry,tenant,policy)
+    if not queries:raise OutputContractError('retrieval_required')
+    if not set(decision.citations)<=matches.keys():raise OutputContractError('retrieved_span')
+    quotes=[];raw=decision.answer.encode()
+    for citation in decision.citations:
+        match=matches[citation];offset=match['text'].encode().find(raw)
+        if offset<0:continue
+        quotes.append({'citation':citation,'document_id':match['document_id'],'document_version':match['document_version'],
+            'document_sha256':match['document_sha256'],'start_byte':match['start_byte']+offset,
+            'end_byte':match['start_byte']+offset+len(raw),'answer_sha256':hashlib.sha256(raw).hexdigest()})
+    if not quotes:raise OutputContractError('retrieved_span')
+    return {'protocol':'batchforge.quoted-answer.v1','snapshot_id':policy.retrieval_snapshot,'quotes':quotes,
+        'scope':'Exact answer bytes occur in a cited retrieved source; semantic correctness is not established'}

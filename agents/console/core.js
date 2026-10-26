@@ -1,6 +1,7 @@
 // Network/state logic is separate from the DOM so uncertainty and workspace
 // races are testable without making model calls or simulating GPU measurements.
 export const terminal = status => ['completed','failed','cancelled'].includes(status);
+export const displayStatus = run => run.status==='completed'&&(run.answer_disposition==='abstained'||run.result?.type==='abstain')?'abstained':run.status;
 const zero='0'.repeat(64), attemptKey='batchforge-agent-pending-v1';
 export class StaleWorkspace extends Error {}
 

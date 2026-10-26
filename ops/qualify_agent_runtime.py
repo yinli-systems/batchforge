@@ -87,10 +87,10 @@ def selected_fixtures(name):
     if name=='schema-contract-heldout-v1':return schema_fixtures()
     if name=='workflow-contract-heldout-v1':return workflow_fixtures()
     if name=='lease-contract-heldout-v1':return lease_fixtures()
-    if name=='retrieval-squad-v1':
+    if name in ('retrieval-squad-v1','retrieval-span-v1'):
         from ops.retrieval_squad import inputs
         import copy
-        return copy.deepcopy(inputs()[1])
+        return copy.deepcopy((inputs() if name=='retrieval-squad-v1' else inputs(name))[1])
     raise ValueError('Unknown frozen fixture set')
 
 
@@ -186,9 +186,9 @@ def plan(now,headroom,fixture_set='baseline'):
         'model_tasks':'existing Batch API/Azure/S3/real480B','new_cloud_resources':False,
         'service_changes':False,'quota_changes':False,'external_effect_tools':False,
         'action_lease':{'seconds':LEASE_SECONDS,'renew_interval_seconds':RENEW_INTERVAL,'action_deadline_seconds':ACTION_SECONDS},
-        'fault_reclaim_gate_seconds':30 if fixture_set in ('lease-contract-heldout-v1','retrieval-squad-v1') else None,
+        'fault_reclaim_gate_seconds':30 if fixture_set in ('lease-contract-heldout-v1','retrieval-squad-v1','retrieval-span-v1') else None,
         'fault':'one Agent coordinator exits after child Batch ACK, before Agent state commit'}
-    if fixture_set=='retrieval-squad-v1':
+    if fixture_set in ('retrieval-squad-v1','retrieval-span-v1'):
         result['quality_gate']={'em_percent':75,'f1_percent':80,'supported_citation_percent':75,'task_success_percent':75}
         result['public_dev_not_hidden']=True
     return result
@@ -280,7 +280,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path);p.add_argument('--apply',action='store_true')
     p.add_argument('--worker-config',type=Path)
     p.add_argument('--batch-url',type=qualification_endpoint,default='http://127.0.0.1:8080')
-    p.add_argument('--fixture-set',choices=['baseline','value-contract-heldout-v1','schema-contract-heldout-v1','workflow-contract-heldout-v1','lease-contract-heldout-v1','retrieval-squad-v1'],default='baseline');args=p.parse_args()
+    p.add_argument('--fixture-set',choices=['baseline','value-contract-heldout-v1','schema-contract-heldout-v1','workflow-contract-heldout-v1','lease-contract-heldout-v1','retrieval-squad-v1','retrieval-span-v1'],default='baseline');args=p.parse_args()
     if args.worker_config:return asyncio.run(worker(args.worker_config))
     if not args.apply:
         print(json.dumps(plan(datetime.now(timezone.utc),80,args.fixture_set),indent=2));return
@@ -328,13 +328,13 @@ def main():
         report['azure_readonly_tls_verify_full']=True
         tid=azure.execute('SELECT tenant_id FROM api_keys WHERE key_hash=%s AND NOT revoked',(hashlib.sha256(key.encode()).hexdigest(),)).fetchone()['tenant_id']
         retrieval_catalogue=''
-        if args.fixture_set=='retrieval-squad-v1':
+        if args.fixture_set in ('retrieval-squad-v1','retrieval-span-v1'):
             from ops.retrieval_squad import inputs,DATASET,evaluate
             from ops.package_retrieval_corpus import package
             corpus,_=inputs();(private/'corpus-source.json').write_bytes(corpus)
             prepared=package(private/'corpus-source.json',private/'retrieval-release',tenant=tid,namespace='canary')
             retrieval_catalogue=prepared['catalogue'];write(base/'retrieval-index.json',prepared['snapshot'])
-            report['retrieval_evaluation']=evaluate(DATASET.read_bytes(),base/'run')
+            report['retrieval_evaluation']=evaluate(DATASET.read_bytes(),base/'run',args.fixture_set)
             from ops.gpu_campaign import sample
             sampling=threading.Thread(target=sample,args=('http://127.0.0.1:8348',base/'run/observations.jsonl',sampling_stop),
                 kwargs={'interval':5},daemon=True);sampling.start()
@@ -361,7 +361,7 @@ def main():
         socket=stage/'socket';socket.mkdir(mode=0o700);os.chown(socket,account.pw_uid,account.pw_gid)
         pg(['initdb','-D',stage/'data','-L',toolchain/'usr/share/postgresql/17','-U','agent_canary','--auth-local=trust','--auth-host=reject','--no-locale','--encoding=UTF8'])
         state_dsn='postgresql://agent_canary@/postgres?host='+str(socket)+'&port=55484'
-        if args.fixture_set=='retrieval-squad-v1':
+        if args.fixture_set in ('retrieval-squad-v1','retrieval-span-v1'):
             # Unlike pg_ctl daemonization, this separate timeout also bounds
             # the native cluster if the parent controller disappears.
             command=finite_command([str(binary/'postgres'),'-D',str(stage/'data'),'-h','','-p','55484','-k',str(socket),
@@ -394,7 +394,7 @@ def main():
         def spawn_api():
             verify_source();pins.check(full=True)
             command=[sys.executable,'-m','agents','api','--executor-keys',str(private/'executors.json'),'--port','18170','--batch-url',args.batch_url]
-            if args.fixture_set=='retrieval-squad-v1':command=finite_command(command,datetime.now(timezone.utc))
+            if args.fixture_set in ('retrieval-squad-v1','retrieval-span-v1'):command=finite_command(command,datetime.now(timezone.utc))
             with (private/'api-private.log').open('ab') as output:
                 child=subprocess.Popen(command,
                     cwd=source,env=api_env,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,start_new_session=True)
@@ -493,7 +493,7 @@ def main():
         verify_source();pins.check(full=True)
         report['headroom_after']=int(azure.execute('''SELECT l.max_retained_tasks-u.retained_tasks AS n
             FROM tenant_retention_limits l JOIN tenant_retention_usage u USING(tenant_id) WHERE l.tenant_id=%s''',(tid,)).fetchone()['n'])
-        if args.fixture_set=='retrieval-squad-v1':
+        if args.fixture_set in ('retrieval-squad-v1','retrieval-span-v1'):
             write(base/'report.json',report)
             with (private/'client-private.log').open('xb') as output:
                 tested=subprocess.run(['/tmp/bf-ci-20261025-v19/runner/externals/node24/bin/node',str(source/'ops/verify_agent_rag.mjs'),
@@ -502,7 +502,8 @@ def main():
             report['actual_client_readback']=json.loads((base/'readback.json').read_bytes())
             if report['actual_client_readback']['passed'] is not True:raise RuntimeError('RAG client proof not verified')
             rows=report['task_results'];n=len(rows)
-            report['rag_quality']={'cases':n,'completed':sum(r['completed'] for r in rows),
+            report['rag_quality']={'cases':n,'completed':sum(r['completed'] for r in rows),'abstained':sum(r.get('abstained',False) for r in rows),
+                'answer_delivered':sum(r.get('answer_delivered',False) for r in rows),
                 'em_percent':100*sum(r['exact_match'] for r in rows)/n,'f1_percent':100*sum(r['f1'] for r in rows)/n,
                 'supported_citation_percent':100*sum(r['citation_verified'] for r in rows)/n,
                 'task_success_percent':100*sum(r['passed'] for r in rows)/n,
@@ -519,7 +520,7 @@ def main():
         for child,fd in children:
             if child.poll() is None:
                 with contextlib.suppress(ProcessLookupError):signal.pidfd_send_signal(fd,signal.SIGTERM)
-                try:child.wait(timeout=25 if args.fixture_set=='retrieval-squad-v1' else 10)
+                try:child.wait(timeout=25 if args.fixture_set in ('retrieval-squad-v1','retrieval-span-v1') else 10)
                 except subprocess.TimeoutExpired:
                     # Each child owns a new session. A timeout wrapper must not
                     # be killed alone while leaving its private API behind.
@@ -538,7 +539,7 @@ def main():
                     pg_guard.wait(timeout=10);report['native_pg_forced_group_cleanup']=True
             report['native_pg_timeout_exited']=pg_guard.poll() is not None
             os.close(pg_guard_fd)
-        if args.fixture_set=='retrieval-squad-v1' and server_started and (not report.get('isolated_pg_stopped') or not report.get('native_pg_timeout_exited')):
+        if args.fixture_set in ('retrieval-squad-v1','retrieval-span-v1') and server_started and (not report.get('isolated_pg_stopped') or not report.get('native_pg_timeout_exited')):
             report.update(passed=False,phase='cleanup_failed')
         if azure:azure.close()
         report['whole_controller_seconds']=time.monotonic()-start

@@ -13,6 +13,8 @@ ORIGIN='https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v1.1.json'
 DATASET=Path('/root/batchforge-runtime/app/.runtime/public-data/dev-v1.1.json')
 SEED='2026102603'
 COUNT=8
+RAG_FIXTURES=('retrieval-squad-v1','retrieval-span-v1')
+SPAN_SEED='2026102604'
 
 
 def write(path,value):atomic_bytes(path,(json.dumps(value,indent=2,allow_nan=False)+'\n').encode())
@@ -45,19 +47,24 @@ def official(raw):
     return corpus,cases
 
 
-def selected(raw):
+def selected(raw,fixture_set='retrieval-squad-v1'):
     corpus,cases=official(raw);snapshot=Snapshot(corpus)
-    selected=sorted(cases,key=lambda c:hashlib.sha256((SEED+':'+c['id']).encode()).hexdigest())[:COUNT]
+    if fixture_set not in RAG_FIXTURES:raise ValueError('Unknown frozen RAG fixture')
+    old=sorted(cases,key=lambda c:hashlib.sha256((SEED+':'+c['id']).encode()).hexdigest())[:COUNT]
+    excluded={c['id'] for c in old} if fixture_set=='retrieval-span-v1' else set()
+    seed=SPAN_SEED if excluded else SEED
+    selected=sorted((c for c in cases if c['id'] not in excluded),key=lambda c:hashlib.sha256((seed+':'+c['id']).encode()).hexdigest())[:COUNT]
     values=[]
     for c in selected:
         values.append({**c,'kind':'retrieval-squad','snapshot_id':snapshot.id,'tools':['retrieval.search'],
             'goal':'Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: '+c['question'],
-            'planner_protocol':'schema-v1','require_citations':True,'tool_sequence':['retrieval.search']})
+            'planner_protocol':'schema-v1','require_citations':True,'tool_sequence':['retrieval.search'],
+            **({'answer_format':'retrieved_span'} if fixture_set=='retrieval-span-v1' else {})})
     return corpus,values
 
 
-@lru_cache(maxsize=1)
-def inputs():return selected(DATASET.read_bytes())
+@lru_cache(maxsize=2)
+def inputs(fixture_set='retrieval-squad-v1'):return selected(DATASET.read_bytes(),fixture_set)
 
 
 def support(case,match):
@@ -78,17 +85,34 @@ def grade(case,run):
             replay=replay and o['arguments_sha256'] in permitted and o['result_sha256']==digest(value) and snapshot.verify(value)
         except (ValueError,TypeError,KeyError):replay=False
     result['retrieval_replay_verified']=bool(replay);result['required_tools']=bool(observations)
-    if not result['completed']:return result
+    result['abstained']=run.get('result',{}).get('type')=='abstain'
+    result['answer_delivered']=result['completed'] and isinstance(run.get('result',{}).get('answer'),str)
+    if not result['answer_delivered']:return result
     answer=run['result']['answer'];metrics=score(answer,[a['text'] for a in case['references']])
     citations=set(run['result'].get('citations',[]));supported={m['citation'] for o in observations for m in o['result']['matches'] if support(case,m)}
     cited=bool(citations) and citations<=supported and replay
     result.update(exact_match=metrics['exact_match'],f1=metrics['f1'],answer_correct=metrics['exact_match']==1,
         citation_verified=bool(cited),answer_sha256=hashlib.sha256(answer.encode()).hexdigest(),
         passed=metrics['exact_match']==1 and bool(cited))
+    if case.get('answer_format')=='retrieved_span':
+        from agents.contracts import Policy,FinalDecision,OutputContractError
+        try:
+            policy=Policy(allowed_tools=('retrieval.search',),retrieval_snapshot=snapshot.id,memory_namespace='canary',require_citations=True,answer_format='retrieved_span')
+            policy.validate_final(FinalDecision(type='final',answer=answer,citations=run['result'].get('citations',[])))
+            proof=run['result']['source_evidence'];expected=[]
+            matches={m['citation']:m for o in observations for m in o['result']['matches']}
+            for citation in run['result']['citations']:
+                match=matches[citation];offset=match['text'].encode().find(answer.encode())
+                if offset>=0:expected.append({'citation':citation,'document_id':match['document_id'],'document_version':match['document_version'],
+                    'document_sha256':match['document_sha256'],'start_byte':match['start_byte']+offset,'end_byte':match['start_byte']+offset+len(answer.encode()),
+                    'answer_sha256':hashlib.sha256(answer.encode()).hexdigest()})
+            valid=replay and bool(expected) and proof['protocol']=='batchforge.quoted-answer.v1' and proof['snapshot_id']==snapshot.id and proof['quotes']==expected
+        except (ValueError,TypeError,KeyError):valid=False
+        result['quoted_span_verified']=bool(valid);result['passed']=result['passed'] and bool(valid)
     return result
 
 
-def evaluate(raw,destination):
+def evaluate(raw,destination,fixture_set='retrieval-squad-v1'):
     destination=Path(destination);destination.mkdir(mode=0o700,exist_ok=False)
     begin=time.monotonic();corpus,cases=official(raw);snapshot=Snapshot(corpus);built=time.monotonic();results=[]
     with (destination/'scores.jsonl').open('x') as stream:
@@ -103,12 +127,12 @@ def evaluate(raw,destination):
     end=time.monotonic();latencies=sorted(r['latency_seconds'] for r in results)
     def quantile(p):
         x=(len(latencies)-1)*p;i=int(x);return latencies[i]+(latencies[min(i+1,len(latencies)-1)]-latencies[i])*(x-i)
-    _,chosen=selected(raw)
+    _,chosen=selected(raw,fixture_set)
     report={'protocol':'batchforge.public-retrieval-evaluation.v1','evaluation_valid':len(results)==10570,
         'source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         'retrieval_source_sha256':hashlib.sha256(Path(__file__).resolve().parents[1].joinpath('agents/retrieval.py').read_bytes()).hexdigest(),
         'scores_sha256':hashlib.sha256((destination/'scores.jsonl').read_bytes()).hexdigest(),
-        'dataset_sha256':SQUAD_DEV_SHA256,'snapshot':snapshot.manifest(),'cases':len(results),'fixture_set':'retrieval-squad-v1',
+        'dataset_sha256':SQUAD_DEV_SHA256,'snapshot':snapshot.manifest(),'cases':len(results),'fixture_set':fixture_set,
         'selected_cases':[{k:v for k,v in c.items() if k not in ('references',)} for c in chosen],
         'fixture_sha256':digest(chosen),'corpus_contains_questions_or_reference_fields':False,
         'build_seconds':built-begin,'query_wall_seconds':end-built,'elapsed_seconds':end-begin,
@@ -117,14 +141,14 @@ def evaluate(raw,destination):
         'answer_span_coverage_at_k':{str(k):sum(r['answer_span_rank'] is not None and r['answer_span_rank']<=k for r in results)/len(results) for k in (1,3,5)},
         'document_mrr_at_5':sum(1/r['document_rank'] if r['document_rank'] else 0 for r in results)/len(results),
         'new_gpu_tasks':0,'browser_visual_qa':False,'scope':'CPU BM25 retrieval over complete public passages, not vector embedding search or inference/task success',
-        'real_agent_plan':{'cases':8,'max_new_tasks':32,'selection_seed':SEED,'selection':'SHA256(seed:public_case_id) ascending, before observing RAG answers',
+        'real_agent_plan':{'cases':8,'max_new_tasks':32,'selection_seed':SPAN_SEED if fixture_set=='retrieval-span-v1' else SEED,'selection':'SHA256(seed:public_case_id) ascending, before observing RAG answers',
             'quality_gate':{'em_percent':75,'f1_percent':80,'supported_citation_percent':75,'task_success_percent':75},'public_dev_not_hidden':True}}
     write(destination/'report.json',report);return report
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--dataset',required=True,type=Path);p.add_argument('--out',required=True,type=Path)
-    a=p.parse_args();report=evaluate(a.dataset.read_bytes(),a.out)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--dataset',required=True,type=Path);p.add_argument('--out',required=True,type=Path);p.add_argument('--fixture-set',choices=RAG_FIXTURES,default=RAG_FIXTURES[0])
+    a=p.parse_args();report=evaluate(a.dataset.read_bytes(),a.out,a.fixture_set)
     print(json.dumps({k:report[k] for k in ('cases','document_recall_at_k','answer_span_coverage_at_k','elapsed_seconds','fixture_sha256')}))
 
 

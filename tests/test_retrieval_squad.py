@@ -71,3 +71,31 @@ def test_independent_api_and_cluster_lifetime_cannot_outlive_final_cleanup_margi
     with pytest.raises(ValueError):q.finite_command(command,datetime(2026,10,26,8,59,tzinfo=timezone.utc))
     with pytest.raises(ValueError):q.finite_command(command,datetime(2026,10,26,3))
     with pytest.raises(ValueError):q.finite_command(command,datetime(2026,10,26,3,tzinfo=timezone.utc),seconds=True)
+
+
+def test_span_validation_is_disjoint_by_id_before_any_retrieval_or_model_answers(monkeypatch):
+    corpus,cases=r.extract(canonical(dataset()));cases=[{**cases[0],'id':str(i)} for i in range(32)]
+    monkeypatch.setattr(r,'official',lambda raw:(corpus,cases))
+    _,old=r.selected(b'fixture');_,new=r.selected(b'fixture','retrieval-span-v1')
+    assert len(old)==len(new)==8 and not {c['id'] for c in old}&{c['id'] for c in new}
+    assert all(c['answer_format']=='retrieved_span' for c in new)
+    assert all('answer_format' not in c for c in old)
+    assert digest(r.selected(b'fixture','retrieval-span-v1')[1])==digest(new)
+
+
+def test_abstention_scores_zero_and_quote_commitment_is_required_for_new_contract(monkeypatch):
+    corpus,cases=r.extract(canonical(dataset()));case={**cases[0],'answer_format':'retrieved_span'};s=Snapshot(corpus)
+    monkeypatch.setattr(r,'inputs',lambda:(corpus,cases))
+    found=s.search(case['question']);m=found['matches'][0]
+    observed={'tool':'retrieval.search','arguments_sha256':digest({'query':case['question']}),'result':found,'result_sha256':digest(found)}
+    run={'status':'completed','state':{'observations':[observed]},'result':{'type':'abstain','reason':'insufficient_evidence'}}
+    value=r.grade(case,run);assert value['abstained'] and value['completed'] and not value['answer_delivered'] and value['f1']==0
+    run['result']={'type':'final','answer':'2030','citations':[m['citation']]}
+    assert not r.grade(case,run)['passed']
+    start=m['text'].encode().index(b'2030')+m['start_byte']
+    run['result']['source_evidence']={'protocol':'batchforge.quoted-answer.v1','snapshot_id':s.id,'quotes':[{
+        'citation':m['citation'],'document_id':m['document_id'],'document_version':m['document_version'],'document_sha256':m['document_sha256'],
+        'start_byte':start,'end_byte':start+4,'answer_sha256':hashlib.sha256(b'2030').hexdigest()}]}
+    assert r.grade(case,run)['passed']
+    run['result']['source_evidence']['quotes'][0]['start_byte']+=1
+    assert not r.grade(case,run)['passed']

@@ -23,7 +23,7 @@ class Node(Strict):
     max_model_calls:int=Field(default=4,ge=1,le=32)
     max_tool_calls:int=Field(default=2,ge=0,le=64)
     max_generated_tokens:int=Field(default=2048,ge=64,le=32768)
-    answer_format:str=Field(default='text',pattern=r'^(text|identifier|number)$')
+    answer_format:str=Field(default='text',pattern=r'^(text|identifier|number|retrieved_span)$')
     require_citations:bool=False
     planner_protocol:str=Field(default='json-v1',pattern=r'^(json-v1|schema-v1)$')
     tool_sequence:list[str]=Field(default_factory=list,max_length=8)
@@ -165,6 +165,8 @@ class WorkflowStore:
                 state['nodes'][nid]['status']='blocked' if child['state'].get('workflow_blocked') and child['status'] not in TERMINAL else child['status']
             if parent['deadline_at']<=parent['db_now']:failure='workflow_deadline_exceeded'
             elif any(c['status'] in ('failed','cancelled') for c in children.values()):failure='workflow_child_failed'
+            elif any(c['status']=='completed' and isinstance(c['result'],dict) and c['result'].get('type')=='abstain' for c in children.values()):
+                failure='workflow_child_abstained'
             active=sum(c['status'] not in TERMINAL and not c['state'].get('workflow_blocked') for c in children.values())
             if not failure:
                 for n in spec.nodes:

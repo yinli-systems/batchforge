@@ -1,0 +1,81 @@
+{
+  "phase": "preregistered_not_executed",
+  "fixture_set": "retrieval-span-v1",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "snapshot": {
+    "protocol": "batchforge.bm25-utf8-chunks.v1",
+    "id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+    "corpus_sha256": "d5efabb51800799e1303a3af87447886d26a8f8068e4cc56c74ba227b489e6e0",
+    "parameters": {
+      "k1": 1.2,
+      "b": 0.75,
+      "chunk_bytes": 1536,
+      "overlap_bytes": 128,
+      "tokenizer": "unicode-nfkc-casefold-word-v1",
+      "query_term_frequency": "binary",
+      "fields": "title+chunk",
+      "score": "idf*tf*(k1+1)/(tf+k1*(1-b+b*length/avg_length))",
+      "tie_break": "chunk_id_ascending"
+    },
+    "source": {
+      "name": "SQuAD1.1 public dev passages",
+      "origin": "https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v1.1.json",
+      "licence": "See original SQuAD release and source Wikipedia terms",
+      "source_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9"
+    },
+    "document_count": 2067,
+    "chunk_count": 2134,
+    "documents_sha256": "500944f7ab30a020ce05bc4a27e64487f667dea6002122b4d439d673b483425f"
+  },
+  "fixture_sha256": "38386fa3b8f75819a119f0025cfc4e17afec7aa25a37f2f6fda90d707df2eb52",
+  "case_ids": [
+    "5728d5793acd2414000dffb5",
+    "56f884cba6d7ea1400e17707",
+    "5726d7faf1498d1400e8ecdc",
+    "572751b4708984140094dc1c",
+    "56d70e570d65d2140019833e",
+    "572f6a0ba23a5019007fc5ec",
+    "5727aec03acd2414000de994",
+    "573005b9947a6a140053cf6c"
+  ],
+  "selection_seed": "2026102604",
+  "public_dev_not_hidden": true,
+  "max_child_tasks": 36,
+  "decoder_tasks": 4,
+  "agent_cases": 8,
+  "max_model_calls_per_agent": 4,
+  "quality_gate": {
+    "em_percent": 75,
+    "f1_percent": 80,
+    "supported_citation_percent": 75,
+    "task_success_percent": 75
+  },
+  "fault": "Coordinator loss after Batch ACK, retain same child identity, next DB lease <=30s",
+  "control_state": "Isolated Unix-only native PostgreSQL; Azure Agent production namespace remains undeployed",
+  "primary_api_source": "5a0a446",
+  "primary_worker_source": "748dc10",
+  "new_cloud_resources": false,
+  "quota_changes": false,
+  "passages_only_index": true,
+  "created_at": "2026-10-26T04:04:48.685792+00:00",
+  "excluded_development_ids": [
+    "5726ab47f1498d1400e8e6a4",
+    "573749741c45671900574460",
+    "57300888b2c2fd1400568776",
+    "5730126ba23a5019007fcd0a",
+    "5729d878af94a219006aa66e",
+    "56e1cbe2cd28a01900c67bb0",
+    "5728e07e3acd2414000e00ea",
+    "56e1127bcd28a01900c6754c"
+  ],
+  "answer_contract": {
+    "name": "retrieved_span",
+    "max_utf8_bytes": 128,
+    "max_words": 16,
+    "exact_source_bytes_required": true,
+    "no_gold_repair": true,
+    "hint_sha256": "bd83818c36bf1b93252a11276a4e8c5843b74ffbb1349e5938e2dfebd0aa5ea6",
+    "abstention": "Typed insufficient_evidence after actual retrieval, scored zero; not absence proof"
+  },
+  "comparison": "New disjoint eight questions, not a matched-question or hidden-test improvement claim. Previous eight remain failed development cases."
+}

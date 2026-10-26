@@ -8,7 +8,7 @@ Agent cancellation. Its accepted usage stays in the original Batch ledger.
 """
 from __future__ import annotations
 import copy,asyncio
-from .contracts import Policy,ToolDecision,FinalDecision,OutputContractError,canonical,digest,parse_decision,planner_messages
+from .contracts import Policy,ToolDecision,FinalDecision,AbstainDecision,OutputContractError,canonical,digest,parse_decision,planner_messages
 from .tools import Context,SPECS,execute
 from .memory import StoreMemory
 from .store import AgentError
@@ -96,10 +96,15 @@ class Coordinator:
             remaining=run['max_generated_tokens']-run['generated_tokens']
             if remaining<64:return await self.fail(run,'generated_token_budget_exceeded')
             observations=[{k:v for k,v in item.items() if k!='elapsed_seconds'} for item in state.get('observations',[])]
+            retrieval_observed=False
+            if policy.answer_format=='retrieved_span':
+                from .retrieval import evidence
+                _,queries=evidence(observations,self.retrieval,run['tenant_id'],policy)
+                retrieval_observed=bool(queries)
             from .structured import response_format
             body={'model':run['model'],'messages':planner_messages(run['goal'],policy,SPECS,observations,output_feedback=state.get('output_feedback'),workflow_inputs=state.get('workflow_inputs')),
                   'max_tokens':min(512,remaining),'temperature':0,
-                  'response_format':response_format(policy,observed_citations=citations(observations),remaining_tools=run['max_tool_calls']-run['tool_calls'],executed_tools=[o['tool'] for o in observations])}
+                  'response_format':response_format(policy,observed_citations=citations(observations),remaining_tools=run['max_tool_calls']-run['tool_calls'],executed_tools=[o['tool'] for o in observations],retrieval_observed=retrieval_observed)}
             state.update(phase='input_intent',step=step+1,request=body,
                          request_sha256=digest(body),child_key=f"agent.{run['id']}.{step+1}")
             return await self.change(run,'intent',kind='model.intent',state=state)
@@ -162,17 +167,30 @@ class Coordinator:
                 return await self.reject_output(run,state,'planner_json_invalid')
             policy.authorize(decision)
             pending=policy.pending_tool([o['tool'] for o in state.get('observations',[])])
-            if pending is not None and (isinstance(decision,FinalDecision) or decision.name!=pending):
+            if pending is not None and (not isinstance(decision,ToolDecision) or decision.name!=pending):
                 return await self.reject_output(run,state,'tool_sequence_required')
+            if isinstance(decision,AbstainDecision):
+                from .retrieval import evidence
+                _,queries=evidence(state.get('observations',[]),self.retrieval,run['tenant_id'],policy)
+                if not queries:return await self.reject_output(run,state,'retrieval_required')
+                return await self.change(run,'abstain',kind='run.abstained',state=state,status='completed',
+                    result={**decision.model_dump(),'batch_receipts':state.get('receipts',[]),
+                        'abstention_evidence':{'snapshot_id':policy.retrieval_snapshot,'queries_sha256':queries,
+                            'scope':'Retrieval executed; insufficient evidence is the model declaration, not a verified absence of an answer'}})
             if isinstance(decision,FinalDecision):
                 if not set(decision.citations)<=citations(state.get('observations',[])):
                     if policy.planner_protocol=='schema-v1':return await self.reject_output(run,state,'citation_unobserved')
                     raise ValueError('Unretrieved citation')
-                try:policy.validate_final(decision)
+                source_evidence=None
+                try:
+                    policy.validate_final(decision)
+                    if policy.answer_format=='retrieved_span':
+                        from .retrieval import quote_evidence
+                        source_evidence=quote_evidence(decision,state.get('observations',[]),self.retrieval,run['tenant_id'],policy)
                 except OutputContractError as exc:
                     return await self.reject_output(run,state,exc.code)
                 return await self.change(run,'final',kind='run.completed',state=state,status='completed',
-                    result={**decision.model_dump(),'batch_receipts':state.get('receipts',[])})
+                    result={**decision.model_dump(),'batch_receipts':state.get('receipts',[]),**({'source_evidence':source_evidence} if source_evidence else {})})
             if run['tool_calls']>=run['max_tool_calls']:return await self.fail(run,'tool_call_budget_exceeded')
             checkpoint();observation=await execute(decision,Context(run['tenant_id'],policy,self.memory,self.retrieval))
             state.setdefault('observations',[]).append(observation)

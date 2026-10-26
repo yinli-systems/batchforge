@@ -39,7 +39,7 @@ class RunRequest(Strict):
     max_tool_calls:int=Field(default=8,ge=0,le=64)
     max_generated_tokens:int=Field(default=4096,ge=64,le=32768)
     max_wall_seconds:int=Field(default=900,ge=30,le=3600)
-    answer_format:str=Field(default='text',pattern=r'^(text|identifier|number)$')
+    answer_format:str=Field(default='text',pattern=r'^(text|identifier|number|retrieved_span)$')
     require_citations:bool=False
     planner_protocol:str=Field(default='json-v1',pattern=r'^(json-v1|schema-v1)$')
     tool_sequence:list[str]=Field(default_factory=list,max_length=8)
@@ -152,7 +152,7 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=(),shared_b
         return {'protocol':'batchforge.agent-capabilities.v1','tenant_id':tid,'models':list(settings.served_models()),
             'tools':[s for s in SPECS if s['name']!='retrieval.search' or snapshots],
             'retrieval_snapshots':snapshots,'planner_protocols':['json-v1']+(['schema-v1'] if settings.json_schema_enabled else []),
-            'answer_formats':['text','identifier','number'],'max_tool_sequence':8,
+            'answer_formats':['text','identifier','number']+(['retrieved_span'] if snapshots else []),'max_tool_sequence':8,
             'workflow_admission_enabled':not read_only and settings.agent_workflows_enabled and settings.batch_submission_enabled and tid in app.state.executor_tenants,
             'admission_enabled':not read_only and settings.batch_submission_enabled and tid in app.state.executor_tenants,
             'memory_writes_enabled':not read_only,'cancellation_enabled':not read_only,

@@ -132,7 +132,7 @@ test('the actual console startup and connection remain usable when the browser s
  const context=vm.createContext({document,location:{href:'http://127.0.0.1/console/'},URL,TextEncoder,setInterval(){},console,
    injectedCore:{...core,AgentClient:class extends core.AgentClient{constructor(options){super({...options,fetch,crypto:webcrypto});}}}});
  Object.defineProperty(context,'sessionStorage',{get(){throw new Error('Browser storage denied');}});
- const app=readFileSync(path.join(__dirname,'../../agents/console/app.js'),'utf8').replace(/^import[^\n]+/,'const {AgentClient,StaleWorkspace,terminal,retrievalSelection,selectedTools}=injectedCore;');
+ const app=readFileSync(path.join(__dirname,'../../agents/console/app.js'),'utf8').replace(/^import[^\n]+/,'const {AgentClient,StaleWorkspace,terminal,retrievalSelection,selectedTools,displayStatus}=injectedCore;');
  vm.runInContext(app,context);document.getElementById('key').value='test-key';
  document.getElementById('connect-form').handlers.submit({preventDefault(){}});
  for(let i=0;i<20&&document.getElementById('workspace').hidden!==false;i++)await new Promise(resolve=>setImmediate(resolve));
@@ -169,4 +169,13 @@ test('child checks also verify the checksum and committed model usage in the cli
  const c=await client(async url=>url.endsWith('agent-capabilities')?response(caps()):response({protocol:'batchforge.agent-child-receipt.v1',run_id:rid,batch_id:'batch_one',committed_receipt_sha256:committed.receipt_sha256,accepted_usage_reconciled:true,current:envelope}));
  c.detail={run:{id:rid,model:'test-model',state:{receipts:[committed]}}};assert.equal((await c.receipt('batch_one')).accepted_usage_reconciled,true);
  receipt.accepted_usage.completion_tokens=11;await assert.rejects(c.receipt('batch_one'),/differs/);
+});
+
+
+test('typed abstention stays distinct from a completed answer in list and detail projections',async()=>{
+ const {displayStatus}=await modulePromise;
+ assert.equal(displayStatus({status:'completed',answer_disposition:'abstained'}),'abstained');
+ assert.equal(displayStatus({status:'completed',result:{type:'abstain'}}),'abstained');
+ assert.equal(displayStatus({status:'completed',result:{type:'final'}}),'completed');
+ assert.equal(displayStatus({status:'running',result:{type:'abstain'}}),'running');
 });

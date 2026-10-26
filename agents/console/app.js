@@ -1,4 +1,4 @@
-import {AgentClient,StaleWorkspace,terminal,retrievalSelection,selectedTools} from './core.js';
+import {AgentClient,StaleWorkspace,terminal,retrievalSelection,selectedTools,displayStatus} from './core.js';
 
 const $=id=>document.getElementById(id);
 const base=new URL('../v1/',location.href).pathname;
@@ -33,7 +33,7 @@ function renderRuns(){
   if(!client.runs.length)list.append(element('div','No workflows submitted yet.','empty'));
   for(const run of client.runs) {
     const row=button('',()=>openRun(run.id),'run-row'+(run.id===selectedId?' selected':''));
-    const top=element('div',undefined,'row-top');top.append(element('span',run.id.slice(0,18),'run-meta'),statusChip(run.status));
+    const top=element('div',undefined,'row-top');top.append(element('span',run.id.slice(0,18),'run-meta'),statusChip(displayStatus(run)));
     row.append(top,element('div',(run.goal_preview||'')+(run.goal_truncated?'…':''),'run-title'),
       element('div',date(run.created_at)+' · '+count(run.model_calls)+' reserved model steps','run-meta'));
     list.append(row);
@@ -59,12 +59,16 @@ function loadComposer(caps){
   if((caps.retrieval_snapshots||[]).length){
     const e=element('option','Search knowledge corpus');e.value='retrieval.search';$('sequence').append(e);
   }
+  for(const option of Array.from($('answer-format').options))if(option.value==='retrieved_span')option.remove();
+  if((caps.answer_formats||[]).includes('retrieved_span')){
+    const option=element('option','Exact source excerpt');option.value='retrieved_span';$('answer-format').append(option);
+  }
   const pending=client.pending();
   if(pending){
     const body=JSON.parse(pending.body),mapping={'goal':'goal','model':'model','protocol':'planner_protocol','namespace':'memory_namespace',
       'answer-format':'answer_format','model-budget':'max_model_calls','tool-budget':'max_tool_calls','token-budget':'max_generated_tokens','wall-budget':'max_wall_seconds','retrieval':'retrieval_snapshot'};
     for(const [id,key] of Object.entries(mapping))if(body[key]!==undefined){
-      if(['model','protocol','retrieval'].includes(id)&&![...$(id).options].some(v=>v.value===body[key])){const o=element('option',body[key]);o.value=body[key];$(id).append(o);}
+      if(['model','protocol','retrieval','answer-format'].includes(id)&&![...$(id).options].some(v=>v.value===body[key])){const o=element('option',body[key]);o.value=body[key];$(id).append(o);}
       $(id).value=body[key];
     }
     $('sequence').value=(body.tool_sequence||[]).join(',');$('require-citations').checked=!!body.require_citations;
@@ -72,6 +76,7 @@ function loadComposer(caps){
   $('mode').textContent=caps.read_only_snapshot?'Read-only snapshot':client.storageError?'Submission storage unavailable':caps.admission_enabled?'Admission open':'Admission paused';
   $('memory-save').disabled=!caps.memory_writes_enabled;
   $('namespace').readOnly=!!$('retrieval').value;
+  $('require-citations').disabled=$('answer-format').value==='retrieved_span';
   $('batch-link').hidden=caps.batch_console_path!=='/';renderComposer();
 }
 function formBody(){
@@ -81,6 +86,10 @@ function formBody(){
     answer_format:$('answer-format').value,require_citations:$('require-citations').checked,
     tool_sequence:$('sequence').value?$('sequence').value.split(','):[]};
   if(snapshot)body.retrieval_snapshot=snapshot.id;
+  if(body.answer_format==='retrieved_span'){
+    if(!snapshot)throw new Error('Choose a knowledge snapshot for an exact source excerpt.');
+    body.require_citations=true;
+  }
   for(const [id,key] of [['model-budget','max_model_calls'],['tool-budget','max_tool_calls'],['token-budget','max_generated_tokens'],['wall-budget','max_wall_seconds']]) {
     const value=Number($(id).value);if(!Number.isSafeInteger(value))throw new Error('Execution limits must be whole numbers.');body[key]=value;
   }
@@ -91,7 +100,7 @@ function renderDetail(){
   const panel=$('detail-panel'),snapshot=client.detail;
   if(!snapshot){panel.replaceChildren(element('div',selectedId?'Loading run…':'Select a run to inspect its execution.','empty'));return;}
   const run=snapshot.run,header=element('div',undefined,'section-title');
-  const title=element('div');title.append(element('p',run.id,'eyebrow'),element('h2',run.goal));header.append(title,statusChip(run.status));
+  const title=element('div');title.append(element('p',run.id,'eyebrow'),element('h2',run.goal));header.append(title,statusChip(displayStatus(run)));
   const actions=element('div',undefined,'detail-actions');
   actions.append(button('Refresh run',()=>openRun(run.id)),button('Verify execution history',async()=>{verifying=true;try{await client.verify();renderDetail();}finally{verifying=false;}}));
   if(!terminal(run.status)&&client.caps?.cancellation_enabled)actions.append(button('Cancel workflow',async()=>{
@@ -108,8 +117,10 @@ function renderDetail(){
   panel.append(element('p',run.model+' · Deadline '+date(run.deadline_at),'muted'));
   panel.append(element('h3','Required tool order'),element('p',(run.policy.tool_sequence||[]).join(' → ')||'Agent chooses from its granted tools.','copy-note'));
   if(run.policy.retrieval_snapshot)panel.append(element('h3','Pinned knowledge snapshot'),element('code',run.policy.retrieval_snapshot));
-  panel.append(element('h3',run.status==='completed'?'Final answer':'Current result'));
+  panel.append(element('h3',displayStatus(run)==='abstained'?'Evidence insufficient':run.status==='completed'?'Final answer':'Current result'));
   const result=run.result;panel.append(element('pre',result?.answer??(result?JSON.stringify(result,null,2):'No final result delivered.')));
+  if(result?.type==='abstain')panel.append(element('p','The Agent reported insufficient evidence. This is not a verified finding that no answer exists. Accepted model usage remains counted.','callout'));
+  if(result?.source_evidence)panel.append(element('h3','Quoted source bytes'),element('pre',JSON.stringify(result.source_evidence,null,2)));
   if(result?.citations?.length){const list=element('ul');for(const c of result.citations)list.append(element('li',c));panel.append(element('h3','Retrieved citations'),list);}
   const columns=element('div',undefined,'two-columns'),tools=element('section'),children=element('section');tools.append(element('h3','Committed tool observations'));
   const observations=run.state.observations||[],ol=element('ol',undefined,'steps');
@@ -146,7 +157,15 @@ async function refresh(){if(refreshing)return;refreshing=true;try{await refreshL
 $('retrieval').addEventListener('change',()=>perform(async()=>{
   const snapshot=retrievalSelection(client.caps,$('retrieval').value);$('namespace').readOnly=!!snapshot;
   if(snapshot)$('namespace').value=snapshot.namespace;
-  else if($('sequence').value==='retrieval.search')$('sequence').value='';
+  else {
+    if($('sequence').value==='retrieval.search')$('sequence').value='';
+    if($('answer-format').value==='retrieved_span')$('answer-format').value='text';
+    $('require-citations').disabled=false;
+  }
+}));
+$('answer-format').addEventListener('change',()=>perform(async()=>{
+  const quote=$('answer-format').value==='retrieved_span';$('require-citations').disabled=quote;
+  if(quote){$('require-citations').checked=true;retrievalSelection(client.caps,$('retrieval').value);if(!$('retrieval').value)throw new Error('Choose a knowledge snapshot first.');$('require-citations').checked=true;}
 }));
 $('connect-form').addEventListener('submit',event=>{event.preventDefault();
   const key=$('key').value.trim();if(!key)return;

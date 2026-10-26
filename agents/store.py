@@ -99,7 +99,8 @@ class AgentStore:
                 anchor=await one(conn,'SELECT created_at,id FROM bf_agents.runs WHERE tenant_id=%s AND id=%s',(tenant,after))
                 if not anchor:raise AgentError(404,'agent_cursor_not_found')
             rows=await (await conn.execute('''SELECT id,left(goal,160) AS goal_preview,length(goal)>160 AS goal_truncated,
-                model,status,model_calls,tool_calls,generated_tokens,revision,event_hash,deadline_at,created_at,updated_at
+                model,status,model_calls,tool_calls,generated_tokens,revision,event_hash,deadline_at,created_at,updated_at,
+                CASE WHEN status='completed' THEN CASE result->>'type' WHEN 'abstain' THEN 'abstained' WHEN 'final' THEN 'answered' ELSE NULL END ELSE NULL END AS answer_disposition
                 FROM bf_agents.runs WHERE tenant_id=%s
                 AND (%s::timestamptz IS NULL OR (created_at,id)<(%s::timestamptz,%s::text))
                 ORDER BY created_at DESC,id DESC LIMIT %s''',
