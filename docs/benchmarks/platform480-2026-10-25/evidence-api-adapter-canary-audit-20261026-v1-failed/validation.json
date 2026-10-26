@@ -1,0 +1,18 @@
+{
+  "passed": false,
+  "phase": "failed",
+  "new_gpu_inference_calls": 0,
+  "scope": "Source-matched controller-loss and exact profile restoration qualification, not complete canary delivery/quality or GPU hardware failure tolerance",
+  "error_type": "RuntimeError",
+  "frames": [
+    {
+      "file": "validator.py",
+      "line": 25
+    },
+    {
+      "file": "_client.py",
+      "line": 1283
+    }
+  ],
+  "validator_sha256": "152ed769a99c6d69d4b52f2aca13ce8382e938a2d874b82ffc43191133608a28"
+}

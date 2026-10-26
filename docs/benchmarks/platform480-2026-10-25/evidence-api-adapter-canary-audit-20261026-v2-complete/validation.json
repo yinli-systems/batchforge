@@ -1,0 +1,105 @@
+{
+  "passed": true,
+  "phase": "complete",
+  "new_gpu_inference_calls": 0,
+  "scope": "Source-matched controller-loss and exact profile restoration qualification, not complete canary delivery/quality or GPU hardware failure tolerance",
+  "source_commit": "c5ccc0d6c29a711f7a6af1b0633ff77feb116326",
+  "actual_engine_dispatch_recorded": true,
+  "primary_configuration_bytes_restored": true,
+  "identities": {
+    "api-a": {
+      "pid": 793093,
+      "start_ticks": "51709540",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 793101,
+      "start_ticks": "51709803",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 793084,
+      "start_ticks": "51709381",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 793107,
+      "start_ticks": "51710089",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "protected_engine_gateway_unchanged": true,
+  "observed_controller_loss_to_restoration_seconds": 10.72881,
+  "finite_guard_run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-soak480-engine-quality-adapter-controller-loss-20261026-v3",
+  "finite_guard_identity": {
+    "pid": 793119,
+    "start_ticks": "51710153",
+    "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+  },
+  "finite_guard_recovery_invocations": 0,
+  "journaled_engine_inference_intents": 1,
+  "known_completed_before_loss": 0,
+  "uncertain_or_unfinished_outcomes": 1,
+  "unknown_outcome_usage_is_not_zero": true,
+  "quality_not_measured": true,
+  "quiet_observations": [
+    {
+      "at": "2026-10-26T05:50:22.495908+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    },
+    {
+      "at": "2026-10-26T05:50:23.952234+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    }
+  ],
+  "retained_tasks": {
+    "limit": 50000,
+    "used": 49964,
+    "reserved": 0,
+    "available": 36,
+    "over_limit": false
+  },
+  "task_payload_bytes": {
+    "limit": 335544320,
+    "used": 205947844,
+    "reserved": 0,
+    "available": 129596476,
+    "over_limit": false
+  },
+  "restoration_report_sha256": "b28b1435b41204b1179fb7c74ef09e71ff976b35d4f2851563f3cfe3e40e0173",
+  "validator_sha256": "b43c93989ebba8b9a3ac4835551e5acf8b53a63d72b48eb613857a0a95ecdfbe"
+}

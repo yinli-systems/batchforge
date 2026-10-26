@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-26T05:47:34.813805+00:00",
+  "runner_identity": {
+    "pid": 793070,
+    "start_ticks": "51708899",
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261026-v25/source"
+  },
+  "intent_journal_sha256": "1b00041417330fa28bb064abca8085fc203cead2d92d64db443ae9fbd26c4e89",
+  "engine_not_quiescent": true,
+  "intentional_controller_exit": 42,
+  "four_h100_sample_observed": true,
+  "gpu_sample_sha256": "f81d74e5097f2b8a8785f431ad095cccd1d217bbb6eb28dc9ebf3e1571e39945"
+}

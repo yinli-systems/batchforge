@@ -1,0 +1,61 @@
+{
+  "collected_at": "2026-10-26T05:51:14.646601+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-engine-quality-adapter-controller-loss-20261026-v3",
+  "files": {
+    "launcher.json": {
+      "bytes": 159,
+      "sha256": "75fd48a6dbd61362a38b200d17c3cefcd27c1697508772343005e5c8cb6c209f",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "runner.json": {
+      "bytes": 246,
+      "sha256": "1d0f126e9886c79225b6cd733eab16ced41bca60e276a6d5505ebfb68daf6acd",
+      "source_relative_path": "runner.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "dispatch-observation.json": {
+      "bytes": 502,
+      "sha256": "06791e61034f9eb45aa4026211ef1a803ed7903ce90219110ef5fdb05d0df094",
+      "source_relative_path": "dispatch-observation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "recovery-validation.json": {
+      "bytes": 2259,
+      "sha256": "b28b1435b41204b1179fb7c74ef09e71ff976b35d4f2851563f3cfe3e40e0173",
+      "source_relative_path": "recovery-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "guard-launcher.json": {
+      "bytes": 343,
+      "sha256": "ba4226f2e0a69f20a650b4a0b295d07f27f604ad64e199fc9d80ba21d8091a8e",
+      "source_relative_path": "guard-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 1586,
+      "sha256": "f80ccf512d1afab49db54a08400986a58f82d3d6a0836c4fafc6bf7df4edfae7",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/plan.json": {
+      "bytes": 3547,
+      "sha256": "e906d6636281ecfb79a9deae76e37a57cc04944ee341261252a456733123fd50",
+      "source_relative_path": "run/plan.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/scores.jsonl": {
+      "bytes": 11159,
+      "sha256": "4e7411d7673f7d1b95afacba7ed96ff2001aa6bc3b4983de87f48dae359013b1",
+      "source_relative_path": "run/scores.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/observations.jsonl": {
+      "bytes": 1795,
+      "sha256": "0f4c1156264a8b4a031a0b689c0e513231b45705886f297e9a041e2e91214a6f",
+      "source_relative_path": "run/observations.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}
