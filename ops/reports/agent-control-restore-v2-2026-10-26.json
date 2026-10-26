@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "backup_version": 2,
+  "archive_sha256": "02c7c80fd9560d77020ba0cd902d994e1ca6156d2e07ae9adbc6c4ac1a704fd1",
+  "archive_source": "Actual Mac owner-only file transferred back to existing Pod",
+  "files": 1147,
+  "directories_including_root": 27,
+  "cold_cluster_state": "shut down",
+  "postgres_version": "PostgreSQL 17.11 (Ubuntu 17.11-1.pgdg24.04+2) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit",
+  "restored_runs": 8,
+  "events": 385,
+  "child_receipts": 16,
+  "accepted_usage": {
+    "prompt_tokens": 25583,
+    "completion_tokens": 1521
+  },
+  "all_state_result_event_head_hashes_match_original": true,
+  "all_retrieval_source_proofs_and_same_answer_scores_replayed": true,
+  "tenant_isolation_verified": true,
+  "default_transaction_read_only": true,
+  "tcp_listener_enabled": false,
+  "native_pg_stopped_and_pid_absent": true,
+  "independent_pg_timeout_seconds": 120,
+  "elapsed_seconds": 3.8358039369923063,
+  "new_gpu_tasks": 0,
+  "external_database_connections": 0,
+  "primary_service_configuration_and_identities_unchanged": true,
+  "transport_observation_timeout": {
+    "seconds": 120,
+    "treated_as_terminal": false,
+    "same_job_revalidated": true,
+    "job_replayed": false,
+    "terminal_phase": "complete"
+  },
+  "prior_file_only_archive": {
+    "preflight_refused": true,
+    "postgres_started": false,
+    "old_archive_preserved": true,
+    "missing_empty_directories": 13
+  },
+  "scope": "Restored terminal native qualification state from complete cold PG17 Mac archive. Not Azure backup restore, interrupted workflow resumption, cross-version migration or whole-Pod HA"
+}

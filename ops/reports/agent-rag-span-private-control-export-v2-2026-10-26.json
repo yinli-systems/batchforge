@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "protocol": "batchforge.stopped-pg-private-export.v2",
+  "scope": "Full stopped qualification PG17 directory and file copy on owner-only Mac storage; actual restore separate",
+  "files": 1147,
+  "directories": 27,
+  "uncompressed_bytes": 43910550,
+  "compressed_bytes": 6061650,
+  "archive_sha256": "02c7c80fd9560d77020ba0cd902d994e1ca6156d2e07ae9adbc6c4ac1a704fd1",
+  "per_file_hashes_equal_prior_cold_snapshot": true,
+  "all_transferred_files_and_local_disk_readback_verified": true,
+  "directory_mode": "0700",
+  "file_modes": "0600",
+  "file_and_directory_fsync_completed": true,
+  "source_postmaster_pid_absent": true,
+  "private_runtime_configuration_or_keys_copied": false,
+  "contains_private_agent_database_state": true,
+  "restore_qualified": false,
+  "exporter_source_sha256": "0cdfce5df379245b6ee0ca3a45050f92cf599dffea43992de267551c2f29f5be"
+}

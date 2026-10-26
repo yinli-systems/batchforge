@@ -163,3 +163,14 @@ and stale-epoch checks; child receipt and artifact readback; bounded cost/latenc
 measurement; current task headroom; and a rollback preserving accepted children.
 The live finite GPU guard pins existing services, so stop/requalify it before
 changing pinned model/API/worker configurations. No resource upgrade is needed.
+
+
+## Qualified native control-state restore
+
+The [cold backup/restore qualification](benchmarks/agent-control-restore-2026-10-26.md)
+restored all eight terminal RAG runs,385 event commitments,16 child receipts and
+source proofs from actual owner-only Mac archive bytes on isolated native PG17.11.
+The first file-only copy omitted13 empty directories and was refused before
+startup; the complete v2 includes the full27-entry directory layout. Both original
+metadata and corrected backup/restore evidence are retained. This does not
+qualify Azure or interrupted in-flight workflow recovery, and no owner DDL ran.

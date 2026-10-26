@@ -1,0 +1,10 @@
+{
+  "passed": false,
+  "phase": "preflight_refused_before_restore",
+  "postgres_started": false,
+  "archive_sha256": "dec00c525ef073b06730592444f9643a6026591eda23472f603c146083c3a2f3",
+  "reason": "File-only archive has no directory entries; source cluster has26 directories including13 empty directories. Complete directory structure must be backed up.",
+  "source_files_hash_verified": true,
+  "production_services_modified": false,
+  "scope": "Backup completeness refusal, not an attempted PostgreSQL startup or application restore"
+}

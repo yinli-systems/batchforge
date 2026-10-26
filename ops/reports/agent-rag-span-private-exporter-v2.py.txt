@@ -1,0 +1,65 @@
+"""Full cold PG17 directory/file backup. No environments or executor keys."""
+from pathlib import Path
+import subprocess,base64,hashlib,io,tarfile,json,re,os,stat
+old=Path('ops/reports/agent-rag-span-private-control-export-2026-10-26.json')
+r=json.loads(old.read_bytes());preflight={'passed':False,'phase':'preflight_refused_before_restore','postgres_started':False,'archive_sha256':r['archive_sha256'],
+ 'reason':'File-only archive has no directory entries; source cluster has26 directories including13 empty directories. Complete directory structure must be backed up.',
+ 'source_files_hash_verified':True,'production_services_modified':False,'scope':'Backup completeness refusal, not an attempted PostgreSQL startup or application restore'}
+p=Path('ops/reports/agent-rag-span-restore-v1-preflight-2026-10-26.json');assert not p.exists();p.write_text(json.dumps(preflight,indent=2)+'\n')
+script=r"""stty -echo
+python3 - <<'BF_PRIVATE_FULL_AGENT_EXPORT'
+from pathlib import Path
+import io,tarfile,hashlib,base64,json,stat,os
+p=Path('/tmp/bf-soak480-agent-runtime-schema-retrieval-span-20261026-v1/data')
+assert p.resolve()==p and not p.is_symlink() and p.stat().st_uid==65534
+assert (p/'PG_VERSION').read_text().strip()=='17' and not (p/'postmaster.pid').exists()
+manifest={'protocol':'batchforge.stopped-pg-private-export.v2','source_run':'soak480-agent-runtime-schema-retrieval-span-20261026-v1','pg_major':'17','files':{},'directories':[],
+ 'scope':'Complete stopped native qualification cluster files and directory layout; restore qualification separate'}
+buffer=io.BytesIO();total=0
+with tarfile.open(fileobj=buffer,mode='w:gz') as t:
+ for f in [p,*sorted(p.rglob('*'))]:
+  s=f.lstat();assert not stat.S_ISLNK(s.st_mode) and s.st_uid==65534
+  name=str(f.relative_to(p));tarname='data' if name=='.' else 'data/'+name
+  if stat.S_ISDIR(s.st_mode):
+   manifest['directories'].append(name);info=tarfile.TarInfo(tarname);info.type=tarfile.DIRTYPE;info.mode=0o700;t.addfile(info);continue
+  assert stat.S_ISREG(s.st_mode) and s.st_size<=32*1024**2
+  data=f.read_bytes();after=f.stat();assert (s.st_ino,s.st_size,s.st_mtime_ns)==(after.st_ino,after.st_size,after.st_mtime_ns)
+  total+=len(data);assert total<=128*1024**2
+  manifest['files'][name]={'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
+  info=tarfile.TarInfo(tarname);info.size=len(data);info.mode=0o600;t.addfile(info,io.BytesIO(data))
+ assert not (p/'postmaster.pid').exists()
+ raw=(json.dumps(manifest,indent=2)+'\n').encode();info=tarfile.TarInfo('private-manifest.json');info.size=len(raw);info.mode=0o600;t.addfile(info,io.BytesIO(raw))
+print('BF_PRIVATE_FULL_AGENT_EXPORT_BEGIN',flush=True)
+print(base64.encodebytes(buffer.getvalue()).decode(),flush=True)
+print('BF_PRIVATE_FULL_AGENT_EXPORT_END',flush=True)
+BF_PRIVATE_FULL_AGENT_EXPORT
+exit
+"""
+result=subprocess.run(['ssh','-tt','-i',str(Path.home()/'.ssh/id_ed25519'),'-o','BatchMode=yes','-o','ConnectTimeout=10','4x7ej43hrqznjn-64410eb2@ssh.runpod.io'],input=script,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=75)
+m=re.findall(r'\nBF_PRIVATE_FULL_AGENT_EXPORT_BEGIN\n([A-Za-z0-9+/=\n]+)\nBF_PRIVATE_FULL_AGENT_EXPORT_END',result.stdout.replace('\r',''));assert len(m)==1
+payload=base64.b64decode(m[0]);assert len(payload)<=32*1024**2
+oldmanifest=json.loads((Path.home()/'.codex/private-evidence/batchforge/soak480-agent-runtime-schema-retrieval-span-20261026-v1-control-db/private-manifest.json').read_bytes())
+with tarfile.open(fileobj=io.BytesIO(payload),mode='r:gz') as t:
+ manifest=json.load(t.extractfile('private-manifest.json'));assert manifest['files']==oldmanifest['files']
+ assert len(t.getmembers())==len(manifest['files'])+len(manifest['directories'])+1
+ for name in manifest['directories']:
+  assert name=='.' or not name.startswith('/') and '..' not in Path(name).parts
+  assert t.getmember('data' if name=='.' else 'data/'+name).isdir()
+ for name,info in manifest['files'].items():
+  assert name and '..' not in Path(name).parts and not name.startswith('/')
+  item=t.getmember('data/'+name);assert item.isfile() and item.size==info['bytes'];raw=t.extractfile(item).read()
+  assert len(raw)==info['bytes'] and hashlib.sha256(raw).hexdigest()==info['sha256']
+base=Path.home()/'.codex/private-evidence/batchforge/soak480-agent-runtime-schema-retrieval-span-20261026-v1-control-db-v2'
+base.mkdir(mode=0o700,parents=True,exist_ok=False)
+for name,data in [('pg17-data.tar.gz',payload),('private-manifest.json',(json.dumps(manifest,indent=2)+'\n').encode())]:
+ with (base/name).open('xb') as stream:os.chmod(base/name,0o600);stream.write(data);stream.flush();os.fsync(stream.fileno())
+fd=os.open(base,os.O_RDONLY);os.fsync(fd);os.close(fd)
+with tarfile.open(base/'pg17-data.tar.gz','r:gz') as t:
+ for name,info in manifest['files'].items():assert hashlib.sha256(t.extractfile('data/'+name).read()).hexdigest()==info['sha256']
+receipt={'passed':True,'protocol':manifest['protocol'],'scope':'Full stopped qualification PG17 directory and file copy on owner-only Mac storage; actual restore separate',
+ 'files':len(manifest['files']),'directories':len(manifest['directories']),'uncompressed_bytes':sum(v['bytes'] for v in manifest['files'].values()),
+ 'compressed_bytes':len(payload),'archive_sha256':hashlib.sha256(payload).hexdigest(),'per_file_hashes_equal_prior_cold_snapshot':True,
+ 'all_transferred_files_and_local_disk_readback_verified':True,'directory_mode':'0700','file_modes':'0600','file_and_directory_fsync_completed':True,
+ 'source_postmaster_pid_absent':True,'private_runtime_configuration_or_keys_copied':False,'contains_private_agent_database_state':True,'restore_qualified':False,
+ 'exporter_source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+p=Path('ops/reports/agent-rag-span-private-control-export-v2-2026-10-26.json');assert not p.exists();p.write_text(json.dumps(receipt,indent=2)+'\n');print(json.dumps(receipt))

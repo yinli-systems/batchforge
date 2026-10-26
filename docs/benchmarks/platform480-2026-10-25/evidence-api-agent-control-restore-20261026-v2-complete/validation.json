@@ -1,0 +1,178 @@
+{
+  "passed": true,
+  "phase": "complete",
+  "new_gpu_tasks": 0,
+  "external_database_connections": 0,
+  "source_commit": "dc139375570339b4b109ed801887ca74756133be",
+  "archive_sha256": "02c7c80fd9560d77020ba0cd902d994e1ca6156d2e07ae9adbc6c4ac1a704fd1",
+  "scope": "Restore of stopped terminal qualification cluster from actual off-Pod Mac archive, not Azure restore, interrupted workflow resume or whole-Pod HA",
+  "primary_before": {
+    "api-a": {
+      "pid": 754368,
+      "start_ticks": "50724295",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 754376,
+      "start_ticks": "50724615",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 735322,
+      "start_ticks": "50346265",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 754391,
+      "start_ticks": "50724938",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "all_archive_file_and_directory_digests_verified": true,
+  "files": 1147,
+  "directories": 27,
+  "cold_cluster_state": "shut down",
+  "timeout_identity": null,
+  "independent_timeout_seconds": 120,
+  "postgres_version": "PostgreSQL 17.11 (Ubuntu 17.11-1.pgdg24.04+2) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit",
+  "restored": {
+    "runs": [
+      {
+        "run_id": "agrun_254902356e5af7996511c8391df4de2f",
+        "revision": 48,
+        "event_head_sha256": "0bdf841feee6abe6b82075a0b67c990fbc91694f3cece2af5cbf0020a30ae6b6",
+        "events": 49,
+        "state_sha256": "6b11c3b5389fe89aef0aa83d8c809c9d39a1bb9419c5a14ce134b9fa5f119046",
+        "result_sha256": "ea3f2caa4414a48cc7c6323783a21c63da945fd57a50447c5f00dbdb32a31f43",
+        "source_quote_verified": true
+      },
+      {
+        "run_id": "agrun_3d0944df6f373aca5e50eb6f8ae99905",
+        "revision": 43,
+        "event_head_sha256": "7350208bfac1ea39ff1eb49516573555e28086244520f0724574d76d779fc19a",
+        "events": 44,
+        "state_sha256": "9e9314604f1372c12767e7e6f927bcfbc34f7f368c3a39263d14213d65a9c0f4",
+        "result_sha256": "7296bf400eb91dd6380fb68a6d9372fd8877f25ad99a1ca896c80a983a2a0fbb",
+        "source_quote_verified": true
+      },
+      {
+        "run_id": "agrun_409fbeb9450027d73180c9dbfcda5ee7",
+        "revision": 48,
+        "event_head_sha256": "cbf9519ef9843e80287e5f2ca6d1ea28b9b709af891cee04e4e865e9e497c047",
+        "events": 49,
+        "state_sha256": "f95e30e1de401b68adf45b3c28f903a444533939db90c91eeac9e6482ef79608",
+        "result_sha256": "baa2343f6a546be9f1b1f2ec991d6caec7e9c155dd2501028453a998a0c9e7e1",
+        "source_quote_verified": true
+      },
+      {
+        "run_id": "agrun_467def0ba259f018fa2fb83360094525",
+        "revision": 46,
+        "event_head_sha256": "aae63fa7ff835879c7701945cd432656a1a7cf2376dd0b217a371a1b65e86d7a",
+        "events": 47,
+        "state_sha256": "359a8c3fc028bb5edb2a9866d57c25ced55fa9266edf3f3dc6ca0eaabf9060c4",
+        "result_sha256": "af6b4560755e8929770204fb644a8454fcb809fd3a7b6a388602908202267100",
+        "source_quote_verified": true
+      },
+      {
+        "run_id": "agrun_79b1a3ce08dab3df1a0ac0750d2cb283",
+        "revision": 48,
+        "event_head_sha256": "b084109b5869bcc67e4797a83c4e84fd8ae598b349db3a90c212e70c38d695c4",
+        "events": 49,
+        "state_sha256": "b5ae713c63d5d91214822e8c73b90d9f9d175563d20fd0921147585c88f71db0",
+        "result_sha256": "0fe9c048c0512b3508fbd18f5659403d6b917bf9060abcc841eef7653adab0a7",
+        "source_quote_verified": true
+      },
+      {
+        "run_id": "agrun_7c6769c246f273c36f0168c975ebede1",
+        "revision": 49,
+        "event_head_sha256": "e5d0ed5e77d68f8a38512b130061a953b99a1f30dec4812220b823e4de676c96",
+        "events": 50,
+        "state_sha256": "97ffc42b9a95500f87721fdd5fea75f5fc361f47d339b4ed66ee32826c0df711",
+        "result_sha256": "0032cb696f771dd4c8f870f3effc5d12d501de93113190ae1404c3c3588ff3e1",
+        "source_quote_verified": true
+      },
+      {
+        "run_id": "agrun_d0441a6f8e46e00a4b389a8a93de7440",
+        "revision": 47,
+        "event_head_sha256": "f87ea1fbb394439f166eb7de1c8e6bb309cf4ccd6229ffc249237bc527f1059a",
+        "events": 48,
+        "state_sha256": "353e299414d5a926bfc139d1b5b778b5dd3d34f388853022b2830ba63cbd83b3",
+        "result_sha256": "211eff390dc0d0910dbe241ff99115cd61995d0bbe6e01f659436c3ce444bbdd",
+        "source_quote_verified": true
+      },
+      {
+        "run_id": "agrun_f9a0b1b21b36c98b0ed3b5cedcef82b9",
+        "revision": 48,
+        "event_head_sha256": "4a6354a23dcbc42a70eecb88374a90f087125f00ad5436165f9c92235ce040b9",
+        "events": 49,
+        "state_sha256": "3cd019050cc2eef6afa9b3889ca88091756d0f41d64df795b4517eb14f6b6fc7",
+        "result_sha256": "967910915e3589ea826df020034662705b109eec7f1246bf5879a7c2af2d15db",
+        "source_quote_verified": true
+      }
+    ],
+    "event_count": 385,
+    "child_receipts": 16,
+    "accepted_usage": {
+      "prompt_tokens": 25583,
+      "completion_tokens": 1521
+    },
+    "tenant_scope_verified": true,
+    "all_source_proofs_and_quality_replayed": true,
+    "schema_versions": {
+      "public": 11,
+      "bf_agents": 1
+    },
+    "native_control_counters": {
+      "active": 0,
+      "retained": 8
+    },
+    "database_read_only": true,
+    "tcp_listener_enabled": false
+  },
+  "primary_after": {
+    "api-a": {
+      "pid": 754368,
+      "start_ticks": "50724295",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 754376,
+      "start_ticks": "50724615",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 735322,
+      "start_ticks": "50346265",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 754391,
+      "start_ticks": "50724938",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "application_restore_verified": true,
+  "restored_pg_stopped": true,
+  "postmaster_pid_absent": true,
+  "elapsed_seconds": 3.8358039369923063
+}

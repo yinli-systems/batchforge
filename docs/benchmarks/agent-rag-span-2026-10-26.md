@@ -92,7 +92,9 @@ Every file was reread from the local archive and verified; directories0700,
 files0600 and file/directory fsync were checked. Only
 [metadata](../../ops/reports/agent-rag-span-private-control-export-2026-10-26.json)
 was committed. Raw model outputs, database archive, keys/environments and weights
-remain outside Git. Actual restore is **not yet qualified**.
+remain outside Git. That file-only v1 was later refused by a completeness preflight. A complete v2
+backup and [actual terminal-state restore](agent-control-restore-2026-10-26.md)
+have now qualified, while the original metadata remains unchanged.
 
 Agent production persistence/DDL is still pending Azure owner authentication;
 `bf_runtime` lacks CREATE and the user confirmed the owner password is not saved.
