@@ -13,6 +13,15 @@ guardian/controller processes, including TERM-ignoring controller KILL, parent
 exit, guardian TERM, handler failure/timeout and log failure. These tests use
 dummy restore handlers and do not qualify restoration of the primary services.
 
+The endpoint-fenced source5dd826d subsequently passed
+[CI40253395659](https://github.com/yinli-systems/batchforge/actions/runs/40253395659):
+**1,765 Python/zero skips,39 Node tests and compileall**, with zero remaining
+runner registrations. A separate actual Pod CPU preparation parsed and verified
+all10,570 cases and the100-case public-source canary, matching the old frozen
+contract/scorer hashes. [Prepared source and plans](platform480-2026-10-25/evidence-api-engine-quality-20261026-v1-prepared/validation.json)
+explicitly record zero HTTP/DB/GPU calls and an unqualified exclusive window/
+platform restore handler. They are not an inference quality result.
+
 The target is the complete10,570-question public SQuAD1.1 dev set on the existing
 480B-total/~35B-active AWQ MoE/four H100 engine. The earlier full **Batch API**
 quality gate53.8221/75.8213 remains failed. The improved1,000-question public
@@ -38,8 +47,8 @@ callback, durable intent/terminal journal and a separate private raw-response
 sink. It validates vLLM0.10.2, the sole served model,18440 context and initial
 engine quiescence. The client must target only loopback8348, with ambient
 proxies/redirects disabled; standalone module execution refuses instead of
-silently submitting work or exiting as a successful evaluation. It validates
-engine quiescence. Each request uses the actual chat-tokenizer protocol, padded
+silently submitting work or exiting as a successful evaluation. Each request
+uses the actual chat-tokenizer protocol, padded
 to16-token blocks, reserving prompt+128 output against164256 tokens and at most
 32 concurrent requests. The engine's actual fresh physical KV capacity must be
 verified by the maintenance controller before that budget is granted.

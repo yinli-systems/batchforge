@@ -1,5 +1,15 @@
 # Correctness checks and CI availability
 
+Full-quality prerequisites source5dd826d passed actual
+[run40253395659](https://github.com/yinli-systems/batchforge/actions/runs/40253395659):
+**1,765 Python/zero skips,39 Node tests and compileall**, PG17.11/Node24.22.1,
+UID65534, zero remaining runner registrations.
+[Exact result](../ops/reports/github-native-ci-5dd826d-2026-10-26.json).
+It includes real isolated Linux pidfd-trigger/controller termination processes
+and synthetic evaluator HTTP, endpoint/proxy/redirect refusals. These qualify
+the trigger primitive and client, not actual primary service restoration or a
+full10,570-question GPU quality result. [Pending protocol](benchmarks/engine-quality-full-2026-10-26.md).
+
 Short-action source8ddc2ca passed actual
 [run40250998254](https://github.com/yinli-systems/batchforge/actions/runs/40250998254):
 **1,727 Python/zero skips,39 Node tests and compileall**, PG17.11/Node24.22.1,
