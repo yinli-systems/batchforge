@@ -409,7 +409,7 @@ def runner(config_path,digest):
         if own.get('identity')!=process_identity(os.getpid()) or own.get('config_sha256')!=digest:raise ValueError('Runner identity not durably granted')
         platform=Platform(c)
         from scripts.engine_quality import prepare,Evaluator
-        if c['plan'].get('protocol')=='batchforge.post-retrieval-adapter-study.v1':
+        if c['plan'].get('protocol') in ('batchforge.post-retrieval-adapter-study.v1','batchforge.post-retrieval-adapter-study.v2'):
             from scripts.answer_adapter_study import prepare,Evaluator
             cohort=prepare(DATASET.read_bytes(),count=c['plan']['case_count'])
         else:cohort=prepare(DATASET.read_bytes(),count=c['plan']['tasks'],seed=2026102601)
@@ -529,7 +529,7 @@ def execute(base,guard_run,seconds,count,apply,qualify_loss,qualification=None,a
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path);p.add_argument('--guard-run',type=Path)
-    p.add_argument('--seconds',type=int,default=3600);p.add_argument('--count',type=int,choices=(100,500,10570),default=10570)
+    p.add_argument('--seconds',type=int,default=3600);p.add_argument('--count',type=int,choices=(100,250,500,10570),default=10570)
     p.add_argument('--apply',action='store_true');p.add_argument('--qualify-controller-loss',action='store_true')
     p.add_argument('--qualified-canary',type=Path);p.add_argument('--adapter-study',action='store_true')
     p.add_argument('--restore-config',type=Path);p.add_argument('--runner-config',type=Path);p.add_argument('--config-sha')
@@ -540,7 +540,7 @@ def main():
         return restore_config(a.restore_config,a.config_sha) if a.restore_config else runner(a.runner_config,a.config_sha)
     if not a.run or not a.guard_run:p.error('New run and existing finite guard required')
     if a.qualify_controller_loss and (a.count!=100 or not a.apply):p.error('Loss injection only on applied100-case qualification')
-    if a.adapter_study and a.count not in (100,500) or not a.adapter_study and a.count==500:p.error('Adapter study supports100/500; original QA supports100/10570')
+    if a.adapter_study and a.count not in (100,250,500) or not a.adapter_study and a.count in (250,500):p.error('Adapter study supports100/250/500; original QA supports100/10570')
     execute(a.run,a.guard_run,a.seconds,a.count,a.apply,a.qualify_controller_loss,a.qualified_canary,adapter_study=a.adapter_study)
 
 

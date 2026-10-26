@@ -45,3 +45,11 @@ was then frozen read-only, before any answer was observed; the initial Mac draft
 and both refused launcher attempts remain preserved. This does not qualify
 cross-architecture replay of numeric BM25 metadata. Both production service
 sources and the published older results remain unchanged.
+
+The original500-case v1 comparison stopped at a120s HTTP timeout (209 known,
+1 unknown outcome), before the ordinal phases. It remains failed. Follow-up v2
+uses250 disjoint questions excluding all618 prior reserved RAG/canary/study IDs,
+and an explicit300s lifetime for both arms. Production serving timeouts are
+unchanged. The original engine QA evaluator keeps its120s default. A passed v2
+would not establish the failed v1's120s service target. The new source, requests,
+cohort and recovery qualification must be frozen independently before inference.

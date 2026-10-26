@@ -142,6 +142,7 @@ def response_record(case,value,*,prompt_count):
 
 
 class Evaluator:
+    request_timeout_seconds=120
     def __init__(self,cohort,client,*,authority,emit,private_response,runtime_fingerprint,deadline_seconds=3600):
         if not all(callable(x) for x in (authority,emit,private_response)):raise ValueError('Live authority, durable journal and private raw-response sink required')
         if (not isinstance(client,httpx.AsyncClient) or str(client.base_url).rstrip('/')!=ENDPOINT
@@ -160,7 +161,7 @@ class Evaluator:
     async def response_bytes(self,method,path,**kwargs):
         self.checkpoint()
         seconds=kwargs.get('timeout',120)
-        if type(seconds) not in (int,float) or not 0<seconds<=120:raise ValueError('Bounded absolute HTTP lifetime required')
+        if type(seconds) not in (int,float) or not 0<seconds<=self.request_timeout_seconds:raise ValueError('Bounded absolute HTTP lifetime required')
         # HTTPX's per-operation inactivity timer is not a total request bound:
         # a peer can keep sending small chunks. The action has its own deadline.
         async with asyncio.timeout(seconds),self.client.stream(method,path,follow_redirects=False,**kwargs) as response:
@@ -203,7 +204,7 @@ class Evaluator:
                     'prompt_tokens':count,'reservation_tokens':amount,'at':datetime.now(timezone.utc).isoformat()})
                 self.inference_intents+=1;dispatched=True
                 self.active+=1;self.peak_active=max(self.peak_active,self.active)
-                try:value,raw=await self.json('POST','/v1/chat/completions',json=request,timeout=120)
+                try:value,raw=await self.json('POST','/v1/chat/completions',json=request,timeout=self.request_timeout_seconds)
                 finally:self.active-=1
                 elapsed=time.monotonic()-start
                 self.private_response(case.id,raw)

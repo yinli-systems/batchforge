@@ -72,3 +72,15 @@ def test_typed_abstention_is_valid_format_but_zero_answer_score(arm):
 def test_malformed_transport_envelope_is_not_mislabelled_a_zero_cost_model_answer(message):
     p=prepared();v=reply();v['choices'][0]['message']=message
     with pytest.raises(ValueError):s.response_record(p,p.cohort.cases[0],'source-ordinal',v,prompt_count=100)
+
+
+async def test_adapter_transport_budget_is_explicit_and_does_not_change_original_qa_default():
+    from scripts.engine_quality import Evaluator as Original
+    assert Original.request_timeout_seconds==120 and s.ArmEvaluator.request_timeout_seconds==300
+    p=prepared();expected=s.plan(p,runtime_fingerprint='synthetic')
+    assert expected['request_timeout_seconds']==300 and expected['protocol'].endswith('.v2')
+    engine=Engine()
+    async with httpx.AsyncClient(base_url='http://127.0.0.1:8348',transport=httpx.MockTransport(engine),trust_env=False) as client:
+        e=s.ArmEvaluator(p,'source-ordinal',client,authority=lambda:True,emit=lambda _:None,private_response=lambda *_:None,runtime_fingerprint='synthetic')
+        await e.json('GET','/version',timeout=300)
+        with pytest.raises(ValueError):await e.json('GET','/version',timeout=301)

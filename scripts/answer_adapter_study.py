@@ -19,7 +19,7 @@ from scripts.quality_eval import score
 from scripts.benchmark import distribution
 
 SEED='2026102606'
-PROTOCOL='batchforge.post-retrieval-adapter-study.v1'
+PROTOCOL='batchforge.post-retrieval-adapter-study.v2'
 ARMS=('full-citation','source-ordinal','source-ordinal','full-citation')
 
 
@@ -34,7 +34,7 @@ class Prepared:
 
 
 def prepare(raw,*,count=500):
-    if count not in (100,500):raise ValueError('Frozen100 canary or500-case matched evaluation required')
+    if count not in (100,250,500):raise ValueError('Frozen100 canary,250 follow-up or original500 selection required')
     corpus,rows=official(raw);snapshot=Snapshot(corpus)
     excluded={c['id'] for name in ('retrieval-squad-v1','retrieval-span-v1') for c in selected(raw,name)[1]}
     # The two source-lineage development cases used the seed05 on the remaining rows.
@@ -42,8 +42,8 @@ def prepare(raw,*,count=500):
     excluded.update(c['id'] for c in source_cases)
     # Canary IDs also become development observations; full study excludes them.
     ranked=sorted((c for c in rows if c['id'] not in excluded),key=lambda c:hashlib.sha256((SEED+':'+c['id']).encode()).hexdigest())
-    chosen=ranked[:100] if count==100 else ranked[100:600]
-    if count==500:excluded.update(c['id'] for c in ranked[:100])
+    chosen=ranked[:100] if count==100 else ranked[600:850] if count==250 else ranked[100:600]
+    if count in (250,500):excluded.update(c['id'] for c in ranked[:600 if count==250 else 100])
     observations={}
     for c in chosen:
         value=snapshot.search(c['question'],5)
@@ -88,13 +88,14 @@ def plan(prepared,*,runtime_fingerprint,deadline_seconds=1800):
         'adapter_source_sha256':hashlib.sha256(Path(answer_adapter.__file__).read_bytes()).hexdigest(),
         'model':MODEL,'runtime_fingerprint':runtime_fingerprint,'deadline_seconds':deadline_seconds,
         'arms':list(ARMS),'concurrency':32,'max_output_tokens':512,'inference_retries':0,
-        'context_limit':18440,'token_budget':164256,'retrieval':'Original question, same frozen BM25 top5 in each arm, no hit filtering',
+        'context_limit':18440,'token_budget':164256,'request_timeout_seconds':300,'retrieval':'Original question, same frozen BM25 top5 in each arm, no hit filtering',
         'quality_gate':{'minimum_exact_match_percent':70,'minimum_f1_percent':80,'minimum_joint_percent':70},
         'scope':'Post-retrieval engine subsystem; no Batch/Agent delivery, acceptance, metering or SLO claim',
         'limitations':['Public dev, not hidden; previous full engine work saw this dataset',
             'ABBA repetitions are correlated, not independent samples or significance evidence',
             'Prompt packing and ordinal encoding change together; their separate causal effects are not identified',
-            'Exact byte/source consistency does not prove semantic correctness; references grade externally']}
+            'Exact byte/source consistency does not prove semantic correctness; references grade externally',
+            '300s absolute HTTP lifetime is a changed transport budget, not passing the failed original120s experiment']}
 
 
 def response_record(prepared,case,arm,value,*,prompt_count):
@@ -133,6 +134,7 @@ def response_record(prepared,case,arm,value,*,prompt_count):
 
 
 class ArmEvaluator(BaseEvaluator):
+    request_timeout_seconds=300
     def __init__(self,prepared,arm,*args,**kw):
         self.prepared=prepared;self.arm=arm
         super().__init__(prepared.cohort,*args,**kw)
@@ -143,7 +145,7 @@ class ArmEvaluator(BaseEvaluator):
             'arm':self.arm,'tasks':len(cohort.cases),'workload_sha256':workload.hexdigest(),
             'dataset_sha256':cohort.dataset_sha256,'complete_public_dev':False,'test_fixture_detected':not self.prepared.public_data_verified,
             'runtime_fingerprint':runtime_fingerprint,'deadline_seconds':deadline_seconds,'answer_contract':self.arm,
-            'concurrency':32,'max_output_tokens':512,'context_limit':18440,'token_budget':164256}
+            'concurrency':32,'max_output_tokens':512,'context_limit':18440,'token_budget':164256,'request_timeout_seconds':300}
     def request(self,case):return body(self.prepared,case,self.arm)
     def score_response(self,case,value,*,prompt_count):return response_record(self.prepared,case,self.arm,value,prompt_count=prompt_count)
 
