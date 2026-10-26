@@ -8,7 +8,7 @@ from __future__ import annotations
 import hashlib,time
 from dataclasses import dataclass
 from pathlib import Path
-from agents.contracts import (Policy,canonical,digest,parse_decision,planner_messages,FinalDecision)
+from agents.contracts import (Policy,canonical,digest,parse_decision,planner_messages,FinalDecision,AbstainDecision)
 from agents.retrieval import Snapshot
 from agents.structured import response_format
 from agents.tools import SPECS
@@ -105,23 +105,27 @@ def response_record(prepared,case,arm,value,*,prompt_count):
     if (not isinstance(choices,list) or len(choices)!=1 or not isinstance(choices[0],dict) or choices[0].get('index')!=0
         or not isinstance(usage,dict) or type(usage.get('prompt_tokens')) is not int or usage['prompt_tokens']!=prompt_count
         or type(usage.get('completion_tokens')) is not int or not 0<=usage['completion_tokens']<=512):raise ValueError('Exact engine delivery/usage required')
-    choice=choices[0];text=choice.get('message',{}).get('content')
+    choice=choices[0];message=choice.get('message')
+    if not isinstance(message,dict):raise ValueError('Assistant message required')
+    text=message.get('content')
     if not isinstance(text,str) or len(text.encode())>32768 or choice.get('finish_reason') not in ('stop','length'):raise ValueError('Terminal engine output required')
-    c=context(prepared,case);valid=False;answer='';cited=[];abstained=False
+    c=context(prepared,case);valid=False;answered=False;answer='';cited=[];abstained=False
     try:
         decision=answer_adapter.parse(text,c) if arm=='source-ordinal' else parse_decision(text)
-        if not isinstance(decision,FinalDecision):abstained=decision.type=='abstain';raise ValueError('Not an answered case')
-        policy(prepared).validate_final(decision)
-        matches={m['citation']:m for m in c['sources']}
-        if not decision.citations or not set(decision.citations)<=matches.keys():raise ValueError('Unobserved source')
-        if not any(decision.answer in matches[ci]['text'] for ci in decision.citations):raise ValueError('No verbatim answer span')
         if choice['finish_reason']!='stop':raise ValueError('Truncated output is not valid')
-        answer=decision.answer;cited=decision.citations;valid=True
-    except ValueError:pass
+        if isinstance(decision,AbstainDecision):valid=True;abstained=True
+        elif isinstance(decision,FinalDecision):
+            policy(prepared).validate_final(decision)
+            matches={m['citation']:m for m in c['sources']}
+            if not decision.citations or not set(decision.citations)<=matches.keys():raise ValueError('Unobserved source')
+            if not any(decision.answer in matches[ci]['text'] for ci in decision.citations):raise ValueError('No verbatim answer span')
+            answer=decision.answer;cited=decision.citations;valid=True;answered=True
+        else:raise ValueError('Final extraction decision required')
+    except (ValueError,TypeError,RecursionError):pass
     ref=next(v for v in prepared.cases if v['id']==case.id)
     supported={m['citation'] for m in c['sources'] if support(ref,m)}
     citation_valid=bool(cited) and set(cited)<=supported
-    metrics=score(answer,case.answers) if valid else {'exact_match':0,'f1':0}
+    metrics=score(answer,case.answers) if answered else {'exact_match':0,'f1':0}
     return {'id':case.id,'status':'completed','answer_contract_valid':valid,'abstained':abstained,**metrics,
         'reference_supported_citation':bool(citation_valid),'joint_exact_and_supported':bool(metrics['exact_match']==1 and citation_valid),
         'prediction_sha256':hashlib.sha256(text.encode()).hexdigest(),'scored_answer_sha256':hashlib.sha256(answer.encode()).hexdigest(),

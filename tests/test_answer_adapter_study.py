@@ -57,3 +57,18 @@ async def test_balanced_four_phase_protocol_preserves_actual_usage_and_source_qu
     assert all(v['joint_percent']==100 and v['output_tokens']==16 for v in r['arms_results'].values())
     assert [x['arm'] for x in r['phases']]==list(s.ARMS)
     assert all(x['answer_contract'] in s.ARMS for x in r['phases'])
+
+
+@pytest.mark.parametrize('arm',['full-citation','source-ordinal'])
+def test_typed_abstention_is_valid_format_but_zero_answer_score(arm):
+    p=prepared();case=p.cohort.cases[0];v=reply()
+    v['choices'][0]['message']['content']=json.dumps({'answer':None,'source':None} if arm=='source-ordinal' else {'type':'abstain','reason':'insufficient_evidence'})
+    r=s.response_record(p,case,arm,v,prompt_count=100)
+    assert r['answer_contract_valid'] and r['abstained'] and r['exact_match']==r['f1']==0
+    assert not r['joint_exact_and_supported']
+
+
+@pytest.mark.parametrize('message',[None,[],1,'not-an-envelope'])
+def test_malformed_transport_envelope_is_not_mislabelled_a_zero_cost_model_answer(message):
+    p=prepared();v=reply();v['choices'][0]['message']=message
+    with pytest.raises(ValueError):s.response_record(p,p.cohort.cases[0],'source-ordinal',v,prompt_count=100)
