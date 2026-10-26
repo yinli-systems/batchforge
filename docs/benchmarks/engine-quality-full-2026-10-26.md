@@ -1,11 +1,22 @@
 # Preregistered full-dev engine quality evaluation
 
-Status: client, independent restoration trigger and platform-specific exclusive
-controller/restore handler implemented. Native checks and real100-case
-controller-loss qualification are required before full execution.
-**No full engine evaluation has started or passed.**
-Serving source remains748dc10. Service process epochs may change during guarded
-maintenance; the480B engine and gateway identities remain protected.
+Status: **complete and quality passed**. Immutable0657482 delivered all10,570
+public SQuAD1.1 dev cases on the existing480B-total/~35B-active AWQ MoE/4H100:
+**EM82.005676% / F1 90.940007%**,8,668 exact answers,220 invalid formats scored
+without repair, zero unknown inference outcomes. The engine window was477.515434s;
+the complete maintenance/evaluation/restoration window was499.057373s.
+The independent restore and post-restore raw-response replay/profile audit passed.
+All10,570 raw responses have a separate owner-only Mac copy outside Git.
+[Machine-readable analysis](../../ops/reports/engine-quality-full-2026-10-26.json),
+[immutable raw report](platform480-2026-10-25/soak480-engine-quality-full-20261026-v1-complete/run/report.json)
+and [post-restore replay audit](platform480-2026-10-25/evidence-api-engine-quality-full-audit-20261026-v1/validation.json).
+
+This is **engine-only** evidence; the old full Batch API cohort remains failed.
+Public dev includes prior calibration IDs and is not hidden testing. New evidence
+is committed for review but not yet published in the main product UI. Serving
+source remains748dc10; the480B engine and gateway identities stayed unchanged.
+The historical prerequisite, failed first real recovery and successful repair
+records follow below.
 
 Prerequisite source1bfada3 passed actual native
 [CI40252909143](https://github.com/yinli-systems/batchforge/actions/runs/40252909143):
@@ -198,3 +209,48 @@ reaped. Their deaths and dispatch proofs are independently observed; the
 intended os._exit(42) is source-pinned, but the OS wait status was not captured.
 Native isolated CPU tests do capture the exit status. No actual Pod exit-code
 observation is claimed in the qualification summary.
+
+## Closed measurement and verified restoration
+
+The frozen body used natural EOS and max128 tokens. All10,570 unique intents and
+terminal responses matched the pinned public input/reference manifest. A separate
+read-only audit rebuilt each request hash without gold, read7,045,415 private
+response bytes, replayed the frozen parser/scorer, checked token/latency/cost
+arithmetic and verified actual restored process profiles and original config
+bytes. That replay uses the same frozen grader and is not an independent grading
+implementation or a hardware attestation.
+
+| Measurement | Result |
+|---|---:|
+| Known prompt / output tokens | 3,475,192 / 115,239 |
+| Engine completions / exact answers per second | 22.1354 / 18.1523 |
+| HTTP service P50 / P95 / P99 | 1.219181 / 2.321162 / 3.688555s |
+| Offered-cohort completion P50 / P95 / P99 | 238.702578 / 452.182134 / 472.799577s |
+| GPU sample means, cards0–3 | 95.096 / 95.149 / 95.809 / 86.989% |
+| Whole controller allocation | $2.231895 |
+| Allocation per1,000 reference-exact answers | $0.257487 |
+
+The whole corpus was offered at the start; its completion distribution includes
+waiting behind earlier questions. HTTP service latency is a separate interval.
+Neither is Batch API durable-acceptance latency. GPU sampling produced94 rows
+per card, no GPU/engine sample errors, maximum internal gap5.440364s and no
+internal gap over10s. The first sample began0.579774s before the engine
+measurement and the last began3.140717s before its end. Time-weighted GPU busy
+over adjacent sample endpoints was95.534/95.601/96.275/87.344%; all cards had a
+100% sample. Busy counters do not prove FLOP saturation or complete coverage
+between samples. Power is parsed separately from utilization.
+
+The engine-only subwindow allocation was$2.135555; it overlaps the$2.231895
+controller window and must not be added to it. These numbers use the confirmed
+$16.10 whole-Pod hourly rate, exclude unverified extra charges and are not an
+invoice, marginal cost or price guarantee. The per-exact denominator is8,668
+answers matching public references; it is not a business-quality certification.
+
+The final independent audit found schema11, configured TLS verify-full,
+least-privilege runtime, zero pending/running tasks, idle worker and engine,
+all primary services ready, exact original environment files/actual process
+profiles and a clean rearmed finite guard with zero recovery invocations.
+Engine/gateway PIDs remained573119/219738. Worker/API/watchdog epochs changed
+through deliberate maintenance. Container free space was418,843,594,752 bytes;
+there was no model/driver/cloud restart, quota increase, history deletion or
+new Batch task. The single Pod remains a single GPU failure domain.

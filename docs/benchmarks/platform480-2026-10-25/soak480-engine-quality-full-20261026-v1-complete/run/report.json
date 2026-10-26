@@ -1,0 +1,83 @@
+{
+  "protocol": "batchforge.engine-squad.v1",
+  "scope": "Engine-only HTTP inference; no Batch tasks, acceptance ledger or platform recovery",
+  "tasks": 10570,
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "complete_public_dev": true,
+  "test_fixture_detected": false,
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+  "case_manifest_sha256": "3df3ccf00f3d7c9610cacdf4d53980320777b9516a748c60e2cacbd82bb8ca66",
+  "workload_sha256": "b5c00682c3d3070b7aad0021d370efc56bbb85484bd537023de7ceecc84cdbf1",
+  "selected_ids_sha256": "cf69e8ff6cba219a05acae3d23b3c2af4b2096c9421a3ac8a945767ad17b1492",
+  "references_sha256": "c1cea120b3719dabc972cc2d2047b3b8d9b41fd6df8a3ffba310fc36c4867270",
+  "answer_contract": "json-span-v1",
+  "answer_contract_sha256": "a7359175cc5bb7d8e1a462ae1121b01a8d00cdacd8871fa89b3957f441e96e09",
+  "scorer_sha256": "ba6ce8d53a3cab9e856660e8f31483a7e13457b6ac3a93aa450943240aa087c8",
+  "client_source_sha256": "4e9fae2a80cbb58092e8c685a73ba2cadbe47c2ed10a00c13e2c3a60f1fab679",
+  "max_output_tokens": 128,
+  "temperature": 0,
+  "forced_output": false,
+  "concurrency": 32,
+  "context_limit": 18440,
+  "token_budget": 164256,
+  "request_timeout_seconds": 120,
+  "deadline_seconds": 3600,
+  "quality_gate": {
+    "minimum_exact_match_percent": 70,
+    "minimum_f1_percent": 80
+  },
+  "inference_retries": 0,
+  "limitations": [
+    "Public dev set including prior calibration IDs; not hidden evaluation or a contamination audit",
+    "Engine-only throughput and latency are not Batch API goodput/P99",
+    "Container journal fsync does not survive Pod loss; export evidence",
+    "Uncertain requests pause admission and are never replayed"
+  ],
+  "passed": true,
+  "delivery_passed": true,
+  "deadline_met": true,
+  "evaluation_valid": true,
+  "measurement_started_at": "2026-10-26T01:52:26.246727+00:00",
+  "measurement_ended_at": "2026-10-26T02:00:23.767576+00:00",
+  "elapsed_seconds": 477.5154336510459,
+  "inference_intents": 10570,
+  "predictions": 10570,
+  "unknown_inference_outcomes": 0,
+  "missing_predictions": 0,
+  "not_dispatched": 0,
+  "exact_match_percent": 82.00567644276254,
+  "f1_percent": 90.94000661220909,
+  "invalid_answer_contracts": 220,
+  "finish_reasons": {
+    "stop": 10570
+  },
+  "known_prompt_tokens": 3475192,
+  "known_completion_tokens": 115239,
+  "all_inference_usage_known": true,
+  "reservation_peak_tokens": 21392,
+  "admission_paused": false,
+  "peak_inflight_requests": 32,
+  "http_service_seconds": {
+    "samples": 10570,
+    "p50": 1.219181,
+    "p95": 2.321162,
+    "p99": 3.688555,
+    "max": 13.325873,
+    "mean": 1.314286
+  },
+  "offered_cohort_completion_seconds": {
+    "samples": 10570,
+    "p50": 238.702578,
+    "p95": 452.182134,
+    "p99": 472.799577,
+    "max": 477.515094,
+    "mean": 237.49259
+  },
+  "exact_results_per_second": 18.15229286669364,
+  "cost": {
+    "operator_whole_pod_usd_per_hour": 16.1,
+    "window_allocation_usd": 2.1355551338282885,
+    "scope": "Engine measurement wall allocation; excludes maintenance/restoration; not invoice or marginal cost"
+  }
+}

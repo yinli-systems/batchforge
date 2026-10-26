@@ -6,7 +6,7 @@ an OpenAI-shaped batch API, and an operations console backed by live data.
 An additive [durable Agent runtime](docs/agent-runtime.md) now implements typed
 planning, capability-checked data tools, tenant memory, fenced coordinator
 leases and receipt-linked model steps through the existing Batch queue.
-The latest native check passes1,765 Python/zero-skip and39 console tests. A
+The latest native check passes1,787 Python/zero-skip and39 console tests. A
 finite real480B qualification passed20/20 fresh ordered-tool Agent goals,
 44 model tasks and88 artifact byte readbacks, including post-ACK coordinator
 loss and API restart. Agent state used an isolated native PostgreSQL cluster;
@@ -32,10 +32,13 @@ within its predeclared30-second gate. Four fresh Agent goals passed with10 model
 tasks and20 artifact reads; four decoder calibration tasks are accounted for
 separately. This finite observation is not a P99 or throughput improvement claim.
 
-[Full-dev engine quality preparation](docs/benchmarks/engine-quality-full-2026-10-26.md)
-now has an exact-token client, pinned full corpus and a native-tested independent
-restoration trigger. Actual platform maintenance/restore integration and the
-full GPU run remain pending; the original full Batch quality failure remains.
+The [full-dev engine quality run](docs/benchmarks/engine-quality-full-2026-10-26.md)
+now passed all10,570 public SQuAD cases: **EM82.01% / F1 90.94%**,477.515seconds,
+zero unknown inference outcomes. Every private response was replay-audited and
+copied off-Pod; the independent service restore passed after a real controller-loss
+qualification. Whole controller allocation was **$2.2319** at the operator-confirmed
+$16.10/h, not an invoice. This is engine-only evidence; the original full Batch
+quality failure remains. The new result is not yet published in the product UI.
 
 The candidate [Agent workspace](docs/agent-console.md) adds same-origin submission,
 required tool order, versioned memory, cancellation and client-verified history/
@@ -53,7 +56,7 @@ The 1,060-task platform campaign includes 120 process-fault recovery tasks,
 verified S3 readback and a separate real primary-entry qualification.
 See [480B platform evidence](docs/benchmarks/platform480-2026-10-25.md).
 
-The complete 10,570-question public SQuAD campaign delivered every task, but
+The original complete 10,570-question **Batch API** SQuAD campaign delivered every task, but
 measured **EM 53.82% / F1 75.82%**, below the predeclared 70% / 80% gates.
 The separate 2,400-task sustained compute workload completed with all checks
 passing: 336.499 completion tokens/s over 80.8 minutes, durable-acceptance P95
@@ -67,7 +70,7 @@ See [ground-truth evaluation and endurance protocol](docs/benchmarks/quality-squ
 
 A frozen JSON-span answer contract subsequently passed a disjoint 1,000-question
 public holdout: **EM82.8% / F1 91.43%** versus matched baseline 56.9% / 77.10%.
-The original full-dev gate remains failed. [Protocol, paired outcomes and cost](docs/benchmarks/quality-contract-2026-10-25.md)
+The original full-dev Batch API gate remains failed. [Protocol, paired outcomes and cost](docs/benchmarks/quality-contract-2026-10-25.md)
 retain both results. Serving source748dc10 passed1,415 native PostgreSQL17
 tests; Agent action-lease source8ddc2ca passed **1,727 Python tests and39 console
 tests**. See [actual CI evidence](docs/ci.md).

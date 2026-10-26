@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-26T02:03:19.313558+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-engine-quality-full-audit-20261026-v1",
+  "files": {
+    "validation.json": {
+      "bytes": 2252,
+      "sha256": "007124d39ddddfb59abc204e18045854b040ed127ed7b1ba13dc3e0cf64f2396",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

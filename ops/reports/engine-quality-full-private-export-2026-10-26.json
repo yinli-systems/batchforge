@@ -1,0 +1,15 @@
+{
+  "protocol": "batchforge.private-public-benchmark-export.v1",
+  "passed": true,
+  "verified_at": "2026-10-26T02:07:21.043056+00:00",
+  "scope": "Operator-verified owner-only Mac copy of public SQuAD engine responses outside Git; not tenant data or whole-platform HA",
+  "source_run": "/root/batchforge-runtime/soak480-engine-quality-full-20261026-v1",
+  "plan_sha256": "ef17de0b51935ba2be3161ced17ba1aeafe8fce27a34435f54a0f1e2568fdde0",
+  "private_manifest_sha256": "87ae6fccf7878181c204988aa96fa773b5507bd60c77e6839913f2b64b5017da",
+  "response_count": 10570,
+  "response_bytes": 7045415,
+  "directory_mode": "0700",
+  "response_file_mode": "0600",
+  "all_bytes_and_hashes_match_public_terminal_commitments": true,
+  "raw_response_bytes_exported_to_git": false
+}

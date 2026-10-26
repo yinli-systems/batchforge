@@ -1,0 +1,52 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "quality_passed": true,
+  "new_gpu_tasks_submitted": 0,
+  "new_cloud_resources": false,
+  "scope": "Read-only raw-response replay, arithmetic and actual post-restoration profile audit. Not a second independent scoring implementation or hardware attestation.",
+  "operator_commit": "0657482f50c51a87ea4e20c388070ee01553fe03",
+  "tasks": 10570,
+  "unique_intents": 10570,
+  "unique_completed": 10570,
+  "exact_results": 8668,
+  "exact_match_percent": 82.00567644276254,
+  "f1_percent": 90.94000661220909,
+  "private_response_count": 10570,
+  "private_response_bytes": 7045415,
+  "private_raw_bytes_replayed": true,
+  "request_hashes_rebuilt_without_gold": true,
+  "all_returned_usage_and_distribution_arithmetic_matches": true,
+  "actual_restored_service_profiles_verified": true,
+  "original_configuration_bytes_match": true,
+  "guard_run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-soak480-engine-quality-full-20261026-v1",
+  "guard_identity": {
+    "pid": 735358,
+    "start_ticks": "50346750",
+    "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+  },
+  "guard_recovery_invocations": 0,
+  "post_restore_observation": {
+    "at": "2026-10-26T02:00:58.481939+00:00",
+    "db_pending": 0,
+    "db_running": 0,
+    "engine_quiescent": true,
+    "schema_version": 11,
+    "runtime_privileges_verified": true,
+    "configured_tls_verify_full": true,
+    "worker_metrics": {
+      "batchforge_worker_inflight": 0.0,
+      "batchforge_worker_reserved_context_tokens": 0.0,
+      "batchforge_worker_adaptive_kv_waiting": 0.0,
+      "batchforge_worker_adaptive_kv_paused": 0.0
+    },
+    "worker_idle": true
+  },
+  "post_restore_state_sha256": "939a6578addc065fe3da3e92a70d2c6292dcf663353b5ee4fa2f74c24fe0b736",
+  "protected_engine_gateway_unchanged": true,
+  "root_disk_free_bytes": 418843594752,
+  "report_sha256": "e63fb2537a259fbe845bcdab1ba6061f24c8046020f7159ab617dd99b465133b",
+  "plan_sha256": "ef17de0b51935ba2be3161ced17ba1aeafe8fce27a34435f54a0f1e2568fdde0",
+  "scores_sha256": "da00f90a0a8c891ce26aa3c64aceed0de81d6c496d7b554410038fefd9f9a1c3",
+  "restore_report_sha256": "8a6b8bde7208d3dae4c21126b3ff721fe6653a4d53c94e182e81308edd193b77"
+}

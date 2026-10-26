@@ -1,0 +1,122 @@
+{
+  "protocol": "batchforge.engine-quality-analysis.v1",
+  "scope": "Full public SQuAD1.1 engine-only evaluation; not Batch API delivery/goodput or hidden testing",
+  "operator_commit": "0657482f50c51a87ea4e20c388070ee01553fe03",
+  "report_sha256": "e63fb2537a259fbe845bcdab1ba6061f24c8046020f7159ab617dd99b465133b",
+  "audit_source_sha256": "9be1f739900329d9e80da26351f1de8355a9cbf98ae19ea4544c73fae5bec2cc",
+  "plan_sha256": "ef17de0b51935ba2be3161ced17ba1aeafe8fce27a34435f54a0f1e2568fdde0",
+  "scores_sha256": "da00f90a0a8c891ce26aa3c64aceed0de81d6c496d7b554410038fefd9f9a1c3",
+  "audit_sha256": "007124d39ddddfb59abc204e18045854b040ed127ed7b1ba13dc3e0cf64f2396",
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "total_parameters_billions": 480,
+  "approximately_active_parameters_billions": 35,
+  "tensor_parallel_size": 4,
+  "tasks": 10570,
+  "unique_intents": 10570,
+  "known_completed": 10570,
+  "unknown_inference_outcomes": 0,
+  "exact_results": 8668,
+  "exact_match_percent": 82.00567644276254,
+  "f1_percent": 90.94000661220909,
+  "invalid_answer_contracts": 220,
+  "quality_gate": {
+    "minimum_exact_match_percent": 70,
+    "minimum_f1_percent": 80
+  },
+  "quality_passed": true,
+  "engine_measurement_seconds": 477.5154336510459,
+  "controller_wall_seconds": 499.057373,
+  "known_prompt_tokens": 3475192,
+  "known_completion_tokens": 115239,
+  "tasks_per_second": 22.13541019854081,
+  "prompt_tokens_per_second": 7277.653778494555,
+  "completion_tokens_per_second": 241.33041966600234,
+  "exact_results_per_second": 18.15229286669364,
+  "http_service_seconds": {
+    "samples": 10570,
+    "p50": 1.219181,
+    "p95": 2.321162,
+    "p99": 3.688555,
+    "max": 13.325873,
+    "mean": 1.314286
+  },
+  "offered_cohort_completion_seconds": {
+    "samples": 10570,
+    "p50": 238.702578,
+    "p95": 452.182134,
+    "p99": 472.799577,
+    "max": 477.515094,
+    "mean": 237.49259
+  },
+  "peak_http_inflight": 32,
+  "reservation_peak_tokens": 21392,
+  "gpu": [
+    {
+      "gpu_index": 0,
+      "samples": 94,
+      "sample_mean_utilization_percent": 95.09574468085107,
+      "time_weighted_utilization_percent": 95.53423058269772,
+      "maximum_utilization_percent": 100.0,
+      "sample_mean_power_watts": 569.3890425531915
+    },
+    {
+      "gpu_index": 1,
+      "samples": 94,
+      "sample_mean_utilization_percent": 95.14893617021276,
+      "time_weighted_utilization_percent": 95.60103472898133,
+      "maximum_utilization_percent": 100.0,
+      "sample_mean_power_watts": 577.8105319148937
+    },
+    {
+      "gpu_index": 2,
+      "samples": 94,
+      "sample_mean_utilization_percent": 95.80851063829788,
+      "time_weighted_utilization_percent": 96.27506131072046,
+      "maximum_utilization_percent": 100.0,
+      "sample_mean_power_watts": 571.8626595744681
+    },
+    {
+      "gpu_index": 3,
+      "samples": 94,
+      "sample_mean_utilization_percent": 86.98936170212765,
+      "time_weighted_utilization_percent": 87.34440246926329,
+      "maximum_utilization_percent": 100.0,
+      "sample_mean_power_watts": 582.106914893617
+    }
+  ],
+  "sampling": {
+    "target_interval_seconds": 5,
+    "rows": 94,
+    "gpu_errors": 0,
+    "engine_errors": 0,
+    "maximum_internal_gap_seconds": 5.440363505971618,
+    "internal_gaps_over_10s": 0,
+    "first_sample_relative_to_measurement_start_seconds": -0.579774,
+    "measurement_end_after_last_sample_seconds": 3.140717
+  },
+  "cost": {
+    "kind": "operator_whole_pod_rate_time_allocation",
+    "hourly_rate_usd": 16.1,
+    "controller_window_usd": 2.2318954736944443,
+    "engine_window_usd": 2.1355551338282885,
+    "controller_usd_per_1000_reference_exact_answers": 0.2574867874589806,
+    "provider_invoice_verified": false,
+    "overlapping_windows_must_not_be_added": true
+  },
+  "actual_restored_service_profiles_verified": true,
+  "restoration_passed": true,
+  "private_raw_offpod_copy": {
+    "responses": 10570,
+    "uncompressed_bytes": 7045415,
+    "operator_export_receipt_sha256": "0a230a09e4838ef9ae6b732cddf51be4731eab2e2154347af9c1d64372d13d2b",
+    "scope": "Owner-only local Mac copy outside Git; not whole-platform HA"
+  },
+  "limitations": [
+    "Full public dev includes previous calibration IDs; not a new holdout or contamination audit",
+    "New engine protocol does not replace the old full Batch API failed cohort",
+    "Different workloads/arrival/endpoints are not controlled throughput comparisons",
+    "NVML busy is not FLOP saturation; time-weighted utilization covers only adjacent sample endpoints",
+    "Raw-response replay uses the frozen grader, not an independent grading implementation",
+    "Operator rate allocation is not an invoice, marginal price or production capacity claim"
+  ]
+}

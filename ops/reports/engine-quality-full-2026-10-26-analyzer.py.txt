@@ -1,0 +1,69 @@
+"""Reproduce public full-SQuAD measurements; no DB/GPU/network operation."""
+from pathlib import Path
+import csv,hashlib,json,statistics
+from datetime import datetime
+ROOT=Path('docs/benchmarks/platform480-2026-10-25')
+base=ROOT/'soak480-engine-quality-full-20261026-v1-complete'
+def load(p):return json.loads(p.read_text())
+def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+report=load(base/'run/report.json');parent=load(base/'campaign.json')
+audit_path=ROOT/'evidence-api-engine-quality-full-audit-20261026-v1/validation.json';audit=load(audit_path)
+audit_source=ROOT/'evidence-api-engine-quality-full-audit-source-20261026-v1'
+audit_source_sha=digest(audit_source/'validator.py');assert load(audit_source/'source-receipt.json')['source_sha256']==audit_source_sha
+export_path=Path('ops/reports/engine-quality-full-private-export-2026-10-26.json');export=load(export_path)
+assert export['passed'] and export['response_count']==10570 and export['response_bytes']==audit['private_response_bytes'] and export['plan_sha256']==digest(base/'run/plan.json')
+assert parent['passed'] and parent['restoration_passed'] and report['evaluation_valid'] and report['passed']
+assert audit['passed'] and audit['report_sha256']==digest(base/'run/report.json') and audit['scores_sha256']==digest(base/'run/scores.jsonl')
+rows=[json.loads(v) for v in (base/'run/observations.jsonl').read_text().splitlines()]
+series={index:[] for index in range(4)}
+for row in rows:
+    if 'gpu_error' in row:continue
+    found=set()
+    for line in row.get('gpu_csv',[]):
+        values=next(csv.reader([line],skipinitialspace=True));assert len(values)==7
+        index=int(values[0]);assert index in series and index not in found;found.add(index)
+        total,used,util,power=map(float,values[3:7])
+        assert 0<=used<=total and 0<=util<=100 and power>=0 and 'H100' in values[2]
+        series[index].append((row['monotonic'],util,power))
+    assert found==set(range(4))
+gpus=[]
+for index,values in series.items():
+    duration=values[-1][0]-values[0][0]
+    area=sum((left[1]+right[1])/2*(right[0]-left[0]) for left,right in zip(values,values[1:]))
+    gpus.append({'gpu_index':index,'samples':len(values),'sample_mean_utilization_percent':statistics.mean(v[1] for v in values),
+        'time_weighted_utilization_percent':area/duration,'maximum_utilization_percent':max(v[1] for v in values),
+        'sample_mean_power_watts':statistics.mean(v[2] for v in values)})
+gaps=[right['monotonic']-left['monotonic'] for left,right in zip(rows,rows[1:])]
+seconds=report['elapsed_seconds'];exact=audit['exact_results'];allocation=parent['cost']['window_allocation_usd']
+assert report['predictions']==10570 and audit['unique_intents']==audit['unique_completed']==10570
+assert abs(allocation-16.1*parent['elapsed_seconds']/3600)<1e-9
+summary={'protocol':'batchforge.engine-quality-analysis.v1','scope':'Full public SQuAD1.1 engine-only evaluation; not Batch API delivery/goodput or hidden testing',
+    'operator_commit':'0657482f50c51a87ea4e20c388070ee01553fe03','report_sha256':digest(base/'run/report.json'),
+    'audit_source_sha256':audit_source_sha,'plan_sha256':digest(base/'run/plan.json'),'scores_sha256':digest(base/'run/scores.jsonl'),'audit_sha256':digest(audit_path),
+    'model':report['model'],'total_parameters_billions':480,'approximately_active_parameters_billions':35,'tensor_parallel_size':4,
+    'tasks':10570,'unique_intents':10570,'known_completed':10570,'unknown_inference_outcomes':report['unknown_inference_outcomes'],
+    'exact_results':exact,'exact_match_percent':report['exact_match_percent'],'f1_percent':report['f1_percent'],
+    'invalid_answer_contracts':report['invalid_answer_contracts'],'quality_gate':report['quality_gate'],'quality_passed':report['passed'],
+    'engine_measurement_seconds':seconds,'controller_wall_seconds':parent['elapsed_seconds'],
+    'known_prompt_tokens':report['known_prompt_tokens'],'known_completion_tokens':report['known_completion_tokens'],
+    'tasks_per_second':10570/seconds,'prompt_tokens_per_second':report['known_prompt_tokens']/seconds,
+    'completion_tokens_per_second':report['known_completion_tokens']/seconds,'exact_results_per_second':exact/seconds,
+    'http_service_seconds':report['http_service_seconds'],'offered_cohort_completion_seconds':report['offered_cohort_completion_seconds'],
+    'peak_http_inflight':report['peak_inflight_requests'],'reservation_peak_tokens':report['reservation_peak_tokens'],
+    'gpu':gpus,'sampling':{'target_interval_seconds':5,'rows':len(rows),'gpu_errors':sum('gpu_error' in x for x in rows),
+        'engine_errors':sum('metrics_error' in x for x in rows),'maximum_internal_gap_seconds':max(gaps),'internal_gaps_over_10s':sum(x>10 for x in gaps),
+        'first_sample_relative_to_measurement_start_seconds':(datetime.fromisoformat(rows[0]['at'])-datetime.fromisoformat(report['measurement_started_at'])).total_seconds(),
+        'measurement_end_after_last_sample_seconds':(datetime.fromisoformat(report['measurement_ended_at'])-datetime.fromisoformat(rows[-1]['at'])).total_seconds()},
+    'cost':{'kind':'operator_whole_pod_rate_time_allocation','hourly_rate_usd':16.1,'controller_window_usd':allocation,
+        'engine_window_usd':report['cost']['window_allocation_usd'],'controller_usd_per_1000_reference_exact_answers':allocation/exact*1000,
+        'provider_invoice_verified':False,'overlapping_windows_must_not_be_added':True},
+    'actual_restored_service_profiles_verified':audit['actual_restored_service_profiles_verified'],'restoration_passed':parent['restoration_passed'],
+    'private_raw_offpod_copy':{'responses':export['response_count'],'uncompressed_bytes':export['response_bytes'],'operator_export_receipt_sha256':digest(export_path),'scope':'Owner-only local Mac copy outside Git; not whole-platform HA'},
+    'limitations':['Full public dev includes previous calibration IDs; not a new holdout or contamination audit',
+        'New engine protocol does not replace the old full Batch API failed cohort',
+        'Different workloads/arrival/endpoints are not controlled throughput comparisons',
+        'NVML busy is not FLOP saturation; time-weighted utilization covers only adjacent sample endpoints',
+        'Raw-response replay uses the frozen grader, not an independent grading implementation',
+        'Operator rate allocation is not an invoice, marginal price or production capacity claim']}
+Path('ops/reports/engine-quality-full-2026-10-26.json').write_text(json.dumps(summary,indent=2,allow_nan=False)+'\n')
+print(json.dumps({'quality_passed':summary['quality_passed'],'exact_match_percent':summary['exact_match_percent'],'f1_percent':summary['f1_percent'],'controller_window_usd':allocation}))

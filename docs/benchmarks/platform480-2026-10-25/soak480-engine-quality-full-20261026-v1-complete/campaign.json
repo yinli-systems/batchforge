@@ -1,0 +1,60 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "started_at": "2026-10-26T01:52:12.545381+00:00",
+  "engine_actions": false,
+  "new_cloud_resources": false,
+  "scope": "Engine-only quality, separate from Batch API acceptance/usage and quality cohorts",
+  "operator_commit": "0657482f50c51a87ea4e20c388070ee01553fe03",
+  "config_sha256": "9278e2b6b8c92615f072d4f422cc50585f1f66781e5cd8c023f51c5e5e42de6e",
+  "physical_kv_tokens": 172912,
+  "apply_requested": true,
+  "maintenance_stage": "inference_running",
+  "qualified_canary_report_sha256": "97ae0ce9350ab1a3d81a1d0cb45650ad6ff3c3ffba5358e9a0e304cc2f3cc90e",
+  "drain_observations": [
+    {
+      "at": "2026-10-26T01:52:22.783993+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    },
+    {
+      "at": "2026-10-26T01:52:24.105893+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    }
+  ],
+  "evaluation_report_sha256": "e63fb2537a259fbe845bcdab1ba6061f24c8046020f7159ab617dd99b465133b",
+  "evaluation_valid": true,
+  "quality_passed": true,
+  "restoration_passed": true,
+  "restoration_report_sha256": "8a6b8bde7208d3dae4c21126b3ff721fe6653a4d53c94e182e81308edd193b77",
+  "finished_at": "2026-10-26T02:00:31.602754+00:00",
+  "elapsed_seconds": 499.057373,
+  "cost": {
+    "operator_whole_pod_usd_per_hour": 16.1,
+    "window_allocation_usd": 2.2318954736944443,
+    "scope": "Whole controller window; overlaps child engine window, not invoice or marginal cost"
+  }
+}
