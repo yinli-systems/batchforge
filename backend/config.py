@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     # Off until this deployment/model passes the native decoder qualification.
     json_schema_enabled: bool = False
     agent_api_enabled: bool = False
+    agent_workflows_enabled: bool = False
     agent_executor_keys_file: str = ''
     max_attempts: int = Field(default=3, ge=1, le=20)
     lease_seconds: int = Field(default=90, ge=5, le=3600)

@@ -70,6 +70,8 @@ class Coordinator:
 
     async def advance(self,run):
         state=copy.deepcopy(run['state']);phase=state.get('phase','plan');policy=policy_from(run['policy'])
+        if policy.execution_kind!='agent' or state.get('workflow_blocked'):
+            raise ValueError('Only activated Agent executions can call the model')
         step=state.get('step',0)
         if phase=='plan':
             if run['model_calls']>=run['max_model_calls']:return await self.fail(run,'model_call_budget_exceeded')
@@ -77,7 +79,7 @@ class Coordinator:
             if remaining<64:return await self.fail(run,'generated_token_budget_exceeded')
             observations=[{k:v for k,v in item.items() if k!='elapsed_seconds'} for item in state.get('observations',[])]
             from .structured import response_format
-            body={'model':run['model'],'messages':planner_messages(run['goal'],policy,SPECS,observations,output_feedback=state.get('output_feedback')),
+            body={'model':run['model'],'messages':planner_messages(run['goal'],policy,SPECS,observations,output_feedback=state.get('output_feedback'),workflow_inputs=state.get('workflow_inputs')),
                   'max_tokens':min(512,remaining),'temperature':0,
                   'response_format':response_format(policy,observed_citations=citations(observations),remaining_tools=run['max_tool_calls']-run['tool_calls'],executed_tools=[o['tool'] for o in observations])}
             state.update(phase='input_intent',step=step+1,request=body,

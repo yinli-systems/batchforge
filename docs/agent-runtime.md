@@ -3,7 +3,8 @@
 The Agent runtime is an opt-in, additive control-plane service. Its model steps
 use the existing BatchForge queue and 480B-total/35B-active MoE worker; it does
 not start another inference engine or call a paid provider. This first runtime
-implements a sequential typed planner/tool loop. It is not the entire Agent
+implements a sequential typed planner/tool loop, with a separate opt-in
+[bounded DAG candidate](agent-workflows.md) for multiple Agent roles. It is not the entire Agent
 platform, an arbitrary-code sandbox, or an already deployed Azure feature.
 
 ## Persistence and authority

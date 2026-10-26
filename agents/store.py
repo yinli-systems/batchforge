@@ -54,25 +54,35 @@ class AgentStore:
         return tail
 
     async def create(self,tenant,key,*,goal,model,policy=Policy()):
+        async with self.pool.connection() as conn,conn.transaction():
+            await self.tenant_lock(conn,tenant)
+            return view(await self.create_locked(conn,tenant,key,goal=goal,model=model,policy=policy))
+
+    async def create_locked(self,conn,tenant,key,*,goal,model,policy=Policy(),rid=None,state=None,deadline=None):
+        """Internal admission primitive; caller already holds the tenant lock.
+
+        Workflow admission reserves the parent and every blocked child in this
+        one transaction. No partially admitted graph survives a quota failure.
+        Initial state/lineage/deadline are server assignments, not HTTP fields.
+        """
         if (not isinstance(key,str) or not 1<=len(key)<=128 or not isinstance(goal,str)
             or not 1<=len(goal.encode())<=32768 or '\x00' in goal or not isinstance(model,str) or not 1<=len(model)<=256
             or not isinstance(policy,Policy)):raise AgentError(400,'invalid_agent_run')
         body={'goal':goal,'model':model,'policy':policy.document()};request_hash=digest(body)
-        async with self.pool.connection() as conn,conn.transaction():
-            await self.tenant_lock(conn,tenant)
-            old=await one(conn,'SELECT * FROM bf_agents.runs WHERE tenant_id=%s AND request_key=%s',(tenant,key))
-            if old:
-                if old['request_hash']!=request_hash:raise AgentError(409,'agent_idempotency_conflict')
-                return view(old)
-            rid='agrun_'+secrets.token_hex(16)
-            row=await one(conn,"""INSERT INTO bf_agents.runs(id,tenant_id,request_key,request_hash,goal,model,policy,
-                max_model_calls,max_tool_calls,max_generated_tokens,event_hash,deadline_at)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,clock_timestamp()+(%s*interval '1 second')) RETURNING *""",
+        old=await one(conn,'SELECT * FROM bf_agents.runs WHERE tenant_id=%s AND request_key=%s',(tenant,key))
+        if old:
+            if old['request_hash']!=request_hash:raise AgentError(409,'agent_idempotency_conflict')
+            return old
+        rid=rid or 'agrun_'+secrets.token_hex(16)
+        row=await one(conn,"""INSERT INTO bf_agents.runs(id,tenant_id,request_key,request_hash,goal,model,policy,
+                max_model_calls,max_tool_calls,max_generated_tokens,event_hash,state,deadline_at)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,COALESCE(%s::timestamptz,clock_timestamp()+(%s*interval '1 second'))) RETURNING *""",
                 (rid,tenant,key,request_hash,goal,model,Jsonb(policy.document()),policy.max_model_calls,policy.max_tool_calls,
-                 policy.max_generated_tokens,ZERO,policy.max_wall_seconds))
-            tail=await self.event(conn,row,kind='run.created',payload={'request_sha256':request_hash},operation_key='create',request_hash=request_hash)
-            row=await one(conn,'UPDATE bf_agents.runs SET event_hash=%s WHERE tenant_id=%s AND id=%s RETURNING *',(tail,tenant,rid))
-            return view(row)
+                 policy.max_generated_tokens,ZERO,Jsonb(state or {}),deadline,policy.max_wall_seconds))
+        payload={'request_sha256':request_hash}
+        if state:payload['state_sha256']=digest(state)
+        tail=await self.event(conn,row,kind='run.created',payload=payload,operation_key='create',request_hash=request_hash)
+        return await one(conn,'UPDATE bf_agents.runs SET event_hash=%s WHERE tenant_id=%s AND id=%s RETURNING *',(tail,tenant,rid))
 
     async def get(self,tenant,rid):
         async with self.pool.connection() as conn:
@@ -96,25 +106,28 @@ class AgentStore:
         return {'data':[{k:v.isoformat() if hasattr(v,'isoformat') else v for k,v in r.items()} for r in rows[:limit]],'has_more':len(rows)>limit,
                 'next_cursor':rows[limit-1]['id'] if len(rows)>limit else None}
 
-    async def claim(self,owner,tenants,*,seconds=30):
+    async def claim(self,owner,tenants,*,seconds=30,kind='agent'):
         if (not isinstance(owner,str) or not 1<=len(owner)<=128 or type(seconds) is not int
-            or not 5<=seconds<=120 or not tenants or len(tenants)>64):raise AgentError(400,'invalid_agent_claim')
+            or not 5<=seconds<=120 or not tenants or len(tenants)>64 or kind not in ('agent','workflow')):raise AgentError(400,'invalid_agent_claim')
         async with self.pool.connection() as conn,conn.transaction():
             # Tenant lock before run, including coordinator contention with
             # cancellation/admission. SKIP LOCKED never waits behind another tenant.
             tenant=await one(conn,"""SELECT t.id FROM public.tenants t WHERE t.id=ANY(%s) AND EXISTS(
                 SELECT 1 FROM bf_agents.runs r WHERE r.tenant_id=t.id
+                AND COALESCE(r.policy->>'execution_kind','agent')=%s AND r.state->>'workflow_blocked' IS DISTINCT FROM 'true'
                 AND (r.status IN ('queued','running','waiting_model') OR (r.status='waiting_approval' AND r.deadline_at<=clock_timestamp()))
                 AND (r.lease_expires_at IS NULL OR r.lease_expires_at<=clock_timestamp()) AND r.ready_at<=clock_timestamp())
                 ORDER BY (SELECT min(r.ready_at) FROM bf_agents.runs r WHERE r.tenant_id=t.id
+                    AND COALESCE(r.policy->>'execution_kind','agent')=%s AND r.state->>'workflow_blocked' IS DISTINCT FROM 'true'
                     AND r.status IN ('queued','running','waiting_model','waiting_approval')),t.id
-                LIMIT 1 FOR NO KEY UPDATE SKIP LOCKED""",(list(tenants),))
+                LIMIT 1 FOR NO KEY UPDATE SKIP LOCKED""",(list(tenants),kind,kind))
             if not tenant:return None
             row=await one(conn,"""SELECT *,clock_timestamp() AS db_now FROM bf_agents.runs WHERE tenant_id=%s
+                AND COALESCE(policy->>'execution_kind','agent')=%s AND state->>'workflow_blocked' IS DISTINCT FROM 'true'
                 AND (status IN ('queued','running','waiting_model') OR (status='waiting_approval' AND deadline_at<=clock_timestamp()))
                 AND ready_at<=clock_timestamp()
                 AND (lease_expires_at IS NULL OR lease_expires_at<=clock_timestamp())
-                ORDER BY created_at,id LIMIT 1 FOR UPDATE SKIP LOCKED""",(tenant['id'],))
+                ORDER BY created_at,id LIMIT 1 FOR UPDATE SKIP LOCKED""",(tenant['id'],kind))
             if not row:return None
             if row['deadline_at']<=row['db_now']:
                 await self.finish_locked(conn,row,'failed','run.deadline',{'code':'agent_deadline_exceeded'});return None
@@ -182,11 +195,25 @@ class AgentStore:
             return view(row)
 
     async def finish_locked(self,conn,row,status,kind,payload):
+        # Parent cancellation/deadline and child cancellation share one tenant
+        # transaction with activation. Already accepted Batch work is not erased.
+        state=row['state']
+        if row['policy'].get('execution_kind')=='workflow' and status in ('failed','cancelled'):
+            children=await (await conn.execute("""SELECT * FROM bf_agents.runs WHERE tenant_id=%s
+                AND policy->>'parent_workflow'=%s
+                ORDER BY id FOR UPDATE""",(row['tenant_id'],row['id']))).fetchall()
+            state={**state,'phase':status,'nodes':{k:dict(v) for k,v in state.get('nodes',{}).items()}}
+            for child in children:
+                if child['status'] not in TERMINAL:
+                    child=await self.finish_locked(conn,child,'cancelled','workflow.cancelled',{'parent_id':row['id'],'code':'parent_'+status})
+                node=child['policy'].get('parent_node')
+                if node in state['nodes']:state['nodes'][node]['status']=child['status']
+            payload={**payload,'state_sha256':digest(state)}
         row['revision']+=1
         tail=await self.event(conn,row,kind=kind,payload=payload,operation_key=kind,request_hash=digest(payload))
-        return await one(conn,"""UPDATE bf_agents.runs SET status=%s,result=%s,lease_owner=NULL,lease_token=NULL,
+        return await one(conn,"""UPDATE bf_agents.runs SET status=%s,result=%s,state=%s,lease_owner=NULL,lease_token=NULL,
             lease_expires_at=NULL,revision=%s,event_hash=%s,updated_at=clock_timestamp() WHERE tenant_id=%s AND id=%s RETURNING *""",
-            (status,Jsonb(payload),row['revision'],tail,row['tenant_id'],row['id']))
+            (status,Jsonb(payload),Jsonb(state),row['revision'],tail,row['tenant_id'],row['id']))
 
     async def cancel(self,tenant,rid):
         async with self.pool.connection() as conn,conn.transaction():

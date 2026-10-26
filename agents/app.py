@@ -24,6 +24,7 @@ from .store import AgentStore,AgentError
 from .executors import credentials
 from .receipts import HTTPReceipts,reconcile
 from .tools import SPECS
+from .workflows import Workflow,WorkflowStore
 
 logger=logging.getLogger('batchforge.agents')
 
@@ -147,6 +148,7 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=(),shared_b
         return {'protocol':'batchforge.agent-capabilities.v1','tenant_id':tid,'models':list(settings.served_models()),
             'tools':SPECS,'planner_protocols':['json-v1']+(['schema-v1'] if settings.json_schema_enabled else []),
             'answer_formats':['text','identifier','number'],'max_tool_sequence':8,
+            'workflow_admission_enabled':not read_only and settings.agent_workflows_enabled and settings.batch_submission_enabled and tid in app.state.executor_tenants,
             'admission_enabled':not read_only and settings.batch_submission_enabled and tid in app.state.executor_tenants,
             'memory_writes_enabled':not read_only,'cancellation_enabled':not read_only,
             'child_receipts_enabled':app.state.receipts is not None,'read_only_snapshot':read_only,
@@ -160,6 +162,21 @@ def create_app(settings=None,*,store=None,auth=None,executor_tenants=(),shared_b
         try:policy=body.policy()
         except ValueError:raise AgentError(422,'invalid_agent_policy') from None
         return await app.state.store.create(tid,idempotency_key,goal=body.goal,model=body.model,policy=policy)
+    @app.post('/v1/agent-workflows')
+    async def create_workflow(body:Workflow,tid=Depends(tenant),idempotency_key:str=Header(min_length=1,max_length=128)):
+        if not settings.agent_workflows_enabled:raise AgentError(503,'workflow_admission_disabled')
+        if tid not in app.state.executor_tenants:raise AgentError(503,'tenant_executor_not_configured')
+        if not settings.batch_submission_enabled:raise AgentError(503,'admission_paused')
+        if any(n.model not in settings.served_models() for n in body.nodes):raise AgentError(400,'agent_model_not_served')
+        if not settings.json_schema_enabled and any(n.planner_protocol=='schema-v1' for n in body.nodes):
+            raise AgentError(400,'agent_schema_ingress_not_enabled')
+        return await WorkflowStore(app.state.store).create(tid,idempotency_key,body)
+    @app.get('/v1/agent-workflows/{rid}')
+    async def workflow(rid:str,tid=Depends(tenant)):return await WorkflowStore(app.state.store).get(tid,rid)
+    @app.post('/v1/agent-workflows/{rid}/cancel')
+    async def cancel_workflow(rid:str,tid=Depends(tenant)):
+        await WorkflowStore(app.state.store).get(tid,rid)
+        return await app.state.store.cancel(tid,rid)
     @app.get('/v1/agent-runs')
     async def runs(tid=Depends(tenant),limit:int=Query(default=20,ge=1,le=100),after:str|None=Query(default=None,max_length=80)):
         return await app.state.store.list(tid,limit=limit,after=after)
