@@ -99,3 +99,29 @@ change or raw user-output export is permitted. Native records remain container
 data, not Azure Agent deployment or Pod-loss durability. Actual completion must
 be recorded separately; a prepared candidate is not a passed rollout. Browser
 visual QA is unavailable under the current browser restriction.
+
+## Closed native result
+
+Candidate2f6bf7c passed [actual CI40247586664](https://github.com/yinli-systems/batchforge/actions/runs/40247586664):
+1,673 Python tests, zero skips,39 Node tests and compileall, with independent
+PostgreSQL17.11/Node24.22.1/UID65534. Its one-job runner deregistered. This includes
+same-key correction after a definite first refusal, conservative handling of an
+earlier lost ACK, read-only coordinator refusal and browser-storage denial.
+
+The same source then passed the finite real-record HTTP qualification:
+**20 snapshots,846 events and44 current Azure child receipts** verified through
+the actual shared client module. Exact asset hashes/CSP, tenant authentication,
+reduced list projection, mutation refusal and unassociated-child404 passed.
+All temporary API/PG/Node children stopped; their port and native postmaster
+record were independently checked closed, with the private primary still ready
+and its finite guard armed. Primary identities/configurations remained unchanged.
+
+[Closed lifecycle/readback](benchmarks/platform480-2026-10-25/evidence-api-agent-console-20261026-v2-complete/validation.json)
+and [exact candidate source receipt](benchmarks/platform480-2026-10-25/evidence-api-agent-runtime-20261026-v7-source/source-receipt.json)
+are exported with transport SHA verification. The first console source dff5139
+also passed the same readback and1,672 Python/35 Node tests; its evidence remains
+separate. The model-producing cohort is source0909c61, while these are UI/client
+readback qualifications. No new GPU task or fresh S3 payload download was made.
+This is not a second20-goal inference result, browser visual QA or production
+Agent deployment. The Azure owner migration and enabled production mount remain
+pending; the current primary still serves748dc10.

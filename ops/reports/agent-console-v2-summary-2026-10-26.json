@@ -1,0 +1,19 @@
+{
+  "source_report": "docs/benchmarks/platform480-2026-10-25/evidence-api-agent-console-20261026-v2-complete/validation.json",
+  "source_report_sha256": "3082f9c1824591605db247bdf909194e44ca171add243359938b8855e1741992",
+  "ui_source_commit": "2f6bf7c2011fc091bae469a8c4020b035b351e0f",
+  "model_cohort_source_commit": "0909c615af424f3131fa8b313ff32ca625bc3799",
+  "model_cohort_report_sha256": "4da4ac13e4ebe1597201f9dc40c71c9347361887c0deee04bfd5518f5bde76cf",
+  "passed": true,
+  "real_snapshots_verified": 20,
+  "events_verified": 846,
+  "current_child_receipts_verified": 44,
+  "snapshot_heads_and_state_hashes_match_prior_independent_pg_restart_audit": true,
+  "asset_hash_checks": 4,
+  "primary_identities_unchanged": true,
+  "owned_children_stopped": true,
+  "new_gpu_tasks": 0,
+  "production_agent_enabled": false,
+  "browser_visual_qa": false,
+  "scope": "Actual shared client logic over preserved real-Agent native records and current Azure Batch ledger receipts; source/CSP checks only, no browser rendering or new model quality run."
+}

@@ -1,5 +1,14 @@
 # Correctness checks and CI availability
 
+Agent console source2f6bf7c passed
+[run40247586664](https://github.com/yinli-systems/batchforge/actions/runs/40247586664):
+**1,673 Python/zero skips,39 Node tests and compileall**, PostgreSQL17.11,
+Node24.22.1/UID65534, no production credentials or GPU, zero remaining runner
+registrations. [Exact result](../ops/reports/github-native-ci-2f6bf7c-2026-10-26.json).
+Its separate real-record qualification verified20 existing snapshots,846 events
+and44 current child ledger receipts. It does not establish a new inference
+quality score, browser visual QA or Azure Agent rollout.
+
 Latest source0909c61 passed actual
 [run40244273293](https://github.com/yinli-systems/batchforge/actions/runs/40244273293):
 **1,660 Python tests, zero skips,23 Node tests and compileall**. This includes

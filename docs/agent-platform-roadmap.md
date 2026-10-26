@@ -17,7 +17,7 @@ but it does not establish Agent task success or every advertised capability.
 | Permissions/security | Known capability whitelist, tenant scoping, read-only data tools | Human approval/resolution protocol and independently qualified code sandbox/egress policy before effectful tools |
 | Multimodal/realtime | Text planner only; bounded event stream is not a multimodal model | Runtime capability checks, real image/audio/video fixtures, streaming cancellation/backpressure and latency evidence |
 | Post-training/RL | Not implemented | Consent/sanitization-aware trajectory export, deterministic reward contracts, frozen holdout, reproducible bounded training/eval on existing GPUs |
-| Product delivery | Existing batch console, receipts, quality/cost/Fleet pages; candidate Agent run/memory console with same-origin integration and client-side history/receipt verification | Native qualification over real records, owner-authenticated deployment, safe approval, richer workflow inspection and browser visual QA when permitted |
+| Product delivery | Existing batch console, receipts, quality/cost/Fleet pages; Agent console candidate qualified on20 real snapshots/846 events/44 current receipts, same-origin integration and client verification | Owner-authenticated deployment, safe approval, richer workflow inspection and browser visual QA when permitted |
 
 Execution order is a real durable Agent loop first; then workflow composition and
 retrieval; then isolation and runtime adapters; then multimodal and learning

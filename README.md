@@ -6,7 +6,7 @@ an OpenAI-shaped batch API, and an operations console backed by live data.
 An additive [durable Agent runtime](docs/agent-runtime.md) now implements typed
 planning, capability-checked data tools, tenant memory, fenced coordinator
 leases and receipt-linked model steps through the existing Batch queue. Native
-The latest native check passes1,660 Python/zero-skip and23 console tests. A
+The latest native check passes1,673 Python/zero-skip and39 console tests. A
 finite real480B qualification passed20/20 fresh ordered-tool Agent goals,
 44 model tasks and88 artifact byte readbacks, including post-ACK coordinator
 loss and API restart. Agent state used an isolated native PostgreSQL cluster;
@@ -16,6 +16,12 @@ The broader
 [Agent platform implementation map](docs/agent-platform-roadmap.md) tracks
 workflow composition, VectorMatch, isolation, multimodal and learning work
 without presenting planned capabilities as deployed features.
+
+The candidate [Agent workspace](docs/agent-console.md) adds same-origin submission,
+required tool order, versioned memory, cancellation and client-verified history/
+child receipts. Its real-record qualification checked20 snapshots,846 events
+and44 current Azure receipts without replaying inference. The production mount
+is still off pending Azure owner authentication; browser visual QA is unavailable.
 
 The current private primary serves **Qwen3-Coder-480B-A35B AWQ** on one
 Pod with **four H100 80GB GPUs**, using TP4. This is a 480B-total / approximately
@@ -43,7 +49,7 @@ A frozen JSON-span answer contract subsequently passed a disjoint 1,000-question
 public holdout: **EM82.8% / F1 91.43%** versus matched baseline 56.9% / 77.10%.
 The original full-dev gate remains failed. [Protocol, paired outcomes and cost](docs/benchmarks/quality-contract-2026-10-25.md)
 retain both results. Serving source748dc10 passed1,415 native PostgreSQL17
-tests; latest Agent/operator source0909c61 passed **1,660 Python tests and23 console
+tests; latest Agent/console source2f6bf7c passed **1,673 Python tests and39 console
 tests**. See [actual CI evidence](docs/ci.md).
 
 The post-Fleet800-task workload closed at428.166 output tokens/s, with four-card
