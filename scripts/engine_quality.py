@@ -12,7 +12,7 @@ from datetime import datetime,timezone
 from pathlib import Path
 import httpx
 from agents.contracts import canonical,protocol_json
-from scripts import answer_contract,quality_eval
+from scripts import answer_contract,quality_eval,contract_scoring
 from scripts.benchmark import distribution
 from worker.kv_admission import WeightedLimiter,AdmissionPaused,tokenizer_body,token_count,reservation,engine_quiescent
 
@@ -108,6 +108,7 @@ def plan(cohort,*,runtime_fingerprint,deadline_seconds=3600):
         'workload_sha256':workload.hexdigest(),'selected_ids_sha256':hashlib.sha256(canonical(sorted(c.id for c in cases))).hexdigest(),
         'references_sha256':hashlib.sha256(canonical([[c.id,list(c.answers)] for c in cases])).hexdigest(),
         'answer_contract':'json-span-v1','answer_contract_sha256':hashlib.sha256(Path(answer_contract.__file__).read_bytes()).hexdigest(),
+        'score_policy':contract_scoring.POLICY,'score_policy_source_sha256':hashlib.sha256(Path(contract_scoring.__file__).read_bytes()).hexdigest(),
         'scorer_sha256':hashlib.sha256(Path(quality_eval.__file__).read_bytes()).hexdigest(),
         'client_source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         'max_output_tokens':128,'temperature':0,'forced_output':False,'concurrency':32,
@@ -135,7 +136,7 @@ def response_record(case,value,*,prompt_count):
     try:prediction=answer_contract.parse_answer(text,case.context,'json-span-v1')
     except (ValueError,TypeError):valid=False;prediction=''
     return {'id':case.id,'status':'completed','answer_contract_valid':valid,
-        **quality_eval.score(prediction,case.answers),'prediction_sha256':hashlib.sha256(text.encode()).hexdigest(),
+        **contract_scoring.enforce(valid,quality_eval.score(prediction,case.answers)),'prediction_sha256':hashlib.sha256(text.encode()).hexdigest(),
         'scored_answer_sha256':hashlib.sha256(prediction.encode()).hexdigest(),'finish_reason':choice['finish_reason'],
         'prompt_tokens':prompt_count,'completion_tokens':usage['completion_tokens']}
 

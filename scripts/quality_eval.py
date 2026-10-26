@@ -23,6 +23,7 @@ from types import SimpleNamespace
 from ops.gpu_campaign import write_json
 from scripts import benchmark
 from scripts.answer_contract import CONTRACTS, messages, parse_answer
+from scripts.contract_scoring import enforce,POLICY
 
 DATASET_SHA256='95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9'
 MODEL='QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ'
@@ -78,6 +79,7 @@ def evaluate(args):
         'scope':'complete dev set' if len(rows)==10570 else 'seeded dev subset','seed':args.seed,
         'model':args.model,'runtime_fingerprint':args.runtime_fingerprint,
         'answer_contract':contract,'answer_contract_sha256':hashlib.sha256(Path(__file__).with_name('answer_contract.py').read_bytes()).hexdigest(),
+        'score_policy':POLICY,'score_policy_source_sha256':hashlib.sha256(Path(__file__).with_name('contract_scoring.py').read_bytes()).hexdigest(),
         'excluded_ids_sha256':hashlib.sha256(json.dumps(sorted(excluded),separators=(',',':')).encode()).hexdigest(),
         'selected_ids_sha256':hashlib.sha256(json.dumps(sorted(r['id'] for r in rows),separators=(',',':')).encode()).hexdigest(),
         'max_tokens':128,'min_tokens':None,'temperature':0,'deadline_seconds':args.deadline,
@@ -126,7 +128,7 @@ def evaluate(args):
             valid=True
             try:scored_answer=parse_answer(answer,references[qid]['context'],contract)
             except (ValueError,TypeError):scored_answer='';valid=False
-            grades[qid]={'id':qid,**score(scored_answer,references[qid]['answers']),
+            grades[qid]={'id':qid,**enforce(valid,score(scored_answer,references[qid]['answers'])),
                 'answer_contract_valid':valid,'scored_answer_sha256':hashlib.sha256(scored_answer.encode()).hexdigest(),
                 'prediction_sha256':hashlib.sha256(answer.encode()).hexdigest(),
                 'finish_reason':body['choices'][0].get('finish_reason'),

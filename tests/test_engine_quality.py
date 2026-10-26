@@ -57,6 +57,21 @@ async def test_invalid_json_or_invented_span_scores_zero_without_repair(text):
     assert all(x['exact_match']==0 for x in e.records)
 
 
+@pytest.mark.parametrize('text',['not JSON','{"answer":"invented"}','{"answer":"a","extra":true}'])
+def test_invalid_contract_never_gets_empty_normalized_reference_credit(text):
+    case=Case('fixture','The answer is a letter.','What is it?',('a',))
+    value=reply();value['choices'][0]['message']['content']=text
+    r=response_record(case,value,prompt_count=100)
+    assert r['answer_contract_valid'] is False and r['exact_match']==r['f1']==0
+
+
+def test_valid_article_reference_retains_original_squad_normalization_semantics():
+    case=Case('fixture','It is a letter.','What is it?',('a',))
+    value=reply();value['choices'][0]['message']['content']='{"answer":"a"}'
+    r=response_record(case,value,prompt_count=100)
+    assert r['answer_contract_valid'] is True and r['exact_match']==1 and r['f1']==0
+
+
 @pytest.mark.parametrize('value',[reply(model='wrong'),reply(choices=[]),reply(choices=[None]),
     reply(usage={'prompt_tokens':99,'completion_tokens':8}),reply(usage={'prompt_tokens':100,'completion_tokens':129})])
 async def test_response_identity_usage_or_envelope_drift_halts_admission_and_hides_partial_scores(value):
