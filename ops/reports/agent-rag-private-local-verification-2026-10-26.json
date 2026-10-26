@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "archive_sha256": "0866da03555d18f67414d2f0c1386a29361dac03bf2ce1197838742e9a63c3a9",
+  "files_rechecked_from_local_disk": 1147,
+  "private_directory_mode": "0700",
+  "archive_mode": "0600",
+  "file_and_directory_fsync_completed": true,
+  "restore_qualified": false,
+  "scope": "Actual local-disk readback of stopped native-PG physical archive; does not establish application restore or HA"
+}

@@ -1,0 +1,23 @@
+{
+  "identity": {
+    "pid": 764014,
+    "start_ticks": "50916888",
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261026-v20/source"
+  },
+  "command": [
+    "/usr/bin/timeout",
+    "--signal=TERM",
+    "--kill-after=90",
+    "2900",
+    "/root/batchforge-runtime/venv/bin/python",
+    "-m",
+    "ops.qualify_agent_schema",
+    "--run",
+    "/root/batchforge-runtime/evidence-api-agent-schema-retrieval-20261026-v1",
+    "--fixture-set",
+    "retrieval-squad-v1",
+    "--apply"
+  ],
+  "source_commit": "236051706547b7abfa3cdb91d0a168c3f96dabcc",
+  "scope": "Existing four-H100 480B; max36 tasks; private temporary ingress/Agent PG, primary configuration unchanged"
+}

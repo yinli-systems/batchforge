@@ -1,0 +1,25 @@
+{
+  "collected_at": "2026-10-26T03:47:11.284615+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-agent-rag-audit-20261026-v1",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 150,
+      "sha256": "9883a0e2876c372ed633618e6c9d79d2058271b99c5a49797ba877daebd9f256",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 8719,
+      "sha256": "394e74161005d2d681f284ed35798bb4df83a2bb53f5b8be679a2b018afd0758",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 7571,
+      "sha256": "e354a56009d20a9ddcef564901cdd089f18dfe2f4e0abd86a42ea8ab9df176ad",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

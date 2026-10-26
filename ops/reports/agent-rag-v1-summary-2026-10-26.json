@@ -1,0 +1,104 @@
+{
+  "source_commit": "236051706547b7abfa3cdb91d0a168c3f96dabcc",
+  "quality_passed": false,
+  "rag_quality": {
+    "cases": 8,
+    "completed": 8,
+    "em_percent": 0.0,
+    "f1_percent": 22.115049302549302,
+    "supported_citation_percent": 87.5,
+    "task_success_percent": 0.0,
+    "all_retrieval_replayed": true,
+    "gate": {
+      "em_percent": 75,
+      "f1_percent": 80,
+      "supported_citation_percent": 75,
+      "task_success_percent": 75
+    }
+  },
+  "agent_cases": 8,
+  "agent_model_children": 16,
+  "decoder_tasks": 4,
+  "unique_accepted_tasks_including_decoder": 20,
+  "accepted_attempts": 20,
+  "agent_accepted_usage": {
+    "prompt_tokens": 23537,
+    "completion_tokens": 1584
+  },
+  "accepted_usage_including_decoder": {
+    "prompt_tokens": 24707,
+    "completion_tokens": 1721
+  },
+  "coordinator_reclaim_seconds": 13.975219,
+  "completion_seconds": {
+    "p50": 57.744969,
+    "p95": 59.1738302,
+    "p99": 59.17815004,
+    "scope": "Eight fresh Agent runs; not Batch/engine service latency or large-sample P99"
+  },
+  "actual_client": {
+    "records": 8,
+    "events": 433,
+    "child_receipts": 16,
+    "passed": true,
+    "browser_visual_qa": false
+  },
+  "cpu_retrieval": {
+    "cases": 10570,
+    "elapsed_seconds": 18.792241398943588,
+    "document_recall_at_k": {
+      "1": 0.7635761589403973,
+      "3": 0.8860927152317881,
+      "5": 0.9180700094607379
+    },
+    "answer_span_coverage_at_k": {
+      "1": 0.7626300851466414,
+      "3": 0.8860927152317881,
+      "5": 0.9180700094607379
+    },
+    "scores_sha256": "31fed49330aef30955987174e34fbcf3d6a4ff750bac32885c7f6c9ec83a37f2"
+  },
+  "gpu_sampled_trial": {
+    "samples": 42,
+    "gpu_errors": 0,
+    "engine_errors": 0,
+    "max_internal_gap_seconds": 5.101330675010104,
+    "scope": "Whole sampled Agent/native setup and storage-readback interval, including idle time; no saturation or capacity claim",
+    "cards": {
+      "0": {
+        "samples": 42,
+        "mean_busy_percent": 3.857142857142857,
+        "max_busy_percent": 90.0
+      },
+      "1": {
+        "samples": 42,
+        "mean_busy_percent": 3.761904761904762,
+        "max_busy_percent": 94.0
+      },
+      "2": {
+        "samples": 42,
+        "mean_busy_percent": 2.8333333333333335,
+        "max_busy_percent": 92.0
+      },
+      "3": {
+        "samples": 42,
+        "mean_busy_percent": 1.7380952380952381,
+        "max_busy_percent": 48.0
+      }
+    }
+  },
+  "whole_wrapper_seconds": 246.46613704500487,
+  "whole_wrapper_allocation_usd": 1.1022513351179386,
+  "nested_agent_seconds": 232.99571251997259,
+  "nested_agent_allocation_usd": 1.042008603214322,
+  "cost_per_quality_qualified_result": null,
+  "cost_scope": "Operator16.10USD/whole-Pod-hour wall allocation, nested windows overlap; zero qualified results; not invoice/marginal",
+  "independent_closure_passed": true,
+  "all_artifact_byte_reads": 34,
+  "remaining_retained_headroom": 70,
+  "primary_api_source": "5a0a446",
+  "primary_worker_source": "748dc10",
+  "agent_production_deployed": false,
+  "whole_platform_complete": false,
+  "next": "Evidence-bound short extractive answer contract with an explicit abstention path; retain this failed cohort and freeze disjoint public RAG validation before further inference."
+}

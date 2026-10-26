@@ -1,4 +1,14 @@
-Current API/operator source **5a0a446** passed actual
+Retrieval candidate **2360517** passed actual
+[run40264534343](https://github.com/yinli-systems/batchforge/actions/runs/40264534343):
+**1905 Python/zero skips,47 Node tests/compileall**, PG17.11/Node24.22.1,
+UID65534, zero remaining runners. [Authenticated receipt](../ops/reports/github-native-ci-2360517-2026-10-26.json).
+Native checks include restarted coordinators, persisted snapshot policy,
+revocation preserving accepted usage, exact chunk/hash bounds and existing-key
+replay. The earlier c3f88ca run40264204474 passed1904/47. The subsequent real
+RAG cohort completed delivery/recovery/client checks but failed answer quality;
+green CI does not make its EM0/F122.12 a pass.
+
+Current primary API/operator source **5a0a446** passed actual
 [run40261699502](https://github.com/yinli-systems/batchforge/actions/runs/40261699502):
 **1,862 Python/zero skips,45 Node tests/compileall**, native PG17.11,
 Node24.22.1/UID65534, zero remaining runners.

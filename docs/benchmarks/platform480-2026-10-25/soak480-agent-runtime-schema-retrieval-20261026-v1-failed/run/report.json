@@ -1,0 +1,202 @@
+{
+  "protocol": "batchforge.public-retrieval-evaluation.v1",
+  "evaluation_valid": true,
+  "source_sha256": "74c33e77f04e081a94836cea6602cc79f349abb750ae553702308931d1e060bc",
+  "retrieval_source_sha256": "dea0b69b710ea63c3b9e2d42f2368e53ae2563dad8d68dbb5a661e5058860e2d",
+  "scores_sha256": "31fed49330aef30955987174e34fbcf3d6a4ff750bac32885c7f6c9ec83a37f2",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "snapshot": {
+    "protocol": "batchforge.bm25-utf8-chunks.v1",
+    "id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+    "corpus_sha256": "d5efabb51800799e1303a3af87447886d26a8f8068e4cc56c74ba227b489e6e0",
+    "parameters": {
+      "k1": 1.2,
+      "b": 0.75,
+      "chunk_bytes": 1536,
+      "overlap_bytes": 128,
+      "tokenizer": "unicode-nfkc-casefold-word-v1",
+      "query_term_frequency": "binary",
+      "fields": "title+chunk",
+      "score": "idf*tf*(k1+1)/(tf+k1*(1-b+b*length/avg_length))",
+      "tie_break": "chunk_id_ascending"
+    },
+    "source": {
+      "name": "SQuAD1.1 public dev passages",
+      "origin": "https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v1.1.json",
+      "licence": "See original SQuAD release and source Wikipedia terms",
+      "source_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9"
+    },
+    "document_count": 2067,
+    "chunk_count": 2134,
+    "documents_sha256": "500944f7ab30a020ce05bc4a27e64487f667dea6002122b4d439d673b483425f"
+  },
+  "cases": 10570,
+  "fixture_set": "retrieval-squad-v1",
+  "selected_cases": [
+    {
+      "id": "5726ab47f1498d1400e8e6a4",
+      "question": "What tribe did Toghrul lead?",
+      "document_id": "squad-25-9",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: What tribe did Toghrul lead?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ]
+    },
+    {
+      "id": "573749741c45671900574460",
+      "question": "What do astronaughts experience while in free-fall?",
+      "document_id": "squad-47-6",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: What do astronaughts experience while in free-fall?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ]
+    },
+    {
+      "id": "57300888b2c2fd1400568776",
+      "question": "What did the number of legions in Roman times depend on?",
+      "document_id": "squad-41-37",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: What did the number of legions in Roman times depend on?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ]
+    },
+    {
+      "id": "5730126ba23a5019007fcd0a",
+      "question": "When did the Egyptian Islamic Jihad assassinate Anwar Sadat?",
+      "document_id": "squad-43-23",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: When did the Egyptian Islamic Jihad assassinate Anwar Sadat?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ]
+    },
+    {
+      "id": "5729d878af94a219006aa66e",
+      "question": "What can concentrate wealth, pass environmental costs on to society and abuse both workers and consumers?",
+      "document_id": "squad-33-4",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: What can concentrate wealth, pass environmental costs on to society and abuse both workers and consumers?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ]
+    },
+    {
+      "id": "56e1cbe2cd28a01900c67bb0",
+      "question": "According to polynomial time reduction squaring can ultimately be logically reduced to what?",
+      "document_id": "squad-4-30",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: According to polynomial time reduction squaring can ultimately be logically reduced to what?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ]
+    },
+    {
+      "id": "5728e07e3acd2414000e00ea",
+      "question": "Why would a person chose civil disobedience against specific laws?",
+      "document_id": "squad-28-10",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: Why would a person chose civil disobedience against specific laws?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ]
+    },
+    {
+      "id": "56e1127bcd28a01900c6754c",
+      "question": "Where were the ashes sent?",
+      "document_id": "squad-3-67",
+      "kind": "retrieval-squad",
+      "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+      "tools": [
+        "retrieval.search"
+      ],
+      "goal": "Search the granted knowledge corpus using retrieval.search to answer this question. Return the shortest answer span supported by the source, with its exact retrieval citation: Where were the ashes sent?",
+      "planner_protocol": "schema-v1",
+      "require_citations": true,
+      "tool_sequence": [
+        "retrieval.search"
+      ]
+    }
+  ],
+  "fixture_sha256": "c89a38213e3a6e34de468f9e450180946f5aa7a4fd9b27547cb73e53db4894d0",
+  "corpus_contains_questions_or_reference_fields": false,
+  "build_seconds": 0.3737047309987247,
+  "query_wall_seconds": 18.418536667944863,
+  "elapsed_seconds": 18.792241398943588,
+  "query_latency_seconds": {
+    "p50": 0.0017262765031773597,
+    "p95": 0.0025211201427737247,
+    "p99": 0.003462912774994037
+  },
+  "document_recall_at_k": {
+    "1": 0.7635761589403973,
+    "3": 0.8860927152317881,
+    "5": 0.9180700094607379
+  },
+  "answer_span_coverage_at_k": {
+    "1": 0.7626300851466414,
+    "3": 0.8860927152317881,
+    "5": 0.9180700094607379
+  },
+  "document_mrr_at_5": 0.8267187007253232,
+  "new_gpu_tasks": 0,
+  "browser_visual_qa": false,
+  "scope": "CPU BM25 retrieval over complete public passages, not vector embedding search or inference/task success",
+  "real_agent_plan": {
+    "cases": 8,
+    "max_new_tasks": 32,
+    "selection_seed": "2026102603",
+    "selection": "SHA256(seed:public_case_id) ascending, before observing RAG answers",
+    "quality_gate": {
+      "em_percent": 75,
+      "f1_percent": 80,
+      "supported_citation_percent": 75,
+      "task_success_percent": 75
+    },
+    "public_dev_not_hidden": true
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "collected_at": "2026-10-26T03:40:22.523104+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-agent-runtime-schema-retrieval-20261026-v1",
+  "files": {
+    "report.json": {
+      "bytes": 89713,
+      "sha256": "335d3a74cbd6bc012c7db82fcdac569592a2e00ec48bce7176d9d46e0c11127d",
+      "source_relative_path": "report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "readback.json": {
+      "bytes": 7447,
+      "sha256": "6824461ef8ff178200e0d963683bf7f41f8d607ffba7574ceb66dbd3a919cfd6",
+      "source_relative_path": "readback.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/report.json": {
+      "bytes": 8672,
+      "sha256": "73596d7293a5e6f2b3751c376d45b80f83d280fc38fb2b1290b5ad90fd9460f6",
+      "source_relative_path": "run/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/scores.jsonl": {
+      "bytes": 8175121,
+      "sha256": "31fed49330aef30955987174e34fbcf3d6a4ff750bac32885c7f6c9ec83a37f2",
+      "source_relative_path": "run/scores.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/observations.jsonl": {
+      "bytes": 75711,
+      "sha256": "fbf90dce00fa4106a06d154af32a20c382f71dc4d8d7577268d582b8fe3546dd",
+      "source_relative_path": "run/observations.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "retrieval-index.json": {
+      "bytes": 981,
+      "sha256": "952fa2b4dc4da5c07b2f2ab0d91e8874449de7a8c4333c1ce68e266ecb480d7a",
+      "source_relative_path": "retrieval-index.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

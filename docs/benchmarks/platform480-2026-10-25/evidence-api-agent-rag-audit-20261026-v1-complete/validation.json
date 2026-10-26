@@ -1,0 +1,252 @@
+{
+  "passed": true,
+  "rag_quality_passed": false,
+  "checks": {
+    "primary_identity_source_configuration_unchanged": true,
+    "native_pg_stopped": true,
+    "controller_stopped": true,
+    "fault_reclaim_within_30s": true,
+    "all8_delivered_with_retrieval_replay": true,
+    "quality_failure_preserved": true,
+    "actual_client_consistency_verified": true,
+    "closed_18170": true,
+    "closed_18172": true,
+    "ready_8080": true,
+    "ready_8082": true,
+    "ready_8083": true,
+    "ready_9105": true,
+    "guard_live_zero_actions": true,
+    "no_cohort_coordinators_live": true,
+    "azure20_unique20_attempts": true,
+    "azure_usage_matches": true,
+    "azure20_payloads_purged_identities_preserved": true,
+    "all17_archives_ready_purged": true,
+    "queue_empty": true,
+    "all34_distinct_artifacts_read": true,
+    "quota_unchanged70_remaining": true
+  },
+  "at": "2026-10-26T03:44:14.985320+00:00",
+  "source_commit": "236051706547b7abfa3cdb91d0a168c3f96dabcc",
+  "source_reports_sha256": [
+    "68a8f893abf4ceda19e660e54c459d85db1f0c348d20ac3c29e052dc736140f5",
+    "335d3a74cbd6bc012c7db82fcdac569592a2e00ec48bce7176d9d46e0c11127d",
+    "d1ed777f4c961138ca850a0da267d35d75d51b0eed3598531fe2e6bf8109d3f5"
+  ],
+  "validator_sha256": "e354a56009d20a9ddcef564901cdd089f18dfe2f4e0abd86a42ea8ab9df176ad",
+  "accepted_usage_including_decoder": {
+    "prompt_tokens": 24707,
+    "completion_tokens": 1721
+  },
+  "whole_wrapper_seconds": 246.46613704500487,
+  "whole_wrapper_pod_allocation_usd": 1.1022513351179386,
+  "cost_per_qualified_task": null,
+  "cost_scope": "Whole wrapper wall allocation, nested child windows overlap; zero quality-qualified tasks; not invoice or marginal cost",
+  "artifact_byte_readbacks": [
+    {
+      "file_id": "file_a13f4358c6d267ff0c67c19972014fda",
+      "sha256": "25ea3d39a3769fe8097740ccde37980950741c20e702575c21ba17abec85184a",
+      "bytes": 2804
+    },
+    {
+      "file_id": "file_a3665c8edb784b0496fb57a2b6c6b45d",
+      "sha256": "6c9a0cc8dbde8778e34adf4ec49e0a40c105479bee19d9abf1f00b00a37db00d",
+      "bytes": 935
+    },
+    {
+      "file_id": "file_89ac335c90b939a3dbde30e812af41e8",
+      "sha256": "4ab898b88a7e5b27131cfcd35fccf9bdbfc204a1de40ad87943d3c6104260b7a",
+      "bytes": 9232
+    },
+    {
+      "file_id": "file_ec54a1570df049799149e99ceba0b844",
+      "sha256": "4e0b5d36e25286ecc274de32e400dd87a3e9bc187385a8189547a6e544370293",
+      "bytes": 1102
+    },
+    {
+      "file_id": "file_86d59f3aabd0abde01e7951ae4c85987",
+      "sha256": "e552fef6456160125dd6c72f994c1149c3e35f09644c74aaffb79e928b8903fa",
+      "bytes": 2809
+    },
+    {
+      "file_id": "file_55cab0617d0a4d95b282d808d856c33b",
+      "sha256": "edf6a54b07fe035b383a6f119170ee9656580a67ae5f441ae70d50a478fd2c31",
+      "bytes": 942
+    },
+    {
+      "file_id": "file_e3073ce7d6a20a394c5322e8886175ad",
+      "sha256": "d9f25838aba9263173ac7634887a0fc4725b66762761823aa08cefa5c27c0cf7",
+      "bytes": 8499
+    },
+    {
+      "file_id": "file_0b48a48eb7444fc8a1c1a461c00ac074",
+      "sha256": "b22cecfb0e1978021297f4179619b887a835d4c20a6d8ccb121bfdd995d66c6f",
+      "bytes": 1137
+    },
+    {
+      "file_id": "file_4abcbf7aa75bf47d80263428c1cd4146",
+      "sha256": "d7766d803e7708df4b7a9aedd8e87cd2ab047deee589ef82b069502cd3f5c385",
+      "bytes": 2779
+    },
+    {
+      "file_id": "file_63c0d6c6ddf84f25b5b911b60219fc6e",
+      "sha256": "1093e38b0cecf4c2b44208e7d93e645a2e47d06415025283988b74b9d22b50fe",
+      "bytes": 912
+    },
+    {
+      "file_id": "file_89ba227a663c3267ba28b8b7ab95baa3",
+      "sha256": "42013a79f1c28fff99e7b484d74de5e940e280a41f73e938c4f8d0ee8cc35ae8",
+      "bytes": 7997
+    },
+    {
+      "file_id": "file_688d887cda174ca089fcf18f30e3e1e8",
+      "sha256": "4d29815dcca022df1a5f756545e00d132897dd3722586cbd6cb0640a5a4ce0e2",
+      "bytes": 1055
+    },
+    {
+      "file_id": "file_333a74e1dc30fdfd0c9d99043bc8bb18",
+      "sha256": "5c936860565e3f2e0b5c8873206df5bbf89801e50069c022fad8a4af38cbb647",
+      "bytes": 2813
+    },
+    {
+      "file_id": "file_cf5f467b5550470c83d848766006979a",
+      "sha256": "1153f31010fc966ac397c4667fb519a4ee9e5109e43f5f745f953860d44ebe9c",
+      "bytes": 957
+    },
+    {
+      "file_id": "file_411da9633d943605468c92964fe5a14c",
+      "sha256": "077d79f7626be768dcb19a1749d12ebf90b79ef93d94899550aec9c96c15561a",
+      "bytes": 8588
+    },
+    {
+      "file_id": "file_3b74a816ea0f47ed97f68f2f53897549",
+      "sha256": "15f9435800fdde879bc904ece33a3a70779759f72287ead1cdeec0e6792dce02",
+      "bytes": 1084
+    },
+    {
+      "file_id": "file_81ae68541012d4b6e2803493a3909181",
+      "sha256": "5270f15c769ee81ce1affdf01223074c1b4616a19f676d4306018f7487fa5850",
+      "bytes": 2858
+    },
+    {
+      "file_id": "file_bf81cc21081f473fb48c9b4db5345e15",
+      "sha256": "b69197079bc3aa880daa0aaab9c67d9f4efdba4e27d6c203b3389190e9b16518",
+      "bytes": 991
+    },
+    {
+      "file_id": "file_d087670580c7c44c3542c8146dd35267",
+      "sha256": "72bc6fffe77d611d840240be28c3b13e9d3bdb9d87b167bd325641eef974c92c",
+      "bytes": 9068
+    },
+    {
+      "file_id": "file_7e16adb114014261ba7c97ecf16958d0",
+      "sha256": "c145b812cf31fde8aa2a63a180bc1e93b96ff5c336f758a34c237b86a5aab611",
+      "bytes": 1128
+    },
+    {
+      "file_id": "file_0e79a9e48f01d7173f9307345672ad43",
+      "sha256": "273cfdea4b8b8f4ce9368cf060ed7522e188c1aef64fef54d2390a6e8bbcea01",
+      "bytes": 2845
+    },
+    {
+      "file_id": "file_652a280f23354a01abd479ae1f8a4c97",
+      "sha256": "af0a4cf83c8a3216b90eadb0339f12df9b7fed75d795f1dad06ee0c0d4607215",
+      "bytes": 978
+    },
+    {
+      "file_id": "file_27b54e07e0eae68d391809ceaec05847",
+      "sha256": "66a2003ca7dfb060f5019e54ddd167e82c4e316736e89824e5d72551d70ecff5",
+      "bytes": 8316
+    },
+    {
+      "file_id": "file_42217dffef48417eaa906b3ae5df4788",
+      "sha256": "63680653bdf0fb675a06cd434dd3ab4c4dd075c4451bc89c22caab90cc683881",
+      "bytes": 1126
+    },
+    {
+      "file_id": "file_8078c358cd29aa000371ac6071b85d7d",
+      "sha256": "6528cb8d951564d2f9217f19d6b533704ea1ba130c6d0c8463258f9082d67657",
+      "bytes": 2819
+    },
+    {
+      "file_id": "file_f71d25d8b92d42a9a1f8462a1aab555f",
+      "sha256": "5448ffc96bf4f8dc1c7330e90d8f817d4304ff395a9ac150e77f5dacb7c9acf1",
+      "bytes": 952
+    },
+    {
+      "file_id": "file_1a004fc7e2000fd819a3d78a5b279292",
+      "sha256": "dec1b904397d4ab7fe15a606f992891bc0d8d30f4868c93a67cdaba964ffbefc",
+      "bytes": 8774
+    },
+    {
+      "file_id": "file_76d30807069b4c9eaa7dd14150c0b381",
+      "sha256": "a20621a4b0897d3d1ebed1ddabf8e8a74bc2f32c64446d5df775a6b84b190c48",
+      "bytes": 1273
+    },
+    {
+      "file_id": "file_877ef83a831ad88d39863eea6ca2f9ce",
+      "sha256": "b3dd313a7c009980b6ef3a55e15b8ad7aff09e64c6edee86e189ab12f22cb42f",
+      "bytes": 2781
+    },
+    {
+      "file_id": "file_0613d7327bc34ee48a30cde828432cd9",
+      "sha256": "8122cdc1ec3eb2749232eb3d796ecca0827950c583d4113a9dbb658eb035156e",
+      "bytes": 914
+    },
+    {
+      "file_id": "file_188a58b2e0e72fc1a0ba82830126a441",
+      "sha256": "63bc610ba6ebde5cf91ddbe999aeb8351d7610c8ceb43c3e90f11f05a51d0d2d",
+      "bytes": 8167
+    },
+    {
+      "file_id": "file_0e9a3652fc4c40d9a4b969d5c0fca7c0",
+      "sha256": "881aa39b4a105b1aea6e0c894894ec76c967c42c6f454143b172d40c82d42a4c",
+      "bytes": 1053
+    },
+    {
+      "file_id": "file_02a3b53126ac2d7a7028541d4efafa6d",
+      "sha256": "f3a2ba527e1701be92c91665c405cbe110d5c8ed4833d5b2d3749af815920f5e",
+      "bytes": 8487
+    },
+    {
+      "file_id": "file_0418a64931894b50b1c5b76bd90d00d5",
+      "sha256": "15235d9908c2c7f3f0606fda408a48c5fe703d4207155d8dc172a5c396160e22",
+      "bytes": 3602
+    }
+  ],
+  "new_gpu_tasks": 0,
+  "database_writes": 0,
+  "primary_identities": {
+    "api-a": {
+      "pid": 754368,
+      "start_ticks": "50724295",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 754376,
+      "start_ticks": "50724615",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 735322,
+      "start_ticks": "50346265",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 754391,
+      "start_ticks": "50724938",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "remaining_retained_headroom": 70,
+  "scope": "Independent closure, identity, ledger, client and S3 verification; confirms RAG quality failure, not an Azure Agent rollout or hardware/whole-Pod HA"
+}

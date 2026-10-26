@@ -1,9 +1,10 @@
 # Pinned Agent retrieval
 
-Candidate implementation and local tests are complete. It is not enabled on
-the primary Agent API: that mount remains off pending the separate Azure owner
-migration. A source-frozen native PostgreSQL and real480B qualification follows
-the preregistered protocol below; implementation alone is not that evidence.
+The candidate passed native correctness tests and a real480B delivery/recovery
+study, but its **answer-quality gate failed**: eight completed runs, EM0% and
+F122.12%. It is not enabled on the primary Agent API; that mount remains off
+pending the separate Azure owner migration. [Closed evidence and failure analysis](benchmarks/agent-rag-2026-10-26.md)
+distinguish retrieval, answer quality, storage and client consistency.
 
 `retrieval.search` searches an operator-published immutable corpus with BM25.
 The corpus contains documents, versions and provenance; it accepts no question,
@@ -63,8 +64,10 @@ answer follows from a source; that is measured separately by an external grader.
 pins the official public SQuAD1.1 dev SHA and all2067 passages. Queries and
 references never enter the corpus. A full10570-query CPU retrieval study reports
 correct-paragraph recall@1/3/5, answer-span coverage and latency with an explicit
-CPU scope. The preliminary local Mac run observed91.807% paragraph recall@5;
-the formal frozen-source Pod run is a separate measurement.
+CPU scope. The preliminary local Mac run observed91.807% paragraph recall@5.
+Frozen Pod source independently reproduced the same rankings over all10570
+queries in18.792seconds. This is CPU retrieval, not GPU answer quality or a
+matched hardware speedup.
 
 Eight Agent questions are selected by SHA256(seed:public case ID) order using
 seed2026102603 before observing their RAG answers. All failures remain in the
