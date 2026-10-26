@@ -1,0 +1,10 @@
+{
+  "timeout_pid": 704001,
+  "timeout_start_ticks": 49823818,
+  "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261026-v8/source",
+  "source_commit": "8ffbc71b384bc2cc02d6a8eb8290dd259f2772f1",
+  "run": "/root/batchforge-runtime/soak480-agent-runtime-dag-20261026-v1",
+  "bounded_seconds": 1800,
+  "gpu_tasks_max": 24,
+  "new_cloud_resources": false
+}

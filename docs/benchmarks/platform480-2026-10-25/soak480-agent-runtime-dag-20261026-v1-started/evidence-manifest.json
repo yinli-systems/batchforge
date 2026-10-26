@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-26T00:33:42.813155+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-agent-runtime-dag-20261026-v1",
+  "files": {
+    "report.json": {
+      "bytes": 6600,
+      "sha256": "022507ce277b917d451f6031d41beea178793b7a293387a00238e516738ed491",
+      "source_relative_path": "report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

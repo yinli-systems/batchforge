@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-26T00:38:56.279198+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-agent-dag-closeout-20261026-v1",
+  "files": {
+    "validation.json": {
+      "bytes": 1923,
+      "sha256": "4e417348eb345550f288e278b22fbf447c8df380d461d70d88e7f5a7a8265cd8",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 2431,
+      "sha256": "e3515d743e0dcda42b90c99ba1e4da51514a62028d2d0dec7850b98d8dd61ba8",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

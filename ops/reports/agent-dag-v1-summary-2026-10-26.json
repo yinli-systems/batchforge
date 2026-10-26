@@ -1,0 +1,32 @@
+{
+  "source_commit": "8ffbc71b384bc2cc02d6a8eb8290dd259f2772f1",
+  "source_report_sha256": "b13a613d89e180f95a9b64a4a9b1c6d41f3e534e9011f94c9d9bddaa23e23811",
+  "passed": true,
+  "graphs": 2,
+  "agent_nodes": 6,
+  "control_records": 8,
+  "accepted_model_tasks": 14,
+  "attempts": 14,
+  "accepted_usage": {
+    "prompt_tokens": 9957,
+    "completion_tokens": 464
+  },
+  "artifact_byte_readbacks": 28,
+  "distinct_artifacts": 28,
+  "verified_events": 357,
+  "process_loss_boundary": "Workflow coordinator exits after committed dependency activation before returning its ACK",
+  "native_postgres_and_api_restart_readback": true,
+  "whole_controller_seconds": 233.09476042998722,
+  "whole_pod_allocation_usd": 1.042451567478554,
+  "cost_scope": "Whole-Pod $16.10/hour controller wall allocation, not invoice, marginal or per-qualified-result cost",
+  "headroom_before": 118,
+  "headroom_after": 104,
+  "independent_closeout_passed": true,
+  "production_agent_schema_deployed": false,
+  "primary_services_changed": false,
+  "new_cloud_resources": false,
+  "gpu_saturation_proven": false,
+  "whole_pod_ha_proven": false,
+  "full_report": "docs/benchmarks/platform480-2026-10-25/soak480-agent-runtime-dag-20261026-v1-complete/report.json",
+  "closeout": "docs/benchmarks/platform480-2026-10-25/evidence-api-agent-dag-closeout-20261026-v1-complete/validation.json"
+}

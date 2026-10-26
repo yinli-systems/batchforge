@@ -1,0 +1,92 @@
+{
+  "captured_at": "2026-10-26T00:33:32.557883+00:00",
+  "commit": "8ffbc71b384bc2cc02d6a8eb8290dd259f2772f1",
+  "run_id": 40249737583,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40249737583",
+  "conclusion": "success",
+  "job": {
+    "id": 121338798680,
+    "name": "existing-pod-cpu",
+    "conclusion": "success",
+    "started_at": "2026-10-26T00:31:17Z",
+    "completed_at": "2026-10-26T00:33:13Z",
+    "runner_name": "batchforge-cpu-20261025-v23",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-10-26T00:31:19Z",
+        "completed_at": "2026-10-26T00:31:20Z"
+      },
+      {
+        "name": "Set up runner",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-10-26T00:31:20Z",
+        "completed_at": "2026-10-26T00:31:20Z"
+      },
+      {
+        "name": "Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-10-26T00:31:20Z",
+        "completed_at": "2026-10-26T00:31:22Z"
+      },
+      {
+        "name": "Locked CPU dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-10-26T00:31:22Z",
+        "completed_at": "2026-10-26T00:31:29Z"
+      },
+      {
+        "name": "Native PostgreSQL17, worker failures and console regressions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-10-26T00:31:29Z",
+        "completed_at": "2026-10-26T00:33:10Z"
+      },
+      {
+        "name": "Post Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10,
+        "started_at": "2026-10-26T00:33:10Z",
+        "completed_at": "2026-10-26T00:33:10Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11,
+        "started_at": "2026-10-26T00:33:10Z",
+        "completed_at": "2026-10-26T00:33:10Z"
+      }
+    ]
+  },
+  "registration_remaining": 0,
+  "python_tests": {
+    "passed": 1709,
+    "skipped": 0,
+    "warnings": 1,
+    "elapsed_seconds": 97.22
+  },
+  "node_tests": {
+    "passed": 39,
+    "failed": 0
+  },
+  "postgres_version": "17.11",
+  "node_version": "24.22.1",
+  "runner_os_uid": 65534,
+  "full_log_sha256": "68d30c90c5b94a5ec1d2527776a713b67b57f3ea28652f72c622c08bacf20528",
+  "new_cloud_resources": false,
+  "billing_settings_changed": false,
+  "production_credentials_transferred": false,
+  "scope": "Exact-head native PostgreSQL DAG correctness and finite canary plan/grader tests; real GPU result separate"
+}

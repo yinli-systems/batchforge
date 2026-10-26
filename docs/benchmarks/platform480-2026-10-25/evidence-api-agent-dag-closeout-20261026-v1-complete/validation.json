@@ -1,0 +1,61 @@
+{
+  "passed": true,
+  "checks": {
+    "primary_identities_match_original": true,
+    "native_pg_stopped": true,
+    "controller_stopped": true,
+    "cost_arithmetic": true,
+    "private_port_18170_closed": true,
+    "private_port_18172_closed": true,
+    "ready_8080": true,
+    "ready_8082": true,
+    "ready_8083": true,
+    "ready_9105": true,
+    "guard_armed_same_process": true
+  },
+  "created_at": "2026-10-26T00:38:11.179887+00:00",
+  "source_commit": "8ffbc71b384bc2cc02d6a8eb8290dd259f2772f1",
+  "source_report_sha256": "b13a613d89e180f95a9b64a4a9b1c6d41f3e534e9011f94c9d9bddaa23e23811",
+  "validator_sha256": "e3515d743e0dcda42b90c99ba1e4da51514a62028d2d0dec7850b98d8dd61ba8",
+  "gpu_tasks_submitted": 0,
+  "database_writes": 0,
+  "fresh_payload_downloads": 0,
+  "primary_identities": {
+    "api-a": {
+      "pid": 641686,
+      "start_ticks": "48004878",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 641694,
+      "start_ticks": "48005158",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 641677,
+      "start_ticks": "48004600",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 641702,
+      "start_ticks": "48005394",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "guard_identity": {
+    "pid": 642163,
+    "start_ticks": "48039170",
+    "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+  },
+  "scope": "Independent current process/source/configuration and cleanup checks; original controller performed PostgreSQL restart, Azure reconciliation and 28 artifact byte reads"
+}

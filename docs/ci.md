@@ -1,5 +1,13 @@
 # Correctness checks and CI availability
 
+The finite real-DAG controller source8ffbc71 passed
+[run40249737583](https://github.com/yinli-systems/batchforge/actions/runs/40249737583):
+**1,709 Python/zero skips,39 Node tests and compileall** on the same isolated
+PG17.11/Node24.22.1/UID65534 toolchain, zero remaining runners.
+[Exact result](../ops/reports/github-native-ci-8ffbc71-2026-10-26.json).
+Its separate [two-graph real480B qualification](benchmarks/agent-dag-2026-10-26.md)
+subsequently passed; CPU tests and model/storage evidence remain distinct.
+
 DAG source d5c6941 passed actual
 [run40249451206](https://github.com/yinli-systems/batchforge/actions/runs/40249451206):
 **1,705 Python/zero skips,39 Node tests and compileall**, PostgreSQL17.11,

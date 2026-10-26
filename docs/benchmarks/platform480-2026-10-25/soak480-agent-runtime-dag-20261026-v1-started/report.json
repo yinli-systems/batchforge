@@ -1,0 +1,252 @@
+{
+  "phase": "running",
+  "passed": false,
+  "gpu_inference": true,
+  "azure_agent_schema_modified": false,
+  "controller_sha256": "2db04bcf489a87ec42970c6fb33575e6d48ccebdac586e5b4b0ade900240c084",
+  "events": [
+    {
+      "phase": "preflight",
+      "at": "2026-10-26T00:33:21.652767+00:00"
+    },
+    {
+      "phase": "running",
+      "at": "2026-10-26T00:33:25.544695+00:00"
+    }
+  ],
+  "source_commit": "8ffbc71b384bc2cc02d6a8eb8290dd259f2772f1",
+  "primary_before": {
+    "api-a": {
+      "pid": 641686,
+      "start_ticks": "48004878",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 641694,
+      "start_ticks": "48005158",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 641677,
+      "start_ticks": "48004600",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 641702,
+      "start_ticks": "48005394",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "plan": {
+    "graphs": 2,
+    "agent_nodes": 6,
+    "max_child_tasks": 24,
+    "fixture_sha256": "3dcbd2f475e52aa50628d3c80996ed7aaff9da11a0fb35b41b3db0bd666e5be9",
+    "fault": "Workflow coordinator exits after committed dependency activation before returning its ACK",
+    "control_state": "Native Unix-only PG17 on existing container disk, not Azure or Pod-loss durable",
+    "model_tasks": "Existing four-H100 480B-total/35B-active MoE, Batch API, Azure ledger and S3",
+    "primary_changes": false,
+    "new_cloud_resources": false,
+    "quota_changes": false
+  },
+  "headroom_before": 118,
+  "guard_scope": "Existing guard unmodified; unknown campaign lock waits, no automatic recovery coverage claimed",
+  "runs": [
+    {
+      "case_id": "dag-0",
+      "run_id": "agrun_2bce6185a445660076dd12023e5e0ae9",
+      "nodes": {
+        "join": {
+          "run_id": "agrun_10e42201f3a9f992fa4a85fd1c6c1acf",
+          "status": "blocked"
+        },
+        "left": {
+          "run_id": "agrun_1fde35b36223503f5a2c7f03d5e2e5c9",
+          "status": "blocked"
+        },
+        "right": {
+          "run_id": "agrun_7e1c8a45ff127ae759c84e94708fc683",
+          "status": "blocked"
+        }
+      }
+    },
+    {
+      "case_id": "dag-1",
+      "run_id": "agrun_6404b91f76e6679fe3a61e5d22ea797c",
+      "nodes": {
+        "join": {
+          "run_id": "agrun_e29fd7be32378bc62a24189b1eb3dec8",
+          "status": "blocked"
+        },
+        "left": {
+          "run_id": "agrun_ecb4f848e4d816c8a3e55644666a60dc",
+          "status": "blocked"
+        },
+        "right": {
+          "run_id": "agrun_e2a3556121cdc87fe72776fe222f8edd",
+          "status": "blocked"
+        }
+      }
+    }
+  ],
+  "gpu_samples": [
+    {
+      "at": "2026-10-26T00:33:25.551014+00:00",
+      "devices": [
+        {
+          "index": 0,
+          "busy_percent": 0,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 40
+        },
+        {
+          "index": 1,
+          "busy_percent": 0,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 38
+        },
+        {
+          "index": 2,
+          "busy_percent": 0,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 38
+        },
+        {
+          "index": 3,
+          "busy_percent": 0,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 36
+        }
+      ]
+    },
+    {
+      "at": "2026-10-26T00:33:30.653793+00:00",
+      "devices": [
+        {
+          "index": 0,
+          "busy_percent": 0,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 41
+        },
+        {
+          "index": 1,
+          "busy_percent": 0,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 40
+        },
+        {
+          "index": 2,
+          "busy_percent": 26,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 39
+        },
+        {
+          "index": 3,
+          "busy_percent": 14,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 38
+        }
+      ]
+    },
+    {
+      "at": "2026-10-26T00:33:35.742527+00:00",
+      "devices": [
+        {
+          "index": 0,
+          "busy_percent": 0,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 40
+        },
+        {
+          "index": 1,
+          "busy_percent": 0,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 38
+        },
+        {
+          "index": 2,
+          "busy_percent": 0,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 38
+        },
+        {
+          "index": 3,
+          "busy_percent": 0,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 36
+        }
+      ]
+    },
+    {
+      "at": "2026-10-26T00:33:40.831718+00:00",
+      "devices": [
+        {
+          "index": 0,
+          "busy_percent": 0,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 41
+        },
+        {
+          "index": 1,
+          "busy_percent": 10,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 40
+        },
+        {
+          "index": 2,
+          "busy_percent": 2,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 40
+        },
+        {
+          "index": 3,
+          "busy_percent": 11,
+          "memory_used_mib": 74125,
+          "memory_total_mib": 81559,
+          "temperature_c": 38
+        }
+      ]
+    }
+  ],
+  "checkpoint": {
+    "terminal": 2,
+    "rows": 8,
+    "at": "2026-10-26T00:33:41.917936+00:00"
+  },
+  "coordinator_fault": {
+    "parent_id": "agrun_2bce6185a445660076dd12023e5e0ae9",
+    "child_ids": [
+      "agrun_1fde35b36223503f5a2c7f03d5e2e5c9",
+      "agrun_7e1c8a45ff127ae759c84e94708fc683"
+    ],
+    "revision": 2,
+    "event_hash": "e8c764e19ecaf1e750dec779b60bd55c65b701d2ecfff0788784bc463c3dc9f3",
+    "pid": 704047,
+    "at": "2026-10-26T00:33:25.975466+00:00"
+  }
+}

@@ -7,6 +7,12 @@ the runtime role has not been elevated. Agent SQLv1 and serving schema11 stay
 unchanged. Native PostgreSQL qualification and real model execution must be
 reported separately from implementation or deterministic adapter tests.
 
+The first [real480B qualification](benchmarks/agent-dag-2026-10-26.md) closed
+successfully: two graphs/six Agent roles,14 unique model tasks/14 attempts,
+coordinator loss after committed activation, native PG/API restart and28 artifact
+byte readbacks. This does not deploy the Agent namespace on Azure or establish
+large-scale throughput, broad task quality or whole-Pod availability.
+
 `POST /v1/agent-workflows` admits at most16 named Agent nodes, declared
 dependencies and output nodes, with at most8 active child Agents. Admission
 rejects cycles, unknown or duplicate dependencies, unused branches, unserved
@@ -61,10 +67,10 @@ Example (explicitly a bounded two-role graph, not a dynamic planner):
 {
   "nodes": [
     {"id":"subtotal","goal":"Calculate 21*2 using math.calculate; return only the number.",
-     "model":"qwen480","answer_format":"number","tool_sequence":["math.calculate"]},
+     "model":"QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ","answer_format":"number","tool_sequence":["math.calculate"]},
     {"id":"review","depends_on":["subtotal"],
      "goal":"Check the dependency answer by calculating 21*2, then return the number.",
-     "model":"qwen480","answer_format":"number","tool_sequence":["math.calculate"]}
+     "model":"QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ","answer_format":"number","tool_sequence":["math.calculate"]}
   ],
   "outputs":["review"],
   "max_parallel":2,
