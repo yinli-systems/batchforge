@@ -1,0 +1,85 @@
+{
+  "commit": "88dc2a9bbc3d04bb6c232caa09d1633d6037e659",
+  "run_id": 40271168141,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40271168141",
+  "conclusion": "failure",
+  "job": {
+    "completedAt": "2026-10-26T04:54:45Z",
+    "conclusion": "failure",
+    "databaseId": 121404086758,
+    "name": "existing-pod-cpu",
+    "startedAt": "2026-10-26T04:51:56Z",
+    "status": "completed",
+    "steps": [
+      {
+        "completedAt": "2026-10-26T04:51:58Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-26T04:51:57Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-26T04:51:58Z",
+        "conclusion": "success",
+        "name": "Set up runner",
+        "number": 2,
+        "startedAt": "2026-10-26T04:51:58Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-26T04:52:02Z",
+        "conclusion": "success",
+        "name": "Run actions/checkout@v4",
+        "number": 3,
+        "startedAt": "2026-10-26T04:51:58Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-26T04:52:10Z",
+        "conclusion": "success",
+        "name": "Locked CPU dependencies",
+        "number": 4,
+        "startedAt": "2026-10-26T04:52:02Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-26T04:54:41Z",
+        "conclusion": "failure",
+        "name": "Native PostgreSQL17, worker failures and console regressions",
+        "number": 5,
+        "startedAt": "2026-10-26T04:52:10Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-26T04:54:41Z",
+        "conclusion": "success",
+        "name": "Post Run actions/checkout@v4",
+        "number": 10,
+        "startedAt": "2026-10-26T04:54:41Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-26T04:54:41Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 11,
+        "startedAt": "2026-10-26T04:54:41Z",
+        "status": "completed"
+      }
+    ],
+    "url": "https://github.com/yinli-systems/batchforge/actions/runs/40271168141/job/121404086758"
+  },
+  "python_tests": {
+    "passed": 1954,
+    "failed": 1,
+    "skipped": 0
+  },
+  "node_ci_tests_executed": false,
+  "failed_test": "test_batch_lookup_reconciles_real_api_commit_without_creating_a_second_task",
+  "reason": "Test fixture omitted required worker credential; backend startup validation refused before Batch API lookup assertions. Other native provenance/client cases passed.",
+  "registration_remaining": 0,
+  "full_log_sha256": "ec08a115fe4b663ddeb8f5177f9621ff1aa7248a482c9bad58f067ab35d87fe6",
+  "production_credentials_transferred": false,
+  "new_cloud_resources": false
+}

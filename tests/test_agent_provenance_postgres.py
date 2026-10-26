@@ -162,7 +162,7 @@ async def test_batch_lookup_reconciles_real_api_commit_without_creating_a_second
     from agents.runtime import DeliveryError
     key='test-only-source-reconciliation-key'
     with psycopg.connect(DSN,autocommit=True) as db:db.execute('INSERT INTO api_keys(key_hash,tenant_id) VALUES(%s,%s) ON CONFLICT DO NOTHING',(hashlib.sha256(key.encode()).hexdigest(),A))
-    app=create_app(Settings(database_url=DSN,model_name='test-model'))
+    app=create_app(Settings(database_url=DSN,model_name='test-model',batchforge_worker_token='test-only-source-lookup-worker-token'))
     request={'model':'test-model','messages':[{'role':'user','content':'test-only synthetic data'}],'max_tokens':32}
     run={'id':'agrun_'+'f'*32,'tenant_id':A,'model':'test-model'}
     state={'request':request,'request_sha256':digest(request),'step':1,'child_key':'source-reconcile-native'}
