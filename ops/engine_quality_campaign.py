@@ -226,14 +226,20 @@ class Platform:
 
     def observe(self,worker=True):
         import psycopg
+        from psycopg.conninfo import conninfo_to_dict
         started=now();self.check()
+        if conninfo_to_dict(self.database_url).get('sslmode')!='verify-full':raise ValueError('Verified TLS database configuration required')
         with psycopg.connect(self.database_url,autocommit=True,connect_timeout=5,
             options='-c default_transaction_read_only=on -c statement_timeout=5000') as db:
             if db.execute('SHOW default_transaction_read_only').fetchone()[0]!='on':raise ValueError('Read-only DB observation required')
+            schema=db.execute('SELECT max(version) FROM batchforge_schema_migrations').fetchone()[0]
+            role=db.execute('SELECT rolsuper,rolcreatedb,rolcreaterole FROM pg_roles WHERE rolname=current_user').fetchone()
+            if schema!=11 or role!=(False,False,False):raise ValueError('Current schema11 least-privilege database required')
             pending,running=db.execute("SELECT count(*) FILTER(WHERE status='pending'),count(*) FILTER(WHERE status='running') FROM tasks WHERE status IN ('pending','running')").fetchone()
         r=self.http.get('http://127.0.0.1:8348/metrics');r.raise_for_status()
         if len(r.content)>2*1024**2:raise ValueError('Metrics exceed bound')
-        o={'at':started,'db_pending':pending,'db_running':running,'engine_quiescent':engine_quiescent(r.text)}
+        o={'at':started,'db_pending':pending,'db_running':running,'engine_quiescent':engine_quiescent(r.text),
+            'schema_version':schema,'runtime_privileges_verified':True,'configured_tls_verify_full':True}
         if worker:
             self.identity(self.worker);r=self.http.get('http://127.0.0.1:9105/metrics');r.raise_for_status();metrics={}
             for line in r.text.splitlines():
@@ -284,10 +290,14 @@ def restore_config(path,digest):
     c=load_config(path,digest);base=Path(c['base']);locks=acquire(15);platform=None
     restore_lock=(base/'restore.lock').open('a');fcntl.flock(restore_lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     result={'passed':False,'phase':'restoring','started_at':now(),'config_sha256':digest,
-        'engine_actions':False,'cloud_actions':False,'errors':[]}
+        'engine_actions':False,'cloud_actions':False,'errors':[],'identity':process_identity(os.getpid())}
     report=base/'recovery-validation.json'
     if report.exists():raise ValueError('Restoration is never automatically replayed')
     try:
+        # Journal failure must not skip a safe restoration attempt. The final
+        # report is still required before anyone can claim verified recovery.
+        try:save(report,result)
+        except OSError:result['initial_journal_write_failed']=True
         platform=Platform(c);platform.check()
         # A runner cannot receive START until this record was fsynced. A child
         # without a record stays blocked and exits on EOF/parent death.
@@ -400,6 +410,8 @@ def execute(base,guard_run,seconds,count,apply,qualify_loss,qualification=None):
         guardian=RestorationGuard(c['controller'],max(.1,c['end_epoch']-time.time()),
             [sys.executable,'-m','ops.engine_quality_campaign','--restore-config',str(base/'restore-private.json'),'--config-sha',digest],
             restore_timeout=600,log_path=base/'restore-private.log')
+        save(base/'guard-launcher.json',{'identity':process_identity(guardian.child.pid),'config_sha256':digest,
+            'kind':'Independent fixed-window sole restoration trigger','maximum_restore_seconds':600})
         guardian.begin();stage('independent_restoration_armed')
         signal_exact(c['guard_identity']);stage('prior_guard_stopped')
         platform.invoke(platform.watch,'stop')
