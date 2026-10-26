@@ -11,6 +11,7 @@ import httpx
 from backend.receipts import verify as verify_receipt
 from .contracts import canonical,digest,protocol_json as strict_json
 from .runtime import RetryLater,DeliveryError
+from .leases import checkpoint
 
 
 class BatchAdapter:
@@ -33,6 +34,7 @@ class BatchAdapter:
     def filename(run,state):return f"agent-{run['id']}-{state['step']}-{state['request_sha256']}.jsonl"
 
     async def request(self,run,method,path,**kwargs):
+        checkpoint()
         key=self.tenant_keys.get(run['tenant_id'])
         if not key:raise PermissionError('Tenant executor not configured')
         headers={'Authorization':'Bearer '+key,**kwargs.pop('headers',{})}
@@ -44,6 +46,7 @@ class BatchAdapter:
         return response
 
     async def find_input(self,run,state):
+        checkpoint()
         raw=self.input_bytes(run,state);expected=hashlib.sha256(raw).hexdigest()
         async with self.pool.connection() as conn:
             rows=await (await conn.execute('''SELECT f.id,f.bytes,

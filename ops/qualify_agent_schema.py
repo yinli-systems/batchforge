@@ -30,10 +30,11 @@ def canary_environment(original,source):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',required=True,type=Path)
-    p.add_argument('--fixture-set',choices=['schema-contract-heldout-v1','workflow-contract-heldout-v1'],default='schema-contract-heldout-v1')
+    p.add_argument('--fixture-set',choices=['schema-contract-heldout-v1','workflow-contract-heldout-v1','lease-contract-heldout-v1'],default='schema-contract-heldout-v1')
     p.add_argument('--apply',action='store_true');args=p.parse_args()
     if not args.apply:
-        print(json.dumps({'decoder_tasks':4,'agent_cases':20,'max_child_tasks':84,
+        cases=4 if args.fixture_set=='lease-contract-heldout-v1' else 20
+        print(json.dumps({'decoder_tasks':4,'agent_cases':cases,'max_child_tasks':4+4*cases,
             'primary_changes':False,'extra_gpu_worker':False,'private_api_lifetime_seconds':2700}));return
     def interrupted(_signum,_frame):raise InterruptedError('Finite schema qualification interrupted')
     signal.signal(signal.SIGTERM,interrupted);signal.signal(signal.SIGINT,interrupted)
@@ -43,7 +44,7 @@ def main():
         raise ValueError('New owned run and at least one hour recovery margin required')
     os.umask(0o077);base.mkdir(mode=0o700);start=time.monotonic();api=None;child=None
     report={'phase':'prepared','passed':False,'primary_changes':False,'azure_agent_migration':False,
-        'private_api':ENDPOINT,'max_child_tasks':84,'extra_gpu_worker':False}
+        'private_api':ENDPOINT,'max_child_tasks':20 if args.fixture_set=='lease-contract-heldout-v1' else 84,'extra_gpu_worker':False}
     def save():write(base/'validation.json',report)
     save()
     try:

@@ -7,6 +7,7 @@ from __future__ import annotations
 import hashlib,re,secrets
 from psycopg.types.json import Jsonb
 from .contracts import Policy,canonical,digest
+from .leases import checkpoint
 
 ACTIVE=('queued','running','waiting_model','waiting_approval')
 TERMINAL=('completed','failed','cancelled')
@@ -134,25 +135,36 @@ class AgentStore:
             row['revision']+=1;epoch=row['lease_epoch']+1;token=secrets.token_hex(24)
             tail=await self.event(conn,row,kind='lease.acquired',payload={'owner':owner,'epoch':epoch},
                 operation_key=f'lease.{epoch}',request_hash=digest({'owner':owner,'epoch':epoch}))
-            return await one(conn,"""UPDATE bf_agents.runs SET status=CASE WHEN status='queued' THEN 'running' ELSE status END,
-                lease_owner=%s,lease_token=%s,lease_epoch=%s,lease_expires_at=clock_timestamp()+(%s*interval '1 second'),
-                revision=%s,event_hash=%s,updated_at=clock_timestamp() WHERE tenant_id=%s AND id=%s RETURNING *""",
+            claimed=await one(conn,"""UPDATE bf_agents.runs SET status=CASE WHEN status='queued' THEN 'running' ELSE status END,
+                lease_owner=%s,lease_token=%s,lease_epoch=%s,lease_expires_at=LEAST(deadline_at,clock_timestamp()+(%s*interval '1 second')),
+                revision=%s,event_hash=%s,updated_at=clock_timestamp() WHERE tenant_id=%s AND id=%s
+                AND deadline_at>clock_timestamp() RETURNING *""",
                 (owner,token,epoch,seconds,row['revision'],tail,row['tenant_id'],row['id']))
+            if claimed is None:raise AgentError(409,'agent_deadline_exceeded')
+            return claimed
 
     async def heartbeat(self,tenant,rid,token,*,seconds=30):
         if type(seconds) is not int or not 5<=seconds<=120:raise AgentError(400,'invalid_agent_lease')
         async with self.pool.connection() as conn,conn.transaction():
             row=await self.locked_run(conn,tenant,rid);self.require_lease(row,token)
-            await conn.execute("UPDATE bf_agents.runs SET lease_expires_at=clock_timestamp()+(%s*interval '1 second'),updated_at=clock_timestamp() WHERE tenant_id=%s AND id=%s",(seconds,tenant,rid))
+            renewed=await one(conn,"""UPDATE bf_agents.runs SET lease_expires_at=LEAST(deadline_at,clock_timestamp()+(%s*interval '1 second')),
+                updated_at=clock_timestamp() WHERE tenant_id=%s AND id=%s AND lease_token=%s
+                AND lease_expires_at>clock_timestamp() AND deadline_at>clock_timestamp() RETURNING lease_expires_at""",(seconds,tenant,rid,token))
+            if renewed is None:raise AgentError(409,'stale_agent_lease')
+            return renewed
 
     async def release_idle(self,tenant,rid,token,*,seconds=2):
         """Do not rewrite planner context or append identical waiting payloads."""
         if type(seconds) is not int or not 1<=seconds<=60:raise AgentError(400,'invalid_agent_wait')
+        checkpoint()
         async with self.pool.connection() as conn,conn.transaction():
             row=await self.locked_run(conn,tenant,rid);self.require_lease(row,token)
-            await conn.execute('''UPDATE bf_agents.runs SET lease_owner=NULL,lease_token=NULL,lease_expires_at=NULL,
+            checkpoint()
+            released=await one(conn,'''UPDATE bf_agents.runs SET lease_owner=NULL,lease_token=NULL,lease_expires_at=NULL,
                 ready_at=clock_timestamp()+(%s*interval '1 second'),updated_at=clock_timestamp()
-                WHERE tenant_id=%s AND id=%s''',(seconds,tenant,rid))
+                WHERE tenant_id=%s AND id=%s AND lease_token=%s AND lease_expires_at>clock_timestamp()
+                AND deadline_at>clock_timestamp() RETURNING id''',(seconds,tenant,rid,token))
+            if released is None:raise AgentError(409,'stale_agent_lease')
 
     @staticmethod
     def require_lease(row,token):
@@ -161,6 +173,7 @@ class AgentStore:
 
     async def transition(self,tenant,rid,token,revision,operation,*,kind,state,status='running',
                          model_calls=0,tool_calls=0,generated_tokens=0,result=None,delay_seconds=0,release=False):
+        checkpoint()
         if (status not in (*ACTIVE,*TERMINAL) or not isinstance(operation,str) or not 1<=len(operation)<=128
             or not isinstance(kind,str) or not re.fullmatch('[a-z][a-z0-9_.]{0,63}',kind)
             or type(revision) is not int or any(type(v) is not int or v<0 for v in (model_calls,tool_calls,generated_tokens,delay_seconds))
@@ -184,14 +197,17 @@ class AgentStore:
                      'model_calls':model_calls,'tool_calls':tool_calls,'generated_tokens':generated_tokens}
             tail=await self.event(conn,row,kind=kind,payload=payload,operation_key=operation,request_hash=request_hash)
             drop=release or status in TERMINAL
+            checkpoint()
             row=await one(conn,"""UPDATE bf_agents.runs SET status=%s,state=%s,result=%s,model_calls=model_calls+%s,
                 tool_calls=tool_calls+%s,generated_tokens=generated_tokens+%s,revision=%s,event_hash=%s,
                 lease_owner=CASE WHEN %s THEN NULL ELSE lease_owner END,lease_token=CASE WHEN %s THEN NULL ELSE lease_token END,
                 lease_expires_at=CASE WHEN %s THEN NULL ELSE lease_expires_at END,
                 ready_at=clock_timestamp()+(%s*interval '1 second'),updated_at=clock_timestamp()
-                WHERE tenant_id=%s AND id=%s RETURNING *""",
+                WHERE tenant_id=%s AND id=%s AND lease_token=%s AND lease_expires_at>clock_timestamp()
+                AND deadline_at>clock_timestamp() RETURNING *""",
                 (status,Jsonb(state),Jsonb(result) if result is not None else None,model_calls,tool_calls,generated_tokens,
-                 row['revision'],tail,drop,drop,drop,delay_seconds,tenant,rid))
+                 row['revision'],tail,drop,drop,drop,delay_seconds,tenant,rid,token))
+            if row is None:raise AgentError(409,'stale_agent_lease')
             return view(row)
 
     async def finish_locked(self,conn,row,status,kind,payload):

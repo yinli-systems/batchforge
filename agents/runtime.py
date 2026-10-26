@@ -7,11 +7,12 @@ fences Agent commits; an already accepted child Batch can still consume GPU afte
 Agent cancellation. Its accepted usage stays in the original Batch ledger.
 """
 from __future__ import annotations
-import copy
+import copy,asyncio
 from .contracts import Policy,ToolDecision,FinalDecision,OutputContractError,canonical,digest,parse_decision,planner_messages
 from .tools import Context,SPECS,execute
 from .memory import StoreMemory
 from .store import AgentError
+from .leases import ActionLease,LeaseLost,ActionDeadline,checkpoint,LEASE_SECONDS,RENEW_INTERVAL,ACTION_SECONDS
 
 
 class RetryLater(Exception):pass
@@ -34,13 +35,26 @@ def citations(observations):
 
 
 class Coordinator:
-    def __init__(self,store,batch,*,owner,tenants,memory=None):
+    def __init__(self,store,batch,*,owner,tenants,memory=None,lease_seconds=LEASE_SECONDS,renew_interval=RENEW_INTERVAL,action_seconds=ACTION_SECONDS):
         self.store=store;self.batch=batch;self.owner=owner;self.tenants=tuple(tenants)
         self.memory=memory or StoreMemory(store)
+        self.lease_seconds=lease_seconds;self.renew_interval=renew_interval;self.action_seconds=action_seconds
+        # Validate before claiming anything; durations are operator settings,
+        # never model-supplied policy or request fields.
+        ActionLease(store,{},claimed_at=0,seconds=lease_seconds,
+                    renew_interval=renew_interval,action_seconds=action_seconds)
 
     async def tick(self):
-        run=await self.store.claim(self.owner,self.tenants,seconds=120)
+        started=asyncio.get_running_loop().time()
+        run=await self.store.claim(self.owner,self.tenants,seconds=self.lease_seconds)
         if run is None:return False
+        lease=ActionLease(self.store,run,claimed_at=started,seconds=self.lease_seconds,
+                          renew_interval=self.renew_interval,action_seconds=self.action_seconds)
+        try:await lease.run(lambda:self.action(run))
+        except (LeaseLost,ActionDeadline):pass  # retain the durable outbox for a later owner
+        return True
+
+    async def action(self,run):
         try:await self.advance(run)
         except RetryLater:
             await self.change(run,'retry',kind='dependency.retry',state=run['state'],delay_seconds=5)
@@ -50,7 +64,6 @@ class Coordinator:
         except (ValueError,PermissionError,DeliveryError) as exc:
             # Do not journal arbitrary DB/HTTP diagnostics or tool content.
             await self.fail(run,{'PermissionError':'tool_not_granted','DeliveryError':'model_delivery_invalid'}.get(type(exc).__name__,'agent_protocol_invalid'))
-        return True
 
     async def change(self,run,label,*,kind,state,status='running',**kwargs):
         value=await self.store.transition(run['tenant_id'],run['id'],run['lease_token'],run['revision'],
@@ -69,6 +82,7 @@ class Coordinator:
         return await self.change(run,'output_rejected',kind='output.rejected',state=state)
 
     async def advance(self,run):
+        checkpoint()
         state=copy.deepcopy(run['state']);phase=state.get('phase','plan');policy=policy_from(run['policy'])
         if policy.execution_kind!='agent' or state.get('workflow_blocked'):
             raise ValueError('Only activated Agent executions can call the model')
@@ -93,7 +107,7 @@ class Coordinator:
             await self.change(run,'upload_intent',kind='artifact.upload_intent',state=state)
             return  # Separate durable claim performs reconciliation first.
         if phase=='input_uncertain':
-            fid=await self.batch.find_input(run,state)
+            checkpoint();fid=await self.batch.find_input(run,state)
             if fid:
                 state.update(phase='batch_intent',file_id=fid)
                 return await self.change(run,'input_found',kind='artifact.reconciled',state=state)
@@ -107,7 +121,7 @@ class Coordinator:
             updated=await self.store.transition(run['tenant_id'],run['id'],run['lease_token'],run['revision'],
                 f"upload.{step}",kind='artifact.upload_started',state=state)
             run.update(updated)
-            fid=await self.batch.upload(run,state)
+            checkpoint();fid=await self.batch.upload(run,state)
             state.update(phase='batch_intent',file_id=fid)
             return await self.change(run,'input_ready',kind='artifact.ready',state=state)
         if phase=='batch_intent':
@@ -116,11 +130,11 @@ class Coordinator:
             state['phase']='batch_uncertain'
             return await self.change(run,'model_reserve',kind='model.reserved',state=state,model_calls=1)
         if phase=='batch_uncertain':
-            bid=await self.batch.create(run,state)
+            checkpoint();bid=await self.batch.create(run,state)
             state.update(phase='waiting_model',batch_id=bid)
             return await self.change(run,'batch_ready',kind='model.enqueued',state=state,status='waiting_model')
         if phase=='waiting_model':
-            delivery=await self.batch.poll(run,state)
+            checkpoint();delivery=await self.batch.poll(run,state)
             if delivery is None:
                 return await self.store.release_idle(run['tenant_id'],run['id'],run['lease_token'])
             usage=delivery['usage']
@@ -156,7 +170,7 @@ class Coordinator:
                 return await self.change(run,'final',kind='run.completed',state=state,status='completed',
                     result={**decision.model_dump(),'batch_receipts':state.get('receipts',[])})
             if run['tool_calls']>=run['max_tool_calls']:return await self.fail(run,'tool_call_budget_exceeded')
-            observation=await execute(decision,Context(run['tenant_id'],policy,self.memory))
+            checkpoint();observation=await execute(decision,Context(run['tenant_id'],policy,self.memory))
             state.setdefault('observations',[]).append(observation)
             state.pop('model_content');state['phase']='plan'
             for key in ('request','batch_id','file_id','upload_attempted','delivery_invalid'):state.pop(key,None)

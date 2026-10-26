@@ -17,6 +17,7 @@ from psycopg_pool import AsyncConnectionPool
 from agents.contracts import digest
 from agents.store import AgentStore,TERMINAL,event_document
 from agents.runtime import Coordinator
+from agents.leases import UnstoppableAction,LEASE_SECONDS,RENEW_INTERVAL,ACTION_SECONDS
 from agents.batch import BatchAdapter
 from agents.migrate import migrate as migrate_agents
 from backend.migrate import migrate_database
@@ -85,6 +86,7 @@ def selected_fixtures(name):
     if name=='value-contract-heldout-v1':return heldout_fixtures()
     if name=='schema-contract-heldout-v1':return schema_fixtures()
     if name=='workflow-contract-heldout-v1':return workflow_fixtures()
+    if name=='lease-contract-heldout-v1':return lease_fixtures()
     raise ValueError('Unknown frozen fixture set')
 
 
@@ -131,6 +133,23 @@ def workflow_fixtures():
     return values
 
 
+def lease_fixtures():
+    values=[]
+    for i in range(2):
+        expression=f'({1217+i}*{173+i})+{211+i}'
+        values.append({'id':f'lease-math-{i}','kind':'numeric','tools':['math.calculate'],
+            'goal':f'Use math.calculate to evaluate {expression}. Return only the numeric final answer.',
+            'expected':str((1217+i)*(173+i)+211+i)})
+        key=f'lease-invoice-{i}';units,price,fee=227+i,59+i,31+i
+        values.append({'id':f'lease-memory-calc-{i}','kind':'numeric','tools':['memory.get','math.calculate'],'key':key,
+            'text':f'Invoice facts: units={units}; unit price={price}; fixed fee={fee}.',
+            'goal':f'Use memory.get for {key}, then math.calculate for units times unit price plus fixed fee. Return only the numeric answer and the exact memory citation.',
+            'expected':str(units*price+fee)})
+    for case in values:
+        case.update(planner_protocol='schema-v1',answer_format='number',require_citations=bool(case.get('key')),tool_sequence=list(case['tools']))
+    return values
+
+
 def grade(case,run):
     if run['status']!='completed':return {'passed':False,'completed':False,'answer_correct':False,'required_tools':False,'citation_verified':False}
     answer=run['result']['answer'];observations=run['state'].get('observations',[])
@@ -159,6 +178,8 @@ def plan(now,headroom,fixture_set='baseline'):
         'fixture_sha256':digest(cases),'control_state':'isolated native PostgreSQL; not Azure Agent deployment',
         'model_tasks':'existing Batch API/Azure/S3/real480B','new_cloud_resources':False,
         'service_changes':False,'quota_changes':False,'external_effect_tools':False,
+        'action_lease':{'seconds':LEASE_SECONDS,'renew_interval_seconds':RENEW_INTERVAL,'action_deadline_seconds':ACTION_SECONDS},
+        'fault_reclaim_gate_seconds':30 if fixture_set=='lease-contract-heldout-v1' else None,
         'fault':'one Agent coordinator exits after child Batch ACK, before Agent state commit'}
 
 
@@ -192,6 +213,7 @@ async def worker(config_path):
     try:
         while time.monotonic()<deadline:
             try:worked=await coordinator.tick()
+            except UnstoppableAction:raise
             except Exception:
                 # Never print arbitrary diagnostics carrying DB/HTTP parameters.
                 worked=False
@@ -236,7 +258,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path);p.add_argument('--apply',action='store_true')
     p.add_argument('--worker-config',type=Path)
     p.add_argument('--batch-url',type=qualification_endpoint,default='http://127.0.0.1:8080')
-    p.add_argument('--fixture-set',choices=['baseline','value-contract-heldout-v1','schema-contract-heldout-v1','workflow-contract-heldout-v1'],default='baseline');args=p.parse_args()
+    p.add_argument('--fixture-set',choices=['baseline','value-contract-heldout-v1','schema-contract-heldout-v1','workflow-contract-heldout-v1','lease-contract-heldout-v1'],default='baseline');args=p.parse_args()
     if args.worker_config:return asyncio.run(worker(args.worker_config))
     if not args.apply:
         print(json.dumps(plan(datetime.now(timezone.utc),80,args.fixture_set),indent=2));return
@@ -287,11 +309,12 @@ def main():
             JOIN tenant_retention_usage u USING(tenant_id) WHERE l.tenant_id=%s''',(tid,)).fetchone()
         report['plan']=plan(datetime.now(timezone.utc),int(quota['headroom']),args.fixture_set);report['headroom_before']=int(quota['headroom'])
         report['payload_headroom_before']=int(quota['payload_headroom'])
-        if quota['payload_headroom']<80*(quota['max_response_bytes']+32768):raise RuntimeError('Existing payload reservation headroom insufficient')
+        maximum=report['plan']['max_new_tasks']
+        if quota['payload_headroom']<maximum*(quota['max_response_bytes']+32768):raise RuntimeError('Existing payload reservation headroom insufficient')
         auxiliary=azure.execute('''SELECT l.resource,l.max_rows-u.rows AS headroom,l.max_bytes-u.bytes AS bytes_headroom
             FROM tenant_auxiliary_limits l JOIN tenant_auxiliary_usage u USING(tenant_id,resource) WHERE l.tenant_id=%s''',(tid,)).fetchall()
         report['auxiliary_headroom_before']=auxiliary
-        required={'input_files':80,'idempotency':80,'blob_generations':80,'archive_runs':80,'archive_chunks':160,
+        required={'input_files':maximum,'idempotency':maximum,'blob_generations':maximum,'archive_runs':maximum,'archive_chunks':maximum*2,
                   'upload_reservations':4,'input_read_leases':4,'result_read_leases':4}
         if any(next((r['headroom'] for r in auxiliary if r['resource']==name),-1)<n for name,n in required.items()):
             raise RuntimeError('Existing auxiliary metadata headroom insufficient')
@@ -378,6 +401,13 @@ def main():
             [r['state']['batch_id'] for r in raw if r['state'].get('batch_id')]))
         fault=report.get('coordinator_fault')
         if not fault or fault['batch_id'] not in bids:raise RuntimeError('Ambiguous ACK did not reconcile original child')
+        with psycopg.connect(state_dsn,autocommit=True,row_factory=dict_row) as state:
+            acquired=state.execute("SELECT created_at FROM bf_agents.events WHERE run_id=%s AND kind='lease.acquired' AND created_at>%s ORDER BY revision LIMIT 1",
+                (fault['run_id'],datetime.fromisoformat(fault['at']))).fetchone()
+        if not acquired:raise RuntimeError('No post-fault lease recovery event')
+        elapsed=(acquired['created_at']-datetime.fromisoformat(fault['at'])).total_seconds()
+        report['fault_ack_to_next_db_lease_seconds']=elapsed
+        report['fault_reclaim_gate_passed']=report['plan']['fault_reclaim_gate_seconds'] is None or 0<=elapsed<=report['plan']['fault_reclaim_gate_seconds']
         with httpx.Client(base_url=args.batch_url,headers={'Authorization':'Bearer '+key},trust_env=False,follow_redirects=False,timeout=20) as client:
             receipts=[]
             for bid in bids:
@@ -405,7 +435,7 @@ def main():
         verify_source();pins.check(full=True)
         report['headroom_after']=int(azure.execute('''SELECT l.max_retained_tasks-u.retained_tasks AS n
             FROM tenant_retention_limits l JOIN tenant_retention_usage u USING(tenant_id) WHERE l.tenant_id=%s''',(tid,)).fetchone()['n'])
-        report['passed']=all(r['passed'] for r in report['task_results']);event('complete' if report['passed'] else 'quality_failed')
+        report['passed']=all(r['passed'] for r in report['task_results']) and report['fault_reclaim_gate_passed'];event('complete' if report['passed'] else 'quality_failed')
     except BaseException as exc:
         report.update(passed=False,error_type=type(exc).__name__,phase_before_failure=report['phase']);event('failed')
     finally:

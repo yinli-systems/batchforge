@@ -14,6 +14,7 @@ from .store import AgentStore
 from .batch import BatchAdapter
 from .runtime import Coordinator
 from .workflows import WorkflowCoordinator
+from .leases import UnstoppableAction
 from .executors import credentials
 
 
@@ -38,6 +39,7 @@ async def run_coordinator(settings,keys,endpoint,seconds,*,workflow=False):
         deadline=time.monotonic()+seconds
         while not stop.is_set() and time.monotonic()<deadline:
             try:worked=await coordinator.tick()
+            except UnstoppableAction:raise
             except Exception as exc:
                 logging.getLogger('batchforge.agents').warning('Coordinator action interrupted: %s',type(exc).__name__)
                 worked=False

@@ -60,3 +60,13 @@ def test_workflow_contract_fixtures_declare_actual_tools_without_reusing_prior_a
         assert case['tool_sequence']==case['tools']
         policy=Policy(planner_protocol='schema-v1',tool_sequence=tuple(case['tool_sequence']))
         assert case['expected'] not in str(policy.document())
+
+
+def test_short_lease_qualification_has_disjoint_finite_cases_and_explicit_recovery_gate():
+    from ops.qualify_agent_runtime import lease_fixtures
+    old=fixtures()+heldout_fixtures()+schema_fixtures()+workflow_fixtures();fresh=lease_fixtures()
+    assert len(fresh)==4 and not {c['id'] for c in old}&{c['id'] for c in fresh}
+    assert not {c['expected'] for c in old}&{c['expected'] for c in fresh}
+    p=plan(datetime(2026,10,26,1,tzinfo=timezone.utc),16,'lease-contract-heldout-v1')
+    assert p['max_new_tasks']==16 and p['fault_reclaim_gate_seconds']==30
+    assert p['action_lease']=={'seconds':15,'renew_interval_seconds':5,'action_deadline_seconds':45}
