@@ -1,5 +1,16 @@
 # Correctness checks and CI availability
 
+DAG source d5c6941 passed actual
+[run40249451206](https://github.com/yinli-systems/batchforge/actions/runs/40249451206):
+**1,705 Python/zero skips,39 Node tests and compileall**, PostgreSQL17.11,
+Node24.22.1/UID65534, zero remaining runners. Native database tests cover
+whole-graph admission rollback, child quota reservations, fanout/join, claim
+partitioning, cancellation racing activation, expiry during an open transaction,
+deadline cascades, committed-activation ACK loss and dependency overflow.
+[Source-bound result](../ops/reports/github-native-ci-d5c6941-2026-10-26.json).
+This check used deterministic Agent adapters. Real-model DAG execution is a
+separate qualification and the Azure Agent namespace is not deployed.
+
 Agent console source2f6bf7c passed
 [run40247586664](https://github.com/yinli-systems/batchforge/actions/runs/40247586664):
 **1,673 Python/zero skips,39 Node tests and compileall**, PostgreSQL17.11,
