@@ -1,9 +1,11 @@
 # Preregistered full-dev engine quality evaluation
 
-Status: client and independent restoration-trigger prerequisites implemented;
-the platform-specific maintenance/restore handler and its real qualification
-are not yet complete. **No full engine evaluation has started or passed.**
-Serving primary748dc10, its worker and guard remain unchanged.
+Status: client, independent restoration trigger and platform-specific exclusive
+controller/restore handler implemented. Native checks and real100-case
+controller-loss qualification are required before full execution.
+**No full engine evaluation has started or passed.**
+Serving source remains748dc10. Service process epochs may change during guarded
+maintenance; the480B engine and gateway identities remain protected.
 
 Prerequisite source1bfada3 passed actual native
 [CI40252909143](https://github.com/yinli-systems/batchforge/actions/runs/40252909143):
@@ -108,3 +110,91 @@ Required next deployment qualification before full evaluation:
 
 No retained-task quota change, new tenant, history deletion, new paid resource
 or paid inference API is authorized or needed for this engine-only study.
+
+Source27a0d30 adds the trusted `ops.engine_quality_campaign` operator roles.
+The independent handler takes both global locks after the caller relinquishes
+them or dies; only that handler restores. The exact runner is blocked on START
+until its identity/config commitment is fsynced. Before inference, both API
+replicas reject create/retry and two fresh Azure/worker/engine observations prove
+drain. After direct inference, an exact pidfd-bound runner stop and two fresh
+engine-quiescence observations precede reopening. Before runner START, restoration
+preserves an already-running Batch worker and its accepted work. Foreign source/
+configuration changes refuse actions. Four-card samples target5 seconds; raw
+responses remain private. Full execution refuses without a closed, same-source
+real100-case controller-loss restoration receipt. A new live restoration-handler
+boundary allows the original qualified finite guard source to rearm without
+resetting its persistent budget or zero-action lifetime allowance.
+
+A passive actual-Pod preflight of immutable27a0d30 verified all six owned live
+process environments, their source/profile pins, the current engine's startup-
+bound172912-token physical cache and exactly four H100. It made zero HTTP or DB
+requests, submitted no inference and changed no primary services. Passing this
+preflight is not qualification of actual restoration.
+
+## First real controller-loss qualification: failed restoration
+
+The first100-case qualification, immutablef7edd48, produced32 fsynced inference
+intents, a fresh nonquiescent engine observation and an actual four-H100 sample
+before the controller deliberately exited42. It has zero terminal records;
+those32 requests remain outcome-unknown, without retry or a quality score. The
+independent restorer stopped the exact runner and restored worker/API service,
+but failed to start the watchdog. The original interrupted campaign and failed
+restoration report are retained unchanged.
+
+Root cause: the operator's `PYTHONSAFEPATH=1` and candidate `PYTHONPATH` leaked
+through the existing process manager into a supervisor env file that declares
+neither setting. The root supervisor's script-relative fallback import then
+failed. This actual-primary failure was not covered by the earlier toy-handler
+process tests. Source0657482 captures private actual per-service environments,
+starts each manager subprocess with that frozen profile, rejects undeclared live
+Python source controls, and preserves the qualified legacy guard's clean import
+environment. A real subprocess regression test reproduces the safe-path issue.
+Private process profiles and raw responses are explicitly excluded from public
+evidence export.
+
+An independent immediate watchdog repair passed. A subsequent clean-source
+repair attempt used system Python and failed on its missing psycopg dependency;
+it is preserved. The new v2 repair used the existing platform venv, proved two
+fresh Azure/worker/engine drain observations, rolled only APIs with a clean
+import environment, restored all original configuration bytes and verified
+API/worker/engine/gateway readiness. It rearmed the same qualified finite guard
+source with zero lifetime recovery invocations, preserving the persistent budget.
+Engine/gateway and worker were not restarted by that repair.
+
+[Original failure](platform480-2026-10-25/soak480-engine-quality-controller-loss-20261026-v1-failed/recovery-validation.json)
+and [clean-source repair](platform480-2026-10-25/evidence-api-engine-quality-source-repair-20261026-v2/validation.json)
+are separate records. A new same-source real controller-loss qualification is
+required before the full cohort; no failed run directory is replayed.
+
+## New same-source qualification and full-run start
+
+Source0657482 passed native CI40255880147:1,787 Python/zero skips,39 Node tests,
+compileall, zero remaining runners. The new real100-case controller-loss run v2
+then passed independent restoration. It recorded24 inference intents and no
+known completed prediction:23 intents have no terminal record and one has a
+conservative AuthorityLost unknown outcome; eight other cases ended AdmissionPaused
+before dispatch. These are deliberately incomplete quality data, without replay.
+Dispatch proof to verified restoration was8.779006 seconds, including8.605475
+seconds in the handler. No engine/cloud action was performed.
+
+A separate read-only audit verified all actual per-service profiles, exact original
+configuration bytes, new owned identities/readiness, unchanged engine/gateway,
+two fresh schema11/TLS/least-privilege DB-worker-engine idle observations and a
+clean rearmed finite guard with zero recovery invocations.
+[Qualification summary](../../ops/reports/engine-quality-restore-qualification-2026-10-26.json)
+and [audit](platform480-2026-10-25/evidence-api-engine-quality-restore-audit-20261026-v1/validation.json).
+
+The new full10570 engine-only run is
+`/root/batchforge-runtime/soak480-engine-quality-full-20261026-v1`, controller735026,
+immutable0657482. It has started real inference; this paragraph is not a final
+quality pass. During its exclusive window both API create/retry gates are
+intentionally closed and worker/watchdog/finite guard are intentionally stopped.
+The480B engine and gateway remain running. The same independently armed
+restoration handler must reopen and verify services after the run. Do not
+interfere with its fixed source or start another load/client.
+
+The actual Pod launcher disconnected and both interrupted controllers were
+reaped. Their deaths and dispatch proofs are independently observed; the
+intended os._exit(42) is source-pinned, but the OS wait status was not captured.
+Native isolated CPU tests do capture the exit status. No actual Pod exit-code
+observation is claimed in the qualification summary.

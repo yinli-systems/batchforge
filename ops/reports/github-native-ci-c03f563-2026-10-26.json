@@ -1,0 +1,11 @@
+{
+  "commit": "c03f563aaa1c73c81a3afc5cb61c4d385917a64f",
+  "run_id": 40254603176,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40254603176",
+  "conclusion": "cancelled",
+  "job_conclusion": "cancelled",
+  "reason": "Operator pushed a source follow-up before the previous check closed; workflow concurrency cancelled this run. Not a passed check or a test assertion failure.",
+  "new_cloud_resources": false,
+  "billing_settings_changed": false,
+  "python_test_result": null
+}

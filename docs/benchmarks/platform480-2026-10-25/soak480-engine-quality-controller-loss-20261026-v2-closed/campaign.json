@@ -1,0 +1,47 @@
+{
+  "phase": "sustained_running",
+  "passed": false,
+  "started_at": "2026-10-26T01:50:28.976454+00:00",
+  "engine_actions": false,
+  "new_cloud_resources": false,
+  "scope": "Engine-only quality, separate from Batch API acceptance/usage and quality cohorts",
+  "operator_commit": "0657482f50c51a87ea4e20c388070ee01553fe03",
+  "config_sha256": "76214a0a191d3e4c6b33717a677fb68cfcee332b3fc232952539500dbf5fb81c",
+  "physical_kv_tokens": 172912,
+  "apply_requested": true,
+  "maintenance_stage": "inference_running",
+  "drain_observations": [
+    {
+      "at": "2026-10-26T01:50:41.440512+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    },
+    {
+      "at": "2026-10-26T01:50:42.763306+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    }
+  ]
+}

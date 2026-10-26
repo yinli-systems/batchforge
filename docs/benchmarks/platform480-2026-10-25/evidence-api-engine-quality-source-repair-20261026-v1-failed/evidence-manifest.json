@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-26T01:47:53.333981+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-engine-quality-source-repair-20261026-v1",
+  "files": {
+    "validation.json": {
+      "bytes": 186,
+      "sha256": "bc4b1f551399ca8331f800802ba54500f5e9011c02300fd91badf90139a0b9d7",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

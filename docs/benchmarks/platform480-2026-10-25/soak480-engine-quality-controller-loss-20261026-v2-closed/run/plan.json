@@ -1,0 +1,37 @@
+{
+  "protocol": "batchforge.engine-squad.v1",
+  "scope": "Engine-only HTTP inference; no Batch tasks, acceptance ledger or platform recovery",
+  "tasks": 100,
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "complete_public_dev": false,
+  "test_fixture_detected": false,
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+  "case_manifest_sha256": "ef993f16cc57dcae7f03dc10dd558456d15ab4fea91407317c58e668f51d9654",
+  "workload_sha256": "20122d3cc4f3f06f2e19a6fe617ee965218a57423265a2f4d98d5b5bcf2f1302",
+  "selected_ids_sha256": "bf5a2e2204a94323eed4e466b44d972e2334a653bd6cbdd8ffe0f97e9ba4e436",
+  "references_sha256": "951d1a50e6a0574db2d606ef1ff0e3873982406700a9df14ae2ddce16fd78101",
+  "answer_contract": "json-span-v1",
+  "answer_contract_sha256": "a7359175cc5bb7d8e1a462ae1121b01a8d00cdacd8871fa89b3957f441e96e09",
+  "scorer_sha256": "ba6ce8d53a3cab9e856660e8f31483a7e13457b6ac3a93aa450943240aa087c8",
+  "client_source_sha256": "4e9fae2a80cbb58092e8c685a73ba2cadbe47c2ed10a00c13e2c3a60f1fab679",
+  "max_output_tokens": 128,
+  "temperature": 0,
+  "forced_output": false,
+  "concurrency": 32,
+  "context_limit": 18440,
+  "token_budget": 164256,
+  "request_timeout_seconds": 120,
+  "deadline_seconds": 600,
+  "quality_gate": {
+    "minimum_exact_match_percent": 70,
+    "minimum_f1_percent": 80
+  },
+  "inference_retries": 0,
+  "limitations": [
+    "Public dev set including prior calibration IDs; not hidden evaluation or a contamination audit",
+    "Engine-only throughput and latency are not Batch API goodput/P99",
+    "Container journal fsync does not survive Pod loss; export evidence",
+    "Uncertain requests pause admission and are never replayed"
+  ]
+}

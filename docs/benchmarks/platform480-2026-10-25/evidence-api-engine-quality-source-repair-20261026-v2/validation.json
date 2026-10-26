@@ -1,0 +1,83 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "engine_actions": false,
+  "worker_actions": false,
+  "new_cloud_resources": false,
+  "interpreter": "existing platform venv",
+  "drain_observations": [
+    {
+      "at": "2026-10-26T01:46:45.638436+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    },
+    {
+      "at": "2026-10-26T01:46:46.971226+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    }
+  ],
+  "restored_identities": {
+    "api-a": {
+      "pid": 730881,
+      "start_ticks": "50264450",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 730893,
+      "start_ticks": "50264613",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 730635,
+      "start_ticks": "50240086",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 730899,
+      "start_ticks": "50264750",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "full_state_sha256": "2d1d9d21b5ecb4fa86fb2d255a0112bf75ea12646c16404d26134cc4e02eef46",
+  "guard_run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-engine-quality-source-repair-20261026-v2",
+  "guard_identity": {
+    "pid": 730911,
+    "start_ticks": "50264834",
+    "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+  },
+  "clean_python_environment_verified": true,
+  "all_original_configuration_bytes_restored": true
+}

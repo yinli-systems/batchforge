@@ -1,0 +1,8 @@
+{
+  "phase": "manual_recovery_required",
+  "passed": false,
+  "engine_actions": false,
+  "worker_actions": false,
+  "new_cloud_resources": false,
+  "error_type": "ModuleNotFoundError"
+}

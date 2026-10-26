@@ -1,3 +1,25 @@
+Source0657482 passed actual
+[run40255880147](https://github.com/yinli-systems/batchforge/actions/runs/40255880147):
+**1,787 Python/zero skips,39 Node tests and compileall**, PG17.11/Node24.22.1,
+UID65534, zero registrations. The new regression invokes a real manager subprocess
+with a frozen service environment while the operator has conflicting Python
+safe-path settings. The public evidence export test excludes private profiles,
+logs and model responses. [Result](../ops/reports/github-native-ci-0657482-2026-10-26.json).
+The preceding real primary restoration failure remains preserved; CI alone does
+not upgrade it to a successful recovery.
+
+Exclusive quality controller sourcef7edd48 passed actual
+[run40255248246](https://github.com/yinli-systems/batchforge/actions/runs/40255248246):
+**1,784 Python/zero skips,39 Node tests and compileall**, PG17.11/Node24.22.1,
+UID65534 and zero remaining registrations. Native isolated controller/guardian/
+handler tests cover parent loss, safe runner termination and refusal to reopen
+when engine quiescence is unknown. Actual primary restoration and full GPU
+quality remain separate qualifications.
+[Exact result](../ops/reports/github-native-ci-f7edd48-2026-10-26.json).
+Source27a0d30 also passed1,784/39. The preceding sourcec03f563 run was cancelled
+by an operator follow-up push before completion; it is preserved as cancelled,
+not a pass or a test assertion failure.
+
 # Correctness checks and CI availability
 
 Full-quality prerequisites source5dd826d passed actual

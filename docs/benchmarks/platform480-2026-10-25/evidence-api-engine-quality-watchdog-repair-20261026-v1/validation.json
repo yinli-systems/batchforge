@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "phase": "complete",
+  "engine_actions": false,
+  "api_actions": false,
+  "worker_actions": false,
+  "new_cloud_resources": false,
+  "watchdog_identity": {
+    "pid": 730682,
+    "start_ticks": "50249858",
+    "cwd": "/root/batchforge-runtime/app"
+  },
+  "original_configuration_bytes_restored": true,
+  "protected_engine_gateway_unchanged": true
+}

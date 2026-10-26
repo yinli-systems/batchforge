@@ -1,0 +1,91 @@
+{
+  "captured_at": "2026-10-26T01:50:43.445141+00:00",
+  "commit": "0657482f50c51a87ea4e20c388070ee01553fe03",
+  "run_id": 40255880147,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40255880147",
+  "conclusion": "success",
+  "job": {
+    "id": 121357485533,
+    "name": "existing-pod-cpu",
+    "conclusion": "success",
+    "started_at": "2026-10-26T01:47:23Z",
+    "completed_at": "2026-10-26T01:49:47Z",
+    "runner_name": "batchforge-cpu-20261025-v30",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-10-26T01:47:24Z",
+        "completed_at": "2026-10-26T01:47:25Z"
+      },
+      {
+        "name": "Set up runner",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-10-26T01:47:26Z",
+        "completed_at": "2026-10-26T01:47:26Z"
+      },
+      {
+        "name": "Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-10-26T01:47:26Z",
+        "completed_at": "2026-10-26T01:47:28Z"
+      },
+      {
+        "name": "Locked CPU dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-10-26T01:47:28Z",
+        "completed_at": "2026-10-26T01:47:36Z"
+      },
+      {
+        "name": "Native PostgreSQL17, worker failures and console regressions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-10-26T01:47:36Z",
+        "completed_at": "2026-10-26T01:49:44Z"
+      },
+      {
+        "name": "Post Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10,
+        "started_at": "2026-10-26T01:49:44Z",
+        "completed_at": "2026-10-26T01:49:44Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11,
+        "started_at": "2026-10-26T01:49:44Z",
+        "completed_at": "2026-10-26T01:49:44Z"
+      }
+    ]
+  },
+  "registration_remaining": 0,
+  "python_tests": {
+    "passed": 1787,
+    "skipped": 0,
+    "elapsed_seconds": 124.29
+  },
+  "node_tests": {
+    "passed": 39,
+    "failed": 0
+  },
+  "postgres_version": "17.11",
+  "node_version": "24.22.1",
+  "runner_os_uid": 65534,
+  "full_log_sha256": "dfaa5a467d06c021aca1610457c0da6e4ae82c04b3d856b60015c9a22138da0d",
+  "new_cloud_resources": false,
+  "billing_settings_changed": false,
+  "production_credentials_transferred": false,
+  "scope": "Source-pinned exclusive quality lifecycle; real subprocess regression for operator safe-path contamination, duplicate environment refusal and public collector exclusion of private service profiles/responses. Actual primary canary is separate."
+}

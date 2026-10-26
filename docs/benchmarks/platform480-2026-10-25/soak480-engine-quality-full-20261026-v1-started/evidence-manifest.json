@@ -1,0 +1,49 @@
+{
+  "collected_at": "2026-10-26T01:56:35.162244+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-engine-quality-full-20261026-v1",
+  "files": {
+    "launcher.json": {
+      "bytes": 159,
+      "sha256": "4f47b798dd82c52fe490abca683e4f53a8560904084c6f42def15af65c9b4de3",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "runner.json": {
+      "bytes": 246,
+      "sha256": "f46422110038b6071556ab3a48d9a559aee5fe057cce615c3f344666747c340e",
+      "source_relative_path": "runner.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "guard-launcher.json": {
+      "bytes": 343,
+      "sha256": "58d8a172beb5a01da70031dc3e13bd5c24cb6c9132cfe80d2c92d22f037f9c19",
+      "source_relative_path": "guard-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 1690,
+      "sha256": "737fc8ab6bd3b6d0654a33348afd970aa4291a7181638be9081688f25d330745",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/plan.json": {
+      "bytes": 1819,
+      "sha256": "ef17de0b51935ba2be3161ced17ba1aeafe8fce27a34435f54a0f1e2568fdde0",
+      "source_relative_path": "run/plan.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/scores.jsonl": {
+      "bytes": 5557262,
+      "sha256": "66eaf2905f8366827240b523bd82fb4c26ded69a17840c49aeb70dc937aa7e49",
+      "source_relative_path": "run/scores.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/observations.jsonl": {
+      "bytes": 89836,
+      "sha256": "b55e8fb2beb375a76e5e3b9f16381ae4476ecef213f59ae491fbe586cee52881",
+      "source_relative_path": "run/observations.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

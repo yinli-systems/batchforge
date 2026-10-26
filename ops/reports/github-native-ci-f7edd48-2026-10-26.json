@@ -1,0 +1,91 @@
+{
+  "captured_at": "2026-10-26T01:42:32.181084+00:00",
+  "commit": "f7edd480ac42ae92969f1eca7be61050e9539c91",
+  "run_id": 40255248246,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40255248246",
+  "conclusion": "success",
+  "job": {
+    "id": 121355585924,
+    "name": "existing-pod-cpu",
+    "conclusion": "success",
+    "started_at": "2026-10-26T01:39:28Z",
+    "completed_at": "2026-10-26T01:41:53Z",
+    "runner_name": "batchforge-cpu-20261025-v29",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-10-26T01:39:29Z",
+        "completed_at": "2026-10-26T01:39:30Z"
+      },
+      {
+        "name": "Set up runner",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-10-26T01:39:30Z",
+        "completed_at": "2026-10-26T01:39:31Z"
+      },
+      {
+        "name": "Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-10-26T01:39:31Z",
+        "completed_at": "2026-10-26T01:39:33Z"
+      },
+      {
+        "name": "Locked CPU dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-10-26T01:39:33Z",
+        "completed_at": "2026-10-26T01:39:41Z"
+      },
+      {
+        "name": "Native PostgreSQL17, worker failures and console regressions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-10-26T01:39:41Z",
+        "completed_at": "2026-10-26T01:41:49Z"
+      },
+      {
+        "name": "Post Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10,
+        "started_at": "2026-10-26T01:41:49Z",
+        "completed_at": "2026-10-26T01:41:50Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11,
+        "started_at": "2026-10-26T01:41:50Z",
+        "completed_at": "2026-10-26T01:41:50Z"
+      }
+    ]
+  },
+  "registration_remaining": 0,
+  "python_tests": {
+    "passed": 1784,
+    "skipped": 0,
+    "elapsed_seconds": 124.97
+  },
+  "node_tests": {
+    "passed": 39,
+    "failed": 0
+  },
+  "postgres_version": "17.11",
+  "node_version": "24.22.1",
+  "runner_os_uid": 65534,
+  "full_log_sha256": "841cedfc8365a5eb7735759c2f2782f7da2e07108b478a71b32c3023226473b5",
+  "new_cloud_resources": false,
+  "billing_settings_changed": false,
+  "production_credentials_transferred": false,
+  "scope": "Full native CPU checks of engine-only exclusive controller/restorer, isolated process loss and fail-closed quiescence. Separate from actual primary restore qualification and GPU quality."
+}

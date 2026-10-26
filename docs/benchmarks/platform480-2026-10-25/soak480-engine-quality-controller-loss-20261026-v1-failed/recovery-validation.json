@@ -1,0 +1,16 @@
+{
+  "passed": false,
+  "phase": "manual_recovery_required",
+  "started_at": "2026-10-26T01:42:42.098838+00:00",
+  "config_sha256": "cc9ef9730eb672d4dc7741b541b448bfee56af2d654bb9599ed36f32a5ab6851",
+  "engine_actions": false,
+  "cloud_actions": false,
+  "errors": [],
+  "identity": {
+    "pid": 730633,
+    "start_ticks": "50239893",
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261026-v13/source"
+  },
+  "error_type": "RuntimeError",
+  "finished_at": "2026-10-26T01:42:48.902528+00:00"
+}

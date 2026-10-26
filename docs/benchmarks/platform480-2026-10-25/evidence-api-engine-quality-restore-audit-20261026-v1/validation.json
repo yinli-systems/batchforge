@@ -1,0 +1,91 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "scope": "Independent read-only audit after actual engine-only controller loss; interrupted quality cohort remains incomplete",
+  "trial_report_sha256": "90bf0a1aef44130ac18e1e833f9bee46737f40153454ac89ca2d8ae257ca1db8",
+  "restore_report_sha256": "97ae0ce9350ab1a3d81a1d0cb45650ad6ff3c3ffba5358e9a0e304cc2f3cc90e",
+  "source_commit": "0657482f50c51a87ea4e20c388070ee01553fe03",
+  "actual_service_profiles_verified": true,
+  "original_configuration_bytes_match": true,
+  "all_services_ready": true,
+  "protected_engine_gateway_unchanged": true,
+  "guard_import_environment_clean": true,
+  "guard_run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-soak480-engine-quality-controller-loss-20261026-v2",
+  "guard_identity": {
+    "pid": 734898,
+    "start_ticks": "50289004",
+    "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+  },
+  "guard_recovery_invocations": 0,
+  "restored_identities": {
+    "api-a": {
+      "pid": 734871,
+      "start_ticks": "50288599",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 734879,
+      "start_ticks": "50288783",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 734862,
+      "start_ticks": "50288420",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 734885,
+      "start_ticks": "50288918",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "state_sha256": "87d6c30c0fee7b7520730659f1ad58b33c0a61aaca5df5cdea81cc571f80c3a2",
+  "fresh_observations": [
+    {
+      "at": "2026-10-26T01:51:35.815350+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    },
+    {
+      "at": "2026-10-26T01:51:37.188090+00:00",
+      "db_pending": 0,
+      "db_running": 0,
+      "engine_quiescent": true,
+      "schema_version": 11,
+      "runtime_privileges_verified": true,
+      "configured_tls_verify_full": true,
+      "worker_metrics": {
+        "batchforge_worker_inflight": 0.0,
+        "batchforge_worker_reserved_context_tokens": 0.0,
+        "batchforge_worker_adaptive_kv_waiting": 0.0,
+        "batchforge_worker_adaptive_kv_paused": 0.0
+      },
+      "worker_idle": true
+    }
+  ],
+  "inference_intents": 24,
+  "terminal_records": 9,
+  "new_gpu_tasks_submitted": 0,
+  "new_cloud_resources": false
+}
