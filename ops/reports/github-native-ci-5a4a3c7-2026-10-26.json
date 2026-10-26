@@ -1,0 +1,90 @@
+{
+  "captured_at": "2026-10-26T02:54:04.041240+00:00",
+  "commit": "5a4a3c788c07f6a2a6a10e5a30cb91ff6d8098c2",
+  "run_id": 40260591749,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40260591749",
+  "conclusion": "success",
+  "job": {
+    "id": 121371931663,
+    "name": "existing-pod-cpu",
+    "conclusion": "success",
+    "started_at": "2026-10-26T02:45:56Z",
+    "completed_at": "2026-10-26T02:48:39Z",
+    "runner_name": "batchforge-cpu-20261025-v32",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-10-26T02:45:57Z",
+        "completed_at": "2026-10-26T02:45:58Z"
+      },
+      {
+        "name": "Set up runner",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-10-26T02:45:58Z",
+        "completed_at": "2026-10-26T02:45:58Z"
+      },
+      {
+        "name": "Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-10-26T02:45:58Z",
+        "completed_at": "2026-10-26T02:46:01Z"
+      },
+      {
+        "name": "Locked CPU dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-10-26T02:46:01Z",
+        "completed_at": "2026-10-26T02:46:09Z"
+      },
+      {
+        "name": "Native PostgreSQL17, worker failures and console regressions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-10-26T02:46:09Z",
+        "completed_at": "2026-10-26T02:48:36Z"
+      },
+      {
+        "name": "Post Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10,
+        "started_at": "2026-10-26T02:48:36Z",
+        "completed_at": "2026-10-26T02:48:36Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11,
+        "started_at": "2026-10-26T02:48:37Z",
+        "completed_at": "2026-10-26T02:48:37Z"
+      }
+    ]
+  },
+  "registration_remaining": 0,
+  "python_tests": {
+    "passed": 1852,
+    "skipped": 0,
+    "elapsed_seconds": 143.96
+  },
+  "node_tests": {
+    "passed": 45,
+    "failed": 0
+  },
+  "postgres_version": "17.11",
+  "node_version": "24.22.1",
+  "runner_os_uid": 65534,
+  "full_log_sha256": "2e684cf3bfc1e5e5e8ce2105762390286c5dad31caeb8abd146ef526a02d3993",
+  "new_cloud_resources": false,
+  "production_credentials_transferred": false,
+  "scope": "Engine evidence API/console plus initial read-only qualifier. A real qualifier then failed because readiness followed the SPA catch-all; subsequent fix and release controller need their own CI and qualification."
+}

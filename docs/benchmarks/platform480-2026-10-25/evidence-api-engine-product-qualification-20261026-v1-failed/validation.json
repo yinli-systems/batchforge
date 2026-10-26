@@ -1,0 +1,32 @@
+{
+  "phase": "failed",
+  "passed": false,
+  "new_gpu_tasks": 0,
+  "primary_services_changed": false,
+  "production_database_mutated": false,
+  "browser_visual_qa": false,
+  "source_commit": "5a4a3c788c07f6a2a6a10e5a30cb91ff6d8098c2",
+  "package": {
+    "phase": "prepared",
+    "passed": true,
+    "catalogue": "/root/batchforge-runtime/evidence-api-engine-product-qualification-20261026-v1/engine-evidence/catalogue.json",
+    "evidence_id": "engine-squad-jsonspan-20261026",
+    "files": 9,
+    "catalogue_sha256": "4fd2c29bc878b30a698ea91a2eda810e2f006985ca84525548d627702399ff36",
+    "corrected_exact_match_percent": 81.99621570482498,
+    "f1_percent": 90.94000661220909,
+    "new_inference_requests": 0,
+    "database_changes": false,
+    "primary_services_changed": false
+  },
+  "candidate_wrapper_identity": {
+    "pid": 746114,
+    "start_ticks": "50647321",
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261026-v16/source"
+  },
+  "phase_before_failure": "preflight",
+  "error_type": "JSONDecodeError",
+  "owned_candidate_processes_stopped": true,
+  "cleanup_errors": [],
+  "closed_at": "2026-10-26T02:50:39.412785+00:00"
+}

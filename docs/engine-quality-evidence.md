@@ -70,3 +70,31 @@ grading implementations or hardware attestations. Public dev includes earlier
 calibration IDs. Allocation at the operator-confirmed16.10USD/h is not an
 invoice, marginal cost or business-quality certification. No browser visual QA
 has been performed in this environment.
+
+## Controlled publication
+
+Source5a4a3c7 passed the actual native GitHub job with1,852 Python and45 Node
+tests, zero skipped. Its first real read-only qualification failed: the
+candidate-only readiness route followed the existing SPA catch-all and returned
+HTML. Its failed receipt remains archived; all candidate processes stopped and
+no production service, SQL or GPU task changed. The follow-up prioritizes the
+authenticated readiness route and adds an HTTP regression for this exact case.
+
+`ops.release_engine_evidence` is a new, prepare-only API release controller.
+It requires a closed source-matched real read-only qualification, freezes actual
+private service profiles, then arms an independent pidfd-bound restoration
+process before any mutation. It coordinates both campaign/recovery locks and
+the finite latch guard. Only two API configurations and the supervisor change;
+the worker, engine, gateway, model, admission budget, SQL schema and retention
+policy are protected. It drains accepted work with the unchanged live worker.
+
+Before commit, controller death restores the original APIs. After a verified
+commit, the sole handler revalidates both gated APIs and the gateway, opens the
+target APIs and rearms the original source-qualified finite guard under new
+state pins. A failed publication attempts one compatible rollback; unknown
+activity or foreign configuration keeps the window closed for inspection.
+The persistent recovery budget is never reset. Actual controller-loss
+qualification on the same source is required before normal publication.
+This controller has local safety tests; native CI, real read-only validation,
+real API controller-loss recovery and main publication are still separate
+steps and are not established by this implementation description.

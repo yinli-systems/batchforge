@@ -74,6 +74,10 @@ def read_only_app(settings):
             schema=await verify_schema(conn,minimum_version=11)
         if row['mode']!='on':raise ValueError('Candidate lost read-only mode')
         return {'status':'read_only_qualification','transaction_read_only':True,'schema_version':schema}
+    # create_app has already installed its SPA catch-all. A route appended
+    # after that catch-all returns index.html instead of this authenticated
+    # readiness receipt, so give the candidate-only route explicit priority.
+    app.router.routes.insert(0,app.router.routes.pop())
     return ReadOnlyRoutes(app)
 
 
@@ -121,6 +125,7 @@ def qualify(base):
             child=subprocess.Popen(['/usr/bin/timeout','--signal=TERM','--kill-after=15','600',sys.executable,'-m',
                 'ops.qualify_engine_evidence','--serve-config',str(private)],env=env,cwd=source,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
         children.append(process_identity(child.pid));report['candidate_wrapper_identity']=children[0];save(base/'validation.json',report)
+        report['phase']='candidate_starting';save(base/'validation.json',report)
         with httpx.Client(base_url='http://127.0.0.1:18160',headers={'Authorization':'Bearer '+key},trust_env=False,timeout=10) as http:
             until=time.monotonic()+45
             while True:
@@ -131,6 +136,7 @@ def qualify(base):
                 if time.monotonic()>=until:raise RuntimeError('Read-only qualification startup timeout')
                 time.sleep(.3)
             report['database_read_only_verified']=True;report['schema_version']=r.json()['schema_version']
+            report['phase']='http_readback';save(base/'validation.json',report)
             if http.get('/readyz').status_code!=503:raise ValueError('Read-only candidate must not pass primary writable readiness')
             for path in ('/v1/files','/v1/batches','/internal/tasks/complete'):
                 denied=http.post(path,json={});assert denied.status_code==503 and denied.json()['error']['code']=='read_only_qualification'
@@ -147,6 +153,7 @@ def qualify(base):
             assert 'failed' in states and 'passed' in states;report['existing_batch_states']=states
             r=http.get('/app.js');r.raise_for_status();assert hashlib.sha256(r.content).hexdigest()==receipt['files']['frontend/app.js']
         save(base/'node-private.json',{'source':str(source),'base_url':'http://127.0.0.1:18160','api_key':key,'output':str(base/'readback.json')})
+        report['phase']='console_client_readback';save(base/'validation.json',report)
         node=Path('/tmp/bf-ci-20261025-v19/runner/externals/node24/bin/node')
         with (base/'node-private.log').open('xb') as log:
             done=subprocess.run([str(node),str(source/'ops/verify_engine_evidence.mjs'),str(base/'node-private.json')],

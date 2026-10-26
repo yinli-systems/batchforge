@@ -38,6 +38,29 @@ def test_read_paths_keep_existing_tenant_auth_and_do_not_enter_writable_lifespan
     assert r.status_code==200 and r.json()['owner']=='owner-a'
 
 
+def test_candidate_readiness_precedes_spa_catchall_and_requires_real_tenant_auth(monkeypatch):
+    class Store:
+        async def tenant(self,key):
+            if key!='owner-a':raise q.APIError(401,'Invalid key','invalid_api_key')
+            return 'tenant-a'
+    class Cursor:
+        async def fetchone(self):return {'mode':'on'}
+    class Conn:
+        async def execute(self,sql):return Cursor()
+    class Pool:
+        @asynccontextmanager
+        async def connection(self):yield Conn()
+    async def schema(*_,**kw):return 11
+    monkeypatch.setattr(q,'verify_schema',schema)
+    wrapper=q.read_only_app(settings());wrapper.app.state.store=Store();wrapper.app.state.pool=Pool()
+    client=TestClient(wrapper)
+    assert client.get('/ops/readonly-readyz').status_code==401
+    assert client.get('/ops/readonly-readyz',headers={'Authorization':'Bearer wrong'}).status_code==401
+    r=client.get('/ops/readonly-readyz',headers={'Authorization':'Bearer owner-a'})
+    assert r.status_code==200 and r.headers['content-type']=='application/json'
+    assert r.json()=={'status':'read_only_qualification','transaction_read_only':True,'schema_version':11}
+
+
 @pytest.mark.parametrize('mode',['on','off'])
 async def test_custom_lifespan_requires_server_readonly_and_starts_no_recovery_tasks(monkeypatch,mode):
     opened=[];calls=[]
