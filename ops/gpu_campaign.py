@@ -57,7 +57,8 @@ class Journal:
         self.output.close()
 
 
-def sample(url, path, stop, worker_url=None):
+def sample(url, path, stop, worker_url=None, interval=1):
+    if type(interval) not in (int,float) or not 1<=interval<=30:raise ValueError('Bounded sampling interval required')
     http = build_opener(ProxyHandler({}))
     with path.open('x') as output:
         while not stop.is_set():
@@ -92,7 +93,7 @@ def sample(url, path, stop, worker_url=None):
             output.write(json.dumps(row) + '\n')
             output.flush()
             os.fsync(output.fileno())
-            stop.wait(1)
+            stop.wait(interval)
 
 
 def execute(args):
