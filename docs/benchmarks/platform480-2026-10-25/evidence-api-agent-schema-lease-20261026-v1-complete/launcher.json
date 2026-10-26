@@ -1,0 +1,10 @@
+{
+  "timeout_pid": 708879,
+  "timeout_start_ticks": 49923276,
+  "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261026-v9/source",
+  "source_commit": "8ddc2ca23243b9fc1e960b2738a6152bccdd28be",
+  "run": "/root/batchforge-runtime/evidence-api-agent-schema-lease-20261026-v1",
+  "bounded_seconds": 2500,
+  "max_gpu_tasks": 20,
+  "new_cloud_resources": false
+}

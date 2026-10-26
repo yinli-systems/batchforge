@@ -1,0 +1,84 @@
+{
+  "passed": true,
+  "checks": {
+    "primary_identity_source_configuration_unchanged": true,
+    "native_pg_stopped": true,
+    "controller_stopped": true,
+    "fault_reclaim_gate": true,
+    "agent_artifacts_20_distinct": true,
+    "closed_18170": true,
+    "closed_18172": true,
+    "ready_8080": true,
+    "ready_8082": true,
+    "ready_8083": true,
+    "ready_9105": true,
+    "guard_armed_same_identity": true,
+    "azure_14_unique_14_attempts": true,
+    "azure_accepted_usage_matches": true,
+    "azure_all14_response_payloads_purged_identities_preserved": true,
+    "all11_batch_archives_ready_purged": true,
+    "decoder_two_archived_objects_byte_verified": true
+  },
+  "at": "2026-10-26T00:54:22.593428+00:00",
+  "source_commit": "8ddc2ca23243b9fc1e960b2738a6152bccdd28be",
+  "source_reports_sha256": [
+    "c98dab8282b303b2050af43b05b3bf3fb805816fd433a3c8f8fdf7d5ebf0746b",
+    "35ee75cd4765b40d125e65b888f0e5df0fa9410f246e927909b1bb0c389dbab8",
+    "7de669c68f7eaf77ab559ebe6a1a07d919d02f10852fd88594d914d2261a08f0"
+  ],
+  "validator_sha256": "1ece5b7f9cd0e344022f360f93a5dcd594795b20bc1944d9e25a1717110a38d4",
+  "accepted_usage_total_including_decoder": {
+    "prompt_tokens": 7948,
+    "completion_tokens": 528
+  },
+  "whole_wrapper_seconds": 196.89056851697387,
+  "whole_wrapper_pod_allocation_usd": 0.8805383758675778,
+  "cost_scope": "Whole wrapper wall allocation; nested child windows overlap and must not be summed; not invoice or marginal cost",
+  "decoder_artifact_byte_readbacks": [
+    {
+      "file_id": "file_b708075ebe145030c44de752321cd851",
+      "sha256": "f3a2ba527e1701be92c91665c405cbe110d5c8ed4833d5b2d3749af815920f5e",
+      "bytes": 8487
+    },
+    {
+      "file_id": "file_dfe50bab3158476fa7c0a66d2dba0200",
+      "sha256": "0c4ee202fe51c40c17e889e730caf33668cfaadea03494c6caf68d329adc4e17",
+      "bytes": 3602
+    }
+  ],
+  "new_gpu_tasks": 0,
+  "database_writes": 0,
+  "fresh_payload_downloads": 2,
+  "primary_identities": {
+    "api-a": {
+      "pid": 641686,
+      "start_ticks": "48004878",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 641694,
+      "start_ticks": "48005158",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 641677,
+      "start_ticks": "48004600",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 641702,
+      "start_ticks": "48005394",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  }
+}

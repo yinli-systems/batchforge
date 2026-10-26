@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-26T00:55:08.723977+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-agent-lease-closeout-20261026-v1",
+  "files": {
+    "validation.json": {
+      "bytes": 2734,
+      "sha256": "237624e566286435d080a748735ab7967ef9c20da819290ac0ac5ac7703d98e8",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 5383,
+      "sha256": "1ece5b7f9cd0e344022f360f93a5dcd594795b20bc1944d9e25a1717110a38d4",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

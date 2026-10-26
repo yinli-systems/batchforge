@@ -1,0 +1,48 @@
+{
+  "source_commit": "8ddc2ca23243b9fc1e960b2738a6152bccdd28be",
+  "passed": true,
+  "agent_goals": 4,
+  "agent_model_tasks": 10,
+  "decoder_tasks": 4,
+  "total_unique_tasks": 14,
+  "total_attempts": 14,
+  "accepted_usage_total": {
+    "prompt_tokens": 7948,
+    "completion_tokens": 528
+  },
+  "agent_usage": {
+    "prompt_tokens": 6778,
+    "completion_tokens": 391
+  },
+  "fault_ack_to_next_db_lease_seconds": 13.580339,
+  "predeclared_reclaim_gate_seconds": 30,
+  "fault_reclaim_gate_passed": true,
+  "action_lease": {
+    "seconds": 15,
+    "renew_interval_seconds": 5,
+    "action_deadline_seconds": 45
+  },
+  "event_histories": 4,
+  "events_verified": 173,
+  "agent_artifact_byte_readbacks": 20,
+  "independent_decoder_artifact_byte_readbacks": 2,
+  "headroom_before_decoder": 104,
+  "headroom_after": 90,
+  "whole_wrapper_seconds": 196.89056851697387,
+  "whole_wrapper_pod_allocation_usd": 0.8805383758675778,
+  "cost_scope": "Whole wrapper wall allocation; nested child windows overlap and must not be summed; not invoice or marginal cost",
+  "agent_api_restart_verified": true,
+  "native_pg_restart_in_this_cohort": false,
+  "all_temporary_services_stopped": true,
+  "production_agent_schema_deployed": false,
+  "primary_changed": false,
+  "new_cloud_resources": false,
+  "native_ci_python_passed": 1727,
+  "native_ci_node_passed": 39,
+  "reports_sha256": [
+    "c98dab8282b303b2050af43b05b3bf3fb805816fd433a3c8f8fdf7d5ebf0746b",
+    "35ee75cd4765b40d125e65b888f0e5df0fa9410f246e927909b1bb0c389dbab8",
+    "7de669c68f7eaf77ab559ebe6a1a07d919d02f10852fd88594d914d2261a08f0"
+  ],
+  "independent_closeout": "docs/benchmarks/platform480-2026-10-25/evidence-api-agent-lease-closeout-20261026-v1-complete/validation.json"
+}

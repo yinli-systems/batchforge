@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-26T00:52:22.841223+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-agent-runtime-schema-lease-20261026-v1",
+  "files": {
+    "report.json": {
+      "bytes": 40969,
+      "sha256": "8720d3b6d51a7d1e061439cd19d0733b8c2727c7ddb7c3bacff7b10724b6eb8d",
+      "source_relative_path": "report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

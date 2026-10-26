@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-26T00:53:35.477579+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-agent-schema-lease-20261026-v1",
+  "files": {
+    "launcher.json": {
+      "bytes": 372,
+      "sha256": "4d4e64f22756821f0b4d6608c84bf0612754b03a7634088c08b09a6d76c2689f",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 2916,
+      "sha256": "c98dab8282b303b2050af43b05b3bf3fb805816fd433a3c8f8fdf7d5ebf0746b",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

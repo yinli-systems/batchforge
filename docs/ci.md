@@ -1,5 +1,16 @@
 # Correctness checks and CI availability
 
+Short-action source8ddc2ca passed actual
+[run40250998254](https://github.com/yinli-systems/batchforge/actions/runs/40250998254):
+**1,727 Python/zero skips,39 Node tests and compileall**, PG17.11/Node24.22.1,
+UID65534 and zero remaining runner registrations.
+[Exact result](../ops/reports/github-native-ci-8ddc2ca-2026-10-26.json).
+New native cases prove renewal across slow I/O, cancellation, uncertain-upload
+reconciliation, absolute action limits, expiry during a transition rolling back
+events/usage and refusal to resurrect an expired lease. The separate
+[real process-loss qualification](benchmarks/agent-action-leases-2026-10-26.md)
+met its predeclared30-second reclaim gate; no primary Agent rollout is implied.
+
 The finite real-DAG controller source8ffbc71 passed
 [run40249737583](https://github.com/yinli-systems/batchforge/actions/runs/40249737583):
 **1,709 Python/zero skips,39 Node tests and compileall** on the same isolated

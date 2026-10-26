@@ -1,0 +1,92 @@
+{
+  "captured_at": "2026-10-26T00:50:00.918873+00:00",
+  "commit": "8ddc2ca23243b9fc1e960b2738a6152bccdd28be",
+  "run_id": 40250998254,
+  "run_url": "https://github.com/yinli-systems/batchforge/actions/runs/40250998254",
+  "conclusion": "success",
+  "job": {
+    "id": 121342638267,
+    "name": "existing-pod-cpu",
+    "conclusion": "success",
+    "started_at": "2026-10-26T00:47:16Z",
+    "completed_at": "2026-10-26T00:49:31Z",
+    "runner_name": "batchforge-cpu-20261025-v24",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-10-26T00:47:17Z",
+        "completed_at": "2026-10-26T00:47:18Z"
+      },
+      {
+        "name": "Set up runner",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-10-26T00:47:18Z",
+        "completed_at": "2026-10-26T00:47:19Z"
+      },
+      {
+        "name": "Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-10-26T00:47:19Z",
+        "completed_at": "2026-10-26T00:47:21Z"
+      },
+      {
+        "name": "Locked CPU dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-10-26T00:47:21Z",
+        "completed_at": "2026-10-26T00:47:29Z"
+      },
+      {
+        "name": "Native PostgreSQL17, worker failures and console regressions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-10-26T00:47:29Z",
+        "completed_at": "2026-10-26T00:49:28Z"
+      },
+      {
+        "name": "Post Run actions/checkout@v4",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10,
+        "started_at": "2026-10-26T00:49:28Z",
+        "completed_at": "2026-10-26T00:49:28Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11,
+        "started_at": "2026-10-26T00:49:28Z",
+        "completed_at": "2026-10-26T00:49:28Z"
+      }
+    ]
+  },
+  "registration_remaining": 0,
+  "python_tests": {
+    "passed": 1727,
+    "skipped": 0,
+    "warnings": 1,
+    "elapsed_seconds": 115.58
+  },
+  "node_tests": {
+    "passed": 39,
+    "failed": 0
+  },
+  "postgres_version": "17.11",
+  "node_version": "24.22.1",
+  "runner_os_uid": 65534,
+  "full_log_sha256": "afd86e9b984e902c7282fc580a163d7ff93c1213bddb80958bfa8e15738c6f01",
+  "new_cloud_resources": false,
+  "billing_settings_changed": false,
+  "production_credentials_transferred": false,
+  "scope": "Exact-head native PostgreSQL action lease, slow I/O, uncertain ACK, cancellation and final-clock fence qualification; real GPU results separate"
+}

@@ -7,6 +7,13 @@ are trusted operator settings, not model policy or HTTP request fields. Schema
 v1, immutable goals/tool budgets and stable child Batch identities are unchanged.
 Serving primary748dc10 and production Agent enrollment are not changed here.
 
+Source8ddc2ca passed **1,727 native Python/zero-skip and39 Node tests**.
+Its separate [real480B qualification](benchmarks/agent-action-leases-2026-10-26.md)
+passed four new Agent goals. After a real Batch ACK and coordinator exit, the
+next DB lease arrived13.580339seconds later and reused the accepted child ID,
+passing the predeclared30-second gate. This is one finite fault observation,
+not an end-to-end tail-latency or throughput improvement claim.
+
 The action and renewer run as separate asyncio tasks. Any renewal error or
 timeout revokes local authority and cancels the action; a successful renewal
 cannot extend the total action deadline. Renewal stops after action completion.
@@ -15,6 +22,10 @@ resetting counters, blindly reuploading or marking uncertain work successful.
 The original outbox therefore reconciles an accepted upload or Batch ACK under
 its original identity. Accepted GPU usage remains in the Batch ledger even if
 the enclosing Agent was cancelled.
+
+Renewal needs an independently available database connection; the provided CLI
+uses a separate coordinator pool with up to four connections. A stalled pool or
+database does not extend authority: renewal times out and revokes the action.
 
 Local monotonic checkpoints precede model HTTP I/O, lookup, trusted tool dispatch
 and state transitions. The conservative local validity interval starts **before**

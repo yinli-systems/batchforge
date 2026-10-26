@@ -23,6 +23,11 @@ or turn a terminal run back into active work.
 Each run has a tenant-scoped request key, immutable goal/model/policy, bounded
 model/tool/generated-token budgets, a database deadline, a revision, an event
 hash head, and a DB-clock coordinator lease with a fresh fencing token/epoch.
+The [short-action lease candidate](agent-action-leases.md) uses15-second
+ownership with independent5-second renewal and a45-second total action bound.
+Final writes and renewals recheck the actual database clock; uncertain accepted
+I/O keeps its original outbox identity. Earlier immutable120-second qualification
+results remain historical and are not relabeled as short-lease measurements.
 Admission, cancellation, quota accounting and state transitions lock the tenant
 first. Lost-ACK transition replay does not charge counters twice. Late lease
 holders cannot commit after expiration, reassignment or cancellation. Terminal
