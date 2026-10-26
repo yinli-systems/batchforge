@@ -1,0 +1,87 @@
+{
+  "protocol": "batchforge.post-retrieval-adapter-study.v2",
+  "tasks": 400,
+  "case_count": 100,
+  "selection_seed": "2026102606",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "selected_ids_sha256": "aed309d4cf8771941522138bfd57da49a8d2c8f458e48eb392ff1225daa3efb8",
+  "references_sha256": "3b80a9e688ab26c950dfa235193535cd4e189154858140e8a5fd11ef1641e277",
+  "excluded_ids": [
+    "56d70e570d65d2140019833e",
+    "56e1127bcd28a01900c6754c",
+    "56e1a38de3433e1400423060",
+    "56e1cbe2cd28a01900c67bb0",
+    "56f8046faef2371900625d72",
+    "56f884cba6d7ea1400e17707",
+    "5726ab47f1498d1400e8e6a4",
+    "5726d7faf1498d1400e8ecdc",
+    "572751b4708984140094dc1c",
+    "5727aec03acd2414000de994",
+    "5728d5793acd2414000dffb5",
+    "5728e07e3acd2414000e00ea",
+    "5729d878af94a219006aa66e",
+    "572f6a0ba23a5019007fc5ec",
+    "573005b9947a6a140053cf6c",
+    "57300888b2c2fd1400568776",
+    "5730126ba23a5019007fcd0a",
+    "573749741c45671900574460"
+  ],
+  "snapshot_id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+  "snapshot": {
+    "protocol": "batchforge.bm25-utf8-chunks.v1",
+    "id": "eb64e978ba0d13e621f243c99d00346d42d677826401925fea2e3e4f4ffb11c5",
+    "corpus_sha256": "d5efabb51800799e1303a3af87447886d26a8f8068e4cc56c74ba227b489e6e0",
+    "parameters": {
+      "k1": 1.2,
+      "b": 0.75,
+      "chunk_bytes": 1536,
+      "overlap_bytes": 128,
+      "tokenizer": "unicode-nfkc-casefold-word-v1",
+      "query_term_frequency": "binary",
+      "fields": "title+chunk",
+      "score": "idf*tf*(k1+1)/(tf+k1*(1-b+b*length/avg_length))",
+      "tie_break": "chunk_id_ascending"
+    },
+    "source": {
+      "name": "SQuAD1.1 public dev passages",
+      "origin": "https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v1.1.json",
+      "licence": "See original SQuAD release and source Wikipedia terms",
+      "source_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9"
+    },
+    "document_count": 2067,
+    "chunk_count": 2134,
+    "documents_sha256": "500944f7ab30a020ce05bc4a27e64487f667dea6002122b4d439d673b483425f"
+  },
+  "workload_sha256": "2d0ac2ae2f696f5a0eb8f630a78be4dafebbb7d29e1d498d0ef085fd4691e94f",
+  "client_source_sha256": "c0d18bfa390d54ce4c1502fe025aa1695cf16d81c88b9bad7dc4183788dfa604",
+  "adapter_source_sha256": "a3d51efbe7c629dfc39ef7ccb1b5989a4999e8d5a3a4ab930f31c401fe4fdd02",
+  "model": "QuantTrio/Qwen3-Coder-480B-A35B-Instruct-AWQ",
+  "runtime_fingerprint": "sha256:1c16be65ee46d160ffb33e5aee8af00d3d42e918b4253789219602eaf6768f36",
+  "deadline_seconds": 1200,
+  "arms": [
+    "full-citation",
+    "source-ordinal",
+    "source-ordinal",
+    "full-citation"
+  ],
+  "concurrency": 32,
+  "max_output_tokens": 512,
+  "inference_retries": 0,
+  "context_limit": 18440,
+  "token_budget": 164256,
+  "request_timeout_seconds": 300,
+  "retrieval": "Original question, same frozen BM25 top5 in each arm, no hit filtering",
+  "quality_gate": {
+    "minimum_exact_match_percent": 70,
+    "minimum_f1_percent": 80,
+    "minimum_joint_percent": 70
+  },
+  "scope": "Post-retrieval engine subsystem; no Batch/Agent delivery, acceptance, metering or SLO claim",
+  "limitations": [
+    "Public dev, not hidden; previous full engine work saw this dataset",
+    "ABBA repetitions are correlated, not independent samples or significance evidence",
+    "Prompt packing and ordinal encoding change together; their separate causal effects are not identified",
+    "Exact byte/source consistency does not prove semantic correctness; references grade externally",
+    "300s absolute HTTP lifetime is a changed transport budget, not passing the failed original120s experiment"
+  ]
+}

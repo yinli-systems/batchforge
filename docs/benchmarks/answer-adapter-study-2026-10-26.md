@@ -74,3 +74,25 @@ differed only in floating BM25 scores and their result digest (max7.11e-15);
 ordinal requests and score-stripped bodies matched. The authoritative Pod plan
 was frozen before any new answer was observed, with the Mac draft and refusal
 preserved. Cross-architecture numeric BM25 replay remains unqualified.
+
+## Separate v2 follow-up, quality results pending
+
+Source9f6c1b0 passed actual native CI40277605467:1987 Python/zero skips,51 Node,
+zero remaining runners. It keeps the original engine QA120s default and adds an
+explicit300s request lifetime only to the separately versioned adapter study.
+The new250 questions exclude all618 earlier reserved RAG/canary/v1-study IDs.
+The [actual Pod plan](../../ops/reports/answer-adapter-study-v2-pod-plan-2026-10-26.json)
+was frozen before this source's inference; the old failure remains unchanged.
+
+A new source-matched controller-loss canary-v4 independently restored original
+profiles in an observed17.052038s. It journaled seven inference intents with no
+completed responses before interruption; their usage remains uncertain. The
+[independent audit](platform480-2026-10-25/evidence-api-adapter-canary-audit-20261026-v3-complete/validation.json)
+passed. This is recovery qualification, not a100-question quality score or an
+RTO comparison with the earlier one-intent fault.
+
+`soak480-engine-quality-adapter-matched-20261026-v2` is now running1000 direct
+engine requests in four250-case ABBA phases under that qualified restoration
+owner. Its original-protocol phase delivered250; the ordinal phases are in
+progress. No complete quality, speedup or cost-per-qualified-result conclusion
+has been made. A passed300s-budget follow-up would not pass the old120s target.

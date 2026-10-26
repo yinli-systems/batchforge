@@ -1,0 +1,25 @@
+{
+  "collected_at": "2026-10-26T06:19:30.052204+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-adapter-canary-audit-20261026-v3",
+  "files": {
+    "source-receipt.json": {
+      "bytes": 150,
+      "sha256": "0295588eff73f68a3de5c035ada31072e5b4443ed6155893dc713bb505f5b118",
+      "source_relative_path": "source-receipt.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validation.json": {
+      "bytes": 3387,
+      "sha256": "d8742e7ff5dc61073d7e35f5f5f4556377ed7c6b00902853a4c9fe0ae0e6164f",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 3796,
+      "sha256": "014276e733c67edd90253ef1b04eebd4886472990a7d11155d7b9e991570e20f",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

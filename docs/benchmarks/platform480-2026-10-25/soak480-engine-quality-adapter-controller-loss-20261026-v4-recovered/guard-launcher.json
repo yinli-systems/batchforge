@@ -1,0 +1,10 @@
+{
+  "identity": {
+    "pid": 800196,
+    "start_ticks": "51850147",
+    "cwd": "/root/batchforge-runtime/evidence-api-agent-runtime-20261026-v26/source"
+  },
+  "config_sha256": "2b378d7ca385c911b6a487fc3e953316c051f9808c865122abd81274eae8faa7",
+  "kind": "Independent fixed-window sole restoration trigger",
+  "maximum_restore_seconds": 600
+}
