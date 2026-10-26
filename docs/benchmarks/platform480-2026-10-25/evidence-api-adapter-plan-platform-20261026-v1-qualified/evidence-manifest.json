@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-26T05:45:46.688339+00:00",
+  "source_run": "/root/batchforge-runtime/evidence-api-adapter-plan-platform-20261026-v1",
+  "files": {
+    "validation.json": {
+      "bytes": 738,
+      "sha256": "421247fbd4734ca789d801811170a4fbd2746420d4d138e44489015aa68bb4d8",
+      "source_relative_path": "validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "validator.py": {
+      "bytes": 52661,
+      "sha256": "d2ea98078c067a525491e537c22cdd91c5969a1159a788000b14266a8712fdf7",
+      "source_relative_path": "validator.py",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}

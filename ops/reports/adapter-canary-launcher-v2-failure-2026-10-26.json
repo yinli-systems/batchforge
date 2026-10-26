@@ -1,0 +1,10 @@
+{
+  "source_commit": "c5ccc0d6c29a711f7a6af1b0633ff77feb116326",
+  "phase": "pre_inference_plan_refused",
+  "controller_launched": false,
+  "gpu_inference_started": false,
+  "service_mutation_started": false,
+  "cause": "Mac and Pod floating BM25 score metadata changed nine full-citation request hashes; an explicit exact-plan assertion refused before controller launch",
+  "private_log_sha256": "cca842849654986f7f6b3bdda05c2f3f17ab957b6aba5e568e6af9dffc67c3f0",
+  "bounded_followup": "Read-only platform plan qualified before inference; source, questions, excerpts, citation order, gates and ordinal requests unchanged; new v3 controller ID"
+}

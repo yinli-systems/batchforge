@@ -36,3 +36,12 @@ closes both APIs' create/retry gates, drains accepted work, stops only the owned
 worker/guard and arms independent bounded restoration before direct inference.
 A new source-matched controller-loss canary must close before the full study.
 No engine/model/cloud resource is restarted, no quota or retention policy changes.
+
+Pre-inference Mac/Pod comparison found nine of100 full-citation bodies differed
+only in floating BM25 scores and their result digest (maximum absolute delta
+7.11e-15). All ordinal requests and score-stripped source/citation bodies matched.
+The exact-plan assertion refused before controller launch. The [actual Pod plan](../ops/reports/answer-adapter-study-pod-plan-2026-10-26.json)
+was then frozen read-only, before any answer was observed; the initial Mac draft
+and both refused launcher attempts remain preserved. This does not qualify
+cross-architecture replay of numeric BM25 metadata. Both production service
+sources and the published older results remain unchanged.

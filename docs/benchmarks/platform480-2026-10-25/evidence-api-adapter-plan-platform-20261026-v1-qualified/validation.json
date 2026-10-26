@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "frozen_before_inference": true,
+  "source_commit": "c5ccc0d6c29a711f7a6af1b0633ff77feb116326",
+  "at": "2026-10-26T05:45:32.091832+00:00",
+  "plan_sha256": "dcbe9c2635c8d0698b8b3dcec06144801a15fb13fb727ab192c6fff61c08f8ea",
+  "mac_full_citation_body_hash_differences": 9,
+  "mac_ordinal_body_hash_differences": 0,
+  "mac_full_body_differences_after_removing_score_and_its_result_digest": 0,
+  "maximum_absolute_bm25_score_difference": 7.105427357601002e-15,
+  "primary_changed": false,
+  "gpu_inference_calls": 0,
+  "scope": "Authoritative existing-Pod pre-inference request plan. Mac draft differed only in floating-point BM25 score bytes and their result hash, no question/source/citation/ordinal/gate changes"
+}

@@ -1,0 +1,10 @@
+{
+  "source_commit": "c5ccc0d6c29a711f7a6af1b0633ff77feb116326",
+  "phase": "launcher_preflight_failed",
+  "controller_launched": false,
+  "gpu_inference_started": false,
+  "service_mutation_started": false,
+  "cause": "Startup wrapper invoked dependency-free system Python; pydantic import failed before launching the maintenance controller",
+  "private_log_sha256": "d032351703cba86dbb6f6b416f0eca197999a13e3f6a1d339403ff2234361147",
+  "bounded_followup": "Explicit existing platform venv, new controller-loss-v2 run ID, unchanged immutable source and workload"
+}
