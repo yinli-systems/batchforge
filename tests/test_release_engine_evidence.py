@@ -4,6 +4,23 @@ import pytest
 from ops import release_engine_evidence as r
 
 
+def test_first_replica_gate_probe_reaches_real_gate_after_request_validation():
+    from fastapi.testclient import TestClient
+    from backend.app import create_app
+    from backend.config import Settings
+    class Store:
+        async def tenant(self,key):return 'tenant-a'
+        async def create(self,*args):pytest.fail('Closed gate must precede any task creation')
+        async def retry(self,*args):pytest.fail('Closed gate must precede any retry lookup')
+    app=create_app(Settings(batch_submission_enabled=False,batchforge_worker_token='test-worker-only-token-12345'))
+    app.state.store=Store()
+    class Platform:pass
+    p=Platform();p.http=TestClient(app);p.key='owner-a'
+    r.verify_gate(p,{'port':8082})
+    # Establish that the empty-body probe would not have tested admission.
+    assert p.http.post('/v1/batches',json={},headers={'Authorization':'Bearer owner-a'}).status_code==422
+
+
 def test_release_patch_preserves_secrets_retention_quality_source_and_worker_settings():
     raw=b'# keep\r\nDATABASE_URL=private-test-only\nQUALITY_EVIDENCE_CATALOGUE=/old/catalogue.json\nBATCH_SUBMISSION_ENABLED=true\nBLOB_GC_ENABLED=true\nRESULT_ARCHIVE_SECONDS=120\nUVICORN_APP_DIR=/old/source\n'
     values={'UVICORN_APP_DIR':'/new/source','FRONTEND_DIR':'/new/source/frontend','ENGINE_EVIDENCE_CATALOGUE':'/private/release/catalogue.json'}

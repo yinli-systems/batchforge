@@ -80,6 +80,14 @@ def load(path,digest):
     return c
 
 
+def verify_gate(platform,api):
+    # The create request must pass body validation to exercise the actual
+    # admission gate. An empty JSON object would return422 before that gate.
+    for path,body in (('/v1/batches',{'input_file_id':'file_nonexistent_release_gate_probe'}),('/v1/batches/missing/retry',{})):
+        r=platform.http.post(f'http://127.0.0.1:{api["port"]}'+path,json=body,headers={'Authorization':'Bearer '+platform.key})
+        if r.status_code!=503 or r.json().get('error',{}).get('code')!='admission_paused':raise ValueError('API create/retry gate not closed')
+
+
 class ReleasePlatform(Platform):
     def __init__(self,c):
         super().__init__(c)
@@ -245,9 +253,7 @@ def execute(base,guard,qualification,apply,qualify_loss,loss_qualification):
         guardian.begin();stage('independent_restoration_armed')
         signal_exact(c['guard_identity']);p.invoke(p.watch,'stop')
         first=p.apis[0];p.configure_bytes(first,gated(p.original[Path(first['env_file'])]))
-        for path in ('/v1/batches','/v1/batches/missing/retry'):
-            r=p.http.post(f'http://127.0.0.1:{first["port"]}'+path,json={},headers={'Authorization':'Bearer '+p.key})
-            if r.status_code!=503 or r.json().get('error',{}).get('code')!='admission_paused':raise ValueError('First API gate not closed')
+        verify_gate(p,first)
         stage('first_api_gate_verified')
         if qualify_loss:
             save(base/'dispatch-observation.json',{'intentional_controller_exit':42,'first_api_gate_verified':True,'at':now(),
