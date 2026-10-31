@@ -1,0 +1,83 @@
+{
+  "passed": true,
+  "finished_at": "2026-10-25T09:43:14.012590+00:00",
+  "phases": [
+    {
+      "phase": "00-fifo",
+      "passed": true,
+      "summary": {
+        "offered": 20,
+        "completed": 20,
+        "errors": 0,
+        "elapsed_seconds": 77.25145651597995,
+        "successful_inferences_per_second": 0.25889479502386953,
+        "final_text_present": 20,
+        "no_final_text": 0,
+        "prompt_tokens": 109056,
+        "generated_tokens": 13600,
+        "prompt_tokens_per_second": 1411.7015383061557,
+        "generated_tokens_per_second": 176.04846061623127,
+        "completion_seconds": {
+          "samples": 20,
+          "p50": 20.548587,
+          "p95": 76.89183,
+          "p99": 77.178407,
+          "max": 77.250051,
+          "mean": 32.114688
+        },
+        "queue_seconds": {
+          "samples": 20,
+          "p50": 0.007199,
+          "p95": 9.420377,
+          "p99": 10.518093,
+          "max": 10.792522,
+          "mean": 1.852709
+        },
+        "http_ttft_seconds": {
+          "samples": 20,
+          "p50": 3.809682,
+          "p95": 7.649764,
+          "p99": 7.649903,
+          "max": 7.649938,
+          "mean": 4.295734
+        },
+        "first_final_content_seconds": {
+          "samples": 20,
+          "p50": 3.809682,
+          "p95": 7.649764,
+          "p99": 7.649903,
+          "max": 7.649938,
+          "mean": 4.295734
+        },
+        "stream_span_per_reported_output_token_proxy_seconds": {
+          "samples": 20,
+          "p50": 0.047863,
+          "p95": 0.101046,
+          "p99": 0.13641,
+          "max": 0.145251,
+          "mean": 0.059034
+        },
+        "visible_text_codepoints": 63637,
+        "final_text_codepoints": 63637,
+        "reasoning_text_codepoints": 0,
+        "http_service_seconds": {
+          "samples": 20,
+          "p50": 16.264986,
+          "p95": 76.886711,
+          "p99": 77.170197,
+          "max": 77.241068,
+          "mean": 30.261978
+        },
+        "all_terminal_completion_seconds": {
+          "samples": 20,
+          "p50": 20.548587,
+          "p95": 76.89183,
+          "p99": 77.178407,
+          "max": 77.250051,
+          "mean": 32.114688
+        },
+        "cost": null
+      }
+    }
+  ]
+}

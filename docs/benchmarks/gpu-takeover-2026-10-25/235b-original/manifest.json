@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "tokenizer_revision": "e156cb4efae43fbee1a1ab073f946a1377e6b969",
+  "dataset": "SQuAD 1.1 development",
+  "license": "CC BY-SA 4.0",
+  "source_url": "https://rajpurkar.github.io/SQuAD-explorer/",
+  "dataset_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "workload_sha256": "52f84aec744faa37b8d6d2166693536f9f8d8778642b29a58b4e6aa08ac2fb4f",
+  "seed": 20261024,
+  "context_limit": 18440,
+  "input_sizes": [
+    128,
+    512,
+    2048,
+    8192,
+    16384
+  ],
+  "output_caps": [
+    32,
+    128,
+    512,
+    2048
+  ],
+  "repeats": 1,
+  "tasks": 20,
+  "prompt_tolerance_tokens": 8,
+  "chat_template_sha256": "64f85b198065d0fba2a81f37e10ed68161ce2c19a754c7100e67e0ca2ee9c326",
+  "prompt_counter": {
+    "type": "huggingface-chat-template",
+    "chat_template_sha256": "64f85b198065d0fba2a81f37e10ed68161ce2c19a754c7100e67e0ca2ee9c326"
+  },
+  "examples": {
+    "mix-0-128-32": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "rendered_prompt_token_ids_sha256": "5d62d5fde84c0c7934ead711958dad34ba21d8ad8a8db7eff6fc0df379b56138",
+      "output_token_cap": 32,
+      "class": "balanced"
+    },
+    "mix-0-128-128": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "rendered_prompt_token_ids_sha256": "807832be0f0c4d19d779d8635cc81291c97022e7a914b0f556b8133efa64714c",
+      "output_token_cap": 128,
+      "class": "balanced"
+    },
+    "mix-0-128-512": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "rendered_prompt_token_ids_sha256": "78fb017fc5c9cf20552cc3f27aa5b30113a9066ce2aecf58ebdfd020a9627509",
+      "output_token_cap": 512,
+      "class": "decode-heavy"
+    },
+    "mix-0-128-2048": {
+      "target_prompt_tokens": 128,
+      "rendered_prompt_tokens": 128,
+      "rendered_prompt_token_ids_sha256": "25cd00fb1ae1ad851223bb91e1e037dc4f0cde813009b3e4f34d9a23f464feaf",
+      "output_token_cap": 2048,
+      "class": "decode-heavy"
+    },
+    "mix-0-512-32": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "rendered_prompt_token_ids_sha256": "520dc6dee76e774b7a4b6a25f4c28ea08ab6ee2a1f2d73c3b625d7e262f8b068",
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-512-128": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "rendered_prompt_token_ids_sha256": "62592e3411917535944845db87aa879324ae5afc5ef4df689315c861d2463bba",
+      "output_token_cap": 128,
+      "class": "balanced"
+    },
+    "mix-0-512-512": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "rendered_prompt_token_ids_sha256": "0e4e1b011c24e3fd47bd2ed6c6a1eeff3490b47ff8e85fbfce10c529298d4626",
+      "output_token_cap": 512,
+      "class": "balanced"
+    },
+    "mix-0-512-2048": {
+      "target_prompt_tokens": 512,
+      "rendered_prompt_tokens": 512,
+      "rendered_prompt_token_ids_sha256": "9ebcf4f72e147b3b037ec0c347ef7f21021fb863ad41aca4e6e16042f7b08ec4",
+      "output_token_cap": 2048,
+      "class": "decode-heavy"
+    },
+    "mix-0-2048-32": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "rendered_prompt_token_ids_sha256": "bcf89ba4f4335d2ddc28246208a3f8c1f6e0fde24134bbce60c71f3a99d08ac2",
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-2048-128": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "rendered_prompt_token_ids_sha256": "30ae359739fea83924684a5788e7efa1634679a7039715e90ba024f91ffd6497",
+      "output_token_cap": 128,
+      "class": "prefill-heavy"
+    },
+    "mix-0-2048-512": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "rendered_prompt_token_ids_sha256": "7e4e1bb83cb98468a89d78774b2130c6ee6252589f886c60518448f95f1c4c86",
+      "output_token_cap": 512,
+      "class": "balanced"
+    },
+    "mix-0-2048-2048": {
+      "target_prompt_tokens": 2048,
+      "rendered_prompt_tokens": 2048,
+      "rendered_prompt_token_ids_sha256": "4ab8e0304d95fdedb58e7757a3c1923c24cb6721b83eb6d59f9ea3173b1f7f21",
+      "output_token_cap": 2048,
+      "class": "balanced"
+    },
+    "mix-0-8192-32": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "rendered_prompt_token_ids_sha256": "825a44f6f93b99e8ce999e2a1ce3a90276d6dcae8a25f24263724fcdc9b43c5c",
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-8192-128": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "rendered_prompt_token_ids_sha256": "847629169b819479e2315f39253d8faeacdabfc804c750a09c66cbe8acb7bea8",
+      "output_token_cap": 128,
+      "class": "prefill-heavy"
+    },
+    "mix-0-8192-512": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "rendered_prompt_token_ids_sha256": "d8e7d92719c48f850cd1a13f7808eb969bc37f34908c811d2e6ac1bca944f4c5",
+      "output_token_cap": 512,
+      "class": "prefill-heavy"
+    },
+    "mix-0-8192-2048": {
+      "target_prompt_tokens": 8192,
+      "rendered_prompt_tokens": 8192,
+      "rendered_prompt_token_ids_sha256": "1b6263b990e988ebd76a8c028a1b787a068494a0e4618e4a6ad9af0a60d9634d",
+      "output_token_cap": 2048,
+      "class": "balanced"
+    },
+    "mix-0-16384-32": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "rendered_prompt_token_ids_sha256": "a0c5b3425d606278121d89215c5dda20f6cd5aa145f679bc16abe75b43734726",
+      "output_token_cap": 32,
+      "class": "prefill-heavy"
+    },
+    "mix-0-16384-128": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "rendered_prompt_token_ids_sha256": "c917fdf76f41f3c740e6a1901a55537a5ba9f00db1990ffc93a444534c652d6a",
+      "output_token_cap": 128,
+      "class": "prefill-heavy"
+    },
+    "mix-0-16384-512": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "rendered_prompt_token_ids_sha256": "3de22adf898e71de73d40177a1f3e5abee2eba377a07090db4f33c98b5cf612f",
+      "output_token_cap": 512,
+      "class": "prefill-heavy"
+    },
+    "mix-0-16384-2048": {
+      "target_prompt_tokens": 16384,
+      "rendered_prompt_tokens": 16384,
+      "rendered_prompt_token_ids_sha256": "b462fe221389efd99e1dc268814795144174d243fd8789c44a1ff4d741fb5da2",
+      "output_token_cap": 2048,
+      "class": "prefill-heavy"
+    }
+  },
+  "limitations": [
+    "Real public text, not customer traffic or a quality evaluation",
+    "Output values are maximum lengths; actual generated tokens must come from engine usage",
+    "Input counts include rendered chat template and generation prefix; server usage must agree",
+    "Prefill/decode labels use requested input and output cap, not separate hardware timing"
+  ]
+}

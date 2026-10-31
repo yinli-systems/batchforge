@@ -1,0 +1,20 @@
+{
+  "created_at": "2026-10-25T09:41:56.659300+00:00",
+  "pid": 545520,
+  "url": "http://127.0.0.1:8348",
+  "policies": [
+    "fifo"
+  ],
+  "concurrency": 16,
+  "context_limit": 18440,
+  "request_timeout": 600,
+  "source_sha256": {
+    "gpu_campaign.py": "b1ba79bb371f8d5cbb51384fb016c81e9e00dfb3af805a98cd18472d8f5f1eff",
+    "engine_matrix.py": "0b203fd45b8a908ca9e93a11e19f2cb645ece502ed870091d49246d57c45d7af"
+  },
+  "cost": null,
+  "cost_note": "No current provider invoice supplied; cost is unmeasured",
+  "scope": "Existing engine only; client dispatch policies, not platform placement",
+  "forced_output": true,
+  "workload_sha256": "d18a1d60dfb2dd67e1913bc0acfb3bbcc55dbe03988305b3f66a04df22ed9bc2"
+}

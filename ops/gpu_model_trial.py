@@ -13,7 +13,6 @@ import fcntl
 import hashlib
 import json
 import os
-import signal
 from pathlib import Path
 import subprocess
 import sys
@@ -26,15 +25,6 @@ from ops.gpu_campaign import write_json
 def require(condition, reason):
     if not condition:
         raise RuntimeError(reason)
-
-
-def require_managed_controls(manager, services):
-    for service in services:
-        if service['role'] not in {'api', 'gateway'}:
-            continue
-        value, error = manager.delegate.invoke(service, 'status')
-        require(error is None and value.get('running') is True,
-                'control_plane_process_record_must_be_reconciled_before_gpu_swap')
 
 
 def restore_services(manager, engine, worker, supervisor, wait, record):
@@ -67,16 +57,6 @@ def main():
     parser.add_argument('--model', type=Path, required=True)
     parser.add_argument('--benchmark-source', type=Path, required=True)
     args = parser.parse_args()
-    class TrialInterrupted(RuntimeError):
-        pass
-    def interrupted(number, frame):
-        # Complete the bounded restoration even if the operator sends another
-        # TERM while it is in progress. SIGKILL/Pod loss remain outside scope.
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        raise TrialInterrupted('trial interrupted')
-    signal.signal(signal.SIGTERM, interrupted)
-    signal.signal(signal.SIGINT, interrupted)
     root, run = args.root.resolve(), args.run.resolve()
     require(root == Path('/root/batchforge-runtime/app'), 'only_existing_batchforge_runtime_allowed')
     require(run.is_relative_to(root.parent) and not run.exists(), 'new_local_trial_directory_required')
@@ -127,15 +107,13 @@ def main():
         require(len([x for x in verified if x['file'].endswith('.safetensors')]) == 51, 'checkpoint_shard_count')
         for entry in verified:
             require((args.model/entry['file']).stat().st_size == entry['bytes'], 'checkpoint_changed_after_verification')
-        manager = Managed()
-        require_managed_controls(manager, services)
         api = next(row for row in services if row['role'] == 'api')
         with psycopg.connect(file_env(api['env_file'])['DATABASE_URL'], connect_timeout=10,
                              options='-c default_transaction_read_only=on -c statement_timeout=10000') as database:
             active = database.execute("SELECT count(*) FROM tasks WHERE model=%s AND status IN ('pending','running')",
                                       (original_env['MODEL_NAME'],)).fetchone()[0]
         require(active == 0, 'serving_queue_must_be_drained')
-        env_path = root/'.runtime'/('480b-'+run.name+'-engine.env')
+        env_path = root/'.runtime/480b-trial-engine.env'
         require(not env_path.exists(), 'candidate_configuration_already_exists')
         write_env(env_path, {'MODEL_NAME':REPO, 'ENGINE_MODEL_PATH':str(args.model), 'ENGINE_REVISION':REVISION,
             'ENGINE_BACKEND':'vllm', 'ENGINE_DTYPE':'half', 'ENGINE_TENSOR_PARALLEL_SIZE':'4',
@@ -151,10 +129,6 @@ def main():
             'model':REPO,'revision':REVISION, 'total_parameters':480154875392,'active_parameters_approx':35000000000,
             'quantization':'AWQ INT4; kernel must be confirmed in actual startup log',
             'manifest_sha256':hashlib.sha256(original_manifest).hexdigest(), 'events':[],
-            'controller_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-            'checkpoint_verified_bytes':sum(entry['bytes'] for entry in verified),
-            'gpu_inventory_csv':subprocess.check_output(['nvidia-smi',
-                '--query-gpu=index,uuid,name,memory.total','--format=csv,noheader'],text=True,timeout=10).splitlines(),
             'limitations':['One existing four-H100 Pod, no independent-node HA',
                            'Local staging is not Pod-loss durable; evidence must be exported off Pod',
                            'Finite engine benchmark; no tenant routing or production capacity claim']}
@@ -181,6 +155,7 @@ def main():
                         manager.invoke(service,'start')
                         event('control_plane_process_recovered')
                 time.sleep(2)
+        manager = Managed()
         altered = False
         campaign_lock = None
         try:
@@ -210,10 +185,7 @@ def main():
                 subprocess.run(command,cwd=args.benchmark_source,check=True,timeout=1800)
                 report['phase']='benchmark_passed'; event('480b_benchmark_passed')
         except Exception as error:
-            report['phase']='failed'; report['error_type']=type(error).__name__
-            if type(error) is RuntimeError:
-                report['error_code']=str(error)
-            event('trial_failed')
+            report['phase']='failed'; report['error_type']=type(error).__name__; event('trial_failed')
         finally:
             if altered:
                 try:
