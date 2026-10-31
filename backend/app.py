@@ -240,6 +240,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def bounded_requests(request, call_next):
         started = time.monotonic()
         if request.method in {"POST", "PUT", "PATCH"}:
+            # Every mutating route requires a credential. Refuse a missing or
+            # malformed one before buffering the body, so anonymous clients
+            # cannot make the API hold request bodies in memory.
+            if not request.headers.get("authorization", "").startswith("Bearer "):
+                if request.url.path.startswith("/internal/"):
+                    return error_response(401, "Valid worker Bearer token required", "invalid_worker_token")
+                return error_response(401, "Bearer API key required", "invalid_api_key")
             limit = settings.max_upload_bytes + 65536 if request.url.path == "/v1/files" else settings.max_request_bytes * 2 + 65536
             try:
                 if int(request.headers.get("content-length", "0")) > limit:

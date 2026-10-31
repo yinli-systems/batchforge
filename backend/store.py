@@ -34,6 +34,15 @@ def unix(value):
     return int(value.timestamp()) if value else None
 
 
+def terminal_status(completed, failed, cancelled, expired):
+    """Final status of an in-progress batch with no pending or running tasks.
+
+    Mirrors batchforge_finish_batch_v4 in the SQL path. Keep the two identical:
+    a batch that expired with cancelled tasks is failed even if some completed.
+    """
+    return "failed" if (cancelled > 0 and expired) or (completed == 0 and failed > 0) else "completed"
+
+
 def batch_view(row):
     result = {
         "id": row["id"], "object": "batch", "endpoint": row["endpoint"], "model": row["model"],
@@ -262,12 +271,12 @@ class Store:
         await conn.execute("UPDATE tenant_queues SET pending_count=pending_count+%s,next_ready_at=COALESCE((SELECT ready_at FROM tasks WHERE tenant_id=%s AND model=%s AND status='pending' ORDER BY ready_at,id LIMIT 1),clock_timestamp()) WHERE tenant_id=%s AND model=%s", (delta, tenant, model, tenant, model))
 
     async def finish_batch(self, conn, bid):
-        row = await one(conn, "SELECT * FROM batches WHERE id=%s", (bid,))
+        row = await one(conn, "SELECT *, expires_at<=clock_timestamp() AS expired FROM batches WHERE id=%s", (bid,))
         if row["pending_count"] or row["running_count"]:
             return
         status = row["status"]
         if status == "in_progress":
-            status = "failed" if row["completed_count"] == 0 and row["failed_count"] else "completed"
+            status = terminal_status(row["completed_count"], row["failed_count"], row["cancelled_count"], row["expired"])
         output_id, error_id = row["output_file_id"], row["error_file_id"]
         if row["completed_count"] and not output_id:
             output_id = identifier("file")
