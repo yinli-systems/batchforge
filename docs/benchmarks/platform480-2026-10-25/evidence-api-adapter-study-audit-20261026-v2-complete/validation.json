@@ -1,0 +1,221 @@
+{
+  "phase": "complete",
+  "passed": true,
+  "new_gpu_tasks": 0,
+  "production_database_writes": 0,
+  "scope": "Independent raw-response replay and arithmetic/source/configuration check using the frozen scorer, not a second independent semantic judge or GPU attestation",
+  "quality_passed": false,
+  "source_commit": "9f6c1b075d0e624190828dcd129ae95d0e45a64e",
+  "report_sha256": "c2d36a51926c25723f07673f4f9f3222a44713168f2015f65b19cc7694c5567c",
+  "raw_responses_replayed": 1000,
+  "raw_response_bytes": 774634,
+  "all_accepted_engine_usage_known": true,
+  "source_bound_records_verified": true,
+  "arms": {
+    "full-citation": {
+      "predictions": 500,
+      "expected": 500,
+      "wall_seconds": 802.764617230976,
+      "exact_match_percent": 62.6,
+      "f1_percent": 71.43103983735563,
+      "joint_percent": 59.6,
+      "quality_passed": false,
+      "invalid_outputs": 82,
+      "abstentions": 12,
+      "prompt_tokens": 1874910,
+      "output_tokens": 76296,
+      "http_service_seconds": {
+        "samples": 500,
+        "p50": 50.394117,
+        "p95": 69.953661,
+        "p99": 87.878755,
+        "max": 111.555697,
+        "mean": 50.472949
+      },
+      "offered_cohort_completion_seconds": {
+        "samples": 500,
+        "p50": 224.036421,
+        "p95": 394.912688,
+        "p99": 407.359464,
+        "max": 408.125423,
+        "mean": 226.555086
+      },
+      "joint_results_per_second": 0.3712171583096291,
+      "whole_pod_wall_allocation_usd": 3.5901417603940873,
+      "allocation_per_1000_joint_results_usd": 12.04745557179224
+    },
+    "source-ordinal": {
+      "predictions": 500,
+      "expected": 500,
+      "wall_seconds": 542.3853145790054,
+      "exact_match_percent": 69.8,
+      "f1_percent": 77.75492484124064,
+      "joint_percent": 67.0,
+      "quality_passed": false,
+      "invalid_outputs": 36,
+      "abstentions": 10,
+      "prompt_tokens": 548502,
+      "output_tokens": 7110,
+      "http_service_seconds": {
+        "samples": 500,
+        "p50": 31.441789,
+        "p95": 50.51654,
+        "p99": 77.24648,
+        "max": 86.020728,
+        "mean": 33.587739
+      },
+      "offered_cohort_completion_seconds": {
+        "samples": 500,
+        "p50": 152.661875,
+        "p95": 265.910935,
+        "p99": 268.886242,
+        "max": 271.468389,
+        "mean": 150.358063
+      },
+      "joint_results_per_second": 0.6176420913239954,
+      "whole_pod_wall_allocation_usd": 2.425667656867218,
+      "allocation_per_1000_joint_results_usd": 7.24079897572304
+    }
+  },
+  "matched_pairs": [
+    {
+      "old_phase": 0,
+      "new_phase": 1,
+      "candidate_win": 25,
+      "tie": 218,
+      "candidate_loss": 7
+    },
+    {
+      "old_phase": 3,
+      "new_phase": 2,
+      "candidate_win": 28,
+      "tie": 213,
+      "candidate_loss": 9
+    }
+  ],
+  "gpu_sampling": {
+    "0": {
+      "arm": "full-citation",
+      "samples": 77,
+      "errors": 0,
+      "maximum_gap_seconds": 5.108903559972532,
+      "gaps_over_10_seconds": 0,
+      "gpu_busy_mean": [
+        23.5974025974026,
+        22.142857142857142,
+        25.337662337662337,
+        20.51948051948052
+      ],
+      "gpu_busy_max": [
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ],
+      "scope": "Busy gauge sampled during measured arm wall, not FLOP saturation"
+    },
+    "1": {
+      "arm": "source-ordinal",
+      "samples": 53,
+      "errors": 0,
+      "maximum_gap_seconds": 5.221820498991292,
+      "gaps_over_10_seconds": 0,
+      "gpu_busy_mean": [
+        8.0,
+        8.11320754716981,
+        6.943396226415095,
+        9.09433962264151
+      ],
+      "gpu_busy_max": [
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ],
+      "scope": "Busy gauge sampled during measured arm wall, not FLOP saturation"
+    },
+    "2": {
+      "arm": "source-ordinal",
+      "samples": 53,
+      "errors": 0,
+      "maximum_gap_seconds": 5.143750632007141,
+      "gaps_over_10_seconds": 0,
+      "gpu_busy_mean": [
+        8.88679245283019,
+        8.528301886792454,
+        10.169811320754716,
+        9.415094339622641
+      ],
+      "gpu_busy_max": [
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ],
+      "scope": "Busy gauge sampled during measured arm wall, not FLOP saturation"
+    },
+    "3": {
+      "arm": "full-citation",
+      "samples": 80,
+      "errors": 0,
+      "maximum_gap_seconds": 5.140097952040378,
+      "gaps_over_10_seconds": 0,
+      "gpu_busy_mean": [
+        32.725,
+        31.8625,
+        34.825,
+        32.425
+      ],
+      "gpu_busy_max": [
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ],
+      "scope": "Busy gauge sampled during measured arm wall, not FLOP saturation"
+    }
+  },
+  "primary_configuration_restored": true,
+  "identities": {
+    "api-a": {
+      "pid": 805331,
+      "start_ticks": "52012680",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "api-b": {
+      "pid": 805338,
+      "start_ticks": "52013017",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "gateway-edge": {
+      "pid": 219738,
+      "start_ticks": "35326874",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "engine-qwen480bench": {
+      "pid": 573119,
+      "start_ticks": "45241916",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "worker-qwen480": {
+      "pid": 805308,
+      "start_ticks": "52012380",
+      "cwd": "/root/batchforge-runtime/app"
+    },
+    "supervisor-primary": {
+      "pid": 805345,
+      "start_ticks": "52013355",
+      "cwd": "/root/batchforge-runtime/app"
+    }
+  },
+  "finite_guard_run": "/root/batchforge-runtime/evidence-api-worker-latch-guard-soak480-engine-quality-adapter-matched-20261026-v2",
+  "finite_guard_identity": {
+    "pid": 805358,
+    "start_ticks": "52013453",
+    "cwd": "/root/batchforge-runtime/evidence-api-worker-latch-guard-candidate-20261025-v2/source"
+  },
+  "finite_guard_recovery_invocations": 0,
+  "azure_agent_ddl_deployed": false,
+  "model": "480B total/~35B active MoE, existing4H100",
+  "validator_sha256": "dfcf3fbb55efcbacdcfebefaa495f1024905708e61e0ae985d43963f140017fc"
+}

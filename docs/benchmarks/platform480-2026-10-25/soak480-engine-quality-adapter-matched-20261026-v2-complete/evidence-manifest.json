@@ -1,0 +1,61 @@
+{
+  "collected_at": "2026-10-26T06:53:38.974514+00:00",
+  "source_run": "/root/batchforge-runtime/soak480-engine-quality-adapter-matched-20261026-v2",
+  "files": {
+    "launcher.json": {
+      "bytes": 159,
+      "sha256": "5b03bf569ea283f08507521ea05a342f23d6a5fb194a52bd5caa2c3ca4d2a78f",
+      "source_relative_path": "launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "runner.json": {
+      "bytes": 246,
+      "sha256": "d7598dd4091b5e6a8ffc1724e4ef6bc5f0ec012ac03b8fd600bbf7e78ebce7d2",
+      "source_relative_path": "runner.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "recovery-validation.json": {
+      "bytes": 2251,
+      "sha256": "6fc77760d74d4ae2ddcecb157a951eafb63fb2d5b69c8f8426688cd1f3a8c7c4",
+      "source_relative_path": "recovery-validation.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "guard-launcher.json": {
+      "bytes": 343,
+      "sha256": "e78ee9f7ce92c29bf7f42af463267454db94b28860a8fbdec8aba586d4237f72",
+      "source_relative_path": "guard-launcher.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "campaign.json": {
+      "bytes": 2257,
+      "sha256": "b9662252fe8b1b0742c20fc2cbcb605aa5e9ef1eccc5df434c6e3bebe2cecde1",
+      "source_relative_path": "campaign.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/plan.json": {
+      "bytes": 22895,
+      "sha256": "3438ecc9d945a560ee8bcc01cd03775bef150d9a158abbb7c83a2fe3c3b5384a",
+      "source_relative_path": "run/plan.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/report.json": {
+      "bytes": 34749,
+      "sha256": "c2d36a51926c25723f07673f4f9f3222a44713168f2015f65b19cc7694c5567c",
+      "source_relative_path": "run/report.json",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/scores.jsonl": {
+      "bytes": 1184888,
+      "sha256": "1cb677c10d4a9a0f3b504638ecbef7c80f3035269d0d49f4f41594d6364dd2ac",
+      "source_relative_path": "run/scores.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    },
+    "run/observations.jsonl": {
+      "bytes": 486066,
+      "sha256": "380daee61c9994f2f34bf210073dc8ed30a7062176716a655f9cd42b804702d4",
+      "source_relative_path": "run/observations.jsonl",
+      "trailing_partial_jsonl_bytes_removed": 0
+    }
+  },
+  "scope": "Allowlisted snapshot; inspect report state for completion"
+}
